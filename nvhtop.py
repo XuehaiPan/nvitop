@@ -29,20 +29,17 @@
 # To Run:
 # $ python nvhtop.py
 
+import datetime
+import sys
 import time
 from collections import OrderedDict
+
+import psutil
 
 import pynvml as nvml
 
 
-def to_string(s):
-    if isinstance(s, bytes):
-        return s.decode('utf-8')
-    else:
-        return str(s)
-
-
-def to_human_readable(x):
+def bytes2human(x):
     if x < (1 << 10):
         return '{}B'.format(x)
     if x < (1 << 20):
@@ -53,123 +50,223 @@ def to_human_readable(x):
 
 def nvml_query(func, *args, **kwargs):
     try:
-        return func(*args, **kwargs)
+        retval = func(*args, **kwargs)
     except nvml.NVMLError as error:
         if error.value == nvml.NVML_ERROR_NOT_SUPPORTED:
             return 'N/A'
         else:
             return str(error)
+    else:
+        if isinstance(retval, bytes):
+            retval = retval.decode('UTF-8')
+        return retval
 
 
-def device_query():
-    nvml.nvmlInit()
+class GProcess(psutil.Process):
+    def __init__(self, pid, device, gpu_memory, type='C'):
+        super(GProcess, self).__init__(pid)
+        self.device = device
+        self.gpu_memory = gpu_memory
+        self.type = type
 
-    driver_version = to_string(nvml.nvmlSystemGetDriverVersion())
-    cuda_version = to_string(nvml.nvmlSystemGetCudaDriverVersion())
-    if cuda_version != 'N/A':
-        cuda_version = cuda_version[:-3] + '.' + cuda_version[-2]
 
-    lines = [
-        time.strftime('%a %b %d %H:%M:%S %Y'),
-        '+-----------------------------------------------------------------------------+',
-        '| NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    |'.format(driver_version, cuda_version),
-        '|-------------------------------+----------------------+----------------------+',
-        '| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |',
-        '| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |',
-        '|===============================+======================+======================|'
-    ]
+class Device(object):
+    def __init__(self, index):
+        self.index = index
+        self.handle = nvml.nvmlDeviceGetHandleByIndex(index)
+        self.name = nvml_query(nvml.nvmlDeviceGetName, self.handle)
+        self.bus_id = nvml_query(lambda handle: nvml.nvmlDeviceGetPciInfo(handle).busId, self.handle)
+        self.memory_total = nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).total, self.handle)
+        self.power_limit = nvml_query(nvml.nvmlDeviceGetPowerManagementLimit, self.handle)
 
-    processes = OrderedDict()
+    def __str__(self):
+        return 'GPU({}, {}, {})'.format(self.index, self.name, bytes2human(self.memory_total))
 
-    count = nvml.nvmlDeviceGetCount()
+    __repr__ = __str__
 
-    for i in range(0, count):
-        handle = nvml.nvmlDeviceGetHandleByIndex(i)
+    @property
+    def display_active(self):
+        return {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetDisplayActive, self.handle), 'N/A')
 
-        name = to_string(nvml_query(nvml.nvmlDeviceGetName, handle))
-        if len(name) > 18:
-            name = name[:15] + '...'
-        persistence_mode = {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetPersistenceMode, handle), 'N/A')
-        bus_id = to_string(nvml_query(nvml.nvmlDeviceGetPciInfo, handle).busId)
-        fan = to_string(nvml_query(nvml.nvmlDeviceGetFanSpeed, handle))
-        if fan != 'N/A':
-            fan += '%'
-        display_active = {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetDisplayActive, handle), 'N/A')
-        ecc_errors = to_string(nvml_query(nvml.nvmlDeviceGetTotalEccErrors, handle, nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED, nvml.NVML_VOLATILE_ECC))
-        utilization = to_string(nvml_query(nvml.nvmlDeviceGetUtilizationRates, handle).gpu) + '%'
-        compute_mode = {
+    @property
+    def persistence_mode(self):
+        return {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetPersistenceMode, self.handle), 'N/A')
+
+    @property
+    def ecc_errors(self):
+        return nvml_query(nvml.nvmlDeviceGetTotalEccErrors, self.handle,
+                          nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
+                          nvml.NVML_VOLATILE_ECC)
+
+    @property
+    def fan_speed(self):
+        fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
+        if fan_speed != 'N/A':
+            fan_speed = str(fan_speed) + '%'
+        return fan_speed
+
+    @property
+    def utilization(self):
+        utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle).gpu
+        if utilization != 'N/A':
+            utilization = str(utilization) + '%'
+        return utilization
+
+    @property
+    def compute_mode(self):
+        return {
             nvml.NVML_COMPUTEMODE_DEFAULT: 'Default',
             nvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD: 'E. Thread',
             nvml.NVML_COMPUTEMODE_PROHIBITED: 'Prohibited',
             nvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'E. Process',
-        }.get(nvml_query(nvml.nvmlDeviceGetComputeMode, handle), 'N/A')
-        memory_info = nvml.nvmlDeviceGetMemoryInfo(handle)
-        memory = '{} / {}'.format(to_human_readable(memory_info.used), to_human_readable(memory_info.total))
-        temperature = to_string(nvml_query(nvml.nvmlDeviceGetTemperature, handle, nvml.NVML_TEMPERATURE_GPU))
+        }.get(nvml_query(nvml.nvmlDeviceGetComputeMode, self.handle), 'N/A')
+
+    @property
+    def temperature(self):
+        temperature = nvml_query(nvml.nvmlDeviceGetTemperature, self.handle, nvml.NVML_TEMPERATURE_GPU)
         if temperature != 'N/A':
-            temperature += 'C'
-        performance_state = to_string(nvml_query(nvml.nvmlDeviceGetPerformanceState, handle))
+            temperature = str(temperature) + 'C'
+        return temperature
+
+    @property
+    def performance_state(self):
+        performance_state = nvml_query(nvml.nvmlDeviceGetPerformanceState, self.handle)
         if performance_state != 'N/A':
-            performance_state = 'P' + performance_state
-        power_usage = nvml_query(nvml.nvmlDeviceGetPowerUsage, handle)
-        power_limit = nvml_query(nvml.nvmlDeviceGetPowerManagementLimit, handle)
-        if power_usage != 'N/A' and power_limit != 'N/A':
-            power = '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
-        else:
-            power = 'N/A'
+            performance_state = 'P' + str(performance_state)
+        return performance_state
+
+    @property
+    def memory_used(self):
+        return nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
+
+    @property
+    def power_usage(self):
+        return nvml_query(nvml.nvmlDeviceGetPowerUsage, self.handle)
+
+    @property
+    def processes(self):
+        process = {}
+
+        for proc in nvml.nvmlDeviceGetComputeRunningProcesses(self.handle):
+            process[proc.pid] = GProcess(pid=proc.pid, device=self, gpu_memory=proc.usedGpuMemory, type='C')
+        for proc in nvml.nvmlDeviceGetGraphicsRunningProcesses(self.handle):
+            if proc.pid in process:
+                process[proc.pid].type = 'C+G'
+            else:
+                process[proc.pid] = GProcess(pid=proc.pid, device=self, gpu_memory=proc.usedGpuMemory, type='G')
+        return OrderedDict(sorted(process.items()))
+
+
+class Top(object):
+    def __init__(self):
+        self.driver_version = str(nvml_query(nvml.nvmlSystemGetDriverVersion))
+        self.cuda_version = str(nvml_query(nvml.nvmlSystemGetCudaDriverVersion))
+        if self.cuda_version != 'N/A':
+            self.cuda_version = self.cuda_version[:-3] + '.' + self.cuda_version[-2]
+
+        self.device_count = nvml.nvmlDeviceGetCount()
+        self.devices = list(map(Device, range(self.device_count)))
+
+    def redraw(self):
+        lines = [
+            time.strftime('%a %b %d %H:%M:%S %Y'),
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
+                                                                                                      self.cuda_version),
+            '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
+            '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+            '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
+            '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+        ]
+
+        processes = OrderedDict()
+
+        for device in self.devices:
+            name = device.name
+            if len(name) > 18:
+                name = name[:15] + '...'
+
+            memory = '{} / {}'.format(bytes2human(device.memory_used), bytes2human(device.memory_total))
+
+            power_usage = device.power_usage
+            if power_usage != 'N/A' and device.power_limit != 'N/A':
+                power = '{}W / {}W'.format(power_usage // 1000, device.power_limit // 1000)
+            else:
+                power = 'N/A'
+
+            lines.extend([
+                '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index, name, device.persistence_mode,
+                                                                          device.bus_id, device.display_active,
+                                                                          device.ecc_errors),
+                '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed, device.temperature,
+                                                                                  device.performance_state,
+                                                                                  power, memory,
+                                                                                  device.utilization, device.compute_mode),
+                '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+            ])
+
+            processes.update(device.processes)
+        lines.pop()
+        lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
         lines.extend([
-            '| {:>3}  {:>18}  {:<4} | {:<16} {:>3} | {:>20} |'.format(i, name, persistence_mode,
-                                                                      bus_id, display_active,
-                                                                      ecc_errors),
-            '| {:>3}  {:>4}  {:>4}  {:>12} | {:>20} | {:>7}  {:>11} |'.format(fan, temperature, performance_state, power,
-                                                                              memory,
-                                                                              utilization, compute_mode),
-            '+-------------------------------+----------------------+----------------------+',
+            '                                                                               ',
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ Processes:                                                                  │',
+            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM    TIME  COMMAND                    │',
+            '╞═════════════════════════════════════════════════════════════════════════════╡'
         ])
 
-        device_process = {}
+        if len(processes) > 0:
+            now_time = datetime.datetime.now()
+            for proc in processes.values():
+                cmdline = proc.cmdline()
+                cmdline[0] = proc.name()
+                cmdline = ' '.join(cmdline)
+                if len(cmdline) > 26:
+                    cmdline = cmdline[:23] + '...'
+                username = proc.username()
+                if len(username) >= 8:
+                    username = username[:6] + '+'
+                running_time = now_time - datetime.datetime.fromtimestamp(proc.create_time())
+                if running_time.days > 1:
+                    running_time = '{} days'.format(running_time.days)
+                elif running_time.days == 1:
+                    running_time = '{} day'.format(running_time.days)
+                else:
+                    running_time = '{}:{}'.format(running_time.seconds // 3600, running_time.seconds // 60)
+                lines.append(
+                    '│ {:>3} {:>6} {:>7} {:>8} {:>5} {:>5} {:>7}  {:<26} │'.format(
+                        proc.device.index,
+                        proc.pid,
+                        username,
+                        bytes2human(proc.gpu_memory),
+                        proc.cpu_percent(),
+                        round(proc.memory_percent(), 2),
+                        running_time, cmdline
+                    )
+                )
+        else:
+            lines.append('│  No running compute processes found                                         │')
 
-        for proc in nvml.nvmlDeviceGetComputeRunningProcesses(handle):
-            device_process[proc.pid] = {
-                'gpu': i, 'pid': proc.pid, 'type': 'C',
-                'name': to_string(nvml.nvmlSystemGetProcessName(proc.pid)),
-                'memory': to_human_readable(proc.usedGpuMemory)
-            }
-        for proc in nvml.nvmlDeviceGetGraphicsRunningProcesses(handle):
-            if proc.pid in device_process:
-                device_process[proc.pid]['type'] = 'C+G'
-            else:
-                device_process[proc.pid] = {
-                    'gpu': i, 'pid': proc.pid, 'type': 'G',
-                    'name': to_string(nvml.nvmlSystemGetProcessName(proc.pid)),
-                    'memory': to_human_readable(proc.usedGpuMemory)
-                }
-        for pid in sorted(device_process):
-            processes[pid] = device_process[pid]
+        lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
-    lines.extend([
-        '                                                                               ',
-        '+-----------------------------------------------------------------------------+',
-        '| Processes:                                                       GPU Memory |',
-        '|  GPU       PID   Type   Process name                             Usage      |',
-        '|=============================================================================|'
-    ])
+        print('\n'.join(lines))
 
-    if len(processes) > 0:
-        for proc in processes.values():
-            if len(proc['name']) > 42:
-                proc['name'] = '...' + proc['name'][-39:]
-            lines.append('|  {gpu:>3}  {pid:>8}    {type:>3}   {name:<42} {memory:>8} |'.format(**proc))
-    else:
-        lines.append('|  No running compute processes found                                         |')
 
-    lines.append('+-----------------------------------------------------------------------------+')
+def main():
+    try:
+        nvml.nvmlInit()
+    except nvml.NVMLError_LibraryNotFound as error:
+        print(error, file=sys.stderr)
+        exit(1)
+
+    top = Top()
+
+    top.redraw()
 
     nvml.nvmlShutdown()
 
-    return '\n'.join(lines)
-
 
 if __name__ == '__main__':
-    print(device_query())
+    main()
