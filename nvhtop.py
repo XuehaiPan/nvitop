@@ -68,6 +68,7 @@ class GProcess(psutil.Process):
     def __init__(self, pid, device, gpu_memory, type='C'):
         super(GProcess, self).__init__(pid)
         super(GProcess, self).cpu_percent()
+        self.user = self.username()
         self.device = device
         self.gpu_memory = gpu_memory
         self.type = type
@@ -77,7 +78,7 @@ class GProcess(psutil.Process):
         return {
             'device': self.device,
             'pid': self.pid,
-            'username': self.username(),
+            'username': self.user,
             'gpu_memory': self.gpu_memory,
             'cpu_percent': self.cpu_percent(),
             'memory_percent': self.memory_percent(),
@@ -199,14 +200,26 @@ class Device(object):
         processes = {}
 
         for p in nvml.nvmlDeviceGetComputeRunningProcesses(self.handle):
-            proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
+            try:
+                proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
+            except psutil.NoSuchProcess:
+                try:
+                    del processes[p.pid]
+                except KeyError:
+                    pass
             proc.gpu_memory = p.usedGpuMemory
             if proc.type == 'G':
                 proc.type = 'C+G'
             else:
                 proc.type = 'C'
         for p in nvml.nvmlDeviceGetGraphicsRunningProcesses(self.handle):
-            proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
+            try:
+                proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
+            except psutil.NoSuchProcess:
+                try:
+                    del processes[p.pid]
+                except KeyError:
+                    pass
             proc.gpu_memory = p.usedGpuMemory
             if proc.type == 'C':
                 proc.type = 'C+G'
@@ -281,6 +294,8 @@ class Top(object):
         self.win.nodelay(True)
 
     def redraw(self):
+        need_clear = False
+
         n_used_devices = 0
         processes = {}
         for device in self.devices:
@@ -388,11 +403,15 @@ class Top(object):
         ])
 
         if len(processes) > 0:
-            processes = sorted(processes.values(), key=lambda proc: (proc.device.index, proc.username(), proc.pid))
+            processes = sorted(processes.values(), key=lambda proc: (proc.device.index, proc.user, proc.pid))
             prev_device_index = None
             attr = 0
             for proc in processes:
-                proc_info = proc.as_dict()
+                try:
+                    proc_info = proc.as_dict()
+                except psutil.NoSuchProcess:
+                    need_clear = True
+                    continue
                 device_index = proc_info['device'].index
                 if prev_device_index is None or prev_device_index != device_index:
                     attr = {
@@ -400,14 +419,18 @@ class Top(object):
                         'moderate': curses.color_pair(2),
                         'high': curses.color_pair(3)
                     }.get(proc_info['device'].condition)
-                cmdline = proc.cmdline()
-                cmdline[0] = proc.name()
+                try:
+                    cmdline = proc.cmdline()
+                    cmdline[0] = proc.name()
+                except psutil.NoSuchProcess:
+                    cmdline = proc_info['cmdline']
+                except IndexError:
+                    cmdline = []
                 cmdline = ' '.join(cmdline).strip()
                 if len(cmdline) > 24:
                     cmdline = cmdline[:21] + '...'
-                username = proc.username()
-                if len(username) >= 8:
-                    username = username[:6] + '+'
+                if len(proc_info['username']) >= 8:
+                    proc_info['username'] = proc_info['username'][:6] + '+'
                 running_time = proc_info['running_time']
                 if running_time.days > 1:
                     running_time = '{} days'.format(running_time.days)
@@ -421,7 +444,7 @@ class Top(object):
                     '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
                         device_index,
                         proc.pid,
-                        username,
+                        proc_info['username'],
                         bytes2human(proc_info['gpu_memory']),
                         proc_info['cpu_percent'],
                         proc_info['memory_percent'],
@@ -435,7 +458,7 @@ class Top(object):
 
         self.rows.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
-        if len(self.rows) < self.n_rows or termsize != self.termsize:
+        if need_clear or len(self.rows) < self.n_rows or termsize != self.termsize:
             self.win.clear()
         self.n_rows = len(self.rows)
         self.termsize = termsize
