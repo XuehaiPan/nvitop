@@ -68,6 +68,7 @@ class GProcess(psutil.Process):
         self.device = device
         self.gpu_memory = gpu_memory
         self.type = type
+        self.cpu_percent()
 
 
 class Device(object):
@@ -179,7 +180,7 @@ class Top(object):
             '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
         ]
 
-        processes = OrderedDict()
+        processes = {}
 
         for device in self.devices:
             name = device.name
@@ -213,37 +214,43 @@ class Top(object):
             '                                                                               ',
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ Processes:                                                                  │',
-            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM    TIME  COMMAND                    │',
+            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
             '╞═════════════════════════════════════════════════════════════════════════════╡'
         ])
 
         if len(processes) > 0:
+            processes = sorted(processes.values(), key=lambda proc: (proc.device.index, proc.username(), proc.pid))
             now_time = datetime.datetime.now()
-            for proc in processes.values():
+            prev_device_index = None
+            for proc in processes:
+                device_index = proc.device.index
                 cmdline = proc.cmdline()
                 cmdline[0] = proc.name()
-                cmdline = ' '.join(cmdline)
-                if len(cmdline) > 26:
-                    cmdline = cmdline[:23] + '...'
+                cmdline = ' '.join(cmdline).strip()
+                if len(cmdline) > 24:
+                    cmdline = cmdline[:21] + '...'
                 username = proc.username()
                 if len(username) >= 8:
                     username = username[:6] + '+'
                 running_time = now_time - datetime.datetime.fromtimestamp(proc.create_time())
                 if running_time.days > 1:
                     running_time = '{} days'.format(running_time.days)
-                elif running_time.days == 1:
-                    running_time = '{} day'.format(running_time.days)
                 else:
-                    running_time = '{}:{}'.format(running_time.seconds // 3600, running_time.seconds // 60)
+                    hours, seconds = divmod(86400 * running_time.days + running_time.seconds, 3600)
+                    running_time = '{:02d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
+                if prev_device_index is not None and prev_device_index != device_index:
+                    lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
+                prev_device_index = device_index
                 lines.append(
-                    '│ {:>3} {:>6} {:>7} {:>8} {:>5} {:>5} {:>7}  {:<26} │'.format(
-                        proc.device.index,
+                    '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
+                        device_index,
                         proc.pid,
                         username,
                         bytes2human(proc.gpu_memory),
                         proc.cpu_percent(),
-                        round(proc.memory_percent(), 2),
-                        running_time, cmdline
+                        proc.memory_percent(),
+                        running_time,
+                        cmdline
                     )
                 )
         else:
@@ -257,9 +264,11 @@ class Top(object):
 def main():
     try:
         nvml.nvmlInit()
-    except nvml.NVMLError_LibraryNotFound as error:
-        print(error, file=sys.stderr)
-        exit(1)
+    except nvml.NVMLError as error:
+        if error.value == nvml.NVML_ERROR_LIBRARY_NOT_FOUND:
+            print(error, file=sys.stderr)
+            exit(1)
+        raise
 
     top = Top()
 
