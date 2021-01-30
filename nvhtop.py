@@ -36,6 +36,7 @@ import time
 
 import psutil
 from cachetools import cached, TTLCache
+from termcolor import colored
 
 import pynvml as nvml
 
@@ -246,7 +247,13 @@ class Top(object):
         curses.endwin()
         for row in self.rows:
             if not isinstance(row, str):
-                row = row[0]
+                row, attr = row
+                color = {
+                    curses.color_pair(1): 'green',
+                    curses.color_pair(2): 'yellow',
+                    curses.color_pair(3): 'red',
+                }.get(attr)
+                row = colored(row, color)
             print(row)
 
     def init_curses(self):
@@ -456,6 +463,7 @@ class Top(object):
                     break
             except KeyboardInterrupt:
                 pass
+            time.sleep(0.5)
 
 
 def main():

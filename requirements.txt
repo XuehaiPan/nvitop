@@ -1,3 +1,4 @@
+nvidia-ml-py
 psutil
 cachetools
-nvidia-ml-py
+termcolor
