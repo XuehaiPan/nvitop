@@ -91,6 +91,11 @@ def get_gpu_process(pid, device):
 
 
 class Device(object):
+    MEMORY_FREE_RATIO = 0.05
+    MEMORY_MODERATE_RATIO = 0.9
+    GPU_FREE_RATIO = 0.05
+    GPU_MODERATE_RATIO = 0.75
+
     def __init__(self, index):
         self.index = index
         self.handle = nvml.nvmlDeviceGetHandleByIndex(index)
@@ -103,6 +108,20 @@ class Device(object):
         return 'GPU({}, {}, {})'.format(self.index, self.name, bytes2human(self.memory_total))
 
     __repr__ = __str__
+
+    @property
+    def condition(self):
+        try:
+            memory_utilization = self.memory_used / self.memory_total
+            gpu_utilization = int(self.utilization[:-1])
+        except ValueError:
+            return 'high'
+
+        if gpu_utilization >= self.GPU_MODERATE_RATIO or memory_utilization >= self.MEMORY_MODERATE_RATIO:
+            return 'high'
+        if gpu_utilization >= self.GPU_FREE_RATIO or memory_utilization >= self.MEMORY_FREE_RATIO:
+            return 'moderate'
+        return 'free'
 
     @property
     @cached(cache=TTLCache(maxsize=128, ttl=5.0))
@@ -198,7 +217,7 @@ class Device(object):
     def as_dict(self):
         return {key: getattr(self, key) for key in self._as_dict_keys}
 
-    _as_dict_keys = ['index', 'name',
+    _as_dict_keys = ['index', 'name', 'condition',
                      'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
                      'fan_speed', 'temperature', 'performance_state',
                      'power_usage', 'power_limit',
@@ -216,17 +235,43 @@ class Top(object):
         self.device_count = nvml.nvmlDeviceGetCount()
         self.devices = list(map(Device, range(self.device_count)))
 
+        self.rows = []
+
+        self.win = None
+        self.termsize = None
+        self.n_rows = 0
+        self.init_curses()
+
+    def __del__(self):
+        curses.endwin()
+        for row in self.rows:
+            if not isinstance(row, str):
+                row = row[0]
+            print(row)
+
+    def init_curses(self):
         self.win = curses.initscr()
+        curses.start_color()
+        try:
+            curses.use_default_colors()
+        except curses.error:
+            pass
+        try:
+            curses.init_pair(1, curses.COLOR_GREEN, -1)
+        except curses.error:
+            pass
+        try:
+            curses.init_pair(2, curses.COLOR_YELLOW, -1)
+        except curses.error:
+            pass
+        try:
+            curses.init_pair(3, curses.COLOR_RED, -1)
+        except curses.error:
+            pass
         curses.noecho()
         curses.cbreak()
         curses.curs_set(False)
         self.win.nodelay(True)
-
-        self.termsize = None
-        self.n_rows = 0
-
-    def __del__(self):
-        curses.endwin()
 
     def redraw(self):
         n_used_devices = 0
@@ -243,21 +288,22 @@ class Top(object):
         else:
             compact = (n_term_rows < 7 + 3 * self.device_count + 7)
 
-        rows = [
+        self.rows.clear()
+        self.rows.extend([
             '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
                                                                                                       self.cuda_version),
             '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
-        ]
+        ])
         if compact:
-            rows.append('│ GPU  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │')
+            self.rows.append('│ GPU  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │')
         else:
-            rows.extend([
+            self.rows.extend([
                 '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
                 '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │'
             ])
-        rows.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
+        self.rows.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
 
         for device in self.devices:
             device_info = device.as_dict()
@@ -273,8 +319,13 @@ class Top(object):
             else:
                 device_info['power'] = 'N/A'
 
+            attr = {
+                'free': curses.color_pair(1),
+                'moderate': curses.color_pair(2),
+                'high': curses.color_pair(3)
+            }.get(device_info['condition'])
             if compact:
-                rows.append(
+                self.rows.append((
                     '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
                         device_info['index'],
                         device_info['temperature'],
@@ -283,37 +334,45 @@ class Top(object):
                         device_info['memory'],
                         device_info['utilization'],
                         device_info['compute_mode']
-                    ))
-            else:
-                rows.extend([
-                    '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(
-                        device_info['index'],
-                        device_info['name'],
-                        device_info['persistence_mode'],
-                        device_info['bus_id'],
-                        device_info['display_active'],
-                        device_info['ecc_errors']
                     ),
-                    '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
-                        device_info['fan_speed'],
-                        device_info['temperature'],
-                        device_info['performance_state'],
-                        device_info['power'],
-                        device_info['memory'],
-                        device_info['utilization'],
-                        device_info['compute_mode']
+                    attr
+                ))
+            else:
+                self.rows.extend([
+                    (
+                        '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(
+                            device_info['index'],
+                            device_info['name'],
+                            device_info['persistence_mode'],
+                            device_info['bus_id'],
+                            device_info['display_active'],
+                            device_info['ecc_errors']
+                        ),
+                        attr
+                    ),
+                    (
+                        '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
+                            device_info['fan_speed'],
+                            device_info['temperature'],
+                            device_info['performance_state'],
+                            device_info['power'],
+                            device_info['memory'],
+                            device_info['utilization'],
+                            device_info['compute_mode']
+                        ),
+                        attr
                     )
                 ])
-            rows.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
+            self.rows.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
 
             device_processes = device.processes
             if len(device_processes) > 0:
                 processes.update(device.processes)
                 n_used_devices += 1
-        rows.pop()
-        rows.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+        self.rows.pop()
+        self.rows.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
-        rows.extend([
+        self.rows.extend([
             '                                                                               ',
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ Processes:                                                                  │',
@@ -324,9 +383,16 @@ class Top(object):
         if len(processes) > 0:
             processes = sorted(processes.values(), key=lambda proc: (proc.device.index, proc.username(), proc.pid))
             prev_device_index = None
+            attr = 0
             for proc in processes:
                 proc_info = proc.as_dict()
                 device_index = proc_info['device'].index
+                if prev_device_index is None or prev_device_index != device_index:
+                    attr = {
+                        'free': curses.color_pair(1),
+                        'moderate': curses.color_pair(2),
+                        'high': curses.color_pair(3)
+                    }.get(proc_info['device'].condition)
                 cmdline = proc.cmdline()
                 cmdline[0] = proc.name()
                 cmdline = ' '.join(cmdline).strip()
@@ -342,9 +408,9 @@ class Top(object):
                     hours, seconds = divmod(86400 * running_time.days + running_time.seconds, 3600)
                     running_time = '{:02d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
                 if prev_device_index is not None and prev_device_index != device_index:
-                    rows.append('├─────────────────────────────────────────────────────────────────────────────┤')
+                    self.rows.append('├─────────────────────────────────────────────────────────────────────────────┤')
                 prev_device_index = device_index
-                rows.append(
+                self.rows.append((
                     '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
                         device_index,
                         proc.pid,
@@ -354,20 +420,24 @@ class Top(object):
                         proc_info['memory_percent'],
                         running_time,
                         cmdline
-                    )
-                )
+                    ),
+                    attr
+                ))
         else:
-            rows.append('│  No running compute processes found                                         │')
+            self.rows.append('│  No running compute processes found                                         │')
 
-        rows.append('╘═════════════════════════════════════════════════════════════════════════════╛')
+        self.rows.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
-        if len(rows) < self.n_rows or termsize != self.termsize:
+        if len(self.rows) < self.n_rows or termsize != self.termsize:
             self.win.clear()
-        self.n_rows = len(rows)
+        self.n_rows = len(self.rows)
         self.termsize = termsize
-        for y, line in enumerate(rows):
+        for y, row in enumerate(self.rows):
             try:
-                self.win.addstr(y, 0, line)
+                if isinstance(row, str):
+                    self.win.addstr(y, 0, row)
+                else:
+                    self.win.addstr(y, 0, *row)
             except curses.error:
                 break
         self.win.refresh()
