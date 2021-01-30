@@ -1,2 +1,3 @@
 psutil
+cachetools
 nvidia-ml-py
