@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 #################################################################################
 # Copyright (c) 2019, NVIDIA Corporation.  All rights reserved.                 #
 #                                                                               #
@@ -27,7 +29,7 @@
 #################################################################################
 
 # To Run:
-# $ python nvhtop.py
+# $ python3 nvhtop.py
 
 import curses
 import datetime
@@ -115,7 +117,7 @@ class Device(object):
     def condition(self):
         try:
             memory_utilization = self.memory_used / self.memory_total
-            gpu_utilization = int(self.utilization[:-1])
+            gpu_utilization = float(self.utilization[:-1]) / 100
         except ValueError:
             return 'high'
 
