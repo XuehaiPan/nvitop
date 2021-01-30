@@ -168,17 +168,22 @@ class Top(object):
         self.device_count = nvml.nvmlDeviceGetCount()
         self.devices = list(map(Device, range(self.device_count)))
 
-    def redraw(self):
+    def redraw(self, compact=False):
         lines = [
             time.strftime('%a %b %d %H:%M:%S %Y'),
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
                                                                                                       self.cuda_version),
-            '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
-            '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-            '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-            '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+            '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
         ]
+        if compact:
+            lines.append('│ GPU  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │')
+        else:
+            lines.extend([
+                '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │'
+            ])
+        lines.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
 
         processes = {}
 
@@ -195,16 +200,24 @@ class Top(object):
             else:
                 power = 'N/A'
 
-            lines.extend([
-                '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index, name, device.persistence_mode,
-                                                                          device.bus_id, device.display_active,
-                                                                          device.ecc_errors),
-                '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed, device.temperature,
-                                                                                  device.performance_state,
-                                                                                  power, memory,
-                                                                                  device.utilization, device.compute_mode),
-                '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-            ])
+            if compact:
+                lines.append(
+                    '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.index, device.temperature,
+                                                                                      device.performance_state,
+                                                                                      power, memory,
+                                                                                      device.utilization, device.compute_mode)
+                )
+            else:
+                lines.extend([
+                    '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index, name, device.persistence_mode,
+                                                                              device.bus_id, device.display_active,
+                                                                              device.ecc_errors),
+                    '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed, device.temperature,
+                                                                                      device.performance_state,
+                                                                                      power, memory,
+                                                                                      device.utilization, device.compute_mode)
+                ])
+            lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
 
             processes.update(device.processes)
         lines.pop()
