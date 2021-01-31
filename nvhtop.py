@@ -9,7 +9,7 @@ import sys
 import time
 
 import psutil
-from cachetools import cached, TTLCache
+from cachetools.func import ttl_cache
 
 import pynvml as nvml
 
@@ -38,31 +38,29 @@ def nvml_query(func, *args, **kwargs):
 
 
 class GProcess(psutil.Process):
-    def __init__(self, pid, device, gpu_memory, type='C'):
+    def __init__(self, pid, device, gpu_memory, proc_type='C'):
         super(GProcess, self).__init__(pid)
         super(GProcess, self).cpu_percent()
         self.user = self.username()
         self.device = device
         self.gpu_memory = gpu_memory
-        self.type = type
+        self.proc_type = proc_type
 
-    @cached(cache=TTLCache(maxsize=128, ttl=5.0))
+    @ttl_cache(ttl=5.0)
     def as_dict(self):
-        return {
+        proc_info = {
             'device': self.device,
-            'pid': self.pid,
-            'username': self.user,
             'gpu_memory': self.gpu_memory,
-            'cpu_percent': self.cpu_percent(),
-            'memory_percent': self.memory_percent(),
-            'running_time': datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time()),
-            'cmdline': self.cmdline()
+            'proc_type': self.proc_type,
+            'running_time': datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
         }
+        proc_info.update(super(GProcess, self).as_dict())
+        return proc_info
 
 
-@cached(cache=TTLCache(maxsize=128, ttl=30.0))
+@ttl_cache(ttl=30.0)
 def get_gpu_process(pid, device):
-    return GProcess(pid, device, gpu_memory=0, type='')
+    return GProcess(pid, device, gpu_memory=0, proc_type='')
 
 
 class Device(object):
@@ -99,24 +97,24 @@ class Device(object):
         return 'free'
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=5.0))
+    @ttl_cache(ttl=60.0)
     def display_active(self):
         return {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetDisplayActive, self.handle), 'N/A')
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=5.0))
+    @ttl_cache(ttl=60.0)
     def persistence_mode(self):
         return {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetPersistenceMode, self.handle), 'N/A')
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=2.0))
+    @ttl_cache(ttl=5.0)
     def ecc_errors(self):
         return nvml_query(nvml.nvmlDeviceGetTotalEccErrors, self.handle,
                           nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
                           nvml.NVML_VOLATILE_ECC)
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=2.0))
+    @ttl_cache(ttl=5.0)
     def fan_speed(self):
         fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
         if fan_speed != 'N/A':
@@ -124,7 +122,7 @@ class Device(object):
         return fan_speed
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=2.0))
+    @ttl_cache(ttl=2.0)
     def utilization(self):
         utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle).gpu
         if utilization != 'N/A':
@@ -132,7 +130,7 @@ class Device(object):
         return utilization
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=5.0))
+    @ttl_cache(ttl=60.0)
     def compute_mode(self):
         return {
             nvml.NVML_COMPUTEMODE_DEFAULT: 'Default',
@@ -142,7 +140,7 @@ class Device(object):
         }.get(nvml_query(nvml.nvmlDeviceGetComputeMode, self.handle), 'N/A')
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=2.0))
+    @ttl_cache(ttl=5.0)
     def temperature(self):
         temperature = nvml_query(nvml.nvmlDeviceGetTemperature, self.handle, nvml.NVML_TEMPERATURE_GPU)
         if temperature != 'N/A':
@@ -150,7 +148,7 @@ class Device(object):
         return temperature
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=5.0))
+    @ttl_cache(ttl=5.0)
     def performance_state(self):
         performance_state = nvml_query(nvml.nvmlDeviceGetPerformanceState, self.handle)
         if performance_state != 'N/A':
@@ -158,49 +156,51 @@ class Device(object):
         return performance_state
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=1.0))
+    @ttl_cache(ttl=1.0)
     def memory_used(self):
         return nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=1.0))
+    @ttl_cache(ttl=5.0)
     def power_usage(self):
         return nvml_query(nvml.nvmlDeviceGetPowerUsage, self.handle)
 
     @property
-    @cached(cache=TTLCache(maxsize=128, ttl=2.0))
+    @ttl_cache(ttl=2.0)
     def processes(self):
         processes = {}
 
         for p in nvml.nvmlDeviceGetComputeRunningProcesses(self.handle):
             try:
                 proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
-            except psutil.NoSuchProcess:
+            except psutil.Error:
                 try:
                     del processes[p.pid]
                 except KeyError:
                     pass
+                continue
             proc.gpu_memory = p.usedGpuMemory
-            if proc.type == 'G':
-                proc.type = 'C+G'
+            if proc.proc_type == 'G':
+                proc.proc_type = 'C+G'
             else:
-                proc.type = 'C'
+                proc.proc_type = 'C'
         for p in nvml.nvmlDeviceGetGraphicsRunningProcesses(self.handle):
             try:
                 proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
-            except psutil.NoSuchProcess:
+            except psutil.Error:
                 try:
                     del processes[p.pid]
                 except KeyError:
                     pass
+                continue
             proc.gpu_memory = p.usedGpuMemory
-            if proc.type == 'C':
-                proc.type = 'C+G'
+            if proc.proc_type == 'C':
+                proc.proc_type = 'C+G'
             else:
-                proc.type = 'G'
+                proc.proc_type = 'G'
         return processes
 
-    @cached(cache=TTLCache(maxsize=128, ttl=1.0))
+    @ttl_cache(ttl=1.0)
     def as_dict(self):
         return {key: getattr(self, key) for key in self._as_dict_keys}
 
@@ -237,7 +237,7 @@ class Top(object):
             print(row)
 
     def init_curses(self):
-        COLOR_NONE = -1
+        COLOR_DEFAULT = -1
 
         self.win = curses.initscr()
         curses.start_color()
@@ -245,18 +245,11 @@ class Top(object):
             curses.use_default_colors()
         except curses.error:
             pass
-        try:
-            curses.init_pair(1, curses.COLOR_GREEN, COLOR_NONE)
-        except curses.error:
-            pass
-        try:
-            curses.init_pair(2, curses.COLOR_YELLOW, COLOR_NONE)
-        except curses.error:
-            pass
-        try:
-            curses.init_pair(3, curses.COLOR_RED, COLOR_NONE)
-        except curses.error:
-            pass
+        for i, color in enumerate([curses.COLOR_GREEN, curses.COLOR_YELLOW, curses.COLOR_RED], start=1):
+            try:
+                curses.init_pair(i, color, COLOR_DEFAULT)
+            except curses.error:
+                pass
         curses.noecho()
         curses.cbreak()
         curses.curs_set(False)
@@ -372,13 +365,13 @@ class Top(object):
         ])
 
         if len(processes) > 0:
-            processes = sorted(processes.values(), key=lambda proc: (proc.device.index, proc.user, proc.pid))
+            processes = sorted(processes.values(), key=lambda p: (p.device.index, p.user, p.pid))
             prev_device_index = None
             attr = 0
             for proc in processes:
                 try:
                     proc_info = proc.as_dict()
-                except psutil.NoSuchProcess:
+                except psutil.Error:
                     need_clear = True
                     continue
                 device_index = proc_info['device'].index
@@ -389,12 +382,10 @@ class Top(object):
                         'high': curses.color_pair(3)
                     }.get(proc_info['device'].condition)
                 try:
-                    cmdline = proc.cmdline()
-                    cmdline[0] = proc.name()
-                except psutil.NoSuchProcess:
                     cmdline = proc_info['cmdline']
+                    cmdline[0] = proc_info['name']
                 except IndexError:
-                    cmdline = []
+                    cmdline = ['Terminated']
                 cmdline = ' '.join(cmdline).strip()
                 if len(cmdline) > 24:
                     cmdline = cmdline[:21] + '...'
