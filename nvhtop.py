@@ -229,7 +229,7 @@ class Top(object):
         self.n_rows = 0
         self.init_curses()
 
-    def __del__(self):
+    def exit(self):
         curses.endwin()
         for row in self.rows:
             if not isinstance(row, str):
@@ -237,6 +237,8 @@ class Top(object):
             print(row)
 
     def init_curses(self):
+        COLOR_NONE = -1
+
         self.win = curses.initscr()
         curses.start_color()
         try:
@@ -244,15 +246,15 @@ class Top(object):
         except curses.error:
             pass
         try:
-            curses.init_pair(1, curses.COLOR_GREEN, -1)
+            curses.init_pair(1, curses.COLOR_GREEN, COLOR_NONE)
         except curses.error:
             pass
         try:
-            curses.init_pair(2, curses.COLOR_YELLOW, -1)
+            curses.init_pair(2, curses.COLOR_YELLOW, COLOR_NONE)
         except curses.error:
             pass
         try:
-            curses.init_pair(3, curses.COLOR_RED, -1)
+            curses.init_pair(3, curses.COLOR_RED, COLOR_NONE)
         except curses.error:
             pass
         curses.noecho()
@@ -468,6 +470,8 @@ def main():
     top = Top()
 
     top.loop()
+
+    top.exit()
 
     nvml.nvmlShutdown()
 
