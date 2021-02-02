@@ -26,11 +26,10 @@ def bytes2human(x):
 def nvml_query(func, *args, **kwargs):
     try:
         retval = func(*args, **kwargs)
+    except nvml.NVMLError_NotSupported:  # pylint: disable=no-member
+        return 'N/A'
     except nvml.NVMLError as error:
-        if error.value == nvml.NVML_ERROR_NOT_SUPPORTED:
-            return 'N/A'
-        else:
-            return str(error)
+        return str(error)
     else:
         if isinstance(retval, bytes):
             retval = retval.decode('UTF-8')
@@ -224,10 +223,9 @@ class Top(object):
 
         self.rows = []
 
-        self.win = None
+        self.win = self.init_curses()
         self.termsize = None
         self.n_rows = 0
-        self.init_curses()
 
     def exit(self):
         curses.endwin()
@@ -236,10 +234,15 @@ class Top(object):
                 row = row[0]
             print(row)
 
-    def init_curses(self):
-        COLOR_DEFAULT = -1
+    @staticmethod
+    def init_curses():
+        win = curses.initscr()
+        win.nodelay(True)
+        curses.noecho()
+        curses.cbreak()
+        curses.curs_set(False)
 
-        self.win = curses.initscr()
+        default = -1
         curses.start_color()
         try:
             curses.use_default_colors()
@@ -247,13 +250,11 @@ class Top(object):
             pass
         for i, color in enumerate([curses.COLOR_GREEN, curses.COLOR_YELLOW, curses.COLOR_RED], start=1):
             try:
-                curses.init_pair(i, color, COLOR_DEFAULT)
+                curses.init_pair(i, color, default)
             except curses.error:
                 pass
-        curses.noecho()
-        curses.cbreak()
-        curses.curs_set(False)
-        self.win.nodelay(True)
+
+        return win
 
     def redraw(self):
         need_clear = False
@@ -444,19 +445,17 @@ class Top(object):
                 curses.flushinp()
                 if key == ord('q'):
                     break
+                time.sleep(0.5)
             except KeyboardInterrupt:
                 pass
-            time.sleep(0.5)
 
 
 def main():
     try:
         nvml.nvmlInit()
-    except nvml.NVMLError as error:
-        if error.value == nvml.NVML_ERROR_LIBRARY_NOT_FOUND:
-            print(error, file=sys.stderr)
-            exit(1)
-        raise
+    except nvml.NVMLError_LibraryNotFound as error:  # pylint: disable=no-member
+        print(error, file=sys.stderr)
+        return 1
 
     top = Top()
 
@@ -468,4 +467,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
