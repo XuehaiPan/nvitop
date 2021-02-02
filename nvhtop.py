@@ -14,6 +14,34 @@ from cachetools.func import ttl_cache
 import pynvml as nvml
 
 
+COLOR_GREEN = 0
+COLOR_YELLOW = 0
+COLOR_RED = 0
+
+
+def init_curses():
+    win = curses.initscr()
+    win.nodelay(True)
+    curses.noecho()
+    curses.cbreak()
+    curses.curs_set(False)
+
+    default = -1
+    curses.start_color()
+    try:
+        curses.use_default_colors()
+    except curses.error:
+        pass
+    for i, color_name in enumerate(['COLOR_GREEN', 'COLOR_YELLOW', 'COLOR_RED'], start=1):
+        try:
+            curses.init_pair(i, getattr(curses, color_name), default)
+            globals()[color_name] = curses.color_pair(i)
+        except curses.error:
+            pass
+
+    return win
+
+
 def bytes2human(x):
     if x < (1 << 10):
         return '{}B'.format(x)
@@ -63,10 +91,10 @@ def get_gpu_process(pid, device):
 
 
 class Device(object):
-    MEMORY_FREE_RATIO = 0.05
-    MEMORY_MODERATE_RATIO = 0.9
-    GPU_FREE_RATIO = 0.05
-    GPU_MODERATE_RATIO = 0.75
+    MEMORY_UTILIZATION_THRESHOLD_LIGHT = 5
+    MEMORY_UTILIZATION_THRESHOLD_MODERATE = 90
+    GPU_UTILIZATION_THRESHOLD_LIGHT = 5
+    GPU_UTILIZATION_THRESHOLD_MODERATE = 75
 
     def __init__(self, index):
         self.index = index
@@ -82,18 +110,17 @@ class Device(object):
     __repr__ = __str__
 
     @property
-    def condition(self):
-        try:
-            memory_utilization = self.memory_used / self.memory_total
-            gpu_utilization = float(self.utilization[:-1]) / 100
-        except ValueError:
-            return 'high'
+    @ttl_cache(ttl=1.0)
+    def load(self):
+        utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle)
 
-        if gpu_utilization >= self.GPU_MODERATE_RATIO or memory_utilization >= self.MEMORY_MODERATE_RATIO:
-            return 'high'
-        if gpu_utilization >= self.GPU_FREE_RATIO or memory_utilization >= self.MEMORY_FREE_RATIO:
+        if utilization == 'N/A':
+            return 'heavy'
+        if utilization.gpu >= self.GPU_UTILIZATION_THRESHOLD_MODERATE or utilization.memory >= self.MEMORY_UTILIZATION_THRESHOLD_MODERATE:
+            return 'heavy'
+        if utilization.gpu >= self.GPU_UTILIZATION_THRESHOLD_LIGHT or utilization.memory >= self.MEMORY_UTILIZATION_THRESHOLD_LIGHT:
             return 'moderate'
-        return 'free'
+        return 'light'
 
     @property
     @ttl_cache(ttl=60.0)
@@ -122,11 +149,11 @@ class Device(object):
 
     @property
     @ttl_cache(ttl=2.0)
-    def utilization(self):
-        utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle).gpu
-        if utilization != 'N/A':
-            utilization = str(utilization) + '%'
-        return utilization
+    def gpu_utilization(self):
+        gpu_utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle).gpu
+        if gpu_utilization != 'N/A':
+            gpu_utilization = str(gpu_utilization) + '%'
+        return gpu_utilization
 
     @property
     @ttl_cache(ttl=60.0)
@@ -203,12 +230,12 @@ class Device(object):
     def as_dict(self):
         return {key: getattr(self, key) for key in self._as_dict_keys}
 
-    _as_dict_keys = ['index', 'name', 'condition',
+    _as_dict_keys = ['index', 'name', 'load',
                      'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
                      'fan_speed', 'temperature', 'performance_state',
                      'power_usage', 'power_limit',
                      'memory_used', 'memory_total',
-                     'utilization', 'compute_mode']
+                     'gpu_utilization', 'compute_mode']
 
 
 class Top(object):
@@ -223,7 +250,7 @@ class Top(object):
 
         self.rows = []
 
-        self.win = self.init_curses()
+        self.win = init_curses()
         self.termsize = None
         self.n_rows = 0
 
@@ -233,28 +260,6 @@ class Top(object):
             if not isinstance(row, str):
                 row = row[0]
             print(row)
-
-    @staticmethod
-    def init_curses():
-        win = curses.initscr()
-        win.nodelay(True)
-        curses.noecho()
-        curses.cbreak()
-        curses.curs_set(False)
-
-        default = -1
-        curses.start_color()
-        try:
-            curses.use_default_colors()
-        except curses.error:
-            pass
-        for i, color in enumerate([curses.COLOR_GREEN, curses.COLOR_YELLOW, curses.COLOR_RED], start=1):
-            try:
-                curses.init_pair(i, color, default)
-            except curses.error:
-                pass
-
-        return win
 
     def redraw(self):
         need_clear = False
@@ -282,7 +287,7 @@ class Top(object):
             '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
         ])
         if compact:
-            self.rows.append('│ GPU  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │')
+            self.rows.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
         else:
             self.rows.extend([
                 '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
@@ -305,19 +310,20 @@ class Top(object):
                 device_info['power'] = 'N/A'
 
             attr = {
-                'free': curses.color_pair(1),
-                'moderate': curses.color_pair(2),
-                'high': curses.color_pair(3)
-            }.get(device_info['condition'])
+                'light': COLOR_GREEN,
+                'moderate': COLOR_YELLOW,
+                'heavy': COLOR_RED
+            }.get(device_info['load'])
             if compact:
                 self.rows.append((
-                    '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
+                    '│ {:>3} {:>3} {:>4} {:>3} {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
                         device_info['index'],
+                        device_info['fan_speed'],
                         device_info['temperature'],
                         device_info['performance_state'],
                         device_info['power'],
                         device_info['memory'],
-                        device_info['utilization'],
+                        device_info['gpu_utilization'],
                         device_info['compute_mode']
                     ),
                     attr
@@ -342,7 +348,7 @@ class Top(object):
                             device_info['performance_state'],
                             device_info['power'],
                             device_info['memory'],
-                            device_info['utilization'],
+                            device_info['gpu_utilization'],
                             device_info['compute_mode']
                         ),
                         attr
@@ -378,10 +384,10 @@ class Top(object):
                 device_index = proc_info['device'].index
                 if prev_device_index is None or prev_device_index != device_index:
                     attr = {
-                        'free': curses.color_pair(1),
-                        'moderate': curses.color_pair(2),
-                        'high': curses.color_pair(3)
-                    }.get(proc_info['device'].condition)
+                        'light': COLOR_GREEN,
+                        'moderate': COLOR_YELLOW,
+                        'heavy': COLOR_RED
+                    }.get(proc_info['device'].load)
                 try:
                     cmdline = proc_info['cmdline']
                     cmdline[0] = proc_info['name']
