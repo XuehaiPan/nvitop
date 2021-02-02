@@ -64,6 +64,13 @@ def nvml_query(func, *args, **kwargs):
         return retval
 
 
+def nvml_check_return(retval, types=None):
+    if types is None:
+        return (retval != 'N/A')
+    else:
+        return (retval != 'N/A' and isinstance(retval, types))
+
+
 class GProcess(psutil.Process):
     def __init__(self, pid, device, gpu_memory, proc_type='C'):
         super(GProcess, self).__init__(pid)
@@ -143,15 +150,15 @@ class Device(object):
     @ttl_cache(ttl=5.0)
     def fan_speed(self):
         fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
-        if fan_speed != 'N/A':
+        if nvml_check_return(fan_speed, int):
             fan_speed = str(fan_speed) + '%'
         return fan_speed
 
     @property
     @ttl_cache(ttl=2.0)
     def gpu_utilization(self):
-        gpu_utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle).gpu
-        if gpu_utilization != 'N/A':
+        gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
+        if nvml_check_return(gpu_utilization, int):
             gpu_utilization = str(gpu_utilization) + '%'
         return gpu_utilization
 
@@ -169,7 +176,7 @@ class Device(object):
     @ttl_cache(ttl=5.0)
     def temperature(self):
         temperature = nvml_query(nvml.nvmlDeviceGetTemperature, self.handle, nvml.NVML_TEMPERATURE_GPU)
-        if temperature != 'N/A':
+        if nvml_check_return(temperature, int):
             temperature = str(temperature) + 'C'
         return temperature
 
@@ -177,7 +184,7 @@ class Device(object):
     @ttl_cache(ttl=5.0)
     def performance_state(self):
         performance_state = nvml_query(nvml.nvmlDeviceGetPerformanceState, self.handle)
-        if performance_state != 'N/A':
+        if nvml_check_return(performance_state, int):
             performance_state = 'P' + str(performance_state)
         return performance_state
 
@@ -241,9 +248,11 @@ class Device(object):
 class Top(object):
     def __init__(self):
         self.driver_version = str(nvml_query(nvml.nvmlSystemGetDriverVersion))
-        self.cuda_version = str(nvml_query(nvml.nvmlSystemGetCudaDriverVersion))
-        if self.cuda_version != 'N/A':
-            self.cuda_version = self.cuda_version[:-3] + '.' + self.cuda_version[-2]
+        cuda_version = nvml_query(nvml.nvmlSystemGetCudaDriverVersion)
+        if nvml_check_return(cuda_version, int):
+            self.cuda_version = str(cuda_version // 1000 + (cuda_version % 1000) / 100)
+        else:
+            self.cuda_version = 'N/A'
 
         self.device_count = nvml.nvmlDeviceGetCount()
         self.devices = list(map(Device, range(self.device_count)))
@@ -303,7 +312,8 @@ class Top(object):
             device_info['memory'] = '{} / {}'.format(bytes2human(device_info['memory_used']),
                                                      bytes2human(device_info['memory_total']))
 
-            if device_info['power_usage'] != 'N/A' and device_info['power_limit'] != 'N / A':
+            if nvml_check_return(device_info['power_usage'], int) \
+                    and nvml_check_return(device_info['power_limit'], int):
                 device_info['power'] = '{}W / {}W'.format(device_info['power_usage'] // 1000,
                                                           device_info['power_limit'] // 1000)
             else:
