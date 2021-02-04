@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # To Run:
-# $ python3 nvhtop
+# $ python3 nvhtop.py
 
 import argparse
 import datetime
@@ -154,13 +154,19 @@ class Device(object):
     @property
     @ttl_cache(ttl=1.0)
     def load(self):
-        utilization = nvml_query(nvml.nvmlDeviceGetUtilizationRates, self.handle)
+        gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
+        memory_used = self.memory_used
+        memory_total = self.memory_total
+        if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
+            memory_utilization = 100 * memory_used // memory_total
+        else:
+            memory_utilization = 'N/A'
 
-        if utilization == 'N/A':
+        if not (nvml_check_return(gpu_utilization, int) and nvml_check_return(memory_utilization, int)):
             return 'heavy'
-        if utilization.gpu >= self.GPU_UTILIZATION_THRESHOLD_MODERATE or utilization.memory >= self.MEMORY_UTILIZATION_THRESHOLD_MODERATE:
+        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLD_MODERATE or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLD_MODERATE:
             return 'heavy'
-        if utilization.gpu >= self.GPU_UTILIZATION_THRESHOLD_LIGHT or utilization.memory >= self.MEMORY_UTILIZATION_THRESHOLD_LIGHT:
+        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLD_LIGHT or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLD_LIGHT:
             return 'moderate'
         return 'light'
 
@@ -182,22 +188,6 @@ class Device(object):
                           nvml.NVML_VOLATILE_ECC)
 
     @property
-    @ttl_cache(ttl=5.0)
-    def fan_speed(self):
-        fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
-        if nvml_check_return(fan_speed, int):
-            fan_speed = str(fan_speed) + '%'
-        return fan_speed
-
-    @property
-    @ttl_cache(ttl=2.0)
-    def gpu_utilization(self):
-        gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
-        if nvml_check_return(gpu_utilization, int):
-            gpu_utilization = str(gpu_utilization) + '%'
-        return gpu_utilization
-
-    @property
     @ttl_cache(ttl=60.0)
     def compute_mode(self):
         return {
@@ -209,19 +199,42 @@ class Device(object):
 
     @property
     @ttl_cache(ttl=5.0)
-    def temperature(self):
-        temperature = nvml_query(nvml.nvmlDeviceGetTemperature, self.handle, nvml.NVML_TEMPERATURE_GPU)
-        if nvml_check_return(temperature, int):
-            temperature = str(temperature) + 'C'
-        return temperature
-
-    @property
-    @ttl_cache(ttl=5.0)
     def performance_state(self):
         performance_state = nvml_query(nvml.nvmlDeviceGetPerformanceState, self.handle)
         if nvml_check_return(performance_state, int):
             performance_state = 'P' + str(performance_state)
         return performance_state
+
+    @property
+    @ttl_cache(ttl=5.0)
+    def power_usage(self):
+        return nvml_query(nvml.nvmlDeviceGetPowerUsage, self.handle)
+
+    @property
+    @ttl_cache(ttl=5.0)
+    def power_state(self):
+        power_usage = self.power_usage
+        power_limit = self.power_limit
+        if nvml_check_return(power_usage, int) and nvml_check_return(power_limit, int):
+            return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
+        else:
+            return 'N/A'
+
+    @property
+    @ttl_cache(ttl=5.0)
+    def fan_speed(self):
+        fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
+        if nvml_check_return(fan_speed, int):
+            fan_speed = str(fan_speed) + '%'
+        return fan_speed
+
+    @property
+    @ttl_cache(ttl=5.0)
+    def temperature(self):
+        temperature = nvml_query(nvml.nvmlDeviceGetTemperature, self.handle, nvml.NVML_TEMPERATURE_GPU)
+        if nvml_check_return(temperature, int):
+            temperature = str(temperature) + 'C'
+        return temperature
 
     @property
     @ttl_cache(ttl=1.0)
@@ -239,19 +252,22 @@ class Device(object):
             return 'N/A'
 
     @property
-    @ttl_cache(ttl=5.0)
-    def power_usage(self):
-        return nvml_query(nvml.nvmlDeviceGetPowerUsage, self.handle)
-
-    @property
-    @ttl_cache(ttl=5.0)
-    def power_state(self):
-        power_usage = self.power_usage
-        power_limit = self.power_limit
-        if nvml_check_return(power_usage, int) and nvml_check_return(power_limit, int):
-            return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
+    @ttl_cache(ttl=1.0)
+    def memory_utilization(self):
+        memory_used = self.memory_used
+        memory_total = self.memory_total
+        if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
+            return str(100 * memory_used // memory_total) + '%'
         else:
             return 'N/A'
+
+    @property
+    @ttl_cache(ttl=1.0)
+    def gpu_utilization(self):
+        gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
+        if nvml_check_return(gpu_utilization, int):
+            gpu_utilization = str(gpu_utilization) + '%'
+        return gpu_utilization
 
     @property
     @ttl_cache(ttl=2.0)
@@ -589,7 +605,7 @@ def main():
         print(error, file=sys.stderr)
         return 1
 
-    parser = argparse.ArgumentParser(prog='nvhtop', description='A interactive Nvidia-GPU process viewer.')
+    parser = argparse.ArgumentParser(prog='nvhtop.py', description='A interactive Nvidia-GPU process viewer.')
     parser.add_argument('-m', '--monitor', type=str, default='notpresented',
                         nargs='?', choices=['auto', 'full', 'compact'],
                         help='Run as a resource monitor. '
