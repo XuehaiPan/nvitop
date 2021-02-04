@@ -1,6 +1,6 @@
 # nvhtop
 
-A interactive Nvidia-GPU process viewer. (Under progress)
+An interactive Nvidia-GPU process viewer. (Under progress)
 
 ## Installation
 
@@ -34,6 +34,8 @@ Run as a resource monitor, like `htop`.
 # Forcibly display as `compact` mode
 ./nvhtop.py --monitor compact
 ```
+
+Press `q` or `esc` to return to the terminal.
 
 Type `./nvhtop.py --help` for more information:
 

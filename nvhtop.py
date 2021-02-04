@@ -505,10 +505,10 @@ class Top(object):
                 self.redraw()
                 for i in range(10):
                     key = self.win.getch()
-                    if key == -1 or key == ord('q'):
+                    if key == -1 or key == ord('q') or key == 27:
                         break
                 self.curses.flushinp()
-                if key == ord('q'):
+                if key == ord('q') or key == 27:
                     break
                 time.sleep(0.5)
             except KeyboardInterrupt:
