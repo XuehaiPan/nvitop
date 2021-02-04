@@ -15,7 +15,7 @@ pip3 install -r requirements.txt
 
 ## Usage
 
-Query the device status. The output is similar to `nvidia-smi` but has been enriched and colorized.
+Query the device status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
 ./nvhtop.py
@@ -52,13 +52,20 @@ optional arguments:
                     If no argument is specified, the default mode `auto` is used.
 ```
 
+For convenience, you can create a symbolic link in `~/.local`.
+
+```bash
+mkdir -p ~/.local/bin
+ln -sf "$PWD/nvhtop.py" ~/.local/bin/nvhtop
+```
+
 ## Screenshots
 
-Example output of `./nvhtop.py`:
+Example output of `nvhtop.py`:
 
 <img width="600" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/106898060-af2c3a80-672e-11eb-9ab6-1ccbaa6292b5.png">
 
-Example output of `./nvhtop.py --monitor`:
+Example output of `nvhtop.py --monitor`:
 
 <table>
   <tr>
