@@ -51,6 +51,25 @@ def bytes2human(x):
         return '{}MiB'.format(x >> 20)
 
 
+def timedelta2human(t):
+    if t.days > 1:
+        return '{} days'.format(t.days)
+    else:
+        hours, seconds = divmod(86400 * t.days + t.seconds, 3600)
+        return '{:02d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
+
+
+def cut_string(s, maxlen, padding='...', align='left'):
+    assert align in ('left', 'right')
+
+    if len(s) <= maxlen:
+        return s
+    if align == 'left':
+        return s[:maxlen - len(padding)] + padding
+    else:
+        return padding + s[-(maxlen - len(padding)):]
+
+
 def nvml_query(func, *args, **kwargs):
     try:
         retval = func(*args, **kwargs)
@@ -194,9 +213,29 @@ class Device(object):
         return nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
 
     @property
+    @ttl_cache(ttl=1.0)
+    def memory_usage(self):
+        memory_used = self.memory_used
+        memory_total = self.memory_total
+        if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
+            return '{} / {}'.format(bytes2human(memory_used), bytes2human(memory_total))
+        else:
+            return 'N/A'
+
+    @property
     @ttl_cache(ttl=5.0)
     def power_usage(self):
         return nvml_query(nvml.nvmlDeviceGetPowerUsage, self.handle)
+
+    @property
+    @ttl_cache(ttl=5.0)
+    def power_state(self):
+        power_usage = self.power_usage
+        power_limit = self.power_limit
+        if nvml_check_return(power_usage, int) and nvml_check_return(power_limit, int):
+            return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
+        else:
+            return 'N/A'
 
     @property
     @ttl_cache(ttl=2.0)
@@ -240,8 +279,8 @@ class Device(object):
     _as_dict_keys = ['index', 'name', 'load',
                      'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
                      'fan_speed', 'temperature', 'performance_state',
-                     'power_usage', 'power_limit',
-                     'memory_used', 'memory_total',
+                     'power_usage', 'power_limit', 'power_state',
+                     'memory_used', 'memory_total', 'memory_usage',
                      'gpu_utilization', 'compute_mode']
 
 
@@ -257,18 +296,15 @@ class Top(object):
         self.device_count = nvml.nvmlDeviceGetCount()
         self.devices = list(map(Device, range(self.device_count)))
 
-        self.rows = []
+        self.lines = []
 
         self.win = init_curses()
         self.termsize = None
-        self.n_rows = 0
+        self.n_lines = 0
 
     def exit(self):
         curses.endwin()
-        for row in self.rows:
-            if not isinstance(row, str):
-                row = row[0]
-            print(row)
+        self.print()
 
     def redraw(self):
         need_clear = False
@@ -281,14 +317,14 @@ class Top(object):
                 processes.update(device.processes)
                 n_used_devices += 1
 
-        n_term_rows, n_term_cols = termsize = self.win.getmaxyx()
+        n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
         if n_used_devices > 0:
-            compact = (n_term_rows < 7 + 3 * self.device_count + 6 + len(processes) + n_used_devices - 1)
+            compact = (n_term_lines < 7 + 3 * self.device_count + 6 + len(processes) + n_used_devices - 1)
         else:
-            compact = (n_term_rows < 7 + 3 * self.device_count + 7)
+            compact = (n_term_lines < 7 + 3 * self.device_count + 7)
 
-        self.rows.clear()
-        self.rows.extend([
+        self.lines.clear()
+        self.lines.extend([
             '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
@@ -296,28 +332,16 @@ class Top(object):
             '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
         ])
         if compact:
-            self.rows.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
+            self.lines.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
         else:
-            self.rows.extend([
+            self.lines.extend([
                 '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
                 '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │'
             ])
-        self.rows.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
+        self.lines.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
 
         for device in self.devices:
             device_info = device.as_dict()
-            if len(device_info['name']) > 18:
-                device_info['name'] = device_info['name'][:15] + '...'
-
-            device_info['memory'] = '{} / {}'.format(bytes2human(device_info['memory_used']),
-                                                     bytes2human(device_info['memory_total']))
-
-            if nvml_check_return(device_info['power_usage'], int) \
-                    and nvml_check_return(device_info['power_limit'], int):
-                device_info['power'] = '{}W / {}W'.format(device_info['power_usage'] // 1000,
-                                                          device_info['power_limit'] // 1000)
-            else:
-                device_info['power'] = 'N/A'
 
             attr = {
                 'light': COLOR_GREEN,
@@ -325,25 +349,25 @@ class Top(object):
                 'heavy': COLOR_RED
             }.get(device_info['load'])
             if compact:
-                self.rows.append((
+                self.lines.append((
                     '│ {:>3} {:>3} {:>4} {:>3} {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
                         device_info['index'],
                         device_info['fan_speed'],
                         device_info['temperature'],
                         device_info['performance_state'],
-                        device_info['power'],
-                        device_info['memory'],
+                        device_info['power_state'],
+                        device_info['memory_usage'],
                         device_info['gpu_utilization'],
                         device_info['compute_mode']
                     ),
                     attr
                 ))
             else:
-                self.rows.extend([
+                self.lines.extend([
                     (
                         '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(
                             device_info['index'],
-                            device_info['name'],
+                            cut_string(device_info['name'], maxlen=18),
                             device_info['persistence_mode'],
                             device_info['bus_id'],
                             device_info['display_active'],
@@ -356,24 +380,24 @@ class Top(object):
                             device_info['fan_speed'],
                             device_info['temperature'],
                             device_info['performance_state'],
-                            device_info['power'],
-                            device_info['memory'],
+                            device_info['power_state'],
+                            device_info['memory_usage'],
                             device_info['gpu_utilization'],
                             device_info['compute_mode']
                         ),
                         attr
                     )
                 ])
-            self.rows.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
+            self.lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
 
             device_processes = device.processes
             if len(device_processes) > 0:
                 processes.update(device.processes)
                 n_used_devices += 1
-        self.rows.pop()
-        self.rows.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+        self.lines.pop()
+        self.lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
-        self.rows.extend([
+        self.lines.extend([
             '                                                                               ',
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ Processes:                                                                  │',
@@ -403,48 +427,35 @@ class Top(object):
                     cmdline[0] = proc_info['name']
                 except IndexError:
                     cmdline = ['Terminated']
-                cmdline = ' '.join(cmdline).strip()
-                if len(cmdline) > 24:
-                    cmdline = cmdline[:21] + '...'
-                if len(proc_info['username']) >= 8:
-                    proc_info['username'] = proc_info['username'][:6] + '+'
-                running_time = proc_info['running_time']
-                if running_time.days > 1:
-                    running_time = '{} days'.format(running_time.days)
-                else:
-                    hours, seconds = divmod(86400 * running_time.days + running_time.seconds, 3600)
-                    running_time = '{:02d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
+                cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
+
                 if prev_device_index is not None and prev_device_index != device_index:
-                    self.rows.append('├─────────────────────────────────────────────────────────────────────────────┤')
+                    self.lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
                 prev_device_index = device_index
-                self.rows.append((
+                self.lines.append((
                     '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
-                        device_index,
-                        proc.pid,
-                        proc_info['username'],
-                        bytes2human(proc_info['gpu_memory']),
-                        proc_info['cpu_percent'],
-                        proc_info['memory_percent'],
-                        running_time,
-                        cmdline
+                        device_index, proc.pid,
+                        cut_string(proc_info['username'], maxlen=7, padding='+'),
+                        bytes2human(proc_info['gpu_memory']), proc_info['cpu_percent'], proc_info['memory_percent'],
+                        timedelta2human(proc_info['running_time']), cmdline
                     ),
                     attr
                 ))
         else:
-            self.rows.append('│  No running compute processes found                                         │')
+            self.lines.append('│  No running compute processes found                                         │')
 
-        self.rows.append('╘═════════════════════════════════════════════════════════════════════════════╛')
+        self.lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
-        if need_clear or len(self.rows) < self.n_rows or termsize != self.termsize:
+        if need_clear or len(self.lines) < self.n_lines or termsize != self.termsize:
             self.win.clear()
-        self.n_rows = len(self.rows)
+        self.n_lines = len(self.lines)
         self.termsize = termsize
-        for y, row in enumerate(self.rows):
+        for y, line in enumerate(self.lines):
             try:
-                if isinstance(row, str):
-                    self.win.addstr(y, 0, row)
+                if isinstance(line, str):
+                    self.win.addstr(y, 0, line)
                 else:
-                    self.win.addstr(y, 0, *row)
+                    self.win.addstr(y, 0, *line)
             except curses.error:
                 break
         self.win.refresh()
@@ -464,6 +475,83 @@ class Top(object):
                 time.sleep(0.5)
             except KeyboardInterrupt:
                 pass
+
+    def print(self):
+        lines = [
+            '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
+                                                                                                      self.cuda_version),
+            '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
+            '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+            '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
+            '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+        ]
+
+        processes = {}
+        for device in self.devices:
+            lines.extend([
+                '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index,
+                                                                          cut_string(device.name, maxlen=18),
+                                                                          device.persistence_mode,
+                                                                          device.bus_id,
+                                                                          device.display_active,
+                                                                          device.ecc_errors),
+                '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed,
+                                                                                  device.temperature,
+                                                                                  device.performance_state,
+                                                                                  device.power_state,
+                                                                                  device.memory_usage,
+                                                                                  device.gpu_utilization,
+                                                                                  device.compute_mode)
+            ])
+            lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
+
+            device_processes = device.processes
+            if len(device_processes) > 0:
+                processes.update(device.processes)
+        lines.pop()
+        lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+
+        lines.extend([
+            '                                                                               ',
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ Processes:                                                                  │',
+            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
+            '╞═════════════════════════════════════════════════════════════════════════════╡'
+        ])
+
+        if len(processes) > 0:
+            processes = sorted(processes.values(), key=lambda p: (p.device.index, p.user, p.pid))
+            prev_device_index = None
+            for proc in processes:
+                try:
+                    proc_info = proc.as_dict()
+                except psutil.Error:
+                    continue
+                device_index = proc_info['device'].index
+                try:
+                    cmdline = proc_info['cmdline']
+                    cmdline[0] = proc_info['name']
+                except IndexError:
+                    cmdline = ['Terminated']
+                cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
+
+                if prev_device_index is not None and prev_device_index != device_index:
+                    lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
+                prev_device_index = device_index
+                lines.append('│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
+                    device_index, proc.pid,
+                    cut_string(proc_info['username'], maxlen=7, padding='+'),
+                    bytes2human(proc_info['gpu_memory']), proc_info['cpu_percent'], proc_info['memory_percent'],
+                    timedelta2human(proc_info['running_time']), cmdline
+                ))
+        else:
+            lines.append('│  No running compute processes found                                         │')
+
+        lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
+
+        print('\n'.join(lines))
 
 
 def main():
