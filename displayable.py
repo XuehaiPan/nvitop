@@ -4,6 +4,7 @@
 import curses
 from collections import OrderedDict
 
+
 DEFAULT_FOREGROUND = curses.COLOR_WHITE
 DEFAULT_BACKGROUND = curses.COLOR_BLACK
 COLOR_PAIRS = {10: 0}
@@ -63,7 +64,7 @@ class CursesShortcuts(object):
 
     def addstr(self, *args, **kwargs):
         try:
-            self.win.addnstr(*args, **kwargs)
+            self.win.addstr(*args, **kwargs)
         except curses.error:
             pass
 
@@ -247,7 +248,7 @@ class DisplayableContainer(Displayable):
 
     def draw(self):
         """Recursively called on visible objects in container"""
-        for displayable in self.container:
+        for displayable in self.container.values():
             if self.need_redraw:
                 displayable.need_redraw = True
             if displayable.visible:

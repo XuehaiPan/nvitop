@@ -4,14 +4,18 @@
 # $ python3 nvhtop.py
 
 import argparse
+import curses
 import datetime
 import sys
 import time
+from collections import OrderedDict
 from contextlib import contextmanager
 
 import psutil
 from cachetools.func import ttl_cache
+
 import pynvml as nvml
+from displayable import Displayable, DisplayableContainer
 
 
 try:
@@ -27,12 +31,6 @@ COLOR_RED = 0
 
 @contextmanager
 def libcurses():
-    try:
-        import curses
-    except ImportError:
-        yield None, None
-        return
-
     win = curses.initscr()
     win.nodelay(True)
     curses.noecho()
@@ -52,8 +50,10 @@ def libcurses():
         except curses.error:
             pass
 
-    yield curses, win
-    curses.endwin()
+    try:
+        yield win
+    finally:
+        curses.endwin()
 
 
 def bytes2human(x):
@@ -169,6 +169,11 @@ class Device(object):
         if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLD_LIGHT or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLD_LIGHT:
             return 'moderate'
         return 'light'
+
+    @property
+    @ttl_cache(ttl=1.0)
+    def color(self):
+        return {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}.get(self.load)
 
     @property
     @ttl_cache(ttl=60.0)
@@ -302,7 +307,7 @@ class Device(object):
     def as_dict(self):
         return {key: getattr(self, key) for key in self._as_dict_keys}
 
-    _as_dict_keys = ['index', 'name', 'load',
+    _as_dict_keys = ['index', 'name', 'load', 'color',
                      'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
                      'fan_speed', 'temperature', 'performance_state',
                      'power_usage', 'power_limit', 'power_state',
@@ -310,11 +315,15 @@ class Device(object):
                      'gpu_utilization', 'compute_mode']
 
 
-class Top(object):
-    def __init__(self, mode='auto', curses=None, win=None):
-        assert mode in ('auto', 'full', 'compact')
-        self.mode = mode
-        self.compact = (mode == 'compact')
+class DevicePanel(Displayable):
+    def __init__(self, devices, compact, win):
+        super(DevicePanel, self).__init__(win)
+
+        self.devices = devices
+        self.device_count = len(self.devices)
+        self._compact = compact
+        self.width = 79
+        self.height = 4 + (3 - int(compact)) * (self.device_count + 1)
 
         self.driver_version = str(nvml_query(nvml.nvmlSystemGetDriverVersion))
         cuda_version = nvml_query(nvml.nvmlSystemGetCudaDriverVersion)
@@ -323,196 +332,92 @@ class Top(object):
         else:
             self.cuda_version = 'N/A'
 
-        self.device_count = nvml.nvmlDeviceGetCount()
-        self.devices = list(map(Device, range(self.device_count)))
+    @property
+    def compact(self):
+        return self._compact
 
-        self.curses = curses
-        self.win = win
-        self.termsize = None
-        self.n_lines = 0
+    @compact.setter
+    def compact(self, value):
+        if self._compact != value:
+            self.need_redraw = True
+            self._compact = value
+            self.height = 4 + (3 - int(self.compact)) * (self.device_count + 1)
 
-    def redraw(self):
-        need_clear = False
+    def draw(self):
+        self.color_reset()
 
-        n_term_lines, _ = termsize = self.win.getmaxyx()
-        if self.mode == 'auto':
-            n_used_devices = 0
-            processes = {}
-            for device in self.devices:
-                device_processes = device.processes
-                if len(device_processes) > 0:
-                    processes.update(device.processes)
-                    n_used_devices += 1
-            if n_used_devices > 0:
-                self.compact = (n_term_lines < 7 + 3 * self.device_count + 6 + len(processes) + n_used_devices - 1)
+        if self.need_redraw:
+            frame = [
+                '╒═════════════════════════════════════════════════════════════════════════════╕',
+                '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
+                                                                                                          self.cuda_version),
+                '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
+            ]
+            if self.compact:
+                frame.extend([
+                    '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │',
+                    '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+                ])
+                frame.extend(self.device_count * [
+                    '│                               │                      │                      │',
+                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                ])
             else:
-                self.compact = (n_term_lines < 7 + 3 * self.device_count + 7)
+                frame.extend([
+                    '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                    '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
+                    '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+                ])
+                frame.extend(self.device_count * [
+                    '│                               │                      │                      │',
+                    '│                               │                      │                      │',
+                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                ])
+            frame.pop()
+            frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
-        lines = [
-            '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
-                                                                                                      self.cuda_version),
-            '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
-        ]
-        if self.compact:
-            lines.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
-        else:
-            lines.extend([
-                '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-                '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │'
-            ])
-        lines.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
+            for y, line in enumerate(frame, start=self.y + 1):
+                self.addstr(y, self.x, line)
 
-        processes = {}
+        self.addstr(self.y, self.x, '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
+
         for device in self.devices:
             device_info = device.as_dict()
 
-            attr = {
-                'light': COLOR_GREEN,
-                'moderate': COLOR_YELLOW,
-                'heavy': COLOR_RED
-            }.get(device_info['load'])
+            self.color(device_info['color'])
             if self.compact:
-                lines.append((
-                    '│ {:>3} {:>3} {:>4} {:>3} {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
-                        device_info['index'],
-                        device_info['fan_speed'],
-                        device_info['temperature'],
-                        device_info['performance_state'],
-                        device_info['power_state'],
-                        device_info['memory_usage'],
-                        device_info['gpu_utilization'],
-                        device_info['compute_mode']
-                    ),
-                    attr
-                ))
+                y = self.y + 4 + 2 * (device.index + 1)
+                self.addstr(y, self.x + 2,
+                            '{:>3} {:>3} {:>4} {:>3} {:>12}'.format(device_info['index'],
+                                                                    device_info['fan_speed'],
+                                                                    device_info['temperature'],
+                                                                    device_info['performance_state'],
+                                                                    device_info['power_state']))
+                self.addstr(y, self.x + 34, '{:>20}'.format(device_info['memory_usage']))
+                self.addstr(y, self.x + 57, '{:>7}  {:>11}'.format(device_info['gpu_utilization'],
+                                                                   device_info['compute_mode']))
+
             else:
-                lines.extend([
-                    (
-                        '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(
-                            device_info['index'],
-                            cut_string(device_info['name'], maxlen=18),
-                            device_info['persistence_mode'],
-                            device_info['bus_id'],
-                            device_info['display_active'],
-                            device_info['ecc_errors']
-                        ),
-                        attr
-                    ),
-                    (
-                        '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
-                            device_info['fan_speed'],
-                            device_info['temperature'],
-                            device_info['performance_state'],
-                            device_info['power_state'],
-                            device_info['memory_usage'],
-                            device_info['gpu_utilization'],
-                            device_info['compute_mode']
-                        ),
-                        attr
-                    )
-                ])
-            lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
+                y = self.y + 4 + 3 * (device.index + 1)
+                self.addstr(y, self.x + 2,
+                            '{:>3}  {:>18}  {:<4}'.format(device_info['index'],
+                                                          cut_string(device_info['name'], maxlen=18),
+                                                          device_info['persistence_mode']))
+                self.addstr(y, self.x + 34, '{:<16} {:>3}'.format(device_info['bus_id'],
+                                                                  device_info['display_active']))
+                self.addstr(y, self.x + 57, '{:>20}'.format(device_info['ecc_errors']))
+                self.addstr(y + 1, self.x + 2,
+                            '{:>3}  {:>4}  {:>4}  {:>12}'.format(device_info['fan_speed'],
+                                                                 device_info['temperature'],
+                                                                 device_info['performance_state'],
+                                                                 device_info['power_state']))
+                self.addstr(y + 1, self.x + 34, '{:>20}'.format(device_info['memory_usage']))
+                self.addstr(y + 1, self.x + 57, '{:>7}  {:>11}'.format(device_info['gpu_utilization'],
+                                                                       device_info['compute_mode']))
 
-            device_processes = device.processes
-            if len(device_processes) > 0:
-                processes.update(device.processes)
-        lines.pop()
-        lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
-
-        lines.extend([
-            '                                                                               ',
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ Processes:                                                                  │',
-            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
-            '╞═════════════════════════════════════════════════════════════════════════════╡'
-        ])
-
-        if len(processes) > 0:
-            processes = sorted(processes.values(), key=lambda p: (p.device.index, p.user, p.pid))
-            prev_device_index = None
-            attr = 0
-            for proc in processes:
-                try:
-                    proc_info = proc.as_dict()
-                except psutil.Error:
-                    need_clear = True
-                    continue
-                device_index = proc_info['device'].index
-                if prev_device_index is None or prev_device_index != device_index:
-                    attr = {
-                        'light': COLOR_GREEN,
-                        'moderate': COLOR_YELLOW,
-                        'heavy': COLOR_RED
-                    }.get(proc_info['device'].load)
-                try:
-                    cmdline = proc_info['cmdline']
-                    cmdline[0] = proc_info['name']
-                except IndexError:
-                    cmdline = ['Terminated']
-                cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
-
-                if prev_device_index is not None and prev_device_index != device_index:
-                    lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
-                prev_device_index = device_index
-                lines.append((
-                    '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
-                        device_index, proc.pid,
-                        cut_string(proc_info['username'], maxlen=7, padstr='+'),
-                        bytes2human(proc_info['gpu_memory']), proc_info['cpu_percent'], proc_info['memory_percent'],
-                        timedelta2human(proc_info['running_time']), cmdline
-                    ),
-                    attr
-                ))
-        else:
-            lines.append('│  No running compute processes found                                         │')
-
-        lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
-
-        if need_clear or len(lines) < self.n_lines or termsize != self.termsize:
-            self.win.clear()
-        self.n_lines = len(lines)
-        self.termsize = termsize
-        for y, line in enumerate(lines):
-            try:
-                if isinstance(line, str):
-                    self.win.addstr(y, 0, line)
-                else:
-                    line, attr = line
-                    for x, ch in enumerate(line):
-                        try:
-                            if ch not in '│ ':
-                                self.win.addstr(y, x, ch, attr)
-                            else:
-                                self.win.addstr(y, x, ch)
-                        except self.curses.error:
-                            if x == 0:
-                                raise
-                            else:
-                                break
-            except self.curses.error:
-                break
-        self.win.refresh()
-
-    def loop(self):
-        if self.win is None:
-            return
-
-        key = -1
-        while True:
-            try:
-                self.redraw()
-                for i in range(10):
-                    key = self.win.getch()
-                    if key == -1 or key == ord('q') or key == 27:
-                        break
-                self.curses.flushinp()
-                if key == ord('q') or key == 27:
-                    break
-                time.sleep(0.5)
-            except KeyboardInterrupt:
-                pass
+    def finalize(self):
+        self.need_redraw = False
+        self.color_reset()
 
     def print(self):
         lines = [
@@ -554,26 +459,119 @@ class Top(object):
         lines.pop()
         lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
-        lines.extend([
-            '                                                                               ',
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ Processes:                                                                  │',
-            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
-            '╞═════════════════════════════════════════════════════════════════════════════╡'
-        ])
+        print('\n'.join(lines))
 
+
+class ProcessPanel(Displayable):
+    def __init__(self, devices, win=None):
+        super(ProcessPanel, self).__init__(win)
+        self.width = 79
+        self.height = 6
+        self._need_redraw = True
+
+        self.devices = devices
+
+    def update_height(self):
+        processes = self.processes
+        n_processes = len(processes)
+        n_used_devices = len(set([p.device.index for p in processes.values()]))
+        if n_processes > 0:
+            height = 5 + len(processes) + n_used_devices - 1
+        else:
+            height = 6
+
+        self.need_redraw = (self.need_redraw or self.height > height)
+        self.height = height
+
+    @property
+    @ttl_cache(ttl=1.0)
+    def processes(self):
+        processes = {}
+        for device in self.devices:
+            processes.update(device.processes)
+        processes = sorted(processes.values(), key=lambda p: (p.device.index, p.user, p.pid))
+        return OrderedDict([(p.pid, p) for p in processes])
+
+    def draw(self):
+        self.color_reset()
+
+        if self.need_redraw:
+            header = [
+                '╒═════════════════════════════════════════════════════════════════════════════╕',
+                '│ Processes:                                                                  │',
+                '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
+                '╞═════════════════════════════════════════════════════════════════════════════╡'
+            ]
+
+            for y, line in enumerate(header, start=self.y):
+                self.addstr(y, self.x, line)
+
+        processes = self.processes
+        y = self.y + 4
         if len(processes) > 0:
-            processes = sorted(processes.values(), key=lambda p: (p.device.index, p.user, p.pid))
             prev_device_index = None
             color = None
-            for proc in processes:
+            for proc in processes.values():
                 try:
                     proc_info = proc.as_dict()
                 except psutil.Error:
                     continue
                 device_index = proc_info['device'].index
                 if prev_device_index is None or prev_device_index != device_index:
-                    color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}.get(proc_info['device'].load)
+                    color = proc_info['device'].color
+                try:
+                    cmdline = proc_info['cmdline']
+                    cmdline[0] = proc_info['name']
+                except IndexError:
+                    cmdline = ['Terminated']
+                cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
+
+                if prev_device_index is not None and prev_device_index != device_index:
+                    self.addstr(
+                        y, self.x, '├─────────────────────────────────────────────────────────────────────────────┤')
+                    y += 1
+                prev_device_index = device_index
+                self.addstr(y, self.x, '│ ')
+                self.color(color)
+                self.addstr(y, self.x + 2, '{:>3}'.format(device_index))
+                self.color_reset()
+                self.addstr(y, self.x + 5,
+                            ' {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
+                                proc.pid, cut_string(proc_info['username'], maxlen=7, padstr='+'),
+                                bytes2human(proc_info['gpu_memory']), proc_info['cpu_percent'],
+                                proc_info['memory_percent'], timedelta2human(proc_info['running_time']),
+                                cmdline
+                            ))
+                y += 1
+            y -= 1
+        else:
+            self.addstr(y, self.x, '│  No running compute processes found                                         │')
+        self.addstr(y + 1, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
+
+    def finalize(self):
+        self.need_redraw = False
+        self.color_reset()
+
+    def print(self):
+        lines = [
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ Processes:                                                                  │',
+            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
+            '╞═════════════════════════════════════════════════════════════════════════════╡'
+        ]
+
+        processes = self.processes
+        if len(processes) > 0:
+            prev_device_index = None
+            color = None
+            for proc in processes.values():
+                try:
+                    proc_info = proc.as_dict()
+                except psutil.Error:
+                    continue
+                device_index = proc_info['device'].index
+                if prev_device_index is None or prev_device_index != device_index:
+                    color = proc_info['device'].color
                 try:
                     cmdline = proc_info['cmdline']
                     cmdline[0] = proc_info['name']
@@ -598,6 +596,81 @@ class Top(object):
         print('\n'.join(lines))
 
 
+class Top(DisplayableContainer):
+    def __init__(self, mode='auto', win=None):
+        super(Top, self).__init__(win)
+
+        assert mode in ('auto', 'full', 'compact')
+        compact = (mode == 'compact')
+        self.mode = mode
+        self._compact = compact
+
+        self.device_count = nvml.nvmlDeviceGetCount()
+        self.devices = list(map(Device, range(self.device_count)))
+
+        self.win = win
+        self.termsize = None
+
+        self.device_panel = DevicePanel(self.devices, compact, win=win)
+        self.process_panel = ProcessPanel(self.devices, win=win)
+        self.process_panel.y = self.device_panel.height + 1
+        self.add_child('device_panel', self.device_panel)
+        self.add_child('process_panel', self.process_panel)
+
+    @property
+    def compact(self):
+        return self._compact
+
+    @compact.setter
+    def compact(self, value):
+        if self._compact != value:
+            self.need_redraw = True
+            self._compact = value
+
+    def draw(self):
+        n_term_lines, _ = self.win.getmaxyx()
+        self.process_panel.update_height()
+        if self.mode == 'auto':
+            self.compact = (n_term_lines < 4 + 3 * (self.device_count + 1) + self.process_panel.height)
+            self.device_panel.compact = self.compact
+            self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
+
+        self.need_redraw = any(map(lambda child: child.need_redraw, self.container.values()))
+
+        if self.need_redraw:
+            self.win.erase()
+        super(Top, self).draw()
+        self.win.refresh()
+
+    def finalize(self):
+        DisplayableContainer.finalize(self)
+        self.win.refresh()
+
+    def loop(self):
+        if self.win is None:
+            return
+
+        key = -1
+        while True:
+            try:
+                self.draw()
+                for i in range(10):
+                    key = self.win.getch()
+                    if key == -1 or key == ord('q'):
+                        break
+                curses.flushinp()
+                if key == ord('q'):
+                    break
+                time.sleep(0.5)
+            except KeyboardInterrupt:
+                pass
+
+    def print(self):
+        self.device_panel.print()
+        print()
+        self.process_panel.print()
+
+
 def main():
     try:
         nvml.nvmlInit()
@@ -616,8 +689,8 @@ def main():
         args.monitor = 'auto'
 
     if args.monitor != 'notpresented':
-        with libcurses() as (curses, win):
-            top = Top(mode=args.monitor, curses=curses, win=win)
+        with libcurses() as win:
+            top = Top(mode=args.monitor, win=win)
             top.loop()
     else:
         top = Top()

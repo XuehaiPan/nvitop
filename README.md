@@ -35,7 +35,7 @@ Run as a resource monitor, like `htop`.
 ./nvhtop.py --monitor compact
 ```
 
-Press `q` or `esc` to return to the terminal.
+Press `q` to return to the terminal.
 
 Type `./nvhtop.py --help` for more information:
 
