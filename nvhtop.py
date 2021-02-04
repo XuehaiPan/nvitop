@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # To Run:
-# $ python3 nvhtop.py
+# $ python3 nvhtop
 
 import argparse
 import datetime
@@ -295,7 +295,11 @@ class Device(object):
 
 
 class Top(object):
-    def __init__(self, curses=None, win=None):
+    def __init__(self, mode='auto', curses=None, win=None):
+        assert mode in ('auto', 'full', 'compact')
+        self.mode = mode
+        self.compact = (mode == 'compact')
+
         self.driver_version = str(nvml_query(nvml.nvmlSystemGetDriverVersion))
         cuda_version = nvml_query(nvml.nvmlSystemGetCudaDriverVersion)
         if nvml_check_return(cuda_version, int):
@@ -314,19 +318,19 @@ class Top(object):
     def redraw(self):
         need_clear = False
 
-        n_used_devices = 0
-        processes = {}
-        for device in self.devices:
-            device_processes = device.processes
-            if len(device_processes) > 0:
-                processes.update(device.processes)
-                n_used_devices += 1
-
-        n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
-        if n_used_devices > 0:
-            compact = (n_term_lines < 7 + 3 * self.device_count + 6 + len(processes) + n_used_devices - 1)
-        else:
-            compact = (n_term_lines < 7 + 3 * self.device_count + 7)
+        n_term_lines, _ = termsize = self.win.getmaxyx()
+        if self.mode == 'auto':
+            n_used_devices = 0
+            processes = {}
+            for device in self.devices:
+                device_processes = device.processes
+                if len(device_processes) > 0:
+                    processes.update(device.processes)
+                    n_used_devices += 1
+            if n_used_devices > 0:
+                self.compact = (n_term_lines < 7 + 3 * self.device_count + 6 + len(processes) + n_used_devices - 1)
+            else:
+                self.compact = (n_term_lines < 7 + 3 * self.device_count + 7)
 
         lines = [
             '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
@@ -335,7 +339,7 @@ class Top(object):
                                                                                                       self.cuda_version),
             '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
         ]
-        if compact:
+        if self.compact:
             lines.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
         else:
             lines.extend([
@@ -344,6 +348,7 @@ class Top(object):
             ])
         lines.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
 
+        processes = {}
         for device in self.devices:
             device_info = device.as_dict()
 
@@ -352,7 +357,7 @@ class Top(object):
                 'moderate': COLOR_YELLOW,
                 'heavy': COLOR_RED
             }.get(device_info['load'])
-            if compact:
+            if self.compact:
                 lines.append((
                     '│ {:>3} {:>3} {:>4} {:>3} {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(
                         device_info['index'],
@@ -397,7 +402,6 @@ class Top(object):
             device_processes = device.processes
             if len(device_processes) > 0:
                 processes.update(device.processes)
-                n_used_devices += 1
         lines.pop()
         lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
@@ -586,16 +590,19 @@ def main():
         return 1
 
     parser = argparse.ArgumentParser(prog='nvhtop', description='A interactive Nvidia-GPU process viewer.')
-    parser.add_argument('-l', '--loop', action='store_true', default=False,
-                        help='Continuously report query data, rather than the default of just once.')
+    parser.add_argument('-m', '--monitor', type=str, default='notpresented',
+                        nargs='?', choices=['auto', 'full', 'compact'],
+                        help='Run as a resource monitor. '
+                             'Continuously report query data, rather than the default of just once. '
+                             'If no argument is specified, the default mode `auto` is used.')
     args = parser.parse_args()
+    if args.monitor is None:
+        args.monitor = 'auto'
 
-    top = None
-    if args.loop:
+    if args.monitor != 'notpresented':
         with libcurses() as (curses, win):
-            top = Top(curses, win)
-            if args.loop:
-                top.loop()
+            top = Top(mode=args.monitor, curses=curses, win=win)
+            top.loop()
     else:
         top = Top()
     top.print()
