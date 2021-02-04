@@ -1,4 +1,5 @@
 nvidia-ml-py
 psutil
 cachetools
+termcolor
 windows-curses; sys_platform == 'windows'
