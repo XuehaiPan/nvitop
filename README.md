@@ -16,15 +16,15 @@ An interactive Nvidia-GPU process viewer. (Under progress)
 From GitHub:
 
 ```bash
-pip install -e git+https://github.com/XuehaiPan/nvhtop.git#egg=nvhtop
+$ pip install git+https://github.com/XuehaiPan/nvhtop.git#egg=nvhtop
 ```
 
-Or, download and pip install:
+Or, download and `pip install`:
 
 ```bash
-git clone --depth=1 https://github.com/XuehaiPan/nvhtop.git
-cd nvhtop
-pip3 install .
+$ git clone --depth=1 https://github.com/XuehaiPan/nvhtop.git
+$ cd nvhtop
+$ pip install .
 ```
 
 ## Usage
@@ -32,21 +32,21 @@ pip3 install .
 Query the device status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
-nvhtop
+$ nvhtop
 ```
 
-Run as a resource monitor, like `htop`.
+Run as a resource monitor, like `htop`:
 
 ```bash
 # Automatically configure the display mode according to the terminal size
-nvhtop.py --monitor
-nvhtop.py --monitor auto
+$ nvhtop --monitor
+$ nvhtop --monitor auto
 
 # Forcibly display as `full` mode
-nvhtop.py --monitor full
+$ nvhtop --monitor full
 
 # Forcibly display as `compact` mode
-nvhtop.py --monitor compact
+$ nvhtop --monitor compact
 ```
 
 Press `q` to return to the terminal.
