@@ -2,7 +2,7 @@ import sys
 
 from setuptools import setup, find_packages
 
-from nvhtop import __version__, __doc__, __license__, __author__, __email__
+import nvhtop
 
 
 extra_description = {}
@@ -15,17 +15,17 @@ except OSError:
 
 setup(
     name='nvhtop',
-    version=__version__,
-    description=__doc__,
+    version=nvhtop.__version__,
+    description=nvhtop.__doc__,
     **extra_description,
-    license=__license__,
-    author=__author__,
-    author_email=__email__,
+    license=nvhtop.__license__,
+    author=nvhtop.__author__,
+    author_email=nvhtop.__email__,
     url="https://github.com/XuehaiPan/nvhtop.git",
     packages=find_packages(include=['nvhtop', 'nvhtop.*']),
     entry_points={
         'console_scripts': [
-            'nvhtop=nvhtop:main'
+            'nvhtop=nvhtop.main:main'
         ],
     },
     install_requires=(['windows-curses'] if sys.platform == 'windows' else []) + [

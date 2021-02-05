@@ -5,7 +5,7 @@
 
 import sys
 
-from nvhtop import main
+from nvhtop.main import main
 
 
 if __name__ == '__main__':
