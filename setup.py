@@ -25,15 +25,15 @@ setup(
     packages=find_packages(include=['nvhtop', 'nvhtop.*']),
     entry_points={
         'console_scripts': [
-            'nvhtop=nvhtop:main',
+            'nvhtop=nvhtop:main'
         ],
     },
-    install_requires=[
+    install_requires=(['windows-curses'] if sys.platform == 'windows' else []) + [
         'nvidia-ml-py',
         'psutil',
         'cachetools',
         'termcolor'
-    ] + (['windows-curses'] if sys.platform == 'windows' else []),
+    ],
     python_requires='>=3.5, <4',
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -53,11 +53,11 @@ setup(
         'Topic :: System :: Hardware',
         'Topic :: System :: Monitoring',
         'Topic :: System :: Systems Administration',
-        'Topic :: Utilities',
+        'Topic :: Utilities'
     ],
     keywords='nvidia, nvidia-smi, GPU, htop, top',
     project_urls={
         'Bug Reports': 'https://github.com/XuehaiPan/nvhtop/issues',
-        'Source': 'https://github.com/XuehaiPan/nvhtop',
+        'Source': 'https://github.com/XuehaiPan/nvhtop'
     },
 )

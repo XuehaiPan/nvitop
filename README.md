@@ -1,6 +1,6 @@
 # nvhtop
 
-An interactive Nvidia-GPU process viewer. (Under progress)
+An interactive Nvidia-GPU process viewer.
 
 ## Requirements
 
