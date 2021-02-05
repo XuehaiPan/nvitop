@@ -42,7 +42,7 @@ def get_color(fg, bg):
     return COLOR_PAIRS[key]
 
 
-def get_color_attr(fg, bg, attr=0):
+def get_color_attr(fg, bg=-1, attr=0):
     """Returns the curses attribute for the given fg/bg/attr combination."""
     if isinstance(attr, str):
         attr = getattr(curses, 'A_{}'.format(attr.upper()), curses.A_NORMAL)

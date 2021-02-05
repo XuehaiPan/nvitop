@@ -106,43 +106,29 @@ class DevicePanel(Displayable):
 
         self.addstr(self.y, self.x, '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
 
+        if self.compact:
+            formats = [
+                '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_state:>12} '
+                '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
+            ]
+        else:
+            formats = [
+                '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
+                '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
+                '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_state:>12} '
+                '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
+            ]
         for device in self.devices:
             device = device.snapshot()
-
-            self.color(device.color)
-            if self.compact:
-                y = self.y + 4 + 2 * (device.index + 1)
-                self.addstr(y, self.x + 2,
-                            '{:>3} {:>3} {:>4} {:>3} {:>12}'.format(device.index,
-                                                                    device.fan_speed,
-                                                                    device.temperature,
-                                                                    device.performance_state,
-                                                                    device.power_state))
-                self.addstr(y, self.x + 34, '{:>20}'.format(device.memory_usage))
-                self.addstr(y, self.x + 57, '{:>7}  {:>11}'.format(device.gpu_utilization,
-                                                                   device.compute_mode))
-
-            else:
-                y = self.y + 4 + 3 * (device.index + 1)
-                self.addstr(y, self.x + 2,
-                            '{:>3}  {:>18}  {:<4}'.format(device.index,
-                                                          cut_string(device.name, maxlen=18),
-                                                          device.persistence_mode))
-                self.addstr(y, self.x + 34, '{:<16} {:>3}'.format(device.bus_id,
-                                                                  device.display_active))
-                self.addstr(y, self.x + 57, '{:>20}'.format(device.ecc_errors))
-                self.addstr(y + 1, self.x + 2,
-                            '{:>3}  {:>4}  {:>4}  {:>12}'.format(device.fan_speed,
-                                                                 device.temperature,
-                                                                 device.performance_state,
-                                                                 device.power_state))
-                self.addstr(y + 1, self.x + 34, '{:>20}'.format(device.memory_usage))
-                self.addstr(y + 1, self.x + 57, '{:>7}  {:>11}'.format(device.gpu_utilization,
-                                                                       device.compute_mode))
+            device.name = cut_string(device.name, maxlen=18)
+            for y, fmt in enumerate(formats, start=self.y + 4 + (3 - int(self.compact)) * (device.index + 1)):
+                self.addstr(y, self.x, fmt.format(**device.__dict__))
+                self.color_at(y, 2, width=29, fg=device.display_color)
+                self.color_at(y, 34, width=20, fg=device.display_color)
+                self.color_at(y, 57, width=20, fg=device.display_color)
 
     def finalize(self):
         self.need_redraw = False
-        self.color_reset()
 
     def print(self):
         self.take_snapshot()
@@ -241,7 +227,7 @@ class ProcessPanel(Displayable):
         y = self.y + 4
         if len(self.snapshots) > 0:
             prev_device_index = None
-            color = None
+            color = -1
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
@@ -258,17 +244,14 @@ class ProcessPanel(Displayable):
                         y, self.x, '├─────────────────────────────────────────────────────────────────────────────┤')
                     y += 1
                 prev_device_index = device_index
-                self.addstr(y, self.x, '│ ')
-                self.color(color)
-                self.addstr(y, self.x + 2, '{:>3}'.format(device_index))
-                self.color_reset()
-                self.addstr(y, self.x + 5,
-                            ' {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
-                                process.pid, cut_string(process.username, maxlen=7, padstr='+'),
+                self.addstr(y, self.x,
+                            '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
+                                device_index, process.pid, cut_string(process.username, maxlen=7, padstr='+'),
                                 bytes2human(process.gpu_memory), process.cpu_percent,
                                 process.memory_percent, timedelta2human(process.running_time),
                                 cmdline
                             ))
+                self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
             y -= 1
         else:
@@ -277,7 +260,6 @@ class ProcessPanel(Displayable):
 
     def finalize(self):
         self.need_redraw = False
-        self.color_reset()
 
     def print(self):
         self.take_snapshot()
