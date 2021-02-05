@@ -2,15 +2,29 @@
 
 An interactive Nvidia-GPU process viewer. (Under progress)
 
+## Requirements
+
+- Python 3.5+
+- curses
+- nvidia-ml-py
+- psutil
+- cachetools
+- termcolor
+
 ## Installation
 
+From GitHub:
+
 ```bash
-# Clone the repo
+pip install -e git+https://github.com/XuehaiPan/nvhtop.git#egg=nvhtop
+```
+
+Or, download and pip install:
+
+```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvhtop.git
 cd nvhtop
-
-# Install dependencies
-pip3 install -r requirements.txt
+pip3 install .
 ```
 
 ## Usage
@@ -18,29 +32,29 @@ pip3 install -r requirements.txt
 Query the device status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
-./nvhtop.py
+nvhtop
 ```
 
 Run as a resource monitor, like `htop`.
 
 ```bash
 # Automatically configure the display mode according to the terminal size
-./nvhtop.py --monitor
-./nvhtop.py --monitor auto
+nvhtop.py --monitor
+nvhtop.py --monitor auto
 
 # Forcibly display as `full` mode
-./nvhtop.py --monitor full
+nvhtop.py --monitor full
 
 # Forcibly display as `compact` mode
-./nvhtop.py --monitor compact
+nvhtop.py --monitor compact
 ```
 
 Press `q` to return to the terminal.
 
-Type `./nvhtop.py --help` for more information:
+Type `nvhtop --help` for more information:
 
 ```
-usage: nvhtop.py [-h] [-m [{auto,full,compact}]]
+usage: nvhtop [-h] [-m [{auto,full,compact}]]
 
 A interactive Nvidia-GPU process viewer.
 
@@ -52,20 +66,13 @@ optional arguments:
                     If no argument is specified, the default mode `auto` is used.
 ```
 
-For convenience, you can create a symbolic link in `~/.local`.
-
-```bash
-mkdir -p ~/.local/bin
-ln -sf "$PWD/nvhtop.py" ~/.local/bin/nvhtop
-```
-
 ## Screenshots
 
-Example output of `nvhtop.py`:
+Example output of `nvhtop`:
 
 <img width="600" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/106898060-af2c3a80-672e-11eb-9ab6-1ccbaa6292b5.png">
 
-Example output of `nvhtop.py --monitor`:
+Example output of `nvhtop --monitor`:
 
 <table>
   <tr>
