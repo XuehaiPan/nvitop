@@ -54,16 +54,24 @@ Press `q` to return to the terminal.
 Type `nvhtop --help` for more information:
 
 ```
-usage: nvhtop [-h] [-m [{auto,full,compact}]]
+usage: nvhtop [-h] [-m [{auto,full,compact}]] [--mem-util-thresh th th]
+              [--gpu-util-thresh th th]
 
 A interactive Nvidia-GPU process viewer.
 
 optional arguments:
-  -h, --help        show this help message and exit
+  -h, --help            show this help message and exit
   -m [{auto,full,compact}], --monitor [{auto,full,compact}]
-                    Run as a resource monitor. Continuously report query data,
-                    rather than the default of just once.
-                    If no argument is specified, the default mode `auto` is used.
+                        Run as a resource monitor. Continuously report query
+                        data, rather than the default of just once. If no
+                        argument is specified, the default mode `auto` is
+                        used.
+  --mem-util-thresh th th
+                        Thresholds of GPU memory utilization to distinguish
+                        load intensity, (1 <= th <= 99, defaults: 10 80)
+  --gpu-util-thresh th th
+                        Thresholds of GPU utilization to distinguish load
+                        intensity, (1 <= th <= 99, defaults: 10 75)
 ```
 
 ## Screenshots

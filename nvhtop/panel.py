@@ -161,7 +161,6 @@ class DevicePanel(Displayable):
         for device in self.devices:
             device = device.snapshot()
 
-            color = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}.get(device.load)
             line1 = '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index,
                                                                               cut_string(device.name, maxlen=18),
                                                                               device.persistence_mode,
@@ -176,8 +175,8 @@ class DevicePanel(Displayable):
                                                                                       device.gpu_utilization,
                                                                                       device.compute_mode)
             lines.extend([
-                '│'.join(map(lambda s: colored(s, color), line1.split('│'))),
-                '│'.join(map(lambda s: colored(s, color), line2.split('│')))
+                '│'.join(map(lambda s: colored(s, device.display_color), line1.split('│'))),
+                '│'.join(map(lambda s: colored(s, device.display_color), line2.split('│')))
             ])
             lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
         lines.pop()
@@ -246,7 +245,7 @@ class ProcessPanel(Displayable):
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
-                    color = process.device.color
+                    color = process.device.display_color
                 try:
                     cmdline = process.cmdline
                     cmdline[0] = process.name
@@ -296,7 +295,7 @@ class ProcessPanel(Displayable):
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
-                    color = process.device.color
+                    color = process.device.display_color
                 try:
                     cmdline = process.cmdline
                     cmdline[0] = process.name

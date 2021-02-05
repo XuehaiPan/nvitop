@@ -90,9 +90,9 @@ def get_gpu_process(pid, device):
 
 
 class Device(object):
-    MEMORY_UTILIZATION_THRESHOLD_LIGHT = 5
-    MEMORY_UTILIZATION_THRESHOLD_MODERATE = 90
-    GPU_UTILIZATION_THRESHOLD_LIGHT = 5
+    MEMORY_UTILIZATION_THRESHOLD_LIGHT = 10
+    MEMORY_UTILIZATION_THRESHOLD_MODERATE = 80
+    GPU_UTILIZATION_THRESHOLD_LIGHT = 10
     GPU_UTILIZATION_THRESHOLD_MODERATE = 75
 
     def __init__(self, index):
@@ -114,7 +114,7 @@ class Device(object):
 
     @property
     @ttl_cache(ttl=1.0)
-    def load(self):
+    def loading_intensity(self):
         gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
         memory_used = self.memory_used
         memory_total = self.memory_total
@@ -133,8 +133,8 @@ class Device(object):
 
     @property
     @ttl_cache(ttl=1.0)
-    def color(self):
-        return {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}.get(self.load)
+    def display_color(self):
+        return {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}.get(self.loading_intensity)
 
     @property
     @ttl_cache(ttl=60.0)
@@ -268,7 +268,7 @@ class Device(object):
     def snapshot(self):
         return Snapshot(**{key: getattr(self, key) for key in self._snapshot_keys})
 
-    _snapshot_keys = ['index', 'name', 'load', 'color',
+    _snapshot_keys = ['index', 'name', 'loading_intensity', 'display_color',
                       'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
                       'fan_speed', 'temperature', 'performance_state',
                       'power_usage', 'power_limit', 'power_state',

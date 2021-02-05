@@ -125,9 +125,24 @@ def main():
                         help='Run as a resource monitor. '
                              'Continuously report query data, rather than the default of just once. '
                              'If no argument is specified, the default mode `auto` is used.')
+    parser.add_argument('--mem-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar='th',
+                        help='Thresholds of GPU memory utilization to distinguish load intensity, '
+                        '(1 <= th <= 99, defaults: {} {})'.format(Device.MEMORY_UTILIZATION_THRESHOLD_LIGHT,
+                                                                  Device.MEMORY_UTILIZATION_THRESHOLD_MODERATE))
+    parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar='th',
+                        help='Thresholds of GPU utilization to distinguish load intensity, '
+                        '(1 <= th <= 99, defaults: {} {})'.format(Device.GPU_UTILIZATION_THRESHOLD_LIGHT,
+                                                                  Device.GPU_UTILIZATION_THRESHOLD_MODERATE))
     args = parser.parse_args()
     if args.monitor is None:
         args.monitor = 'auto'
+    if args.mem_util_thresh is not None:
+        Device.MEMORY_UTILIZATION_THRESHOLD_LIGHT = min(args.mem_util_thresh)
+        Device.MEMORY_UTILIZATION_THRESHOLD_MODERATE = max(args.mem_util_thresh)
+    if args.gpu_util_thresh is not None:
+        Device.GPU_UTILIZATION_THRESHOLD_LIGHT = min(args.gpu_util_thresh)
+        Device.GPU_UTILIZATION_THRESHOLD_MODERATE = max(args.gpu_util_thresh)
+
 
     if args.monitor != 'notpresented':
         with libcurses() as win:
