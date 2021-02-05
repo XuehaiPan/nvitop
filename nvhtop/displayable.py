@@ -1,8 +1,8 @@
-# This file is part of ranger, the console file manager.
+# This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
+# This file is originally part of ranger , the console file manager. https://github.com/ranger/ranger
 # License: GNU GPL version 3.
 
 import curses
-from collections import OrderedDict
 
 
 DEFAULT_FOREGROUND = curses.COLOR_WHITE
@@ -135,7 +135,7 @@ class Displayable(CursesShortcuts):
     """
 
     def __init__(self, win):
-        self.need_redraw = True
+        self._need_redraw = True
         self.focused = False
         self._visible = True
         self.x = 0
@@ -144,6 +144,7 @@ class Displayable(CursesShortcuts):
         self.height = 0
 
         self.win = win
+        self.parent = None
 
     def __contains__(self, item):
         """Checks if item is inside the boundaries.
@@ -166,6 +167,7 @@ class Displayable(CursesShortcuts):
         Called on every main iteration if visible. Containers should call draw()
         on their contained objects here. Override this!
         """
+        self.need_redraw = False
 
     def destroy(self):
         """Called when the object is destroyed."""
@@ -192,7 +194,7 @@ class Displayable(CursesShortcuts):
 
     def poke(self):
         """Called before drawing, even if invisible"""
-        if not self.visible:
+        if not self.visible and self.need_redraw:
             self.win.erase()
 
     def finalize(self):
@@ -210,6 +212,17 @@ class Displayable(CursesShortcuts):
         if self._visible != value:
             self.need_redraw = True
             self._visible = value
+
+    @property
+    def need_redraw(self):
+        return self._need_redraw
+
+    @need_redraw.setter
+    def need_redraw(self, value):
+        if self._need_redraw != value:
+            self._need_redraw = value
+            if value and self.parent is not None:
+                self.parent.need_redraw = True
 
     def __str__(self):
         return self.__class__.__name__
@@ -234,21 +247,21 @@ class DisplayableContainer(Displayable):
     """
 
     def __init__(self, win):
-        self.container = OrderedDict()
+        super(DisplayableContainer, self).__init__(win)
 
-        Displayable.__init__(self, win)
+        self.container = []
 
     # extended or overridden methods
 
     def poke(self):
         """Recursively called on objects in container"""
-        Displayable.poke(self)
+        super(DisplayableContainer, self).poke()
         for displayable in self.container:
             displayable.poke()
 
     def draw(self):
         """Recursively called on visible objects in container"""
-        for displayable in self.container.values():
+        for displayable in self.container:
             if self.need_redraw:
                 displayable.need_redraw = True
             if displayable.visible:
@@ -291,9 +304,17 @@ class DisplayableContainer(Displayable):
 
     # new methods
 
-    def add_child(self, name, obj):
+    def add_child(self, obj):
         """Add the objects to the container."""
-        self.container[name] = obj
+        if obj.parent is not None:
+            obj.parent.remove_child(obj)
+        self.container.append(obj)
+        obj.parent = self
+
+    def replace_child(self, old_obj, new_obj):
+        """Replace the old object with the new instance in the container."""
+        self.container[self.container.index(old_obj)] = new_obj
+        new_obj.parent = self
 
     def remove_child(self, obj):
         """Remove the object from the container."""
@@ -301,10 +322,12 @@ class DisplayableContainer(Displayable):
             self.container.remove(obj)
         except ValueError:
             pass
+        else:
+            obj.parent = None
 
     def get_focused_obj(self):
         # Finds a focused displayable object in the container.
-        for displayable in self.container.values():
+        for displayable in self.container:
             if displayable.focused:
                 return displayable
             try:

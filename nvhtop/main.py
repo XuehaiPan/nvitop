@@ -467,7 +467,6 @@ class ProcessPanel(Displayable):
         super(ProcessPanel, self).__init__(win)
         self.width = 79
         self.height = 6
-        self._need_redraw = True
 
         self.devices = devices
 
@@ -614,8 +613,11 @@ class Top(DisplayableContainer):
         self.device_panel = DevicePanel(self.devices, compact, win=win)
         self.process_panel = ProcessPanel(self.devices, win=win)
         self.process_panel.y = self.device_panel.height + 1
-        self.add_child('device_panel', self.device_panel)
-        self.add_child('process_panel', self.process_panel)
+        self.process_panel.update_height()
+        self.add_child(self.device_panel)
+        self.add_child(self.process_panel)
+
+        self.height = self.device_panel.height + 1 + self.process_panel.height
 
     @property
     def compact(self):
@@ -631,11 +633,10 @@ class Top(DisplayableContainer):
         n_term_lines, _ = self.win.getmaxyx()
         self.process_panel.update_height()
         if self.mode == 'auto':
-            self.compact = (n_term_lines < 4 + 3 * (self.device_count + 1) + self.process_panel.height)
+            self.compact = (n_term_lines < 4 + 3 * (self.device_count + 1) + 1 + self.process_panel.height)
             self.device_panel.compact = self.compact
             self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
-
-        self.need_redraw = any(map(lambda child: child.need_redraw, self.container.values()))
+        self.height = self.device_panel.height + 1 + self.process_panel.height
 
         if self.need_redraw:
             self.win.erase()
