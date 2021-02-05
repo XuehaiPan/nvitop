@@ -78,7 +78,7 @@ optional arguments:
 
 Example output of `nvhtop`:
 
-<img width="600" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/106898060-af2c3a80-672e-11eb-9ab6-1ccbaa6292b5.png">
+<img width="600" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/107054137-b32d8a80-680a-11eb-9a0e-dd9975fd9ecc.png">
 
 Example output of `nvhtop --monitor`:
 
@@ -89,10 +89,10 @@ Example output of `nvhtop --monitor`:
   </tr>
   <tr valign="top">
     <td align="center">
-      <img src="https://user-images.githubusercontent.com/16078332/106898073-b18e9480-672e-11eb-812f-85951a8d98cc.png">
+      <img src="https://user-images.githubusercontent.com/16078332/107054291-e6701980-680a-11eb-8da0-8d59dfce0ed7.png">
     </td>
     <td align="center">
-      <img src="https://user-images.githubusercontent.com/16078332/106898074-b2272b00-672e-11eb-9351-3301240b2d42.png">
+      <img src="https://user-images.githubusercontent.com/16078332/107054190-c3de0080-680a-11eb-8016-4fb958d4bbc4.png">
     </td>
   </tr>
 </table>
