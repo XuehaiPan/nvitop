@@ -51,25 +51,37 @@ def nvml_check_return(retval, types=None):
         return (retval != 'N/A' and isinstance(retval, types))
 
 
+class Snapshot(object):
+    def __init__(self, **items):
+        for key, value in items.items():
+            setattr(self, key, value)
+
+    def __bool__(self):
+        return bool(self.__dict__)
+
+
 class GProcess(psutil.Process):
     def __init__(self, pid, device, gpu_memory, proc_type='C'):
         super(GProcess, self).__init__(pid)
         super(GProcess, self).cpu_percent()
-        self.user = self.username()
         self.device = device
         self.gpu_memory = gpu_memory
         self.proc_type = proc_type
 
     @ttl_cache(ttl=5.0)
-    def as_dict(self):
-        proc_info = {
-            'device': self.device,
-            'gpu_memory': self.gpu_memory,
-            'proc_type': self.proc_type,
-            'running_time': datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
-        }
-        proc_info.update(super(GProcess, self).as_dict())
-        return proc_info
+    def snapshot(self):
+        try:
+            snapshot = Snapshot(
+                device=self.device,
+                gpu_memory=self.gpu_memory,
+                proc_type=self.proc_type,
+                running_time=datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+            )
+            snapshot.__dict__.update(super(GProcess, self).as_dict())
+        except psutil.Error:
+            return None
+        else:
+            return snapshot
 
 
 @ttl_cache(ttl=30.0)
@@ -253,12 +265,12 @@ class Device(object):
         return processes
 
     @ttl_cache(ttl=1.0)
-    def as_dict(self):
-        return {key: getattr(self, key) for key in self._as_dict_keys}
+    def snapshot(self):
+        return Snapshot(**{key: getattr(self, key) for key in self._snapshot_keys})
 
-    _as_dict_keys = ['index', 'name', 'load', 'color',
-                     'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
-                     'fan_speed', 'temperature', 'performance_state',
-                     'power_usage', 'power_limit', 'power_state',
-                     'memory_used', 'memory_total', 'memory_usage',
-                     'gpu_utilization', 'compute_mode']
+    _snapshot_keys = ['index', 'name', 'load', 'color',
+                      'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
+                      'fan_speed', 'temperature', 'performance_state',
+                      'power_usage', 'power_limit', 'power_state',
+                      'memory_used', 'memory_total', 'memory_usage',
+                      'gpu_utilization', 'compute_mode']
