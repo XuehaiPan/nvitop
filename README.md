@@ -2,6 +2,18 @@
 
 An interactive Nvidia-GPU process viewer.
 
+This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [`nvidia-htop`](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. Meanwhile, there is a powerful interactive GPU monitoring tool called [`nvtop`](https://github.com/Syllo/nvtop). But [`nvtop`](https://github.com/Syllo/nvtop) is written in C, which makes it lack of portability. And you should compile it yourself during installation, which is really inconvenient. Therefore, based on the above reasons, I make this repo. I got a lot help when reading the source code of [`ranger`](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [`ranger`](https://github.com/ranger/ranger) under the GPLv3 License.
+
+## Features
+
+- **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
+- **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+- **Interactive**: responsive for user inputs in monitor mode. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
+- **Efficiency**:
+  - query status using NVML Python bindings directly and cache them with `ttl_cache`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - display information using `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
+- **Portability**: written in pure Python, easy to install, and works on both Linux and Windows. (vs. [nvtop](https://github.com/Syllo/nvtop))
+
 ## Requirements
 
 - Python 3.5+
@@ -93,3 +105,7 @@ Example output of `nvhtop --monitor`:
     <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png"></td>
   </tr>
 </table>
+
+## License
+
+GNU General Public License, version 3 (GPLv3)
