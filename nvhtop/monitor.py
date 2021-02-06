@@ -27,7 +27,10 @@ def timedelta2human(dt):
         return '{} days'.format(dt.days)
     else:
         hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)
-        return '{:02d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
+        if hours > 0:
+            return '{:d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
+        else:
+            return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
 def nvml_query(func, *args, **kwargs):
@@ -59,6 +62,14 @@ class Snapshot(object):
     def __bool__(self):
         return bool(self.__dict__)
 
+    def __str__(self):
+        return '{}({})'.format(
+            self.__class__.__name__,
+            ', '.join('{}={!r}'.format(key, value) for key, value in self.__dict__.items())
+        )
+
+    __repr__ = __str__
+
 
 class GProcess(psutil.Process):
     def __init__(self, pid, device, gpu_memory, proc_type='C'):
@@ -68,7 +79,7 @@ class GProcess(psutil.Process):
         self.gpu_memory = gpu_memory
         self.proc_type = proc_type
 
-    @ttl_cache(ttl=5.0)
+    @ttl_cache(ttl=2.0)
     def snapshot(self):
         try:
             snapshot = Snapshot(
