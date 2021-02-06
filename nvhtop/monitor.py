@@ -90,10 +90,8 @@ def get_gpu_process(pid, device):
 
 
 class Device(object):
-    MEMORY_UTILIZATION_THRESHOLD_LIGHT = 10
-    MEMORY_UTILIZATION_THRESHOLD_MODERATE = 80
-    GPU_UTILIZATION_THRESHOLD_LIGHT = 10
-    GPU_UTILIZATION_THRESHOLD_MODERATE = 75
+    MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
+    GPU_UTILIZATION_THRESHOLDS = (10, 75)
 
     def __init__(self, index):
         self.index = index
@@ -125,9 +123,9 @@ class Device(object):
 
         if not (nvml_check_return(gpu_utilization, int) and nvml_check_return(memory_utilization, int)):
             return 'heavy'
-        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLD_MODERATE or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLD_MODERATE:
+        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLDS[-1] or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLDS[-1]:
             return 'heavy'
-        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLD_LIGHT or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLD_LIGHT:
+        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLDS[0] or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLDS[0]:
             return 'moderate'
         return 'light'
 

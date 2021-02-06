@@ -2,18 +2,18 @@
 # License: GNU GPL version 3.
 
 import argparse
+import contextlib
 import curses
 import sys
 import time
-from contextlib import contextmanager
 
 import pynvml as nvml
 from .displayable import DisplayableContainer
 from .monitor import Device
-from .panel import DevicePanel, ProcessPanel
+from .panel import colored, DevicePanel, ProcessPanel
 
 
-@contextmanager
+@contextlib.contextmanager
 def libcurses():
     win = curses.initscr()
     win.nodelay(True)
@@ -69,12 +69,15 @@ class Top(DisplayableContainer):
     def poke(self):
         super(Top, self).poke()
 
-        n_term_lines, _ = self.win.getmaxyx()
+        n_term_lines, _ = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
             self.compact = (n_term_lines < 4 + 3 * (self.device_count + 1) + 1 + self.process_panel.height)
             self.device_panel.compact = self.compact
             self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = self.device_panel.height + 1 + self.process_panel.height
+        if self.termsize != termsize:
+            self.termsize = termsize
+            self.need_redraw = True
 
     def draw(self):
         if self.need_redraw:
@@ -119,30 +122,32 @@ def main():
         print(error, file=sys.stderr)
         return 1
 
-    parser = argparse.ArgumentParser(prog='nvhtop', description='A interactive Nvidia-GPU process viewer.')
+    coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
+                                                               colored('moderate', 'yellow'),
+                                                               colored('heavy', 'red'))
+    parser = argparse.ArgumentParser(prog='nvhtop', description='A interactive Nvidia-GPU process viewer.',
+                                     formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--monitor', type=str, default='notpresented',
                         nargs='?', choices=['auto', 'full', 'compact'],
-                        help='Run as a resource monitor. '
-                             'Continuously report query data, rather than the default of just once. '
+                        help='Run as a resource monitor. Continuously report query data,\n' +
+                             'rather than the default of just once.\n' +
                              'If no argument is specified, the default mode `auto` is used.')
-    parser.add_argument('--mem-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar='th',
-                        help='Thresholds of GPU memory utilization to distinguish load intensity, '
-                        '(1 <= th <= 99, defaults: {} {})'.format(Device.MEMORY_UTILIZATION_THRESHOLD_LIGHT,
-                                                                  Device.MEMORY_UTILIZATION_THRESHOLD_MODERATE))
-    parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar='th',
-                        help='Thresholds of GPU utilization to distinguish load intensity, '
-                        '(1 <= th <= 99, defaults: {} {})'.format(Device.GPU_UTILIZATION_THRESHOLD_LIGHT,
-                                                                  Device.GPU_UTILIZATION_THRESHOLD_MODERATE))
+    parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
+                        help='Thresholds of GPU utilization to distinguish load intensity.\n' +
+                             'Coloring rules: {}.\n'.format(coloring_rules) +
+                             '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.GPU_UTILIZATION_THRESHOLDS))
+    parser.add_argument('--mem-util-thresh', type=int, nargs=2,
+                        choices=range(1, 100), metavar=('th1', 'th2'),
+                        help='Thresholds of GPU memory utilization to distinguish load intensity.\n' +
+                             'Coloring rules: {}.\n'.format(coloring_rules) +
+                             '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
     args = parser.parse_args()
     if args.monitor is None:
         args.monitor = 'auto'
-    if args.mem_util_thresh is not None:
-        Device.MEMORY_UTILIZATION_THRESHOLD_LIGHT = min(args.mem_util_thresh)
-        Device.MEMORY_UTILIZATION_THRESHOLD_MODERATE = max(args.mem_util_thresh)
     if args.gpu_util_thresh is not None:
-        Device.GPU_UTILIZATION_THRESHOLD_LIGHT = min(args.gpu_util_thresh)
-        Device.GPU_UTILIZATION_THRESHOLD_MODERATE = max(args.gpu_util_thresh)
-
+        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
+    if args.mem_util_thresh is not None:
+        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
 
     if args.monitor != 'notpresented':
         with libcurses() as win:
