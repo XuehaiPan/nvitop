@@ -12,7 +12,9 @@ This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop
 - **Efficiency**:
   - query status using NVML Python bindings directly and cache them with `ttl_cache`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
   - display information using `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
-- **Portability**: written in pure Python, easy to install, and works on both Linux and Windows. (vs. [nvtop](https://github.com/Syllo/nvtop))
+- **Portability**:
+  - get process information using `psutil` library instead of calling `ps -p`, and works on both Linux and Windows. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - written in pure Python, easy to install, and works on both Linux and Windows. (vs. [nvtop](https://github.com/Syllo/nvtop))
 
 ## Requirements
 
