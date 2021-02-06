@@ -13,13 +13,13 @@ An interactive Nvidia-GPU process viewer.
 
 ## Installation
 
-From GitHub:
+Install `nvhtop` using `pip` from GitHub:
 
 ```bash
 $ pip install git+https://github.com/XuehaiPan/nvhtop.git#egg=nvhtop
 ```
 
-Or, download and `pip install`:
+Or, clone this repo and install `nvhtop` manually:
 
 ```bash
 $ git clone --depth=1 https://github.com/XuehaiPan/nvhtop.git
@@ -29,7 +29,7 @@ $ pip install .
 
 ## Usage
 
-Query the device status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
+Query the device and process status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
 $ nvhtop
@@ -79,21 +79,17 @@ optional arguments:
 
 Example output of `nvhtop`:
 
-<img width="600" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/107054137-b32d8a80-680a-11eb-9a0e-dd9975fd9ecc.png">
+<img width="680" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/107119517-0a8f3180-68c3-11eb-9569-2274c17e2c5f.png">
 
 Example output of `nvhtop --monitor`:
 
 <table>
-  <tr>
+  <tr valign="center">
     <td align="center">Full</td>
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center">
-      <img src="https://user-images.githubusercontent.com/16078332/107054291-e6701980-680a-11eb-8da0-8d59dfce0ed7.png">
-    </td>
-    <td align="center">
-      <img src="https://user-images.githubusercontent.com/16078332/107054190-c3de0080-680a-11eb-8016-4fb958d4bbc4.png">
-    </td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119519-0bc05e80-68c3-11eb-9e31-94aa1f9c59b2.png"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png"></td>
   </tr>
 </table>
