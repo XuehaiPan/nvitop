@@ -41,6 +41,9 @@ class DevicePanel(Displayable):
         self._compact = compact
         self.width = 79
         self.height = 4 + (3 - int(compact)) * (self.device_count + 1)
+        self.full_height = 4 + 3 * (self.device_count + 1)
+        if self.device_count == 0:
+            self.height = self.full_height = 6
 
         self.driver_version = str(nvml_query('nvmlSystemGetDriverVersion'))
         cuda_version = nvml_query('nvmlSystemGetCudaDriverVersion')
@@ -79,30 +82,37 @@ class DevicePanel(Displayable):
                 '╒═════════════════════════════════════════════════════════════════════════════╕',
                 '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
                                                                                                           self.cuda_version),
-                '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
             ]
-            if self.compact:
-                frame.extend([
-                    '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │',
-                    '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
-                ])
-                frame.extend(self.device_count * [
-                    '│                               │                      │                      │',
-                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-                ])
+            if self.device_count > 0:
+                frame.append('├───────────────────────────────┬──────────────────────┬──────────────────────┤')
+                if self.compact:
+                    frame.extend([
+                        '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │',
+                        '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+                    ])
+                    frame.extend(self.device_count * [
+                        '│                               │                      │                      │',
+                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                    ])
+                else:
+                    frame.extend([
+                        '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                        '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
+                        '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+                    ])
+                    frame.extend(self.device_count * [
+                        '│                               │                      │                      │',
+                        '│                               │                      │                      │',
+                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                    ])
+                frame.pop()
+                frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
             else:
                 frame.extend([
-                    '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-                    '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-                    '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+                    '╞═════════════════════════════════════════════════════════════════════════════╡',
+                    '│  No visible CUDA device found                                               │',
+                    '╘═════════════════════════════════════════════════════════════════════════════╛'
                 ])
-                frame.extend(self.device_count * [
-                    '│                               │                      │                      │',
-                    '│                               │                      │                      │',
-                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-                ])
-            frame.pop()
-            frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
             for y, line in enumerate(frame, start=self.y + 1):
                 self.addstr(y, self.x, line)
@@ -121,10 +131,10 @@ class DevicePanel(Displayable):
                 '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_state:>12} '
                 '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
             ]
-        for device in self.devices:
+        for index, device in enumerate(self.devices):
             device = device.snapshot()
             device.name = cut_string(device.name, maxlen=18)
-            for y, fmt in enumerate(formats, start=self.y + 4 + (3 - int(self.compact)) * (device.index + 1)):
+            for y, fmt in enumerate(formats, start=self.y + 4 + (3 - int(self.compact)) * (index + 1)):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, 2, width=29, fg=device.display_color)
                 self.color_at(y, 34, width=20, fg=device.display_color)
