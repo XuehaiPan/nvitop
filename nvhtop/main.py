@@ -116,12 +116,6 @@ class Top(DisplayableContainer):
 
 
 def main():
-    try:
-        nvml.nvmlInit()
-    except nvml.NVMLError_LibraryNotFound as error:  # pylint: disable=no-member
-        print(error, file=sys.stderr)
-        return 1
-
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
                                                                colored('moderate', 'yellow'),
                                                                colored('heavy', 'red'))
@@ -144,10 +138,19 @@ def main():
     args = parser.parse_args()
     if args.monitor is None:
         args.monitor = 'auto'
+    if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
+        print('Error: Must run nvhtop monitor mode from terminal', file=sys.stderr)
+        return 1
     if args.gpu_util_thresh is not None:
         Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
     if args.mem_util_thresh is not None:
         Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
+
+    try:
+        nvml.nvmlInit()
+    except nvml.NVMLError_LibraryNotFound as error:  # pylint: disable=no-member
+        print('Error: {}'.format(error), file=sys.stderr)
+        return 1
 
     if args.monitor != 'notpresented':
         with libcurses() as win:

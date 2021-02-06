@@ -1,6 +1,7 @@
 # This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
+import sys
 import time
 from collections import OrderedDict
 
@@ -12,6 +13,8 @@ from .monitor import nvml_query, nvml_check_return, bytes2human, timedelta2human
 
 
 try:
+    if not sys.stdout.isatty():
+        raise ImportError
     from termcolor import colored
 except ImportError:
     def colored(text, color=None, on_color=None, attrs=None):
