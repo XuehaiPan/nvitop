@@ -10,11 +10,11 @@ This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop
 - **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
 - **Interactive**: responsive for user inputs in monitor mode. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Efficiency**:
-  - query status using NVML Python bindings directly and cache them with `ttl_cache`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - query device status using NVML Python bindings directly and cache them with `ttl_cache`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
   - display information using `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
-- **Portability**:
-  - get process information using `psutil` library instead of calling `ps -p`, and works on both Linux and Windows. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
-  - written in pure Python, easy to install, and works on both Linux and Windows. (vs. [nvtop](https://github.com/Syllo/nvtop))
+- **Portability**: work on both Linux and Windows.
+  - get process information using `psutil` library instead of calling `ps -p`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - written in pure Python, easy to install with `pip`. (vs. [nvtop](https://github.com/Syllo/nvtop))
 
 ## Requirements
 
@@ -46,21 +46,30 @@ $ pip install .
 Query the device and process status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
+# Query status of all devices
 $ nvhtop
+
+# Specify query devices
+$ nvhtop -o 0 1  # only show <GPU 0> and <GPU 1>
 ```
 
 Run as a resource monitor, like `htop`:
 
 ```bash
 # Automatically configure the display mode according to the terminal size
-$ nvhtop --monitor
-$ nvhtop --monitor auto
+$ nvhtop -m
 
 # Forcibly display as `full` mode
-$ nvhtop --monitor full
+$ nvhtop -m full
 
 # Forcibly display as `compact` mode
-$ nvhtop --monitor compact
+$ nvhtop -m compact
+
+# Specify query devices
+$ nvhtop -m -o 0 1  # only show <GPU 0> and <GPU 1>
+
+# Only show devices in `CUDA_VISIBLE_DEVICES`
+$ nvhtop -m -ov
 ```
 
 Press `q` to return to the terminal.
@@ -68,8 +77,8 @@ Press `q` to return to the terminal.
 Type `nvhtop --help` for more information:
 
 ```
-usage: nvhtop [-h] [-m [{auto,full,compact}]] [--gpu-util-thresh th1 th2]
-              [--mem-util-thresh th1 th2]
+usage: nvhtop [-h] [-m [{auto,full,compact}]] [-o idx [idx ...]] [-ov]
+              [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
 
 A interactive Nvidia-GPU process viewer.
 
@@ -79,6 +88,9 @@ optional arguments:
                         Run as a resource monitor. Continuously report query data,
                         rather than the default of just once.
                         If no argument is specified, the default mode `auto` is used.
+  -o idx [idx ...], --only idx [idx ...]
+                        Only show devices specified, suppress option `-ov`.
+  -ov, --only-visible   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to distinguish load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
