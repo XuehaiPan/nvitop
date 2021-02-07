@@ -151,35 +151,44 @@ class DevicePanel(Displayable):
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
                                                                                                       self.cuda_version),
-            '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
-            '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-            '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-            '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
         ]
 
-        for device in self.devices:
-            device = device.snapshot()
-
-            line1 = '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index,
-                                                                              cut_string(device.name, maxlen=18),
-                                                                              device.persistence_mode,
-                                                                              device.bus_id,
-                                                                              device.display_active,
-                                                                              device.ecc_errors)
-            line2 = '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed,
-                                                                                      device.temperature,
-                                                                                      device.performance_state,
-                                                                                      device.power_state,
-                                                                                      device.memory_usage,
-                                                                                      device.gpu_utilization,
-                                                                                      device.compute_mode)
+        if self.device_count > 0:
             lines.extend([
-                '│'.join(map(lambda s: colored(s, device.display_color), line1.split('│'))),
-                '│'.join(map(lambda s: colored(s, device.display_color), line2.split('│')))
+                '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
+                '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
+                '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
             ])
-            lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
-        lines.pop()
-        lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+            for device in self.devices:
+                device = device.snapshot()
+
+                line1 = '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index,
+                                                                                  cut_string(device.name, maxlen=18),
+                                                                                  device.persistence_mode,
+                                                                                  device.bus_id,
+                                                                                  device.display_active,
+                                                                                  device.ecc_errors)
+                line2 = '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed,
+                                                                                          device.temperature,
+                                                                                          device.performance_state,
+                                                                                          device.power_state,
+                                                                                          device.memory_usage,
+                                                                                          device.gpu_utilization,
+                                                                                          device.compute_mode)
+                lines.extend([
+                    '│'.join(map(lambda s: colored(s, device.display_color), line1.split('│'))),
+                    '│'.join(map(lambda s: colored(s, device.display_color), line2.split('│')))
+                ])
+                lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
+            lines.pop()
+            lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+        else:
+            lines.extend([
+                '╞═════════════════════════════════════════════════════════════════════════════╡',
+                '│  No visible CUDA device found                                               │',
+                '╘═════════════════════════════════════════════════════════════════════════════╛'
+            ])
 
         print('\n'.join(lines))
 

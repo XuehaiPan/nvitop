@@ -57,8 +57,6 @@ class Top(DisplayableContainer):
 
         self.height = self.device_panel.height + 1 + self.process_panel.height
 
-        self.update_size()
-
     @property
     def compact(self):
         return self._compact
@@ -132,6 +130,10 @@ def main():
                         help='Run as a resource monitor. Continuously report query data,\n' +
                              'rather than the default of just once.\n' +
                              'If no argument is specified, the default mode `auto` is used.')
+    parser.add_argument('-o', '--only', type=int, nargs='+', metavar='idx',
+                        help='Only show devices specified, suppress option `-ov`.')
+    parser.add_argument('-ov', '--only-visible', action='store_true',
+                        help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
     parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
                         help='Thresholds of GPU utilization to distinguish load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
@@ -141,8 +143,6 @@ def main():
                         help='Thresholds of GPU memory utilization to distinguish load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
-    parser.add_argument('--visible-devices-only', action='store_true',
-                        help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`')
     args = parser.parse_args()
     if args.monitor is None:
         args.monitor = 'auto'
@@ -161,18 +161,19 @@ def main():
         return 1
 
     device_count = nvml.nvmlDeviceGetCount()
-    if args.visible_devices_only:
+    if args.only is not None:
+        visible_devices = set(args.only)
+    elif args.only_visible:
         try:
-            cuda_visible_devices = set(map(int, filter(lambda s: s != '' and not s.isspace(),
-                                                       os.getenv('CUDA_VISIBLE_DEVICES').split(','))))
+            visible_devices = set(map(int, filter(lambda s: s != '' and not s.isspace(),
+                                                  os.getenv('CUDA_VISIBLE_DEVICES').split(','))))
         except (ValueError, AttributeError):
-            cuda_visible_devices = set(range(device_count))
-        cuda_visible_devices.intersection_update(range(device_count))
+            visible_devices = set(range(device_count))
     else:
-        cuda_visible_devices = set(range(device_count))
-    devices = list(map(Device, sorted(cuda_visible_devices)))
+        visible_devices = set(range(device_count))
+    devices = list(map(Device, sorted(set(range(device_count)).intersection(visible_devices))))
 
-    if args.monitor != 'notpresented':
+    if args.monitor != 'notpresented' and len(devices) > 0:
         with libcurses() as win:
             top = Top(devices, mode=args.monitor, win=win)
             top.loop()
