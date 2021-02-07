@@ -114,10 +114,12 @@ class DevicePanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
+            self.addstr(self.y, self.x + 62, '(Press q to Quit)')
+            self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
             for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-        self.addstr(self.y, self.x, '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
+        self.addstr(self.y, self.x, '{:<62}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
 
         if self.compact:
             formats = self.formats_compact

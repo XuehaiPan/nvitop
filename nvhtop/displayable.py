@@ -45,10 +45,15 @@ def get_color(fg, bg):
     return COLOR_PAIRS[key]
 
 
-def get_color_attr(fg, bg=-1, attr=0):
+def get_color_attr(fg=-1, bg=-1, attr=0):
     """Returns the curses attribute for the given fg/bg/attr combination."""
     if isinstance(attr, str):
-        attr = getattr(curses, 'A_{}'.format(attr.upper()), curses.A_NORMAL)
+        attr_strings = map(str.strip, attr.split('|'))
+        attr = 0
+        for s in attr_strings:
+            attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
+    if fg == -1 and bg == -1:
+        return attr
     return curses.color_pair(get_color(fg, bg)) | attr
 
 
@@ -94,7 +99,7 @@ class CursesShortcuts(object):
         except curses.error:
             pass
 
-    def set_fg_bg_attr(self, fg, bg, attr=0):
+    def set_fg_bg_attr(self, fg=-1, bg=-1, attr=0):
         try:
             self.win.attrset(get_color_attr(fg, bg, attr))
         except curses.error:
