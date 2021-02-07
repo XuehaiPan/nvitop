@@ -15,6 +15,9 @@ from .utils import bytes2human, timedelta2human, Snapshot
 class GProcess(psutil.Process):
     def __init__(self, pid, device, gpu_memory, type='C'):  # pylint: disable=redefined-builtin
         super(GProcess, self).__init__(pid)
+        self._ident = (self.pid, self._create_time, device.index)
+        self._hash = None
+
         super(GProcess, self).cpu_percent()
         self.device = device
         self.gpu_memory = gpu_memory
@@ -48,6 +51,8 @@ class GProcess(psutil.Process):
                 running_time_human=timedelta2human(running_time)
             )
             snapshot.__dict__.update(super(GProcess, self).as_dict())
+            if len(snapshot.cmdline) == 0:  # pylint: disable=no-member
+                raise psutil.Error
         except psutil.Error:
             return None
         else:

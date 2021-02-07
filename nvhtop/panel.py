@@ -195,7 +195,7 @@ class ProcessPanel(Displayable):
 
     def take_snapshot(self):
         self.snapshots.clear()
-        self.snapshots.extend(map(lambda process: process.snapshot(), self.processes.values()))
+        self.snapshots.extend(filter(None, map(lambda process: process.snapshot(), self.processes.values())))
 
     @property
     @ttl_cache(ttl=1.0)
@@ -207,7 +207,7 @@ class ProcessPanel(Displayable):
                     processes[(p.device.index, p.username(), p.pid)] = p
                 except psutil.Error:
                     pass
-        return OrderedDict([(key[-1], processes[key]) for key in sorted(processes.keys())])
+        return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):
         self.take_snapshot()
