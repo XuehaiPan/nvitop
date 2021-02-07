@@ -1,6 +1,9 @@
 # This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=invalid-name
+
 import sys
 
 import pynvml as nvml
@@ -8,9 +11,9 @@ import pynvml as nvml
 try:
     if not sys.stdout.isatty():
         raise ImportError
-    from termcolor import colored
+    from termcolor import colored # pylint: disable=unused-import
 except ImportError:
-    def colored(text, color=None, on_color=None, attrs=None):
+    def colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
         return text
 
 
@@ -64,9 +67,8 @@ def nvml_query(func, *args, **kwargs):
 
 def nvml_check_return(retval, types=None):
     if types is None:
-        return (retval != 'N/A')
-    else:
-        return (retval != 'N/A' and isinstance(retval, types))
+        return retval != 'N/A'
+    return retval != 'N/A' and isinstance(retval, types)
 
 
 class Snapshot(object):

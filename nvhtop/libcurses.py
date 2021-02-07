@@ -1,6 +1,8 @@
 # This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+
 import contextlib
 import curses
 import signal
@@ -20,7 +22,7 @@ def libcurses():
     except curses.error:
         pass
 
-    def interrupt_handler(signum, frame):
+    def interrupt_handler(signum, frame):  # pylint: disable=unused-argument
         # Push a Ctrl+C (ascii value 3) to the curses getch stack
         curses.ungetch(3)
     # Simulate a ^C press in curses when an interrupt is caught

@@ -1,6 +1,9 @@
 # This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=invalid-name
+
 from collections import OrderedDict
 
 import psutil
@@ -45,9 +48,11 @@ class Device(object):
 
         if not (nvml_check_return(gpu_utilization, int) and nvml_check_return(memory_utilization, int)):
             return 'heavy'
-        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLDS[-1] or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLDS[-1]:
+        if gpu_utilization >= Device.GPU_UTILIZATION_THRESHOLDS[-1] or \
+                memory_utilization >= Device.MEMORY_UTILIZATION_THRESHOLDS[-1]:
             return 'heavy'
-        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLDS[0] or memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLDS[0]:
+        if gpu_utilization >= Device.GPU_UTILIZATION_THRESHOLDS[0] or \
+                memory_utilization >= Device.MEMORY_UTILIZATION_THRESHOLDS[0]:
             return 'moderate'
         return 'light'
 
@@ -160,8 +165,8 @@ class Device(object):
     def processes(self):
         processes = OrderedDict()
 
-        for proc_type, func in [('C', nvml.nvmlDeviceGetComputeRunningProcesses),
-                                ('G', nvml.nvmlDeviceGetComputeRunningProcesses)]:
+        for type, func in [('C', nvml.nvmlDeviceGetComputeRunningProcesses),  # pylint: disable=redefined-builtin
+                           ('G', nvml.nvmlDeviceGetComputeRunningProcesses)]:
             try:
                 running_processes = func(self.handle)
             except nvml.NVMLError:
@@ -176,11 +181,9 @@ class Device(object):
                         except KeyError:
                             pass
                         continue
-                    proc.gpu_memory = p.usedGpuMemory
-                    if proc.proc_type != proc_type:
-                        proc.proc_type = 'C+G'
                     else:
-                        proc.proc_type = proc_type
+                        proc.gpu_memory = p.usedGpuMemory
+                        proc.type = proc.type + type
 
         return processes
 

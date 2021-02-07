@@ -2,16 +2,19 @@
 # This file is originally part of ranger, the console file manager. https://github.com/ranger/ranger
 # License: GNU GPL version 3.
 
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=invalid-name
+
 import copy
 import curses.ascii
 
 
-digits = set(map(ord, '0123456789'))  # pylint: disable=invalid-name
+digits = set(map(ord, '0123456789'))
 
 # Arbitrary numbers which are not used with curses.KEY_XYZ
 ANYKEY, PASSIVE_ACTION, ALT_KEY, QUANT_KEY = range(9001, 9005)
 
-special_keys = {  # pylint: disable=invalid-name
+special_keys = {
     'bs': curses.KEY_BACKSPACE,
     'backspace': curses.KEY_BACKSPACE,
     'backspace2': curses.ascii.DEL,
@@ -38,7 +41,7 @@ special_keys = {  # pylint: disable=invalid-name
     'gt': ord('>'),
 }
 
-very_special_keys = {  # pylint: disable=invalid-name
+very_special_keys = {
     'any': ANYKEY,
     'alt': ALT_KEY,
     'bg': PASSIVE_ACTION,
@@ -66,7 +69,7 @@ special_keys_init()
 
 special_keys.update(very_special_keys)
 del very_special_keys
-reversed_special_keys = {  # pylint: disable=invalid-name
+reversed_special_keys = {
     v: k for k, v in special_keys.items()
 }
 
@@ -202,9 +205,9 @@ class KeyMaps(dict):
         for key in clean_source:
             try:
                 pointer = pointer[key]
-            except KeyError:
+            except KeyError as e:
                 raise KeyError("Tried to copy the keybinding `%s',"
-                               " but it was not found." % source)
+                               " but it was not found." % source) from e
         self.bind(context, target, copy.deepcopy(pointer))
 
     def unbind(self, context, keys):

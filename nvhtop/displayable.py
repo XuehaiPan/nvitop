@@ -2,6 +2,9 @@
 # This file is originally part of ranger, the console file manager. https://github.com/ranger/ranger
 # License: GNU GPL version 3.
 
+# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=invalid-name
+
 import curses
 
 
@@ -135,6 +138,8 @@ class Displayable(CursesShortcuts):
     """
 
     def __init__(self, win):
+        super(Displayable, self).__init__()
+
         self._need_redraw = True
         self.focused = False
         self._visible = True
