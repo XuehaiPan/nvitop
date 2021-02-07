@@ -142,7 +142,7 @@ class Displayable(CursesShortcuts):
         x, y, width, height -- absolute coordinates and boundaries
     """
 
-    def __init__(self, win):
+    def __init__(self, win, root=None):
         super(Displayable, self).__init__()
 
         self._need_redraw = True
@@ -154,6 +154,7 @@ class Displayable(CursesShortcuts):
         self.height = 0
 
         self.win = win
+        self.root = root
         self.parent = None
 
     def __contains__(self, item):
@@ -171,6 +172,18 @@ class Displayable(CursesShortcuts):
 
         return self.contains_point(y, x)
 
+    def contains_point(self, y, x):
+        """Test whether the point lies inside this object.
+
+        x and y should be absolute coordinates.
+        """
+        return (self.x <= x < self.x + self.width) and (self.y <= y < self.y + self.height)
+
+    def poke(self):
+        """Called before drawing, even if invisible"""
+        if not self.visible and self.need_redraw:
+            self.win.erase()
+
     def draw(self):
         """Draw the object.
 
@@ -179,16 +192,16 @@ class Displayable(CursesShortcuts):
         """
         self.need_redraw = False
 
+    def finalize(self):
+        """Called after every displayable is done drawing.
+
+        Override this!
+        """
+
     def destroy(self):
         """Called when the object is destroyed."""
         self.win = None
-
-    def contains_point(self, y, x):
-        """Test whether the point lies inside this object.
-
-        x and y should be absolute coordinates.
-        """
-        return (self.x <= x < self.x + self.width) and (self.y <= y < self.y + self.height)
+        self.root = None
 
     def click(self, event):
         """Called when a mouse key is pressed and self.focused is True.
@@ -198,17 +211,6 @@ class Displayable(CursesShortcuts):
 
     def press(self, key):
         """Called when a key is pressed and self.focused is True.
-
-        Override this!
-        """
-
-    def poke(self):
-        """Called before drawing, even if invisible"""
-        if not self.visible and self.need_redraw:
-            self.win.erase()
-
-    def finalize(self):
-        """Called after every displayable is done drawing.
 
         Override this!
         """
@@ -256,8 +258,8 @@ class DisplayableContainer(Displayable):
     container -- a list with all contained objects (rw)
     """
 
-    def __init__(self, win):
-        super(DisplayableContainer, self).__init__(win)
+    def __init__(self, win, root=None):
+        super(DisplayableContainer, self).__init__(win, root)
 
         self.container = []
 
@@ -285,6 +287,12 @@ class DisplayableContainer(Displayable):
             if displayable.visible:
                 displayable.finalize()
 
+    def destroy(self):
+        """Recursively called on objects in container"""
+        for displayable in self.container:
+            displayable.destroy()
+        super(DisplayableContainer, self).destroy()
+
     def press(self, key):
         """Recursively called on objects in container"""
         focused_obj = self.get_focused_obj()
@@ -307,11 +315,6 @@ class DisplayableContainer(Displayable):
 
         return False
 
-    def destroy(self):
-        """Recursively called on objects in container"""
-        for displayable in self.container:
-            displayable.destroy()
-
     # new methods
 
     def add_child(self, obj):
@@ -320,11 +323,13 @@ class DisplayableContainer(Displayable):
             obj.parent.remove_child(obj)
         self.container.append(obj)
         obj.parent = self
+        obj.root = self.root
 
     def replace_child(self, old_obj, new_obj):
         """Replace the old object with the new instance in the container."""
         self.container[self.container.index(old_obj)] = new_obj
         new_obj.parent = self
+        new_obj.root = self.root
 
     def remove_child(self, obj):
         """Remove the object from the container."""
@@ -334,6 +339,7 @@ class DisplayableContainer(Displayable):
             pass
         else:
             obj.parent = None
+            obj.root = None
 
     def get_focused_obj(self):
         # Finds a focused displayable object in the container.

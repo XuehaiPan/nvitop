@@ -9,7 +9,7 @@ import datetime
 import psutil
 from cachetools.func import ttl_cache
 
-from .utils import Snapshot
+from .utils import bytes2human, timedelta2human, Snapshot
 
 
 class GProcess(psutil.Process):
@@ -38,11 +38,14 @@ class GProcess(psutil.Process):
     @ttl_cache(ttl=2.0)
     def snapshot(self):
         try:
+            running_time = datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
             snapshot = Snapshot(
                 device=self.device,
                 gpu_memory=self.gpu_memory,
+                gpu_memory_human=bytes2human(self.gpu_memory),
                 type=self.type,
-                running_time=datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+                running_time=running_time,
+                running_time_human=timedelta2human(running_time)
             )
             snapshot.__dict__.update(super(GProcess, self).as_dict())
         except psutil.Error:

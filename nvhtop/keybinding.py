@@ -165,7 +165,7 @@ def _unbind_traverse(pointer, keys, pos=0):
 
 class KeyMaps(dict):
     def __init__(self, keybuffer=None):
-        dict.__init__(self)
+        super(KeyMaps, self).__init__()
         self.keybuffer = keybuffer
         self.used_keymap = None
 

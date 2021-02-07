@@ -12,9 +12,15 @@ import signal
 def libcurses():
     win = curses.initscr()
     win.nodelay(True)
+    win.leaveok(True)
+    win.keypad(True)
+
     curses.noecho()
     curses.cbreak()
     curses.curs_set(False)
+    curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
+    curses.mouseinterval(0)
+    curses.ungetmouse(0, 0, 0, 0, 0)
 
     curses.start_color()
     try:

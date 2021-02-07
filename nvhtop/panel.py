@@ -11,13 +11,12 @@ import psutil
 from cachetools.func import ttl_cache
 
 from .displayable import Displayable
-from .utils import (nvml_query, nvml_check_return,
-                    colored, cut_string, bytes2human, timedelta2human)
+from .utils import nvml_query, nvml_check_return, colored, cut_string
 
 
 class DevicePanel(Displayable):
-    def __init__(self, devices, compact, win):
-        super(DevicePanel, self).__init__(win)
+    def __init__(self, devices, compact, win, root=None):
+        super(DevicePanel, self).__init__(win, root)
 
         self.devices = devices
         self.device_count = len(self.devices)
@@ -163,16 +162,22 @@ class DevicePanel(Displayable):
 
         print('\n'.join(lines))
 
+    def press(self, key):
+        self.root.keymaps.use_keymap('device')
+        self.root.press(key)
+
 
 class ProcessPanel(Displayable):
-    def __init__(self, devices, win=None):
-        super(ProcessPanel, self).__init__(win)
+    def __init__(self, devices, win=None, root=None):
+        super(ProcessPanel, self).__init__(win, root)
         self.width = 79
         self.height = 6
 
         self.devices = devices
 
         self.snapshots = []
+
+        self.offset = -1
 
     def header_lines(self):
         header = [
@@ -192,19 +197,6 @@ class ProcessPanel(Displayable):
         self.snapshots.clear()
         self.snapshots.extend(map(lambda process: process.snapshot(), self.processes.values()))
 
-    def poke(self):
-        self.take_snapshot()
-        n_processes = len(self.snapshots)
-        n_used_devices = len(set([p.device.index for p in self.snapshots]))
-        if n_processes > 0:
-            height = 5 + n_processes + n_used_devices - 1
-        else:
-            height = 6
-        self.need_redraw = (self.need_redraw or self.height > height)
-        self.height = height
-
-        super(ProcessPanel, self).poke()
-
     @property
     @ttl_cache(ttl=1.0)
     def processes(self):
@@ -217,12 +209,41 @@ class ProcessPanel(Displayable):
                     pass
         return OrderedDict([(key[-1], processes[key]) for key in sorted(processes.keys())])
 
+    def poke(self):
+        self.take_snapshot()
+        n_processes = len(self.snapshots)
+        n_used_devices = len(set([p.device.index for p in self.snapshots]))
+        if n_processes > 0:
+            height = 5 + n_processes + n_used_devices - 1
+        else:
+            height = 6
+
+        max_info_len = 0
+        for process in self.snapshots:
+            process.host_info = '{:>5.1f} {:>5.1f}  {:>8}  {:<24}'.format(
+                process.cpu_percent, process.memory_percent,
+                process.running_time_human, ' '.join(process.cmdline).strip()
+            )
+            max_info_len = max(max_info_len, len(process.host_info))
+        self.offset = max(-1, min(self.offset, max_info_len - 47))
+
+        self.need_redraw = (self.need_redraw or self.height > height)
+        self.height = height
+
+        super(ProcessPanel, self).poke()
+
     def draw(self):
         self.color_reset()
 
         if self.need_redraw:
             for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
+
+        if self.offset < 22:
+            self.addstr(self.y + 2, self.x + 31,
+                        '{:<46}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.offset, 0):]))
+        else:
+            self.addstr(self.y + 2, self.x + 31, '{:<46}'.format('COMMAND'))
 
         if len(self.snapshots) > 0:
             y = self.y + 4
@@ -232,12 +253,11 @@ class ProcessPanel(Displayable):
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
                     color = process.device.display_color
-                try:
-                    cmdline = process.cmdline
-                    cmdline[0] = process.name
-                except IndexError:
-                    cmdline = ['Terminated']
-                cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
+                host_info = process.host_info
+                if self.offset < 0:
+                    host_info = cut_string(host_info, padstr='..', maxlen=47)
+                else:
+                    host_info = host_info[self.offset:self.offset + 47]
 
                 if prev_device_index is not None and prev_device_index != device_index:
                     self.addstr(y, self.x,
@@ -245,15 +265,19 @@ class ProcessPanel(Displayable):
                     y += 1
                 prev_device_index = device_index
                 self.addstr(y, self.x,
-                            '│ {:>3} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
+                            '│ {:>3} {:>6} {:>7} {:>8} {:<47} │'.format(
                                 device_index, process.pid, cut_string(process.username, maxlen=7, padstr='+'),
-                                bytes2human(process.gpu_memory), process.cpu_percent,
-                                process.memory_percent, timedelta2human(process.running_time),
-                                cmdline
+                                process.gpu_memory_human, host_info
                             ))
+                if self.offset > 0:
+                    self.addstr(y, self.x + 30, ' ')
                 self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
             self.addstr(y, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
+        else:
+            self.addstr(self.y + 4, self.x,
+                        '│  No running compute processes found                                         │')
+            self.offset = -1
 
     def finalize(self):
         self.need_redraw = False
@@ -270,12 +294,7 @@ class ProcessPanel(Displayable):
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
                     color = process.device.display_color
-                try:
-                    cmdline = process.cmdline
-                    cmdline[0] = process.name
-                except IndexError:
-                    cmdline = ['Terminated']
-                cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
+                cmdline = cut_string(' '.join(process.cmdline).strip(), padstr='..', maxlen=24)
 
                 if prev_device_index is not None and prev_device_index != device_index:
                     lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
@@ -283,10 +302,14 @@ class ProcessPanel(Displayable):
                 lines.append('│ {} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
                     colored('{:>3}'.format(device_index), color), process.pid,
                     cut_string(process.username, maxlen=7, padstr='+'),
-                    bytes2human(process.gpu_memory), process.cpu_percent, process.memory_percent,
-                    timedelta2human(process.running_time), cmdline
+                    process.gpu_memory_human, process.cpu_percent, process.memory_percent,
+                    process.running_time_human, cmdline
                 ))
 
             lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
         print('\n'.join(lines))
+
+    def press(self, key):
+        self.root.keymaps.use_keymap('process')
+        self.root.press(key)
