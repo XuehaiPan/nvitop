@@ -35,6 +35,17 @@ class DevicePanel(Displayable):
         else:
             self.cuda_version = 'N/A'
 
+        self.formats_compact = [
+            '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_state:>12} '
+            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
+        ]
+        self.formats_full = [
+            '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
+            '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
+            '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_state:>12} '
+            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
+        ]
+
         self.snapshots = []
 
     @property
@@ -47,6 +58,48 @@ class DevicePanel(Displayable):
             self.need_redraw = True
             self._compact = value
             self.height = 4 + (3 - int(self.compact)) * (self.device_count + 1)
+
+    def header_lines(self):
+        header = [
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
+                                                                                                      self.cuda_version),
+        ]
+        if self.device_count > 0:
+            header.append('├───────────────────────────────┬──────────────────────┬──────────────────────┤')
+            if self.compact:
+                header.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
+            else:
+                header.extend([
+                    '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                    '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │'
+                ])
+            header.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
+        else:
+            header.extend([
+                '╞═════════════════════════════════════════════════════════════════════════════╡',
+                '│  No visible CUDA device found                                               │',
+                '╘═════════════════════════════════════════════════════════════════════════════╛'
+            ])
+        return header
+
+    def frame_lines(self):
+        frame = self.header_lines()
+        if self.device_count > 0:
+            if self.compact:
+                frame.extend(self.device_count * [
+                    '│                               │                      │                      │',
+                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                ])
+            else:
+                frame.extend(self.device_count * [
+                    '│                               │                      │                      │',
+                    '│                               │                      │                      │',
+                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                ])
+            frame.pop()
+            frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+        return frame
 
     def take_snapshot(self):
         self.snapshots.clear()
@@ -61,63 +114,19 @@ class DevicePanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            frame = [
-                '╒═════════════════════════════════════════════════════════════════════════════╕',
-                '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
-                                                                                                          self.cuda_version),
-            ]
-            if self.device_count > 0:
-                frame.append('├───────────────────────────────┬──────────────────────┬──────────────────────┤')
-                if self.compact:
-                    frame.extend([
-                        '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │',
-                        '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
-                    ])
-                    frame.extend(self.device_count * [
-                        '│                               │                      │                      │',
-                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-                    ])
-                else:
-                    frame.extend([
-                        '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-                        '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-                        '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
-                    ])
-                    frame.extend(self.device_count * [
-                        '│                               │                      │                      │',
-                        '│                               │                      │                      │',
-                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-                    ])
-                frame.pop()
-                frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
-            else:
-                frame.extend([
-                    '╞═════════════════════════════════════════════════════════════════════════════╡',
-                    '│  No visible CUDA device found                                               │',
-                    '╘═════════════════════════════════════════════════════════════════════════════╛'
-                ])
-
-            for y, line in enumerate(frame, start=self.y + 1):
+            for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
         self.addstr(self.y, self.x, '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
 
         if self.compact:
-            formats = [
-                '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_state:>12} '
-                '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
-            ]
+            formats = self.formats_compact
         else:
-            formats = [
-                '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
-                '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
-                '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_state:>12} '
-                '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
-            ]
+            formats = self.formats_full
         for index, device in enumerate(self.devices):
             device = device.snapshot()
             device.name = cut_string(device.name, maxlen=18)
-            for y, fmt in enumerate(formats, start=self.y + 4 + (3 - int(self.compact)) * (index + 1)):
+            for y, fmt in enumerate(formats, start=self.y + 4 + (len(formats) + 1) * (index + 1)):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, 2, width=29, fg=device.display_color)
                 self.color_at(y, 34, width=20, fg=device.display_color)
@@ -131,47 +140,24 @@ class DevicePanel(Displayable):
 
         lines = [
             '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
-                                                                                                      self.cuda_version),
+            *self.header_lines()
         ]
 
         if self.device_count > 0:
-            lines.extend([
-                '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
-                '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-                '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-                '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
-            ])
             for device in self.devices:
                 device = device.snapshot()
+                device.name = cut_string(device.name, maxlen=18)
 
-                line1 = '│ {:>3}  {:>18}  {:<4} │ {:<16} {:>3} │ {:>20} │'.format(device.index,
-                                                                                  cut_string(device.name, maxlen=18),
-                                                                                  device.persistence_mode,
-                                                                                  device.bus_id,
-                                                                                  device.display_active,
-                                                                                  device.ecc_errors)
-                line2 = '│ {:>3}  {:>4}  {:>4}  {:>12} │ {:>20} │ {:>7}  {:>11} │'.format(device.fan_speed,
-                                                                                          device.temperature,
-                                                                                          device.performance_state,
-                                                                                          device.power_state,
-                                                                                          device.memory_usage,
-                                                                                          device.gpu_utilization,
-                                                                                          device.compute_mode)
-                lines.extend([
-                    '│'.join(map(lambda s: colored(s, device.display_color), line1.split('│'))),
-                    '│'.join(map(lambda s: colored(s, device.display_color), line2.split('│')))
-                ])
+                def colorize(s):
+                    return colored(s, device.display_color)  # pylint: disable=cell-var-from-loop
+
+                for fmt in self.formats_full:
+                    line = fmt.format(**device.__dict__)
+                    lines.append('│'.join(map(colorize, line.split('│'))))
+
                 lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
             lines.pop()
             lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
-        else:
-            lines.extend([
-                '╞═════════════════════════════════════════════════════════════════════════════╡',
-                '│  No visible CUDA device found                                               │',
-                '╘═════════════════════════════════════════════════════════════════════════════╛'
-            ])
 
         print('\n'.join(lines))
 
@@ -185,6 +171,20 @@ class ProcessPanel(Displayable):
         self.devices = devices
 
         self.snapshots = []
+
+    def header_lines(self):
+        header = [
+            '╒═════════════════════════════════════════════════════════════════════════════╕',
+            '│ Processes:                                                                  │',
+            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
+            '╞═════════════════════════════════════════════════════════════════════════════╡'
+        ]
+        if len(self.snapshots) == 0:
+            header.extend([
+                '│  No running compute processes found                                         │',
+                '╘═════════════════════════════════════════════════════════════════════════════╛'
+            ])
+        return header
 
     def take_snapshot(self):
         self.snapshots.clear()
@@ -219,18 +219,11 @@ class ProcessPanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            header = [
-                '╒═════════════════════════════════════════════════════════════════════════════╕',
-                '│ Processes:                                                                  │',
-                '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
-                '╞═════════════════════════════════════════════════════════════════════════════╡'
-            ]
-
-            for y, line in enumerate(header, start=self.y):
+            for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
 
-        y = self.y + 4
         if len(self.snapshots) > 0:
+            y = self.y + 4
             prev_device_index = None
             color = -1
             for process in self.snapshots:
@@ -245,8 +238,8 @@ class ProcessPanel(Displayable):
                 cmdline = cut_string(' '.join(cmdline).strip(), maxlen=24)
 
                 if prev_device_index is not None and prev_device_index != device_index:
-                    self.addstr(
-                        y, self.x, '├─────────────────────────────────────────────────────────────────────────────┤')
+                    self.addstr(y, self.x,
+                                '├─────────────────────────────────────────────────────────────────────────────┤')
                     y += 1
                 prev_device_index = device_index
                 self.addstr(y, self.x,
@@ -258,10 +251,7 @@ class ProcessPanel(Displayable):
                             ))
                 self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
-            y -= 1
-        else:
-            self.addstr(y, self.x, '│  No running compute processes found                                         │')
-        self.addstr(y + 1, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
+            self.addstr(y, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
 
     def finalize(self):
         self.need_redraw = False
@@ -269,12 +259,7 @@ class ProcessPanel(Displayable):
     def print(self):
         self.take_snapshot()
 
-        lines = [
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ Processes:                                                                  │',
-            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
-            '╞═════════════════════════════════════════════════════════════════════════════╡'
-        ]
+        lines = self.header_lines()
 
         if len(self.snapshots) > 0:
             prev_device_index = None
@@ -299,9 +284,7 @@ class ProcessPanel(Displayable):
                     bytes2human(process.gpu_memory), process.cpu_percent, process.memory_percent,
                     timedelta2human(process.running_time), cmdline
                 ))
-        else:
-            lines.append('│  No running compute processes found                                         │')
 
-        lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
+            lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
         print('\n'.join(lines))
