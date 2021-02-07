@@ -6,10 +6,11 @@ import os
 import sys
 
 import pynvml as nvml
+
+from .device import Device
 from .libcurses import libcurses
-from .monitor import Device
-from .panel import colored
 from .top import Top
+from .utils import colored
 
 
 def parse_arguments():

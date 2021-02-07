@@ -2,7 +2,6 @@
 # This file is originally part of ranger, the console file manager. https://github.com/ranger/ranger
 # License: GNU GPL version 3.
 
-import sys
 import copy
 import curses.ascii
 

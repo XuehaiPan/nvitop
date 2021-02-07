@@ -1,103 +1,14 @@
 # This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
-import datetime
 from collections import OrderedDict
 
 import psutil
+import pynvml as nvml
 from cachetools.func import ttl_cache
 
-import pynvml as nvml
-
-
-def bytes2human(x):
-    if x == 'N/A':
-        return x
-
-    if x < (1 << 10):
-        return '{}B'.format(x)
-    if x < (1 << 20):
-        return '{}KiB'.format(x >> 10)
-    else:
-        return '{}MiB'.format(x >> 20)
-
-
-def timedelta2human(dt):
-    if dt.days > 1:
-        return '{} days'.format(dt.days)
-    else:
-        hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)
-        if hours > 0:
-            return '{:d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
-        else:
-            return '{:d}:{:02d}'.format(*divmod(seconds, 60))
-
-
-def nvml_query(func, *args, **kwargs):
-    if isinstance(func, str):
-        func = getattr(nvml, func)
-
-    try:
-        retval = func(*args, **kwargs)
-    except nvml.NVMLError:
-        return 'N/A'
-    else:
-        if isinstance(retval, bytes):
-            retval = retval.decode('UTF-8')
-        return retval
-
-
-def nvml_check_return(retval, types=None):
-    if types is None:
-        return (retval != 'N/A')
-    else:
-        return (retval != 'N/A' and isinstance(retval, types))
-
-
-class Snapshot(object):
-    def __init__(self, **items):
-        for key, value in items.items():
-            setattr(self, key, value)
-
-    def __bool__(self):
-        return bool(self.__dict__)
-
-    def __str__(self):
-        return '{}({})'.format(
-            self.__class__.__name__,
-            ', '.join('{}={!r}'.format(key, value) for key, value in self.__dict__.items())
-        )
-
-    __repr__ = __str__
-
-
-class GProcess(psutil.Process):
-    def __init__(self, pid, device, gpu_memory, proc_type='C'):
-        super(GProcess, self).__init__(pid)
-        super(GProcess, self).cpu_percent()
-        self.device = device
-        self.gpu_memory = gpu_memory
-        self.proc_type = proc_type
-
-    @ttl_cache(ttl=2.0)
-    def snapshot(self):
-        try:
-            snapshot = Snapshot(
-                device=self.device,
-                gpu_memory=self.gpu_memory,
-                proc_type=self.proc_type,
-                running_time=datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
-            )
-            snapshot.__dict__.update(super(GProcess, self).as_dict())
-        except psutil.Error:
-            return None
-        else:
-            return snapshot
-
-
-@ttl_cache(ttl=30.0)
-def get_gpu_process(pid, device):
-    return GProcess(pid, device, gpu_memory=0, proc_type='')
+from .process import GProcess
+from .utils import nvml_query, nvml_check_return, bytes2human, Snapshot
 
 
 class Device(object):
@@ -258,7 +169,7 @@ class Device(object):
             else:
                 for p in running_processes:
                     try:
-                        proc = processes[p.pid] = get_gpu_process(pid=p.pid, device=self)
+                        proc = processes[p.pid] = GProcess.get(pid=p.pid, device=self)
                     except psutil.Error:
                         try:
                             del processes[p.pid]

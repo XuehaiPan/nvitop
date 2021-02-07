@@ -1,7 +1,6 @@
 # This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
-import sys
 import time
 from collections import OrderedDict
 
@@ -9,27 +8,8 @@ import psutil
 from cachetools.func import ttl_cache
 
 from .displayable import Displayable
-from .monitor import nvml_query, nvml_check_return, bytes2human, timedelta2human
-
-
-try:
-    if not sys.stdout.isatty():
-        raise ImportError
-    from termcolor import colored
-except ImportError:
-    def colored(text, color=None, on_color=None, attrs=None):
-        return text
-
-
-def cut_string(s, maxlen, padstr='...', align='left'):
-    assert align in ('left', 'right')
-
-    if len(s) <= maxlen:
-        return s
-    if align == 'left':
-        return s[:maxlen - len(padstr)] + padstr
-    else:
-        return padstr + s[-(maxlen - len(padstr)):]
+from .utils import (nvml_query, nvml_check_return,
+                    colored, cut_string, bytes2human, timedelta2human)
 
 
 class DevicePanel(Displayable):
