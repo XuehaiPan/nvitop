@@ -105,7 +105,7 @@ optional arguments:
 
 Example output of `nvhtop`:
 
-<img width="680" alt="Screenshot" src="https://user-images.githubusercontent.com/16078332/107119517-0a8f3180-68c3-11eb-9569-2274c17e2c5f.png">
+<img src="https://user-images.githubusercontent.com/16078332/107147678-4640fe80-698a-11eb-9160-7d85e12f8fef.png" alt="screenshot">
 
 Example output of `nvhtop --monitor`:
 
@@ -115,8 +115,8 @@ Example output of `nvhtop --monitor`:
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119519-0bc05e80-68c3-11eb-9e31-94aa1f9c59b2.png"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119519-0bc05e80-68c3-11eb-9e31-94aa1f9c59b2.png" alt="full"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png" alt="compact"></td>
   </tr>
 </table>
 
