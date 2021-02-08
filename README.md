@@ -19,7 +19,7 @@ This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop),
   - query device status using [*NVML Python bindings*](https://pypi.org/project/nvidia-ml-py) directly and cache them with `ttl_cache` from [cachetools](https://github.com/tkem/cachetools), instead of parsing the output of `nvidia-smi`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
   - display information using the `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Portability**: work on both Linux and Windows.
-  - get host process information using the cross-platform library [psutil](https://github.com/giampaolo/psutil) instead of calling `ps -p <pid>` in a subprocess. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - get host process information using the cross-platform library [psutil](https://github.com/giampaolo/psutil) instead of calling `ps -p <pid>` in a subprocess. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop) & [py3nvml](https://github.com/fbcotter/py3nvml))
   - written in pure Python, easy to install with `pip`. (vs. [nvtop](https://github.com/Syllo/nvtop))
 
 ## Requirements
