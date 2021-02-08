@@ -1,4 +1,4 @@
-# nvhtop
+# nvitop
 
 An interactive Nvidia-GPU process viewer.
 
@@ -27,17 +27,17 @@ This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop
 
 ## Installation
 
-Install `nvhtop` using `pip` from GitHub:
+Install `nvitop` using `pip` from GitHub:
 
 ```bash
-$ pip install git+https://github.com/XuehaiPan/nvhtop.git#egg=nvhtop
+$ pip install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
-Or, clone this repo and install `nvhtop` manually:
+Or, clone this repo and install `nvitop` manually:
 
 ```bash
-$ git clone --depth=1 https://github.com/XuehaiPan/nvhtop.git
-$ cd nvhtop
+$ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
+$ cd nvitop
 $ pip install .
 ```
 
@@ -47,37 +47,37 @@ Query the device and process status. The output is similar to `nvidia-smi`, but 
 
 ```bash
 # Query status of all devices
-$ nvhtop
+$ nvitop
 
 # Specify query devices
-$ nvhtop -o 0 1  # only show <GPU 0> and <GPU 1>
+$ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 ```
 
 Run as a resource monitor, like `htop`:
 
 ```bash
 # Automatically configure the display mode according to the terminal size
-$ nvhtop -m
+$ nvitop -m
 
 # Forcibly display as `full` mode
-$ nvhtop -m full
+$ nvitop -m full
 
 # Forcibly display as `compact` mode
-$ nvhtop -m compact
+$ nvitop -m compact
 
 # Specify query devices
-$ nvhtop -m -o 0 1  # only show <GPU 0> and <GPU 1>
+$ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
 
 # Only show devices in `CUDA_VISIBLE_DEVICES`
-$ nvhtop -m -ov
+$ nvitop -m -ov
 ```
 
 Press `q` to return to the terminal.
 
-Type `nvhtop --help` for more information:
+Type `nvitop --help` for more information:
 
 ```
-usage: nvhtop [-h] [-m [{auto,full,compact}]] [-o idx [idx ...]] [-ov]
+usage: nvitop [-h] [-m [{auto,full,compact}]] [-o idx [idx ...]] [-ov]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
 
 A interactive Nvidia-GPU process viewer.
@@ -105,11 +105,11 @@ optional arguments:
 
 ![Screen Recording](https://user-images.githubusercontent.com/16078332/107175086-e0468c80-6a06-11eb-98c3-7ead90ec01e2.gif)
 
-Example output of `nvhtop`:
+Example output of `nvitop`:
 
 <img src="https://user-images.githubusercontent.com/16078332/107147678-4640fe80-698a-11eb-9160-7d85e12f8fef.png" alt="Screenshot">
 
-Example output of `nvhtop -m`:
+Example output of `nvitop -m`:
 
 <table>
   <tr valign="center">

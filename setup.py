@@ -2,7 +2,7 @@ import sys
 
 from setuptools import setup, find_packages
 
-import nvhtop
+import nvitop
 
 
 extra_description = {}
@@ -14,18 +14,18 @@ except OSError:
     pass
 
 setup(
-    name='nvhtop',
-    version=nvhtop.__version__,
-    description=nvhtop.__doc__,
+    name='nvitop',
+    version=nvitop.__version__,
+    description=nvitop.__doc__,
     **extra_description,
-    license=nvhtop.__license__,
-    author=nvhtop.__author__,
-    author_email=nvhtop.__email__,
-    url="https://github.com/XuehaiPan/nvhtop.git",
-    packages=find_packages(include=['nvhtop', 'nvhtop.*']),
+    license=nvitop.__license__,
+    author=nvitop.__author__,
+    author_email=nvitop.__email__,
+    url="https://github.com/XuehaiPan/nvitop.git",
+    packages=find_packages(include=['nvitop', 'nvitop.*']),
     entry_points={
         'console_scripts': [
-            'nvhtop=nvhtop.main:main'
+            'nvitop=nvitop.main:main'
         ],
     },
     install_requires=(['windows-curses'] if sys.platform == 'windows' else []) + [
@@ -57,7 +57,7 @@ setup(
     ],
     keywords='nvidia, nvidia-smi, GPU, htop, top',
     project_urls={
-        'Bug Reports': 'https://github.com/XuehaiPan/nvhtop/issues',
-        'Source': 'https://github.com/XuehaiPan/nvhtop'
+        'Bug Reports': 'https://github.com/XuehaiPan/nvitop/issues',
+        'Source': 'https://github.com/XuehaiPan/nvitop'
     },
 )

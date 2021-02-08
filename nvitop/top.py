@@ -1,4 +1,4 @@
-# This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
+# This file is part of nvitop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring

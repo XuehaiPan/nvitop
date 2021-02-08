@@ -15,7 +15,7 @@
 - Terminal emulator and version:
 - Python version:
 - NVML/CUDA version:
-- `nvhtop` version/commit:
+- `nvitop` version/commit:
 - `python-ml-py` version:
 - Locale:
 

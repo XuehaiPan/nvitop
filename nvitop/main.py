@@ -1,4 +1,4 @@
-# This file is part of nvhtop, the interactive Nvidia-GPU process viewer.
+# This file is part of nvitop, the interactive Nvidia-GPU process viewer.
 # License: GNU GPL version 3.
 
 import argparse
@@ -17,7 +17,7 @@ def parse_arguments():
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
                                                                colored('moderate', 'yellow'),
                                                                colored('heavy', 'red'))
-    parser = argparse.ArgumentParser(prog='nvhtop', description='A interactive Nvidia-GPU process viewer.',
+    parser = argparse.ArgumentParser(prog='nvitop', description='A interactive Nvidia-GPU process viewer.',
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--monitor', type=str, default='notpresented',
                         nargs='?', choices=['auto', 'full', 'compact'],
@@ -41,7 +41,7 @@ def parse_arguments():
     if args.monitor is None:
         args.monitor = 'auto'
     if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
-        print('Error: Must run nvhtop monitor mode from terminal', file=sys.stderr)
+        print('Error: Must run nvitop monitor mode from terminal', file=sys.stderr)
         return 1
     if args.gpu_util_thresh is not None:
         Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
