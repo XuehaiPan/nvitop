@@ -116,7 +116,7 @@ optional arguments:
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/107147678-4640fe80-698a-11eb-9160-7d85e12f8fef.png" alt="Screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/107185971-5d313080-6a1e-11eb-83b7-1fdac1570e26.png" alt="Screenshot">
 
 Example output of `nvitop -m`:
 
