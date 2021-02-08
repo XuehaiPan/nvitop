@@ -38,19 +38,31 @@ class GProcess(psutil.Process):
         if self._type == 'CG':
             self._type = 'C+G'
 
+    @ttl_cache(ttl=1.0)
+    def running_time(self):
+        return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+
+    cpu_percent = ttl_cache(ttl=1.0)(psutil.Process.cpu_percent)
+    memory_percent = ttl_cache(ttl=1.0)(psutil.Process.memory_percent)
+
     @ttl_cache(ttl=2.0)
     def snapshot(self):
         try:
-            running_time = datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+            running_time = self.running_time()
             snapshot = Snapshot(
+                pid=self.pid,
                 device=self.device,
                 gpu_memory=self.gpu_memory,
                 gpu_memory_human=bytes2human(self.gpu_memory),
                 type=self.type,
+                username=self.username(),
+                name=self.name(),
+                cmdline=self.cmdline(),
+                cpu_percent=self.cpu_percent(),
+                memory_percent=self.memory_percent(),
                 running_time=running_time,
                 running_time_human=timedelta2human(running_time)
             )
-            snapshot.__dict__.update(super(GProcess, self).as_dict())
             if len(snapshot.cmdline) == 0:  # pylint: disable=no-member
                 raise psutil.Error
         except psutil.Error:
