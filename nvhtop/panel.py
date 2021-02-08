@@ -16,6 +16,8 @@ from .utils import colored, cut_string, nvml_check_return, nvml_query
 
 
 class DevicePanel(Displayable):
+    SNAPSHOT_INTERVAL = 0.7
+
     def __init__(self, devices, compact, win, root=None):
         super(DevicePanel, self).__init__(win, root)
 
@@ -118,7 +120,7 @@ class DevicePanel(Displayable):
         self.daemon_started.wait()
         while self.daemon_started.is_set():
             self.take_snapshot()
-            time.sleep(0.7)
+            time.sleep(self.SNAPSHOT_INTERVAL)
 
     def poke(self):
         if not self.daemon_started.is_set():
@@ -191,6 +193,8 @@ class DevicePanel(Displayable):
 
 
 class ProcessPanel(Displayable):
+    SNAPSHOT_INTERVAL = 0.7
+
     def __init__(self, devices, win=None, root=None):
         super(ProcessPanel, self).__init__(win, root)
         self.width = 79
@@ -233,7 +237,7 @@ class ProcessPanel(Displayable):
         self.daemon_started.wait()
         while self.daemon_started.is_set():
             self.take_snapshot()
-            time.sleep(0.7)
+            time.sleep(self.SNAPSHOT_INTERVAL)
 
     @property
     @ttl_cache(ttl=1.0)
