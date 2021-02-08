@@ -1,22 +1,25 @@
 # nvitop
 
-![Python 3.7](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
-![PyPI](https://img.shields.io/pypi/v/nvitop)
+![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
+![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)
+![status](https://img.shields.io/pypi/status/nvitop)
+![Top Language](https://img.shields.io/github/languages/top/XuehaiPan/nvitop?label=Python)
+![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)
 
 An interactive Nvidia-GPU process viewer.
 
-This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [`nvidia-htop`](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. Meanwhile, there is a powerful interactive GPU monitoring tool called [`nvtop`](https://github.com/Syllo/nvtop). But [`nvtop`](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And it is really inconvenient that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [`ranger`](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [`ranger`](https://github.com/ranger/ranger) under the GPLv3 License.
+This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. Meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And it is really inconvenient that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
 
 ## Features
 
 - **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
-- **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+- **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop), limited support with command `watch -c`)
 - **Interactive**: responsive for user inputs in monitor mode. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Efficiency**:
-  - query device status using NVML Python bindings directly and cache them with `ttl_cache`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
-  - display information using `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
+  - query device status using [*NVML Python bindings*](https://pypi.org/project/nvidia-ml-py) directly and cache them with `ttl_cache` from [cachetools](https://github.com/tkem/cachetools), instead of parsing the output of `nvidia-smi`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - display information using the `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Portability**: work on both Linux and Windows.
-  - get process information using `psutil` library instead of calling `ps -p`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
+  - get host process information using the cross-platform library [psutil](https://github.com/giampaolo/psutil) instead of calling `ps -p <pid>` in a subprocess. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
   - written in pure Python, easy to install with `pip`. (vs. [nvtop](https://github.com/Syllo/nvtop))
 
 ## Requirements
