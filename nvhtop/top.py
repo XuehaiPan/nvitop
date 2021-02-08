@@ -90,7 +90,7 @@ class Top(DisplayableContainer):
     def poke(self):
         super(Top, self).poke()
 
-        if self.termsize is None:
+        if self.termsize is None or self.height != self.device_panel.height + 1 + self.process_panel.height:
             self.update_size()
 
     def draw(self):
