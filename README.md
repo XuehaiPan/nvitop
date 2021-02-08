@@ -1,5 +1,8 @@
 # nvitop
 
+![Python 3.7](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
+![PyPI](https://img.shields.io/pypi/v/nvitop)
+
 An interactive Nvidia-GPU process viewer.
 
 This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [`nvidia-htop`](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. Meanwhile, there is a powerful interactive GPU monitoring tool called [`nvtop`](https://github.com/Syllo/nvtop). But [`nvtop`](https://github.com/Syllo/nvtop) is written in C, makes it lack of portability. And you should compile it yourself during installation, which is really inconvenient. Therefore, I made this repo. I got a lot help when reading the source code of [`ranger`](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [`ranger`](https://github.com/ranger/ranger) under the GPLv3 License.
@@ -27,13 +30,19 @@ This project is inspired by [`nvidia-htop`](https://github.com/peci1/nvidia-htop
 
 ## Installation
 
-Install `nvitop` using `pip` from GitHub:
+Install from PyPI:
+
+```bash
+$ pip install nvitop
+```
+
+Install latest version from GitHub:
 
 ```bash
 $ pip install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
-Or, clone this repo and install `nvitop` manually:
+Or, clone this repo and install manually:
 
 ```bash
 $ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
