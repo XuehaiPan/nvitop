@@ -103,11 +103,13 @@ optional arguments:
 
 ## Screenshots
 
+![Screen Recording](https://user-images.githubusercontent.com/16078332/107175086-e0468c80-6a06-11eb-98c3-7ead90ec01e2.gif)
+
 Example output of `nvhtop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/107147678-4640fe80-698a-11eb-9160-7d85e12f8fef.png" alt="screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/107147678-4640fe80-698a-11eb-9160-7d85e12f8fef.png" alt="Screenshot">
 
-Example output of `nvhtop --monitor`:
+Example output of `nvhtop -m`:
 
 <table>
   <tr valign="center">
@@ -115,8 +117,8 @@ Example output of `nvhtop --monitor`:
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119519-0bc05e80-68c3-11eb-9e31-94aa1f9c59b2.png" alt="full"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png" alt="compact"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119519-0bc05e80-68c3-11eb-9e31-94aa1f9c59b2.png" alt="Full"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png" alt="Compact"></td>
   </tr>
 </table>
 
