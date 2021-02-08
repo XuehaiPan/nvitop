@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name,line-too-long
 
+import threading
 import time
 from collections import OrderedDict
 
@@ -11,7 +12,7 @@ import psutil
 from cachetools.func import ttl_cache
 
 from .displayable import Displayable
-from .utils import nvml_query, nvml_check_return, colored, cut_string
+from .utils import colored, cut_string, nvml_check_return, nvml_query
 
 
 class DevicePanel(Displayable):
@@ -46,6 +47,11 @@ class DevicePanel(Displayable):
         ]
 
         self.snapshots = []
+        self.snapshot_lock = threading.RLock()
+        self.take_snapshot()
+        self.snapshot_daemon = threading.Thread(name='device-snapshots',
+                                                target=self._snapshot_target, daemon=True)
+        self.daemon_started = threading.Event()
 
     @property
     def compact(self):
@@ -101,11 +107,23 @@ class DevicePanel(Displayable):
         return frame
 
     def take_snapshot(self):
-        self.snapshots.clear()
-        self.snapshots.extend(map(lambda device: device.snapshot(), self.devices))
+        snapshots = list(map(lambda device: device.snapshot(), self.devices))
+
+        with self.snapshot_lock:
+            self.snapshots = snapshots
+
+        return snapshots
+
+    def _snapshot_target(self):
+        self.daemon_started.wait()
+        while self.daemon_started.is_set():
+            self.take_snapshot()
+            time.sleep(0.7)
 
     def poke(self):
-        self.take_snapshot()
+        if not self.daemon_started.is_set():
+            self.daemon_started.set()
+            self.snapshot_daemon.start()
 
         super(DevicePanel, self).poke()
 
@@ -124,8 +142,10 @@ class DevicePanel(Displayable):
             formats = self.formats_compact
         else:
             formats = self.formats_full
-        for index, device in enumerate(self.devices):
-            device = device.snapshot()
+
+        with self.snapshot_lock:
+            snapshots = self.snapshots
+        for index, device in enumerate(snapshots):
             device.name = cut_string(device.name, maxlen=18)
             for y, fmt in enumerate(formats, start=self.y + 4 + (len(formats) + 1) * (index + 1)):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
@@ -136,8 +156,12 @@ class DevicePanel(Displayable):
     def finalize(self):
         self.need_redraw = False
 
+    def destroy(self):
+        super(DevicePanel, self).destroy()
+        self.daemon_started.clear()
+
     def print(self):
-        self.take_snapshot()
+        snapshots = self.take_snapshot()
 
         lines = [
             '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
@@ -145,8 +169,7 @@ class DevicePanel(Displayable):
         ]
 
         if self.device_count > 0:
-            for device in self.devices:
-                device = device.snapshot()
+            for device in snapshots:
                 device.name = cut_string(device.name, maxlen=18)
 
                 def colorize(s):
@@ -176,6 +199,11 @@ class ProcessPanel(Displayable):
         self.devices = devices
 
         self.snapshots = []
+        self.snapshot_lock = threading.RLock()
+        self.take_snapshot()
+        self.snapshot_daemon = threading.Thread(name='process-snapshots',
+                                                target=self._snapshot_target, daemon=True)
+        self.daemon_started = threading.Event()
 
         self.offset = -1
 
@@ -194,8 +222,18 @@ class ProcessPanel(Displayable):
         return header
 
     def take_snapshot(self):
-        self.snapshots.clear()
-        self.snapshots.extend(filter(None, map(lambda process: process.snapshot(), self.processes.values())))
+        snapshots = list(filter(None, map(lambda process: process.snapshot(), self.processes.values())))
+
+        with self.snapshot_lock:
+            self.snapshots = snapshots
+
+        return snapshots
+
+    def _snapshot_target(self):
+        self.daemon_started.wait()
+        while self.daemon_started.is_set():
+            self.take_snapshot()
+            time.sleep(0.7)
 
     @property
     @ttl_cache(ttl=1.0)
@@ -210,16 +248,22 @@ class ProcessPanel(Displayable):
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):
-        self.take_snapshot()
-        n_processes = len(self.snapshots)
-        n_used_devices = len(set([p.device.index for p in self.snapshots]))
+        if not self.daemon_started.is_set():
+            self.daemon_started.set()
+            self.snapshot_daemon.start()
+
+        with self.snapshot_lock:
+            snapshots = self.snapshots
+
+        n_processes = len(snapshots)
+        n_used_devices = len(set([p.device.index for p in snapshots]))
         if n_processes > 0:
             height = 5 + n_processes + n_used_devices - 1
         else:
             height = 6
 
         max_info_len = 0
-        for process in self.snapshots:
+        for process in snapshots:
             process.host_info = '{:>5.1f} {:>5.1f}  {:>8}  {:<24}'.format(
                 process.cpu_percent, process.memory_percent,
                 process.running_time_human, ' '.join(process.cmdline).strip()
@@ -245,11 +289,14 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 2, self.x + 31, '{:<46}'.format('COMMAND'))
 
-        if len(self.snapshots) > 0:
+        with self.snapshot_lock:
+            snapshots = self.snapshots
+
+        if len(snapshots) > 0:
             y = self.y + 4
             prev_device_index = None
             color = -1
-            for process in self.snapshots:
+            for process in snapshots:
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
                     color = process.device.display_color
@@ -282,15 +329,19 @@ class ProcessPanel(Displayable):
     def finalize(self):
         self.need_redraw = False
 
+    def destroy(self):
+        super(ProcessPanel, self).destroy()
+        self.daemon_started.clear()
+
     def print(self):
-        self.take_snapshot()
+        snapshots = self.take_snapshot()
 
         lines = self.header_lines()
 
-        if len(self.snapshots) > 0:
+        if len(snapshots) > 0:
             prev_device_index = None
             color = None
-            for process in self.snapshots:
+            for process in snapshots:
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
                     color = process.device.display_color

@@ -80,5 +80,6 @@ def main():
     else:
         top = Top(devices)
     top.print()
+    top.destroy()
 
     nvml.nvmlShutdown()
