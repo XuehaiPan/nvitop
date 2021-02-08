@@ -29,7 +29,7 @@
 
 #### Context
 
-<!-- How has this issue affected you?  What are you trying to accomplish? -->
+<!-- How has this issue affected you? What are you trying to accomplish? -->
 
 
 #### Possible Solutions
