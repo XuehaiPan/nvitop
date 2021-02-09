@@ -42,6 +42,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX :: Linux',
         'Environment :: GPU',
@@ -55,7 +57,7 @@ setup(
         'Topic :: System :: Systems Administration',
         'Topic :: Utilities'
     ],
-    keywords='nvidia, nvidia-smi, GPU, htop, top',
+    keywords='nvidia, nvidia-smi, GPU, top, htop',
     project_urls={
         'Bug Reports': 'https://github.com/XuehaiPan/nvitop/issues',
         'Source': 'https://github.com/XuehaiPan/nvitop'
