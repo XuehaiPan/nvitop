@@ -115,11 +115,11 @@ optional arguments:
 
 ## Screenshots
 
-![Screen Recording](https://user-images.githubusercontent.com/16078332/107384686-2a299280-6b2d-11eb-8171-f679a36ca242.gif)
+![Screen Recording](https://user-images.githubusercontent.com/16078332/107397216-6ebb2b00-6b39-11eb-9263-35e660bb82df.gif)
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/107185971-5d313080-6a1e-11eb-83b7-1fdac1570e26.png" alt="Screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/107397202-6a8f0d80-6b39-11eb-8bea-62ff63a44088.png" alt="Screenshot">
 
 Example output of `nvitop -m`:
 
@@ -129,8 +129,8 @@ Example output of `nvitop -m`:
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107383546-0fa2e980-6b2c-11eb-97b0-f24ddbff4eba.png" alt="Full"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107383551-116cad00-6b2c-11eb-87c8-aab59f4cf881.png" alt="Compact"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107397207-6bc03a80-6b39-11eb-8ce2-0c84d358de52.png" alt="Full"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107397209-6cf16780-6b39-11eb-8766-8767b551f13f.png" alt="Compact"></td>
   </tr>
 </table>
 
