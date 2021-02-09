@@ -115,7 +115,7 @@ optional arguments:
 
 ## Screenshots
 
-![Screen Recording](https://user-images.githubusercontent.com/16078332/107175086-e0468c80-6a06-11eb-98c3-7ead90ec01e2.gif)
+![Screen Recording](https://user-images.githubusercontent.com/16078332/107384686-2a299280-6b2d-11eb-8171-f679a36ca242.gif)
 
 Example output of `nvitop`:
 
@@ -129,8 +129,8 @@ Example output of `nvitop -m`:
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119519-0bc05e80-68c3-11eb-9e31-94aa1f9c59b2.png" alt="Full"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107119521-0d8a2200-68c3-11eb-96e0-12ca2a0cebb5.png" alt="Compact"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107383546-0fa2e980-6b2c-11eb-97b0-f24ddbff4eba.png" alt="Full"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107383551-116cad00-6b2c-11eb-87c8-aab59f4cf881.png" alt="Compact"></td>
   </tr>
 </table>
 
