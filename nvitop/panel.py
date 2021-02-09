@@ -370,7 +370,7 @@ class ProcessPanel(Displayable):
                 if self.offset > 0:
                     self.addstr(y, self.x + 30, ' ')
                 if self.selected.index is None and process.identity == self.selected.identity:
-                    self.color_at(y, self.x + 2, width=75, attr='standout')
+                    self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
                     self.selected.index = i
                     self.selected.process = process
                 else:
