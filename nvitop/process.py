@@ -50,6 +50,8 @@ class GProcess(psutil.Process):
         try:
             running_time = self.running_time()
             snapshot = Snapshot(
+                process=self,
+                identity=self._ident,
                 pid=self.pid,
                 device=self.device,
                 gpu_memory=self.gpu_memory,

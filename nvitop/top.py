@@ -4,10 +4,13 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import curses
+import signal
 import time
 
+import psutil
+
 from .displayable import DisplayableContainer
-from .keybinding import KeyBuffer, KeyMaps, ALT_KEY
+from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
 from .mouse import MouseEvent
 from .panel import DevicePanel, ProcessPanel
 
@@ -67,6 +70,44 @@ class Top(DisplayableContainer):
         def cmd_right(top):
             top.process_panel.offset += 1
 
+        def select_up(top):
+            selected = top.process_panel.selected
+            with top.process_panel.snapshot_lock:
+                snapshots = top.process_panel.snapshots
+            if len(snapshots) > 0:
+                if not selected.is_set():
+                    selected.index = len(snapshots) - 1
+                else:
+                    selected.index = max(0, selected.index - 1)
+                selected.process = snapshots[selected.index]
+            else:
+                selected.reset()
+
+        def select_down(top):
+            selected = top.process_panel.selected
+            with top.process_panel.snapshot_lock:
+                snapshots = top.process_panel.snapshots
+            if len(snapshots) > 0:
+                if not selected.is_set():
+                    selected.index = 0
+                else:
+                    selected.index = min(selected.index + 1, len(snapshots) - 1)
+                selected.process = snapshots[selected.index]
+            else:
+                selected.reset()
+
+        def send_signal(top, sig):
+            selected = top.process_panel.selected
+            if selected.is_set():
+                try:
+                    psutil.Process(selected.process.pid).send_signal(sig)
+                except psutil.Error:
+                    pass
+
+        def kill(top): return send_signal(top, signal.SIGKILL)
+        def terminate(top): return send_signal(top, signal.SIGTERM)
+        def interrupt(top): return send_signal(top, signal.SIGINT)
+
         self.keymaps.bind('top', 'q', quit)
         self.keymaps.bind('process', 'q', quit)
         self.keymaps.bind('process', '<left>', cmd_left)
@@ -75,8 +116,14 @@ class Top(DisplayableContainer):
         self.keymaps.bind('process', '<right>', cmd_right)
         self.keymaps.bind('process', '>', cmd_right)
         self.keymaps.bind('process', ']', cmd_right)
+        self.keymaps.bind('process', '<up>', select_up)
+        self.keymaps.bind('process', '<down>', select_down)
+        self.keymaps.bind('process', 'k', kill)
+        self.keymaps.bind('process', 't', terminate)
+        self.keymaps.bind('process', '<C-c>', interrupt)
 
     def update_size(self):
+        curses.update_lines_cols()
         n_term_lines, _ = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
             self.compact = (n_term_lines < self.device_panel.full_height + 1 + self.process_panel.height)
@@ -97,7 +144,6 @@ class Top(DisplayableContainer):
         if self.need_redraw:
             self.win.erase()
         super(Top, self).draw()
-        self.win.refresh()
 
     def finalize(self):
         super(Top, self).finalize()

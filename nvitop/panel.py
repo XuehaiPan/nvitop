@@ -51,7 +51,7 @@ class DevicePanel(Displayable):
         self.snapshots = []
         self.snapshot_lock = threading.RLock()
         self.take_snapshot()
-        self.snapshot_daemon = threading.Thread(name='device-snapshots',
+        self.snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
                                                 target=self._snapshot_target, daemon=True)
         self.daemon_started = threading.Event()
 
@@ -195,6 +195,47 @@ class DevicePanel(Displayable):
 class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
+    class Selected(object):
+        def __init__(self, index=None, process=None):
+            self.index = index
+            self._proc = None
+            self._ident = None
+            self.process = process
+
+        @property
+        def identity(self):
+            if self._ident is None:
+                try:
+                    self._ident = self.process.identity
+                except AttributeError:
+                    try:
+                        self._ident = self.process._ident
+                    except AttributeError:
+                        pass
+            return self._ident
+
+        @property
+        def process(self):
+            return self._proc
+
+        @process.setter
+        def process(self, process):
+            self._proc = process
+            self._ident = None
+
+        def reset(self):
+            self.index = None
+            self._proc = None
+            self._ident = None
+
+        def is_set(self):
+            if self.index is not None and self.process is not None:
+                return True
+            self.reset()
+            return False
+
+        __bool__ = is_set
+
     def __init__(self, devices, win=None, root=None):
         super(ProcessPanel, self).__init__(win, root)
         self.width = 79
@@ -205,10 +246,11 @@ class ProcessPanel(Displayable):
         self.snapshots = []
         self.snapshot_lock = threading.RLock()
         self.take_snapshot()
-        self.snapshot_daemon = threading.Thread(name='process-snapshots',
+        self.snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
                                                 target=self._snapshot_target, daemon=True)
         self.daemon_started = threading.Event()
 
+        self.selected = self.Selected()
         self.offset = -1
 
     def header_lines(self):
@@ -296,11 +338,12 @@ class ProcessPanel(Displayable):
         with self.snapshot_lock:
             snapshots = self.snapshots
 
+        self.selected.index = None
         if len(snapshots) > 0:
             y = self.y + 4
             prev_device_index = None
             color = -1
-            for process in snapshots:
+            for i, process in enumerate(snapshots):
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
                     color = process.device.display_color
@@ -322,13 +365,20 @@ class ProcessPanel(Displayable):
                             ))
                 if self.offset > 0:
                     self.addstr(y, self.x + 30, ' ')
-                self.color_at(y, self.x + 2, width=3, fg=color)
+                if process.identity == self.selected.identity:
+                    self.color_at(y, self.x + 2, width=75, attr='standout')
+                    self.selected.index = i
+                else:
+                    self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
             self.addstr(y, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
         else:
             self.addstr(self.y + 4, self.x,
                         '│  No running compute processes found                                         │')
             self.offset = -1
+        if self.selected.index is None:
+            self.selected.reset()
+
 
     def finalize(self):
         self.need_redraw = False
