@@ -252,6 +252,7 @@ class ProcessPanel(Displayable):
 
         self.selected = self.Selected()
         self.offset = -1
+        self.current_user = psutil.Process().username()
 
     def header_lines(self):
         header = [
@@ -324,14 +325,6 @@ class ProcessPanel(Displayable):
         if self.need_redraw:
             for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
-            self.addstr(self.y - 1, self.x + 12,
-                        '(Press k(KILL)/t(TERM)/^c(INT) to send signals to selected process)')
-            self.color_at(self.y - 1, self.x + 19, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 21, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, self.x + 27, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 29, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, self.x + 35, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 38, width=3, fg='red', attr='bold')
 
         if self.offset < 22:
             self.addstr(self.y + 2, self.x + 31,
@@ -383,6 +376,18 @@ class ProcessPanel(Displayable):
             self.offset = -1
         if self.selected.index is None:
             self.selected.reset()
+
+        if self.selected.is_set() and self.selected.process.username == self.current_user:
+            self.addstr(self.y - 1, self.x + 12,
+                        '(Press k(KILL)/t(TERM)/^c(INT) to send signals to selected process)')
+            self.color_at(self.y - 1, self.x + 19, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 21, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, self.x + 27, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 29, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, self.x + 35, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 38, width=3, fg='red', attr='bold')
+        else:
+            self.addstr(self.y - 1, self.x, ' ' * self.width)
 
     def finalize(self):
         self.need_redraw = False
