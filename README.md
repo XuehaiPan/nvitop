@@ -115,7 +115,7 @@ optional arguments:
 
 ## Screenshots
 
-![Screen Recording](https://user-images.githubusercontent.com/16078332/107397216-6ebb2b00-6b39-11eb-9263-35e660bb82df.gif)
+![Screen Recording](https://user-images.githubusercontent.com/16078332/107406772-c65e9400-6b43-11eb-876b-40527c64ffe4.gif)
 
 Example output of `nvitop`:
 
