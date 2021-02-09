@@ -12,6 +12,17 @@ from cachetools.func import ttl_cache
 from .utils import bytes2human, timedelta2human, Snapshot
 
 
+def add_quotes(s):
+    if '$' not in s and '\\' not in s:
+        if ' ' not in s:
+            return s
+        if '"' not in s:
+            return '"{}"'.format(s)
+    if "'" not in s:
+        return "'{}'".format(s)
+    return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
+
+
 class GProcess(psutil.Process):
     def __init__(self, pid, device, gpu_memory, type='C'):  # pylint: disable=redefined-builtin
         super(GProcess, self).__init__(pid)
@@ -48,25 +59,34 @@ class GProcess(psutil.Process):
     @ttl_cache(ttl=2.0)
     def snapshot(self):
         try:
-            running_time = self.running_time()
-            snapshot = Snapshot(
-                process=self,
-                identity=self._ident,
-                pid=self.pid,
-                device=self.device,
-                gpu_memory=self.gpu_memory,
-                gpu_memory_human=bytes2human(self.gpu_memory),
-                type=self.type,
-                username=self.username(),
-                name=self.name(),
-                cmdline=self.cmdline(),
-                cpu_percent=self.cpu_percent(),
-                memory_percent=self.memory_percent(),
-                running_time=running_time,
-                running_time_human=timedelta2human(running_time)
-            )
-            if len(snapshot.cmdline) == 0:  # pylint: disable=no-member
-                raise psutil.Error
+            with self.oneshot():
+                cmdline = self.cmdline()
+                if len(cmdline) == 0:
+                    raise psutil.Error
+                cpu_percent = self.cpu_percent()
+                memory_percent = self.memory_percent()
+                running_time = self.running_time()
+                running_time_human = timedelta2human(running_time)
+                command = ' '.join(map(add_quotes, filter(None, map(str.strip, cmdline))))
+                host_info = '{:>5.1f} {:>5.1f}  {:>8}  {}'.format(cpu_percent, memory_percent,
+                                                                  running_time_human, command)
+                snapshot = Snapshot(
+                    process=self,
+                    identity=self._ident,
+                    pid=self.pid,
+                    device=self.device,
+                    gpu_memory=self.gpu_memory,
+                    gpu_memory_human=bytes2human(self.gpu_memory),
+                    type=self.type,
+                    username=self.username(),
+                    name=self.name(),
+                    cmdline=cmdline,
+                    cpu_percent=cpu_percent,
+                    memory_percent=memory_percent,
+                    running_time=running_time,
+                    running_time_human=running_time_human,
+                    host_info=host_info
+                )
         except psutil.Error:
             return None
         else:

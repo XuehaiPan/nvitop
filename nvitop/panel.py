@@ -209,7 +209,7 @@ class ProcessPanel(Displayable):
                     self._ident = self.process.identity
                 except AttributeError:
                     try:
-                        self._ident = self.process._ident
+                        self._ident = self.process._ident  # pylint: disable=protected-access
                     except AttributeError:
                         pass
             return self._ident
@@ -310,10 +310,6 @@ class ProcessPanel(Displayable):
 
         max_info_len = 0
         for process in snapshots:
-            process.host_info = '{:>5.1f} {:>5.1f}  {:>8}  {:<24}'.format(
-                process.cpu_percent, process.memory_percent,
-                process.running_time_human, ' '.join(process.cmdline).strip()
-            )
             max_info_len = max(max_info_len, len(process.host_info))
         self.offset = max(-1, min(self.offset, max_info_len - 47))
 
@@ -407,16 +403,14 @@ class ProcessPanel(Displayable):
                 device_index = process.device.index
                 if prev_device_index is None or prev_device_index != device_index:
                     color = process.device.display_color
-                cmdline = cut_string(' '.join(process.cmdline).strip(), padstr='..', maxlen=24)
-
                 if prev_device_index is not None and prev_device_index != device_index:
                     lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
                 prev_device_index = device_index
-                lines.append('│ {} {:>6} {:>7} {:>8} {:>5.1f} {:>5.1f}  {:>8}  {:<24} │'.format(
+
+                lines.append('│ {} {:>6} {:>7} {:>8} {:<47} │'.format(
                     colored('{:>3}'.format(device_index), color), process.pid,
                     cut_string(process.username, maxlen=7, padstr='+'),
-                    process.gpu_memory_human, process.cpu_percent, process.memory_percent,
-                    process.running_time_human, cmdline
+                    process.gpu_memory_human, cut_string(process.host_info, padstr='..', maxlen=47)
                 ))
 
             lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
