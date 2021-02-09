@@ -99,9 +99,9 @@ optional arguments:
   -m [{auto,full,compact}], --monitor [{auto,full,compact}]
                         Run as a resource monitor. Continuously report query data,
                         rather than the default of just once.
-                        If no argument is specified, the default mode `auto` is used.
+                        If no argument is given, the default mode `auto` is used.
   -o idx [idx ...], --only idx [idx ...]
-                        Only show devices specified, suppress option `-ov`.
+                        Only show the specified devices, suppress option `-ov`.
   -ov, --only-visible   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to distinguish load intensity.

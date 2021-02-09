@@ -85,7 +85,7 @@ class DevicePanel(Displayable):
         else:
             header.extend([
                 '╞═════════════════════════════════════════════════════════════════════════════╡',
-                '│  No visible CUDA device found                                               │',
+                '│  No visible CUDA devices found                                              │',
                 '╘═════════════════════════════════════════════════════════════════════════════╛'
             ])
         return header

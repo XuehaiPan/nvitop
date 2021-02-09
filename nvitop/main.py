@@ -23,9 +23,9 @@ def parse_arguments():
                         nargs='?', choices=['auto', 'full', 'compact'],
                         help='Run as a resource monitor. Continuously report query data,\n' +
                              'rather than the default of just once.\n' +
-                             'If no argument is specified, the default mode `auto` is used.')
+                             'If no argument is given, the default mode `auto` is used.')
     parser.add_argument('-o', '--only', type=int, nargs='+', metavar='idx',
-                        help='Only show devices specified, suppress option `-ov`.')
+                        help='Only show the specified devices, suppress option `-ov`.')
     parser.add_argument('-ov', '--only-visible', action='store_true',
                         help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
     parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
