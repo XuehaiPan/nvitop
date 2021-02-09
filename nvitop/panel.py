@@ -133,10 +133,10 @@ class DevicePanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            self.addstr(self.y, self.x + 62, '(Press q to Quit)')
-            self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
             for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
+            self.addstr(self.y, self.x + 62, '(Press q to quit)')
+            self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
 
         self.addstr(self.y, self.x, '{:<62}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
 
@@ -328,6 +328,14 @@ class ProcessPanel(Displayable):
         if self.need_redraw:
             for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
+            self.addstr(self.y - 1, self.x + 12,
+                        '(Press k(KILL)/t(TERM)/^c(INT) to send signals to selected process)')
+            self.color_at(self.y - 1, self.x + 19, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 21, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, self.x + 27, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 29, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, self.x + 35, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 38, width=3, fg='red', attr='bold')
 
         if self.offset < 22:
             self.addstr(self.y + 2, self.x + 31,
@@ -365,9 +373,10 @@ class ProcessPanel(Displayable):
                             ))
                 if self.offset > 0:
                     self.addstr(y, self.x + 30, ' ')
-                if process.identity == self.selected.identity:
+                if self.selected.index is None and process.identity == self.selected.identity:
                     self.color_at(y, self.x + 2, width=75, attr='standout')
                     self.selected.index = i
+                    self.selected.process = process
                 else:
                     self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
@@ -378,7 +387,6 @@ class ProcessPanel(Displayable):
             self.offset = -1
         if self.selected.index is None:
             self.selected.reset()
-
 
     def finalize(self):
         self.need_redraw = False

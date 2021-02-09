@@ -61,14 +61,11 @@ class Top(DisplayableContainer):
             self._compact = value
 
     def init_keybindings(self):
-        def quit(top):
-            raise BreakLoop
+        def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin,multiple-statements
 
-        def cmd_left(top):
-            top.process_panel.offset -= 1
+        def cmd_left(top): top.process_panel.offset -= 1  # pylint: disable=multiple-statements
 
-        def cmd_right(top):
-            top.process_panel.offset += 1
+        def cmd_right(top): top.process_panel.offset += 1  # pylint: disable=multiple-statements
 
         def select_up(top):
             selected = top.process_panel.selected
@@ -104,9 +101,9 @@ class Top(DisplayableContainer):
                 except psutil.Error:
                     pass
 
-        def kill(top): return send_signal(top, signal.SIGKILL)
-        def terminate(top): return send_signal(top, signal.SIGTERM)
-        def interrupt(top): return send_signal(top, signal.SIGINT)
+        def kill(top): return send_signal(top, signal.SIGKILL)  # pylint: disable=multiple-statements
+        def terminate(top): return send_signal(top, signal.SIGTERM)  # pylint: disable=multiple-statements
+        def interrupt(top): return send_signal(top, signal.SIGINT)  # pylint: disable=multiple-statements
 
         self.keymaps.bind('top', 'q', quit)
         self.keymaps.bind('process', 'q', quit)
@@ -123,7 +120,7 @@ class Top(DisplayableContainer):
         self.keymaps.bind('process', '<C-c>', interrupt)
 
     def update_size(self):
-        curses.update_lines_cols()
+        curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, _ = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
             self.compact = (n_term_lines < self.device_panel.full_height + 1 + self.process_panel.height)
@@ -198,16 +195,17 @@ class Top(DisplayableContainer):
             self.handle_key(key)
 
     def press(self, key):
-        self.keybuffer.add(key)
+        keybuffer = self.keybuffer
 
-        if self.keybuffer.result is not None:
+        keybuffer.add(key)
+        if keybuffer.result is not None:
             try:
-                self.keybuffer.result(self)
+                keybuffer.result(self)
             finally:
-                if self.keybuffer.finished_parsing:
-                    self.keybuffer.clear()
-        elif self.keybuffer.finished_parsing:
-            self.keybuffer.clear()
+                if keybuffer.finished_parsing:
+                    keybuffer.clear()
+        elif keybuffer.finished_parsing:
+            keybuffer.clear()
             return False
         return True
 

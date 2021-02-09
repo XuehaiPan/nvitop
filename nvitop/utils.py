@@ -11,7 +11,7 @@ import pynvml as nvml
 try:
     if not sys.stdout.isatty():
         raise ImportError
-    from termcolor import colored # pylint: disable=unused-import
+    from termcolor import colored  # pylint: disable=unused-import
 except ImportError:
     def colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
         return text
