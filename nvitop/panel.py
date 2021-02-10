@@ -223,15 +223,17 @@ class ProcessPanel(Displayable):
             self._proc = process
             self._ident = None
 
-        def reset(self):
+        def clear(self):
             self.index = None
             self._proc = None
             self._ident = None
 
+        reset = clear
+
         def is_set(self):
             if self.index is not None and self.process is not None:
                 return True
-            self.reset()
+            self.clear()
             return False
 
         __bool__ = is_set
@@ -375,7 +377,7 @@ class ProcessPanel(Displayable):
                         '│  No running compute processes found                                         │')
             self.offset = -1
         if self.selected.index is None:
-            self.selected.reset()
+            self.selected.clear()
 
         if self.selected.is_set() and self.selected.process.username == self.current_user:
             self.addstr(self.y - 1, self.x + 12,

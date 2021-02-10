@@ -78,7 +78,7 @@ class Top(DisplayableContainer):
                     selected.index = max(0, selected.index - 1)
                 selected.process = snapshots[selected.index]
             else:
-                selected.reset()
+                selected.clear()
 
         def select_down(top):
             selected = top.process_panel.selected
@@ -91,7 +91,7 @@ class Top(DisplayableContainer):
                     selected.index = min(selected.index + 1, len(snapshots) - 1)
                 selected.process = snapshots[selected.index]
             else:
-                selected.reset()
+                selected.clear()
 
         def send_signal(top, sig):
             selected = top.process_panel.selected
@@ -100,6 +100,10 @@ class Top(DisplayableContainer):
                     psutil.Process(selected.process.pid).send_signal(sig)
                 except psutil.Error:
                     pass
+                else:
+                    if sig != signal.SIGINT:
+                        selected.clear()
+                    time.sleep(1.0)
 
         def kill(top): return send_signal(top, signal.SIGKILL)  # pylint: disable=multiple-statements
         def terminate(top): return send_signal(top, signal.SIGTERM)  # pylint: disable=multiple-statements
@@ -159,9 +163,7 @@ class Top(DisplayableContainer):
             try:
                 self.redraw()
                 self.handle_input()
-                if time.time() - self.last_input_time <= 1.0:
-                    time.sleep(0.05)
-                else:
+                if time.time() - self.last_input_time > 1.0:
                     time.sleep(0.5)
             except BreakLoop:
                 break
