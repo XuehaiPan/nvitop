@@ -95,7 +95,7 @@ class Top(DisplayableContainer):
 
         def send_signal(top, sig):
             selected = top.process_panel.selected
-            if selected.is_set():
+            if selected.is_set() and selected.process.username == top.process_panel.current_user:
                 try:
                     psutil.Process(selected.process.pid).send_signal(sig)
                 except psutil.Error:
