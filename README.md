@@ -113,6 +113,15 @@ optional arguments:
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
 ```
 
+### Keybindings for monitor mode
+
+- **`q`**: quit and return to the terminal.
+- **`←`** / **`→`** / **`<`** / **`>`** / **`[`** / **`]`**: scroll the host information of processes
+- **`↑`** / **`↓`**: select and highlight process
+- **`k`**: send `signal.SIGKILL` to selected process
+- **`t`**: send `signal.SIGTERM` to selected process
+- **`^c`**: send `signal.SIGINT` to selected process
+
 ## Screenshots
 
 ![Screen Recording](https://user-images.githubusercontent.com/16078332/107406772-c65e9400-6b43-11eb-876b-40527c64ffe4.gif)
