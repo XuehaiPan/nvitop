@@ -138,8 +138,8 @@ Example output of `nvitop -m`:
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107397207-6bc03a80-6b39-11eb-8ce2-0c84d358de52.png" alt="Full"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107397209-6cf16780-6b39-11eb-8766-8767b551f13f.png" alt="Compact"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107529263-a7b8d580-6bf5-11eb-9ff8-f53f5b5d2471.png" alt="Full"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107529273-aa1b2f80-6bf5-11eb-8b07-ce7cd4ee82bf.png" alt="Compact"></td>
   </tr>
 </table>
 
