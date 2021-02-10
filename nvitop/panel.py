@@ -151,9 +151,9 @@ class DevicePanel(Displayable):
             device.name = cut_string(device.name, maxlen=18)
             for y, fmt in enumerate(formats, start=self.y + 4 + (len(formats) + 1) * (index + 1)):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
-                self.color_at(y, 2, width=29, fg=device.display_color)
-                self.color_at(y, 34, width=20, fg=device.display_color)
-                self.color_at(y, 57, width=20, fg=device.display_color)
+                self.color_at(y, 1, width=31, fg=device.display_color)
+                self.color_at(y, 33, width=22, fg=device.display_color)
+                self.color_at(y, 56, width=22, fg=device.display_color)
 
     def finalize(self):
         self.need_redraw = False
