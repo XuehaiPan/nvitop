@@ -115,12 +115,12 @@ optional arguments:
 
 #### Keybindings for monitor mode
 
-- **`q`**: quit and return to the terminal.
-- **`<LEFT>`** / **`<RIGHT>`** / **`[`** / **`]`** / **`<`** / **`>`**: scroll the host information of processes
-- **`<UP>`** / **`<DOWN>`**: select and highlight process
-- **`k`**: send `signal.SIGKILL` to selected process
-- **`t`**: send `signal.SIGTERM` to selected process
-- **`<CTRL>+c`**: send `signal.SIGINT` to selected process
+- `q`: quit and return to the terminal.
+- `<LEFT>` / `<RIGHT>` / `[` / `]` / `<` / `>`: scroll the host information of processes.
+- `<UP>` / `<DOWN>`: select and highlight process.
+- `k`: send `signal.SIGKILL` to selected process.
+- `t`: send `signal.SIGTERM` to selected process.
+- `<CTRL>+c`: send `signal.SIGINT` to selected process.
 
 ## Screenshots
 
