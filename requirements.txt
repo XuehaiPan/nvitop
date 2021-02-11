@@ -1,4 +1,4 @@
-nvidia-ml-py
+nvidia-ml-py==11.*
 psutil
 cachetools
 termcolor

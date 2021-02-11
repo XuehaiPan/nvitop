@@ -29,7 +29,7 @@ setup(
         ],
     },
     install_requires=(['windows-curses'] if sys.platform == 'windows' else []) + [
-        'nvidia-ml-py',
+        'nvidia-ml-py==11.*',
         'psutil',
         'cachetools',
         'termcolor'
