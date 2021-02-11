@@ -9,12 +9,12 @@ import copy
 import curses.ascii
 
 
-digits = set(map(ord, '0123456789'))
+DIGITS = set(map(ord, '0123456789'))
 
 # Arbitrary numbers which are not used with curses.KEY_XYZ
 ANYKEY, PASSIVE_ACTION, ALT_KEY, QUANT_KEY = range(9001, 9005)
 
-special_keys = {
+SPECIAL_KEYS = {
     'bs': curses.KEY_BACKSPACE,
     'backspace': curses.KEY_BACKSPACE,
     'backspace2': curses.ascii.DEL,
@@ -41,7 +41,7 @@ special_keys = {
     'gt': ord('>'),
 }
 
-very_special_keys = {
+VERY_SPECIAL_KEYS = {
     'any': ANYKEY,
     'alt': ALT_KEY,
     'bg': PASSIVE_ACTION,
@@ -50,27 +50,27 @@ very_special_keys = {
 
 
 def special_keys_init():
-    for key, val in tuple(special_keys.items()):
-        special_keys['a-' + key] = (ALT_KEY, val)
+    for key, val in tuple(SPECIAL_KEYS.items()):
+        SPECIAL_KEYS['a-' + key] = (ALT_KEY, val)
 
     for char in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_!{}':
-        special_keys['a-' + char] = (ALT_KEY, ord(char))
+        SPECIAL_KEYS['a-' + char] = (ALT_KEY, ord(char))
 
     for char in 'abcdefghijklmnopqrstuvwxyz_':
-        special_keys['c-' + char] = ord(char) - 96
+        SPECIAL_KEYS['c-' + char] = ord(char) - 96
 
-    special_keys['c-space'] = 0
+    SPECIAL_KEYS['c-space'] = 0
 
     for n in range(64):
-        special_keys['f' + str(n)] = curses.KEY_F0 + n
+        SPECIAL_KEYS['f' + str(n)] = curses.KEY_F0 + n
 
 
 special_keys_init()
 
-special_keys.update(very_special_keys)
-del very_special_keys
-reversed_special_keys = {
-    v: k for k, v in special_keys.items()
+SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)
+del VERY_SPECIAL_KEYS
+REVERSED_SPECIAL_KEYS = {
+    v: k for k, v in SPECIAL_KEYS.items()
 }
 
 
@@ -105,7 +105,7 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
                     in_brackets = False
                     string = ''.join(bracket_content).lower()
                     try:
-                        keys = special_keys[string]
+                        keys = SPECIAL_KEYS[string]
                         for key in keys:
                             yield key
                     except KeyError:
@@ -140,27 +140,9 @@ def construct_keybinding(iterable):
 def key_to_string(key):
     if key in range(33, 127):
         return chr(key)
-    if key in reversed_special_keys:
-        return '<%s>' % reversed_special_keys[key]
+    if key in REVERSED_SPECIAL_KEYS:
+        return '<%s>' % REVERSED_SPECIAL_KEYS[key]
     return '<%s>' % str(key)
-
-
-def _unbind_traverse(pointer, keys, pos=0):
-    if keys[pos] not in pointer:
-        return
-    if len(keys) > pos + 1 and isinstance(pointer, dict):
-        _unbind_traverse(pointer[keys[pos]], keys, pos=pos + 1)
-        if not pointer[keys[pos]]:
-            del pointer[keys[pos]]
-    elif len(keys) == pos + 1:
-        try:
-            del pointer[keys[pos]]
-        except KeyError:
-            pass
-        try:
-            keys.pop()
-        except IndexError:
-            pass
 
 
 class KeyMaps(dict):
@@ -214,7 +196,25 @@ class KeyMaps(dict):
         keys, pointer = self._clean_input(context, keys)
         if not keys:
             return
-        _unbind_traverse(pointer, keys)
+        KeyMaps._unbind_traverse(pointer, keys)
+
+    @staticmethod
+    def _unbind_traverse(pointer, keys, pos=0):
+        if keys[pos] not in pointer:
+            return
+        if len(keys) > pos + 1 and isinstance(pointer, dict):
+            KeyMaps._unbind_traverse(pointer[keys[pos]], keys, pos=pos + 1)
+            if not pointer[keys[pos]]:
+                del pointer[keys[pos]]
+        elif len(keys) == pos + 1:
+            try:
+                del pointer[keys[pos]]
+            except KeyError:
+                pass
+            try:
+                keys.pop()
+            except IndexError:
+                pass
 
 
 class KeyBuffer(object):  # pylint: disable=too-many-instance-attributes
@@ -244,7 +244,7 @@ class KeyBuffer(object):  # pylint: disable=too-many-instance-attributes
     def add(self, key):
         self.keys.append(key)
         self.result = None
-        if not self.finished_parsing_quantifier and key in digits:
+        if not self.finished_parsing_quantifier and key in DIGITS:
             if self.quantifier is None:
                 self.quantifier = 0
             self.quantifier = self.quantifier * 10 + key - 48  # (48 = ord(0))

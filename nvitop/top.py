@@ -114,17 +114,17 @@ class Top(DisplayableContainer):
         self.keymaps.bind('top', 'q', quit)
         self.keymaps.bind('process', 'q', quit)
         self.keymaps.bind('process', '<left>', cmd_left)
-        self.keymaps.bind('process', '<', cmd_left)
-        self.keymaps.bind('process', '[', cmd_left)
+        self.keymaps.copy('process', '<left>', '<')
+        self.keymaps.copy('process', '<left>', '[')
         self.keymaps.bind('process', '<right>', cmd_right)
-        self.keymaps.bind('process', '>', cmd_right)
-        self.keymaps.bind('process', ']', cmd_right)
+        self.keymaps.copy('process', '<right>', '>')
+        self.keymaps.copy('process', '<right>', ']')
         self.keymaps.bind('process', '<up>', select_up)
         self.keymaps.bind('process', '<down>', select_down)
         self.keymaps.bind('process', '<backspace>', select_clear)
         self.keymaps.bind('process', 'k', kill)
         self.keymaps.bind('process', 't', terminate)
-        self.keymaps.bind('process', '<C-c>', interrupt)
+        self.keymaps.bind('process', '<c-c>', interrupt)
 
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
