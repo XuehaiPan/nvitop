@@ -167,7 +167,7 @@ class Top(DisplayableContainer):
                 self.redraw()
                 self.handle_input()
                 if time.time() - self.last_input_time > 1.0:
-                    time.sleep(0.5)
+                    time.sleep(0.25)
             except BreakLoop:
                 break
 
@@ -215,9 +215,10 @@ class Top(DisplayableContainer):
         return True
 
     def handle_input(self):  # pylint: disable=too-many-branches
-        self.last_input_time = time.time()
-
         key = self.win.getch()
+        if key != curses.ERR:
+            self.last_input_time = time.time()
+
         if key == curses.KEY_ENTER:
             key = ord('\n')
         if key == 27 or (128 <= key < 256):
