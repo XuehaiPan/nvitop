@@ -93,6 +93,8 @@ class Top(DisplayableContainer):
             else:
                 selected.clear()
 
+        def select_clear(top): top.process_panel.selected.clear()  # pylint: disable=multiple-statements
+
         def send_signal(top, sig):
             selected = top.process_panel.selected
             if selected.is_set() and selected.process.username == top.process_panel.current_user:
@@ -119,6 +121,7 @@ class Top(DisplayableContainer):
         self.keymaps.bind('process', ']', cmd_right)
         self.keymaps.bind('process', '<up>', select_up)
         self.keymaps.bind('process', '<down>', select_down)
+        self.keymaps.bind('process', '<backspace>', select_clear)
         self.keymaps.bind('process', 'k', kill)
         self.keymaps.bind('process', 't', terminate)
         self.keymaps.bind('process', '<C-c>', interrupt)
