@@ -40,9 +40,6 @@ def parse_arguments():
     args = parser.parse_args()
     if args.monitor is None:
         args.monitor = 'auto'
-    if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
-        print('Error: Must run nvitop monitor mode from terminal', file=sys.stderr)
-        return 1
     if args.gpu_util_thresh is not None:
         Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
     if args.mem_util_thresh is not None:
@@ -54,10 +51,19 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
+    if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
+        print('ERROR: Must run nvitop monitor mode from terminal.', file=sys.stderr)
+        return 1
+
     try:
         nvml.nvmlInit()
-    except nvml.NVMLError_LibraryNotFound as error:  # pylint: disable=no-member
-        print('Error: {}'.format(error), file=sys.stderr)
+    except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
+        print('ERROR: The NVIDIA Management Library (NVML) not found.\n'
+              'HINT: The NVIDIA Management Library can be downloaded as part of the NVIDIA CUDA\n'
+              '      Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
+              '      Please see Installation Guides on https://docs.nvidia.com/cuda/index.html\n'
+              '      for more details.',
+              file=sys.stderr)
         return 1
 
     device_count = nvml.nvmlDeviceGetCount()
