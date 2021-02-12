@@ -8,7 +8,7 @@ import threading
 import time
 
 from ..displayable import Displayable
-from ..utils import colored, cut_string, nvml_check_return, nvml_query
+from ...utils import colored, cut_string, nvml_check_return, nvml_query
 
 
 class DevicePanel(Displayable):

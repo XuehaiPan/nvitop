@@ -125,14 +125,14 @@ class Displayable(CursesShortcuts):
 
     Additionally, there are these methods:
 
-    __contains__(item) -- is the item (y, x) inside the widget?
+    __contains__(item) -- is the item (y, x) inside the panel?
 
     These attributes are set:
 
     Modifiable:
         focused -- Focused objects receive press() calls.
         visible -- Visible objects receive draw() and finalize() calls
-        need_redraw -- Should the widget be redrawn? This variable may
+        need_redraw -- Should the panel be redrawn? This variable may
             be set at various places in the script and should eventually be
             handled (and unset) in the draw() method.
 

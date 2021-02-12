@@ -13,7 +13,7 @@ import psutil
 from cachetools.func import ttl_cache
 
 from ..displayable import Displayable
-from ..utils import colored, cut_string
+from ...utils import colored, cut_string
 
 
 class Selected(object):

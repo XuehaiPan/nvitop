@@ -10,8 +10,7 @@ import sys
 import pynvml as nvml
 
 from .device import Device
-from .libcurses import libcurses
-from .top import Top
+from .ui import libcurses, Top
 from .utils import colored
 
 
