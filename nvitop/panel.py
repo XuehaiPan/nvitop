@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name,line-too-long
 
+import signal
 import threading
 import time
 from collections import OrderedDict
@@ -196,11 +197,12 @@ class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
     class Selected(object):
-        def __init__(self, index=None, process=None):
-            self.index = index
+        def __init__(self, panel):
+            self.panel = panel
+            self.current_user = self.panel.current_user
+            self.index = None
             self._proc = None
             self._ident = None
-            self.process = process
 
         @property
         def identity(self):
@@ -222,6 +224,44 @@ class ProcessPanel(Displayable):
         def process(self, process):
             self._proc = process
             self._ident = None
+
+        def move(self, direction=0):
+            if direction == 0:
+                return
+
+            with self.panel.snapshot_lock:
+                processes = self.panel.snapshots
+            if len(processes) > 0:
+                if not self.is_set():
+                    if direction > 0:
+                        self.index = 0
+                    else:
+                        self.index = len(processes) - 1
+                else:
+                    self.index = min(max(0, self.index + direction), len(processes) - 1)
+                self.process = processes[self.index]
+            else:
+                self.clear()
+
+        def send_signal(self, sig):
+            if self.is_set() and self.process.username == self.current_user:
+                try:
+                    psutil.Process(self.process.pid).send_signal(sig)
+                except psutil.Error:
+                    pass
+                else:
+                    if sig != signal.SIGINT:
+                        self.clear()
+                    time.sleep(1.0)
+
+        def kill(self):
+            return self.send_signal(signal.SIGKILL)
+
+        def terminate(self):
+            return self.send_signal(signal.SIGTERM)
+
+        def interrupt(self):
+            return self.send_signal(signal.SIGINT)
 
         def clear(self):
             self.index = None
@@ -252,9 +292,9 @@ class ProcessPanel(Displayable):
                                                 target=self._snapshot_target, daemon=True)
         self.daemon_started = threading.Event()
 
-        self.selected = self.Selected()
-        self.offset = -1
         self.current_user = psutil.Process().username()
+        self.selected = self.Selected(panel=self)
+        self.offset = -1
 
     def header_lines(self):
         header = [
@@ -427,3 +467,11 @@ class ProcessPanel(Displayable):
     def press(self, key):
         self.root.keymaps.use_keymap('process')
         self.root.press(key)
+
+    def click(self, event):
+        direction = event.wheel_direction()
+        if event.shift():
+            self.offset += direction
+        else:
+            self.selected.move(direction=direction)
+        return True

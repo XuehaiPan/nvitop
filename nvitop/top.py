@@ -4,10 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import curses
-import signal
 import time
-
-import psutil
 
 from .displayable import DisplayableContainer
 from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
@@ -61,66 +58,31 @@ class Top(DisplayableContainer):
             self._compact = value
 
     def init_keybindings(self):
-        def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin,multiple-statements
+        # pylint: disable=multiple-statements
 
-        def cmd_left(top): top.process_panel.offset -= 1  # pylint: disable=multiple-statements
+        def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
 
-        def cmd_right(top): top.process_panel.offset += 1  # pylint: disable=multiple-statements
+        def cmd_left(top): top.process_panel.offset -= 1
+        def cmd_right(top): top.process_panel.offset += 1
 
-        def select_up(top):
-            selected = top.process_panel.selected
-            with top.process_panel.snapshot_lock:
-                snapshots = top.process_panel.snapshots
-            if len(snapshots) > 0:
-                if not selected.is_set():
-                    selected.index = len(snapshots) - 1
-                else:
-                    selected.index = max(0, selected.index - 1)
-                selected.process = snapshots[selected.index]
-            else:
-                selected.clear()
+        def select_up(top): top.process_panel.selected.move(direction=-1)
+        def select_down(top): top.process_panel.selected.move(direction=+1)
+        def select_clear(top): top.process_panel.selected.clear()
 
-        def select_down(top):
-            selected = top.process_panel.selected
-            with top.process_panel.snapshot_lock:
-                snapshots = top.process_panel.snapshots
-            if len(snapshots) > 0:
-                if not selected.is_set():
-                    selected.index = 0
-                else:
-                    selected.index = min(selected.index + 1, len(snapshots) - 1)
-                selected.process = snapshots[selected.index]
-            else:
-                selected.clear()
-
-        def select_clear(top): top.process_panel.selected.clear()  # pylint: disable=multiple-statements
-
-        def send_signal(top, sig):
-            selected = top.process_panel.selected
-            if selected.is_set() and selected.process.username == top.process_panel.current_user:
-                try:
-                    psutil.Process(selected.process.pid).send_signal(sig)
-                except psutil.Error:
-                    pass
-                else:
-                    if sig != signal.SIGINT:
-                        selected.clear()
-                    time.sleep(1.0)
-
-        def kill(top): return send_signal(top, signal.SIGKILL)  # pylint: disable=multiple-statements
-        def terminate(top): return send_signal(top, signal.SIGTERM)  # pylint: disable=multiple-statements
-        def interrupt(top): return send_signal(top, signal.SIGINT)  # pylint: disable=multiple-statements
+        def kill(top): top.process_panel.selected.kill()
+        def terminate(top): top.process_panel.selected.terminate()
+        def interrupt(top): top.process_panel.selected.interrupt()
 
         self.keymaps.bind('top', 'q', quit)
         self.keymaps.bind('process', 'q', quit)
         self.keymaps.bind('process', '<left>', cmd_left)
-        self.keymaps.copy('process', '<left>', '<')
         self.keymaps.copy('process', '<left>', '[')
         self.keymaps.bind('process', '<right>', cmd_right)
-        self.keymaps.copy('process', '<right>', '>')
         self.keymaps.copy('process', '<right>', ']')
         self.keymaps.bind('process', '<up>', select_up)
+        self.keymaps.copy('process', '<up>', '<s-tab>')
         self.keymaps.bind('process', '<down>', select_down)
+        self.keymaps.copy('process', '<down>', '<tab>')
         self.keymaps.bind('process', '<backspace>', select_clear)
         self.keymaps.bind('process', 'k', kill)
         self.keymaps.bind('process', 't', terminate)

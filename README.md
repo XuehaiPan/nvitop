@@ -116,12 +116,14 @@ optional arguments:
 #### Keybindings for monitor mode
 
 - `q`: quit and return to the terminal.
-- `<LEFT>` / `<RIGHT>` / `[` / `]` / `<` / `>`: scroll the host information of processes.
-- `<UP>` / `<DOWN>`: select and highlight process.
+- (`<LEFT>` `<RIGHT>`) / (`[` `]`) / `<S-WHEEL>`: scroll the host information of processes.
+- (`<UP>` `<DOWN>`) / (`<TAB>` `<S-TAB>`) / `<WHEEL>`: select and highlight process.
 - `<BACKSPACE>`: clear selection.
 - `k`: send `signal.SIGKILL` to selected process.
 - `t`: send `signal.SIGTERM` to selected process.
-- `<CTRL>+c`: send `signal.SIGINT` to selected process.
+- `<C-c>`: send `signal.SIGINT` to selected process.
+
+*Note: Press `<CTRL>` key to multiply the mouse wheel events by `5`.*
 
 ## Screenshots
 
