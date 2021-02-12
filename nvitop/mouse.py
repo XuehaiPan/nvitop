@@ -58,6 +58,27 @@ class MouseEvent(object):
         except IndexError:
             return False
 
+    def released(self, n):
+        """Returns whether the mouse key n is released"""
+        try:
+            return (self.bstate & MouseEvent.RELEASED[n]) != 0
+        except IndexError:
+            return False
+
+    def clicked(self, n):
+        """Returns whether the mouse key n is clicked"""
+        try:
+            return (self.bstate & MouseEvent.CLICKED[n]) != 0
+        except IndexError:
+            return False
+
+    def double_clicked(self, n):
+        """Returns whether the mouse key n is double clicked"""
+        try:
+            return (self.bstate & MouseEvent.DOUBLE_CLICKED[n]) != 0
+        except IndexError:
+            return False
+
     def wheel_direction(self):
         """Returns the direction of the scroll action, 0 if there was none"""
         # If the bstate > ALL_MOUSE_EVENTS, it's an invalid mouse button.

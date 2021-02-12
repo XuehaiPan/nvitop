@@ -71,8 +71,8 @@ def main():
         visible_devices = set(args.only)
     elif args.only_visible:
         try:
-            visible_devices = set(map(int, filter(lambda s: s != '' and not s.isspace(),
-                                                  os.getenv('CUDA_VISIBLE_DEVICES').split(','))))
+            visible_devices = map(str.strip, os.getenv('CUDA_VISIBLE_DEVICES').split(','))
+            visible_devices = set(map(int, filter(str.isnumeric, visible_devices)))
         except (ValueError, AttributeError):
             visible_devices = set(range(device_count))
     else:
