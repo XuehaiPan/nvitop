@@ -254,8 +254,7 @@ class KeyBuffer(object):  # pylint: disable=too-many-instance-attributes
             moved = True
             if key in self.pointer:
                 self.pointer = self.pointer[key]
-            elif self.any_key in self.pointer and \
-                    key not in self.exclude_from_anykey:
+            elif self.any_key in self.pointer and key not in self.exclude_from_anykey:
                 self.wildcards.append(key)
                 self.pointer = self.pointer[self.any_key]
             else:

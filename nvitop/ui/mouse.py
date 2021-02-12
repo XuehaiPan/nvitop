@@ -88,7 +88,7 @@ class MouseEvent(object):
         # the code for the "scroll down" button.
         if self.pressed(4):
             return -self.CTRL_SCROLLWHEEL_MULTIPLIER if self.ctrl() else -1
-        if self.pressed(2) or (self.bstate & (1 << 21)) or self. key_invalid():
+        if self.pressed(2) or (self.bstate & (1 << 21)) or self.key_invalid():
             return self.CTRL_SCROLLWHEEL_MULTIPLIER if self.ctrl() else 1
         return 0
 

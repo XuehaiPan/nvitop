@@ -28,9 +28,9 @@ def libcurses():
     except curses.error:
         pass
 
-    def interrupt_handler(signum, frame):  # pylint: disable=unused-argument
-        # Push a Ctrl+C (ascii value 3) to the curses getch stack
-        curses.ungetch(3)
+    # Push a Ctrl+C (ascii value 3) to the curses getch stack
+    def interrupt_handler(signalnum, frame): curses.ungetch(3)  # pylint: disable=multiple-statements,unused-argument
+
     # Simulate a ^C press in curses when an interrupt is caught
     signal.signal(signal.SIGINT, interrupt_handler)
 

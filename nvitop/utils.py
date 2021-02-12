@@ -8,6 +8,7 @@ import sys
 
 import pynvml as nvml
 
+
 try:
     if not sys.stdout.isatty():
         raise ImportError
