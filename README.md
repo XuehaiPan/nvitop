@@ -6,9 +6,13 @@
 ![Top Language](https://img.shields.io/github/languages/top/XuehaiPan/nvitop?label=Python)
 ![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)
 
-An interactive Nvidia-GPU process viewer.
+An interactive NVIDIA-GPU process viewer.
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. Meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And it is really inconvenient that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
+
+This project is currently in the *beta phase*, most features has been well tested on Linux. If you are using Windows with CUDA-capable GPUs, please submit feedbacks on the issue page, thank you very much.
+
+If this repo is useful to you, please star ⭐️ it to let more people kown 🤗.
 
 ## Features
 
@@ -92,7 +96,7 @@ Type `nvitop --help` for more information:
 usage: nvitop [-h] [-m [{auto,full,compact}]] [-o idx [idx ...]] [-ov]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
 
-A interactive Nvidia-GPU process viewer.
+A interactive NVIDIA-GPU process viewer.
 
 optional arguments:
   -h, --help            show this help message and exit

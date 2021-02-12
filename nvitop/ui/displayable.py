@@ -1,4 +1,4 @@
-# This file is part of nvitop, the interactive Nvidia-GPU process viewer.
+# This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # This file is originally part of ranger, the console file manager. https://github.com/ranger/ranger
 # License: GNU GPL version 3.
 

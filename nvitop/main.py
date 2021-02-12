@@ -1,4 +1,4 @@
-# This file is part of nvitop, the interactive Nvidia-GPU process viewer.
+# This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
@@ -18,7 +18,7 @@ def parse_arguments():
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
                                                                colored('moderate', 'yellow'),
                                                                colored('heavy', 'red'))
-    parser = argparse.ArgumentParser(prog='nvitop', description='A interactive Nvidia-GPU process viewer.',
+    parser = argparse.ArgumentParser(prog='nvitop', description='A interactive NVIDIA-GPU process viewer.',
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--monitor', type=str, default='notpresented',
                         nargs='?', choices=['auto', 'full', 'compact'],

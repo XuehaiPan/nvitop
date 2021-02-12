@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# This file is part of nvitop, the interactive Nvidia-GPU process viewer.
+# This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
 import sys
