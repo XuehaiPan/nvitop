@@ -45,6 +45,13 @@ class Selected(object):
         self._proc = process
         self._ident = None
 
+    @property
+    def pid(self):
+        try:
+            return self.identity[0]
+        except TypeError:
+            return None
+
     def move(self, direction=0):
         if direction == 0:
             return
@@ -100,6 +107,34 @@ class Selected(object):
         return False
 
     __bool__ = is_set
+
+    def is_same(self, process):
+        try:
+            return self.identity == process.identity
+        except AttributeError:
+            try:
+                return self.identity == process._ident  # pylint: disable=protected-access
+            except AttributeError:
+                pass
+        except TypeError:
+            pass
+
+        return False
+
+    __eq__ = is_same
+
+    def is_same_on_host(self, process):
+        try:
+            return self.identity[:2] == process.identity[:2]
+        except AttributeError:
+            try:
+                return self.identity[:2] == process._ident[:2]  # pylint: disable=protected-access
+            except AttributeError:
+                pass
+        except TypeError:
+            pass
+
+        return False
 
 
 class ProcessPanel(Displayable):
@@ -200,31 +235,36 @@ class ProcessPanel(Displayable):
                         '{:<46}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.offset, 0):]))
         else:
             self.addstr(self.y + 2, self.x + 31, '{:<46}'.format('COMMAND'))
-        self.addstr(self.y, self.x + 23, '═' * 54)
 
         with self.snapshot_lock:
             snapshots = self.snapshots
 
-        self.selected.index = None
+        selected = self.selected
+        selected.index = None
+        for i, process in enumerate(snapshots):
+            if process.identity == selected.identity:
+                selected.index = i
+                selected.process = process
+
         if len(snapshots) > 0:
             y = self.y + 4
             prev_device_index = None
             color = -1
             for i, process in enumerate(snapshots):
                 device_index = process.device.index
-                if prev_device_index is None or prev_device_index != device_index:
+                if prev_device_index != device_index:
                     color = process.device.display_color
+                    if prev_device_index is not None:
+                        self.addstr(y, self.x,
+                                    '├─────────────────────────────────────────────────────────────────────────────┤')
+                        y += 1
+                prev_device_index = device_index
+
                 host_info = process.host_info
                 if self.offset < 0:
                     host_info = cut_string(host_info, padstr='..', maxlen=47)
                 else:
                     host_info = host_info[self.offset:self.offset + 47]
-
-                if prev_device_index is not None and prev_device_index != device_index:
-                    self.addstr(y, self.x,
-                                '├─────────────────────────────────────────────────────────────────────────────┤')
-                    y += 1
-                prev_device_index = device_index
                 self.addstr(y, self.x,
                             '│ {:>3} {:>6} {:>7} {:>8} {:<47} │'.format(
                                 device_index, process.pid, cut_string(process.username, maxlen=7, padstr='+'),
@@ -232,19 +272,13 @@ class ProcessPanel(Displayable):
                             ))
                 if self.offset > 0:
                     self.addstr(y, self.x + 30, ' ')
-                if self.selected.index is None and process.identity == self.selected.identity:
-                    self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
-                    self.selected.index = i
-                    self.selected.process = process
 
-                    memory_usage = ' Memory-Usage: {} '.format(process.device.memory_usage)
-                    gpu_utilization = ' GPU-Util: {} '.format(process.device.gpu_utilization)
-                    mem_len, gpu_len = len(memory_usage), len(gpu_utilization)
-                    x = self.x + self.width - 2 - mem_len - 2 - gpu_len
-                    self.addstr(self.y, x, memory_usage)
-                    self.addstr(self.y, x + 2 + mem_len, gpu_utilization)
-                    self.color_at(self.y, x, width=mem_len, fg=color)
-                    self.color_at(self.y, x + 2 + mem_len, width=gpu_len, fg=color)
+                if selected.is_same_on_host(process):
+                    if selected.is_same(process):
+                        self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
+                    else:
+                        self.color_at(y, self.x + 1, width=77, attr='bold')
+                        self.color_at(y, self.x + 2, width=3, fg=color, attr='bold')
                 else:
                     self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
@@ -254,15 +288,15 @@ class ProcessPanel(Displayable):
                         '│  No running compute processes found                                         │')
             self.offset = -1
 
-        if self.selected.owned():
-            self.addstr(self.y - 1, self.x + 12,
-                        '(Press k(KILL)/t(TERM)/^c(INT) to send signals to selected process)')
-            self.color_at(self.y - 1, self.x + 19, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 21, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, self.x + 27, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 29, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, self.x + 35, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 38, width=3, fg='red', attr='bold')
+        if selected.owned():
+            self.addstr(self.y - 1, self.x + 32,
+                        '(Press k(KILL)/t(TERM)/^c(INT) to send signals)')
+            self.color_at(self.y - 1, self.x + 39, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 41, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, self.x + 47, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 49, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, self.x + 55, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, self.x + 58, width=3, fg='red', attr='bold')
         else:
             self.addstr(self.y - 1, self.x, ' ' * self.width)
 
@@ -283,10 +317,10 @@ class ProcessPanel(Displayable):
             color = None
             for process in snapshots:
                 device_index = process.device.index
-                if prev_device_index is None or prev_device_index != device_index:
+                if prev_device_index != device_index:
                     color = process.device.display_color
-                if prev_device_index is not None and prev_device_index != device_index:
-                    lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
+                    if prev_device_index is not None:
+                        lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
                 prev_device_index = device_index
 
                 lines.append('│ {} {:>6} {:>7} {:>8} {:<47} │'.format(
