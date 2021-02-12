@@ -9,7 +9,7 @@ import time
 from .displayable import DisplayableContainer
 from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
 from .mouse import MouseEvent
-from .panel import DevicePanel, ProcessPanel
+from .panels import DevicePanel, ProcessPanel
 
 
 class BreakLoop(Exception):

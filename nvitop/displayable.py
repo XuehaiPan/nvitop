@@ -107,7 +107,7 @@ class CursesShortcuts(object):
 
     def color_reset(self):
         """Change the colors to the default colors"""
-        CursesShortcuts.color(self)
+        self.color()
 
 
 class Displayable(CursesShortcuts):
