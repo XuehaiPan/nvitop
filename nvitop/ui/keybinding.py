@@ -69,9 +69,7 @@ special_keys_init()
 
 SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)
 del VERY_SPECIAL_KEYS
-REVERSED_SPECIAL_KEYS = {
-    v: k for k, v in SPECIAL_KEYS.items()
-}
+REVERSED_SPECIAL_KEYS = {v: k for k, v in SPECIAL_KEYS.items()}
 
 
 def parse_keybinding(obj):  # pylint: disable=too-many-branches

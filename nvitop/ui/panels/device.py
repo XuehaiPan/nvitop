@@ -35,13 +35,13 @@ class DevicePanel(Displayable):
 
         self.formats_compact = [
             '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_state:>12} '
-            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
+            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │',
         ]
         self.formats_full = [
             '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
             '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
             '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_state:>12} '
-            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │'
+            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │',
         ]
 
         self.snapshots = []
@@ -75,14 +75,14 @@ class DevicePanel(Displayable):
             else:
                 header.extend([
                     '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-                    '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │'
+                    '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
                 ])
             header.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
         else:
             header.extend([
                 '╞═════════════════════════════════════════════════════════════════════════════╡',
                 '│  No visible CUDA devices found                                              │',
-                '╘═════════════════════════════════════════════════════════════════════════════╛'
+                '╘═════════════════════════════════════════════════════════════════════════════╛',
             ])
         return header
 
@@ -92,13 +92,13 @@ class DevicePanel(Displayable):
             if self.compact:
                 frame.extend(self.device_count * [
                     '│                               │                      │                      │',
-                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
                 ])
             else:
                 frame.extend(self.device_count * [
                     '│                               │                      │                      │',
                     '│                               │                      │                      │',
-                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
                 ])
             frame.pop()
             frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
@@ -163,7 +163,7 @@ class DevicePanel(Displayable):
 
         lines = [
             '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
-            *self.header_lines()
+            *self.header_lines(),
         ]
 
         if self.device_count > 0:

@@ -90,3 +90,7 @@ def main():
     top.destroy()
 
     nvml.nvmlShutdown()
+
+
+if __name__ == '__main__':
+    sys.exit(main())

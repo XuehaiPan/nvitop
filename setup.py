@@ -26,13 +26,13 @@ setup(
     entry_points={
         'console_scripts': [
             'nvitop=nvitop.main:main'
-        ],
+        ]
     },
     install_requires=(['windows-curses'] if sys.platform == 'windows' else []) + [
         'nvidia-ml-py==11.*',
         'psutil',
         'cachetools',
-        'termcolor'
+        'termcolor',
     ],
     python_requires='>=3.5, <4',
     classifiers=[
@@ -55,11 +55,11 @@ setup(
         'Topic :: System :: Hardware',
         'Topic :: System :: Monitoring',
         'Topic :: System :: Systems Administration',
-        'Topic :: Utilities'
+        'Topic :: Utilities',
     ],
     keywords='nvidia, nvidia-smi, GPU, top, htop',
     project_urls={
         'Bug Reports': 'https://github.com/XuehaiPan/nvitop/issues',
-        'Source': 'https://github.com/XuehaiPan/nvitop'
+        'Source': 'https://github.com/XuehaiPan/nvitop',
     },
 )
