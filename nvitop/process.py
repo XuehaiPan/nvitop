@@ -5,6 +5,7 @@
 # pylint: disable=invalid-name
 
 import datetime
+import sys
 
 import psutil
 from cachetools.func import ttl_cache
@@ -12,15 +13,24 @@ from cachetools.func import ttl_cache
 from .utils import bytes2human, timedelta2human, Snapshot
 
 
-def add_quotes(s):
-    if '$' not in s and '\\' not in s:
-        if ' ' not in s:
-            return s
-        if '"' not in s:
-            return '"{}"'.format(s)
-    if "'" not in s:
-        return "'{}'".format(s)
-    return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
+if sys.platform != 'windows':
+    def add_quotes(s):
+        if '$' not in s and '\\' not in s:
+            if ' ' not in s:
+                return s
+            if '"' not in s:
+                return '"{}"'.format(s)
+        if "'" not in s:
+            return "'{}'".format(s)
+        return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
+else:
+    def add_quotes(s):
+        if '%' not in s and '^' not in s:
+            if ' ' not in s:
+                return s
+            if '"' not in s:
+                return '"{}"'.format(s)
+        return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
 
 
 class GProcess(psutil.Process):
