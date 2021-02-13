@@ -29,11 +29,14 @@ If this repo is useful to you, please star ⭐️ it to let more people kown �
 ## Requirements
 
 - Python 3.5+
-- curses
+- NVIDIA Management Library (NVML)
 - nvidia-ml-py
+- curses
 - psutil
 - cachetools
 - termcolor
+
+**Note**: The NVIDIA Management Library (NVML) can be downloaded as part of the NVIDIA CUDA Toolkit (available at [NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). Please see [Installation Guides](https://docs.nvidia.com/cuda/index.html#installation-guides) in [CUDA Toolkit Documentation](https://docs.nvidia.com/cuda/index.html) for more details. The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html#nvml-api-reference).
 
 ## Installation
 
@@ -127,7 +130,7 @@ optional arguments:
 - `t`: send `signal.SIGTERM` to selected process.
 - `<C-c>`: send `signal.SIGINT` to selected process.
 
-*Note: Press `<CTRL>` key to multiply the mouse wheel events by `5`.*
+**Note**: Press `<CTRL>` key to multiply the mouse wheel events by `5`.
 
 ## Screenshots
 
