@@ -59,11 +59,12 @@ def main():
     try:
         nvml.nvmlInit()
     except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
-        print('ERROR: The NVIDIA Management Library (NVML) not found.\n'
-              'HINT: The NVIDIA Management Library can be downloaded as part of the NVIDIA CUDA\n'
-              '      Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
-              '      Please see Installation Guides on https://docs.nvidia.com/cuda/index.html\n'
-              '      for more details.',
+        print('ERROR: NVIDIA Management Library (NVML) not found.\n'
+              'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
+              '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
+              '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
+              '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
+              '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.',
               file=sys.stderr)
         return 1
 

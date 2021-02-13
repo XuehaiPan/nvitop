@@ -31,12 +31,12 @@ If this repo is useful to you, please star ⭐️ it to let more people kown �
 - Python 3.5+
 - NVIDIA Management Library (NVML)
 - nvidia-ml-py
-- curses
 - psutil
 - cachetools
+- curses
 - termcolor
 
-**Note**: The NVIDIA Management Library (NVML) can be downloaded as part of the NVIDIA CUDA Toolkit (available at [NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). Please see [Installation Guides](https://docs.nvidia.com/cuda/index.html#installation-guides) in [CUDA Toolkit Documentation](https://docs.nvidia.com/cuda/index.html) for more details. The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html#nvml-api-reference).
+**Note**: The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
 
 ## Installation
 
