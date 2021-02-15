@@ -21,10 +21,10 @@ class DevicePanel(Displayable):
         self.device_count = len(self.devices)
         self._compact = compact
         self.width = 79
-        self.height = 4 + (3 - int(compact)) * (self.device_count + 1)
-        self.full_height = 4 + 3 * (self.device_count + 1)
+        self.height = 3 + (3 - int(compact)) * (self.device_count + 1)
+        self.full_height = 3 + 3 * (self.device_count + 1)
         if self.device_count == 0:
-            self.height = self.full_height = 6
+            self.height = self.full_height = 5
 
         self.driver_version = str(nvml_query('nvmlSystemGetDriverVersion'))
         cuda_version = nvml_query('nvmlSystemGetCudaDriverVersion')
@@ -60,7 +60,7 @@ class DevicePanel(Displayable):
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
-            self.height = 4 + (3 - int(self.compact)) * (self.device_count + 1)
+            self.height = 3 + (3 - int(self.compact)) * (self.device_count + 1)
 
     def header_lines(self):
         header = [
@@ -129,12 +129,8 @@ class DevicePanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            for y, line in enumerate(self.frame_lines(), start=self.y + 1):
+            for y, line in enumerate(self.frame_lines(), start=self.y):
                 self.addstr(y, self.x, line)
-            self.addstr(self.y, self.x + 62, '(Press q to quit)')
-            self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
-
-        self.addstr(self.y, self.x, '{:<62}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
 
         if self.compact:
             formats = self.formats_compact
@@ -145,7 +141,7 @@ class DevicePanel(Displayable):
             snapshots = self.snapshots
         for index, device in enumerate(snapshots):
             device.name = cut_string(device.name, maxlen=18)
-            for y, fmt in enumerate(formats, start=self.y + 4 + (len(formats) + 1) * (index + 1)):
+            for y, fmt in enumerate(formats, start=self.y + 3 + (len(formats) + 1) * (index + 1)):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, 1, width=31, fg=device.display_color)
                 self.color_at(y, 33, width=22, fg=device.display_color)
@@ -161,10 +157,7 @@ class DevicePanel(Displayable):
     def print(self):
         snapshots = self.take_snapshot()
 
-        lines = [
-            '{:<79}'.format(time.strftime('%a %b %d %H:%M:%S %Y')),
-            *self.header_lines(),
-        ]
+        lines = self.header_lines()
 
         if self.device_count > 0:
             for device in snapshots:

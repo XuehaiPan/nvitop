@@ -189,7 +189,7 @@ class Device(object):
 
     @ttl_cache(ttl=1.0)
     def snapshot(self):
-        return Snapshot(**{key: getattr(self, key) for key in self._snapshot_keys})
+        return Snapshot(real=self, **{key: getattr(self, key) for key in self._snapshot_keys})
 
     _snapshot_keys = ['index', 'name', 'loading_intensity', 'display_color',
                       'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',

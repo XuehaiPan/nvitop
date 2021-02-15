@@ -36,11 +36,12 @@ class Top(DisplayableContainer):
         self.add_child(self.process_panel)
 
         self.device_panel = DevicePanel(self.devices, compact, win=win)
+        self.device_panel.y = 1
         self.device_panel.focused = False
         self.add_child(self.device_panel)
 
-        self.process_panel.y = self.device_panel.height + 1
-        self.height = self.device_panel.height + 1 + self.process_panel.height
+        self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
+        self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
 
         self.keybuffer = KeyBuffer()
         self.keymaps = KeyMaps(self.keybuffer)
@@ -92,10 +93,10 @@ class Top(DisplayableContainer):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, _ = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
-            self.compact = (n_term_lines < self.device_panel.full_height + 1 + self.process_panel.height)
+            self.compact = (n_term_lines < 1 + self.device_panel.full_height + 1 + self.process_panel.height)
             self.device_panel.compact = self.compact
             self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
-        self.height = self.device_panel.height + 1 + self.process_panel.height
+        self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
         if self.termsize != termsize:
             self.termsize = termsize
             self.need_redraw = True
@@ -109,6 +110,10 @@ class Top(DisplayableContainer):
     def draw(self):
         if self.need_redraw:
             self.win.erase()
+            self.addstr(self.y, self.x + 62, '(Press q to quit)')
+            self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
+        self.addstr(self.y, self.x, '{:<62}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
+
         super(Top, self).draw()
 
     def finalize(self):
@@ -134,6 +139,7 @@ class Top(DisplayableContainer):
                 break
 
     def print(self):
+        print(time.strftime('%a %b %d %H:%M:%S %Y'))
         self.device_panel.print()
         print()
         self.process_panel.print()

@@ -81,7 +81,7 @@ class GProcess(psutil.Process):
                 host_info = '{:>5.1f} {:>5.1f}  {:>8}  {}'.format(cpu_percent, memory_percent,
                                                                   running_time_human, command)
                 snapshot = Snapshot(
-                    process=self,
+                    real=self,
                     identity=self._ident,
                     pid=self.pid,
                     device=self.device,
