@@ -219,7 +219,7 @@ class KeyBuffer(object):  # pylint: disable=too-many-instance-attributes
     any_key = ANYKEY
     passive_key = PASSIVE_ACTION
     quantifier_key = QUANT_KEY
-    exclude_from_anykey = [27]
+    exclude_from_anykey = [curses.ascii.ESC]
 
     def __init__(self, keymap=None):
         self.keymap = keymap
@@ -245,7 +245,7 @@ class KeyBuffer(object):  # pylint: disable=too-many-instance-attributes
         if not self.finished_parsing_quantifier and key in DIGITS:
             if self.quantifier is None:
                 self.quantifier = 0
-            self.quantifier = self.quantifier * 10 + key - 48  # (48 = ord(0))
+            self.quantifier = self.quantifier * 10 + key - 48  # (48 = ord('0'))
         else:
             self.finished_parsing_quantifier = True
 

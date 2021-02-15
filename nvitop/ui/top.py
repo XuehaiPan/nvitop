@@ -84,6 +84,7 @@ class Top(DisplayableContainer):
         self.keymaps.copy('process', '<up>', '<s-tab>')
         self.keymaps.bind('process', '<down>', select_down)
         self.keymaps.copy('process', '<down>', '<tab>')
+        self.keymaps.bind('process', '<esc>', select_clear)
         self.keymaps.bind('process', '<backspace>', select_clear)
         self.keymaps.bind('process', 'k', kill)
         self.keymaps.bind('process', 't', terminate)
