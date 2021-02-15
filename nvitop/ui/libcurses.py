@@ -5,11 +5,14 @@
 
 import contextlib
 import curses
+import os
 import signal
 
 
 @contextlib.contextmanager
 def libcurses():
+    os.environ.setdefault('ESCDELAY', '25')
+
     win = curses.initscr()
     win.nodelay(True)
     win.leaveok(True)
