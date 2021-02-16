@@ -156,7 +156,7 @@ class ProcessPanel(Displayable):
 
         self.current_user = psutil.Process().username()
         self.selected = Selected(panel=self)
-        self.offset = -1
+        self.cmd_offset = -1
 
     def header_lines(self):
         header = [
@@ -216,7 +216,7 @@ class ProcessPanel(Displayable):
         max_info_len = 0
         for process in snapshots:
             max_info_len = max(max_info_len, len(process.host_info))
-        self.offset = max(-1, min(self.offset, max_info_len - 47))
+        self.cmd_offset = max(-1, min(self.cmd_offset, max_info_len - 47))
 
         self.need_redraw = (self.need_redraw or self.height > height)
         self.height = height
@@ -230,9 +230,9 @@ class ProcessPanel(Displayable):
             for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
 
-        if self.offset < 22:
+        if self.cmd_offset < 22:
             self.addstr(self.y + 2, self.x + 31,
-                        '{:<46}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.offset, 0):]))
+                        '{:<46}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.cmd_offset, 0):]))
         else:
             self.addstr(self.y + 2, self.x + 31, '{:<46}'.format('COMMAND'))
 
@@ -261,16 +261,16 @@ class ProcessPanel(Displayable):
                 prev_device_index = device_index
 
                 host_info = process.host_info
-                if self.offset < 0:
+                if self.cmd_offset < 0:
                     host_info = cut_string(host_info, padstr='..', maxlen=47)
                 else:
-                    host_info = host_info[self.offset:self.offset + 47]
+                    host_info = host_info[self.cmd_offset:self.cmd_offset + 47]
                 self.addstr(y, self.x,
                             '│ {:>3} {:>6} {:>7} {:>8} {:<47} │'.format(
                                 device_index, process.pid, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info
                             ))
-                if self.offset > 0:
+                if self.cmd_offset > 0:
                     self.addstr(y, self.x + 30, ' ')
 
                 if selected.is_same_on_host(process):
@@ -286,7 +286,7 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 4, self.x,
                         '│  No running compute processes found                                         │')
-            self.offset = -1
+            self.cmd_offset = -1
 
         if selected.owned():
             self.addstr(self.y - 1, self.x + 32,
@@ -340,7 +340,7 @@ class ProcessPanel(Displayable):
     def click(self, event):
         direction = event.wheel_direction()
         if event.shift():
-            self.offset += direction
+            self.cmd_offset += direction
         else:
             self.selected.move(direction=direction)
         return True

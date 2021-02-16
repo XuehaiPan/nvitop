@@ -43,7 +43,7 @@ If this repo is useful to you, please star ⭐️ it to let more people kown �
 Install from PyPI:
 
 ```bash
-$ pip install nvitop
+$ pip install --upgrade nvitop
 ```
 
 Install the latest version from GitHub (*recommended*):
@@ -70,6 +70,9 @@ $ nvitop
 
 # Specify query devices
 $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
+
+# Only show devices in `CUDA_VISIBLE_DEVICES`
+$ nvitop -ov
 ```
 
 Run as a resource monitor, like `htop`:
@@ -123,14 +126,16 @@ optional arguments:
 #### Keybindings for monitor mode
 
 - `q`: quit and return to the terminal.
-- (`<LEFT>` `<RIGHT>`) / (`[` `]`) / `<S-WHEEL>`: scroll the host information of processes.
-- (`<UP>` `<DOWN>`) / (`<TAB>` `<S-TAB>`) / `<WHEEL>`: select and highlight process.
-- `<ESC>` / `<BACKSPACE>`: clear selection.
+- (`<Left>` `<Right>`) / (`[` `]`) / `<S-Wheel>`: scroll the host information of processes.
+- `<Home>` / `<C-a>`: scroll the host information of processes to the beginning of line.
+- `<End>` / `<C-e>`: scroll the host information of selected processes to the end of line.
+- (`<Up>` `<Down>`) / (`<Tab>` `<S-Tab>`) / `<Wheel>`: select and highlight process.
+- `<Esc>`: clear selection.
 - `k`: send `signal.SIGKILL` to selected process.
 - `t`: send `signal.SIGTERM` to selected process.
 - `<C-c>`: send `signal.SIGINT` to selected process.
 
-**Note**: Press `<CTRL>` key to multiply the mouse wheel events by `5`.
+**Note**: Press `<Ctrl>` key to multiply the mouse wheel events by `5`.
 
 ## Screenshots
 

@@ -18,7 +18,8 @@ class BreakLoop(Exception):
 
 class Top(DisplayableContainer):
     def __init__(self, devices, mode='auto', win=None):
-        super(Top, self).__init__(win, self)
+        super(Top, self).__init__(win, root=self)
+        self.termsize = None
 
         assert mode in ('auto', 'full', 'compact')
         compact = (mode == 'compact')
@@ -28,18 +29,15 @@ class Top(DisplayableContainer):
         self.devices = devices
         self.device_count = len(self.devices)
 
-        self.win = win
-        self.termsize = None
-
-        self.process_panel = ProcessPanel(self.devices, win=win)
+        self.process_panel = ProcessPanel(self.devices, win=win, root=self)
         self.process_panel.focused = True
         self.add_child(self.process_panel)
 
-        self.device_panel = DevicePanel(self.devices, compact, win=win)
-        self.device_panel.y = 1
+        self.device_panel = DevicePanel(self.devices, compact, win=win, root=self)
         self.device_panel.focused = False
         self.add_child(self.device_panel)
 
+        self.device_panel.y = 1
         self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
 
@@ -63,8 +61,13 @@ class Top(DisplayableContainer):
 
         def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
 
-        def cmd_left(top): top.process_panel.offset -= 1
-        def cmd_right(top): top.process_panel.offset += 1
+        def cmd_left(top): top.process_panel.cmd_offset -= 1
+        def cmd_right(top): top.process_panel.cmd_offset += 1
+        def cmd_begin(top): top.process_panel.cmd_offset = -1
+        def cmd_end(top):
+            selected = top.process_panel.selected
+            if selected.is_set():
+                top.process_panel.cmd_offset = len(selected.process.host_info) - 47
 
         def select_up(top): top.process_panel.selected.move(direction=-1)
         def select_down(top): top.process_panel.selected.move(direction=+1)
@@ -80,15 +83,18 @@ class Top(DisplayableContainer):
         self.keymaps.copy('process', '<left>', '[')
         self.keymaps.bind('process', '<right>', cmd_right)
         self.keymaps.copy('process', '<right>', ']')
+        self.keymaps.bind('process', '<home>', cmd_begin)
+        self.keymaps.copy('process', '<home>', '<C-a>')
+        self.keymaps.bind('process', '<end>', cmd_end)
+        self.keymaps.copy('process', '<end>', '<C-e>')
         self.keymaps.bind('process', '<up>', select_up)
-        self.keymaps.copy('process', '<up>', '<s-tab>')
+        self.keymaps.copy('process', '<up>', '<S-tab>')
         self.keymaps.bind('process', '<down>', select_down)
         self.keymaps.copy('process', '<down>', '<tab>')
         self.keymaps.bind('process', '<esc>', select_clear)
-        self.keymaps.bind('process', '<backspace>', select_clear)
         self.keymaps.bind('process', 'k', kill)
         self.keymaps.bind('process', 't', terminate)
-        self.keymaps.bind('process', '<c-c>', interrupt)
+        self.keymaps.bind('process', '<C-c>', interrupt)
 
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
@@ -185,9 +191,10 @@ class Top(DisplayableContainer):
 
     def handle_input(self):  # pylint: disable=too-many-branches
         key = self.win.getch()
-        if key != curses.ERR:
-            self.last_input_time = time.time()
+        if key == curses.ERR:
+            return
 
+        self.last_input_time = time.time()
         if key == curses.KEY_ENTER:
             key = ord('\n')
         if key == 27 or (128 <= key < 256):
@@ -203,13 +210,12 @@ class Top(DisplayableContainer):
                 keys[0] = ALT_KEY
             self.handle_keys(*keys)
             curses.flushinp()
-        else:
+        elif key >= 0:
             # Handle simple key presses, CTRL+X, etc here:
-            if key >= 0:
-                curses.flushinp()
-                if key == curses.KEY_MOUSE:
-                    self.handle_mouse()
-                elif key == curses.KEY_RESIZE:
-                    self.update_size()
-                else:
-                    self.handle_key(key)
+            curses.flushinp()
+            if key == curses.KEY_MOUSE:
+                self.handle_mouse()
+            elif key == curses.KEY_RESIZE:
+                self.update_size()
+            else:
+                self.handle_key(key)
