@@ -67,7 +67,7 @@ class Top(DisplayableContainer):
         def cmd_end(top):
             selected = top.process_panel.selected
             if selected.is_set():
-                top.process_panel.cmd_offset = len(selected.process.host_info) - 47
+                top.process_panel.cmd_offset = max(0, len(selected.process.host_info) - 47)
 
         def select_up(top): top.process_panel.selected.move(direction=-1)
         def select_down(top): top.process_panel.selected.move(direction=+1)
