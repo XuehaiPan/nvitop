@@ -53,7 +53,7 @@ def special_keys_init():
     for key, val in tuple(SPECIAL_KEYS.items()):
         SPECIAL_KEYS['a-' + key] = (ALT_KEY, val)
 
-    for char in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_!{}':
+    for char in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_!{}[],./':
         SPECIAL_KEYS['a-' + char] = (ALT_KEY, ord(char))
 
     for char in 'abcdefghijklmnopqrstuvwxyz_':
@@ -101,7 +101,13 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
             if in_brackets:
                 if char == '>':
                     in_brackets = False
-                    string = ''.join(bracket_content).lower()
+                    string = ''.join(bracket_content)
+                    string_lower = string.lower()
+                    if len(string) == 3 and \
+                            (string_lower.startswith('a-') or string_lower.startswith('c-')):
+                        string = '{}-{}'.format(string_lower[0], string[-1])
+                    else:
+                        string = string_lower
                     try:
                         keys = SPECIAL_KEYS[string]
                         for key in keys:
