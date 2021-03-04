@@ -143,7 +143,7 @@ class Displayable(CursesShortcuts):
     """
 
     def __init__(self, win, root=None):
-        super(Displayable, self).__init__()
+        super().__init__()
 
         self._need_redraw = True
         self.focused = False
@@ -259,7 +259,7 @@ class DisplayableContainer(Displayable):
     """
 
     def __init__(self, win, root=None):
-        super(DisplayableContainer, self).__init__(win, root)
+        super().__init__(win, root)
 
         self.container = []
 
@@ -267,7 +267,7 @@ class DisplayableContainer(Displayable):
 
     def poke(self):
         """Recursively called on objects in container"""
-        super(DisplayableContainer, self).poke()
+        super().poke()
         for displayable in self.container:
             displayable.poke()
 
@@ -291,7 +291,7 @@ class DisplayableContainer(Displayable):
         """Recursively called on objects in container"""
         for displayable in self.container:
             displayable.destroy()
-        super(DisplayableContainer, self).destroy()
+        super().destroy()
 
     def press(self, key):
         """Recursively called on objects in container"""

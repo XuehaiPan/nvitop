@@ -151,7 +151,7 @@ def key_to_string(key):
 
 class KeyMaps(dict):
     def __init__(self, keybuffer=None):
-        super(KeyMaps, self).__init__()
+        super().__init__()
         self.keybuffer = keybuffer
         self.used_keymap = None
 

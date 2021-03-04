@@ -140,7 +140,7 @@ class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
     def __init__(self, devices, win=None, root=None):
-        super(ProcessPanel, self).__init__(win, root)
+        super().__init__(win, root)
         self.width = 79
         self.height = 6
 
@@ -220,7 +220,7 @@ class ProcessPanel(Displayable):
         self.need_redraw = (self.need_redraw or self.height > height)
         self.height = height
 
-        super(ProcessPanel, self).poke()
+        super().poke()
 
     def draw(self):
         self.color_reset()
@@ -276,6 +276,7 @@ class ProcessPanel(Displayable):
                     if selected.is_same(process):
                         self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
                     else:
+                        self.addstr(y, self.x + 1, '=')
                         self.color_at(y, self.x + 1, width=77, attr='bold')
                         self.color_at(y, self.x + 2, width=3, fg=color, attr='bold')
                 else:
@@ -289,7 +290,7 @@ class ProcessPanel(Displayable):
 
         if selected.owned():
             self.addstr(self.y - 1, self.x + 32,
-                        '(Press k(KILL)/t(TERM)/^c(INT) to send signals)')
+                        '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
             self.color_at(self.y - 1, self.x + 39, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y - 1, self.x + 41, width=4, fg='red', attr='bold')
             self.color_at(self.y - 1, self.x + 47, width=1, fg='magenta', attr='bold | italic')
@@ -303,7 +304,7 @@ class ProcessPanel(Displayable):
         self.need_redraw = False
 
     def destroy(self):
-        super(ProcessPanel, self).destroy()
+        super().destroy()
         self.daemon_started.clear()
 
     def print(self):

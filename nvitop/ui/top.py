@@ -18,7 +18,7 @@ class BreakLoop(Exception):
 
 class Top(DisplayableContainer):
     def __init__(self, devices, mode='auto', win=None):
-        super(Top, self).__init__(win, root=self)
+        super().__init__(win, root=self)
         self.termsize = None
 
         assert mode in ('auto', 'full', 'compact')
@@ -73,12 +73,14 @@ class Top(DisplayableContainer):
         def select_down(top): top.process_panel.selected.move(direction=+1)
         def select_clear(top): top.process_panel.selected.clear()
 
-        def kill(top): top.process_panel.selected.kill()
         def terminate(top): top.process_panel.selected.terminate()
+        def kill(top): top.process_panel.selected.kill()
         def interrupt(top): top.process_panel.selected.interrupt()
 
         self.keymaps.bind('top', 'q', quit)
+        self.keymaps.copy('top', 'q', 'Q')
         self.keymaps.bind('process', 'q', quit)
+        self.keymaps.copy('process', 'q', 'Q')
         self.keymaps.bind('process', '<left>', cmd_left)
         self.keymaps.copy('process', '<left>', '[')
         self.keymaps.bind('process', '<right>', cmd_right)
@@ -92,8 +94,8 @@ class Top(DisplayableContainer):
         self.keymaps.bind('process', '<down>', select_down)
         self.keymaps.copy('process', '<down>', '<tab>')
         self.keymaps.bind('process', '<esc>', select_clear)
-        self.keymaps.bind('process', 'k', kill)
-        self.keymaps.bind('process', 't', terminate)
+        self.keymaps.bind('process', 'T', terminate)
+        self.keymaps.bind('process', 'K', kill)
         self.keymaps.bind('process', '<C-c>', interrupt)
 
     def update_size(self):
@@ -109,7 +111,7 @@ class Top(DisplayableContainer):
             self.need_redraw = True
 
     def poke(self):
-        super(Top, self).poke()
+        super().poke()
 
         if self.termsize is None or self.height != self.device_panel.height + 1 + self.process_panel.height:
             self.update_size()
@@ -121,10 +123,10 @@ class Top(DisplayableContainer):
             self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
         self.addstr(self.y, self.x, '{:<62}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
 
-        super(Top, self).draw()
+        super().draw()
 
     def finalize(self):
-        super(Top, self).finalize()
+        super().finalize()
         self.win.refresh()
 
     def redraw(self):
@@ -159,14 +161,14 @@ class Top(DisplayableContainer):
         except curses.error:
             return
         else:
-            super(Top, self).click(event)
+            super().click(event)
 
     def handle_key(self, key):
         """Handles key input"""
 
         if key < 0:
             self.keybuffer.clear()
-        elif not super(Top, self).press(key):
+        elif not super().press(key):
             self.keymaps.use_keymap('top')
             self.press(key)
 

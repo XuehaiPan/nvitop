@@ -42,19 +42,19 @@ If this repo is useful to you, please star ⭐️ it to let more people kown �
 
 Install from PyPI:
 
-```bash
+```console
 $ pip install --upgrade nvitop
 ```
 
 Install the latest version from GitHub (*recommended*):
 
-```bash
+```console
 $ pip install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
 Or, clone this repo and install manually:
 
-```bash
+```console
 $ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
 $ cd nvitop
 $ pip install .
@@ -131,8 +131,8 @@ optional arguments:
 - `<End>` / `<C-e>`: scroll the host information of selected processes to the end of line.
 - (`<Up>` `<Down>`) / (`<Tab>` `<S-Tab>`) / `<Wheel>`: select and highlight process.
 - `<Esc>`: clear selection.
-- `k`: send `signal.SIGKILL` to selected process.
-- `t`: send `signal.SIGTERM` to selected process.
+- `T`: send `signal.SIGTERM` to selected process.
+- `K`: send `signal.SIGKILL` to selected process.
 - `<C-c>`: send `signal.SIGINT` to selected process.
 
 **Note**: Press `<Ctrl>` key to multiply the mouse wheel events by `5`.

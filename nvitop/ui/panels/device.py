@@ -15,7 +15,7 @@ class DevicePanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
     def __init__(self, devices, compact, win, root=None):
-        super(DevicePanel, self).__init__(win, root)
+        super().__init__(win, root)
 
         self.devices = devices
         self.device_count = len(self.devices)
@@ -123,7 +123,7 @@ class DevicePanel(Displayable):
             self.daemon_started.set()
             self.snapshot_daemon.start()
 
-        super(DevicePanel, self).poke()
+        super().poke()
 
     def draw(self):
         self.color_reset()
@@ -151,7 +151,7 @@ class DevicePanel(Displayable):
         self.need_redraw = False
 
     def destroy(self):
-        super(DevicePanel, self).destroy()
+        super().destroy()
         self.daemon_started.clear()
 
     def print(self):

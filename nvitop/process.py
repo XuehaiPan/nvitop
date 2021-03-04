@@ -68,15 +68,15 @@ class HostProcess(psutil.Process):
         except KeyError:
             pass
 
-        instance = super(HostProcess, cls).__new__(cls)
+        instance = super().__new__(cls)
         instance.__init__(pid)
         with cls.INSTANCE_LOCK:
             cls.INSTANCES[pid] = instance
         return instance
 
     def __init__(self, pid=None):
-        super(HostProcess, self).__init__(pid)
-        super(HostProcess, self).cpu_percent()
+        super().__init__(pid)
+        super().cpu_percent()
 
     cpu_percent = ttl_cache(ttl=1.0)(psutil.Process.cpu_percent)
     memory_percent = ttl_cache(ttl=1.0)(psutil.Process.memory_percent)
@@ -92,7 +92,7 @@ class GpuProcess(object):
         except KeyError:
             pass
 
-        instance = super(GpuProcess, cls).__new__(cls)
+        instance = super().__new__(cls)
         instance.__init__(pid, device, gpu_memory, type)
         with cls.INSTANCE_LOCK:
             cls.INSTANCES[(pid, device)] = instance
