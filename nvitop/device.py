@@ -30,10 +30,26 @@ class Device(object):
         self.memory_total = nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).total, self.handle)
         self.power_limit = nvml_query(nvml.nvmlDeviceGetPowerManagementLimit, self.handle)
 
+        self._ident = (self.index, self.bus_id)
+        self._hash = None
+
     def __str__(self):
         return 'GPU({}, {}, {})'.format(self.index, self.name, bytes2human(self.memory_total))
 
     __repr__ = __str__
+
+    def __eq__(self, other):
+        if not isinstance(other, Device):
+            return NotImplemented
+        return self._ident == other._ident
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        if self._hash is None:
+            self._hash = hash(self._ident)
+        return self._hash
 
     @property
     @ttl_cache(ttl=1.0)

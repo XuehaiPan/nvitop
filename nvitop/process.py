@@ -34,6 +34,8 @@ else:
 
 
 class GProcess(psutil.Process):
+    INSTANCES = {}
+
     def __init__(self, pid, device, gpu_memory, type='C'):  # pylint: disable=redefined-builtin
         super(GProcess, self).__init__(pid)
         self._ident = (self.pid, self._create_time, device.index)
@@ -42,8 +44,17 @@ class GProcess(psutil.Process):
         super(GProcess, self).cpu_percent()
         self.device = device
         self.gpu_memory = gpu_memory
-        self._type = ''
         self.type = type
+
+        self.INSTANCES[(pid, device)] = self
+
+    @property
+    def gpu_memory(self):
+        return self._gpu_memory
+
+    @gpu_memory.setter
+    def gpu_memory(self, value):
+        self._gpu_memory = value
 
     @property
     def type(self):
@@ -98,11 +109,25 @@ class GProcess(psutil.Process):
                     host_info=host_info
                 )
         except psutil.Error:
+            self.garbage_clean()
             return None
         else:
             return snapshot
 
     @staticmethod
-    @ttl_cache(ttl=30.0)
     def get(pid, device):
+        try:
+            process = GProcess.INSTANCES[(pid, device)]
+            if psutil.pid_exists(pid):
+                return process
+            else:
+                process.garbage_clean()
+        except KeyError:
+            pass
         return GProcess(pid, device, gpu_memory=0, type='')
+
+    def garbage_clean(self):
+        try:
+            del GProcess.INSTANCES[(self.pid, self.device)]
+        except KeyError:
+            pass

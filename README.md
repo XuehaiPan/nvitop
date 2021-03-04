@@ -8,7 +8,7 @@
 
 An interactive NVIDIA-GPU process viewer.
 
-This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. Meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And it is really inconvenient that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
+This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
 
 This project is currently in the *beta phase*, most features have been tested on Linux. If you are using Windows with CUDA-capable GPUs, please submit feedback on the issue page, thank you very much!
 
@@ -64,7 +64,7 @@ $ pip install .
 
 Query the device and process status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
-```bash
+```console
 # Query status of all devices
 $ nvitop
 
@@ -77,7 +77,7 @@ $ nvitop -ov
 
 Run as a resource monitor, like `htop`:
 
-```bash
+```console
 # Automatically configure the display mode according to the terminal size
 $ nvitop -m
 

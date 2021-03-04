@@ -195,7 +195,7 @@ class ProcessPanel(Displayable):
                 try:
                     processes[(p.device.index, p.username(), p.pid)] = p
                 except psutil.Error:
-                    pass
+                    p.garbage_clean()
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):
