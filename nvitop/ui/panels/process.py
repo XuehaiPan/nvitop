@@ -13,7 +13,7 @@ import psutil
 from cachetools.func import ttl_cache
 
 from ..displayable import Displayable
-from ...utils import colored, cut_string
+from ...utils import colored, cut_string, Snapshot
 
 
 class Selected(object):
@@ -28,12 +28,9 @@ class Selected(object):
     def identity(self):
         if self._ident is None:
             try:
-                self._ident = self.process.identity
+                self._ident = self.process._ident  # pylint: disable=protected-access
             except AttributeError:
-                try:
-                    self._ident = self.process._ident  # pylint: disable=protected-access
-                except AttributeError:
-                    pass
+                pass
         return self._ident
 
     @property
@@ -42,6 +39,8 @@ class Selected(object):
 
     @process.setter
     def process(self, process):
+        if isinstance(process, Snapshot):
+            process = process.real
         self._proc = process
         self._ident = None
 
@@ -71,12 +70,12 @@ class Selected(object):
             self.clear()
 
     def owned(self):
-        return self.is_set() and self.process.username == self.current_user
+        return self.is_set() and self.process.username() == self.current_user
 
     def send_signal(self, sig):
         if self.owned():
             try:
-                psutil.Process(self.process.pid).send_signal(sig)
+                self.process.send_signal(sig)
             except psutil.Error:
                 pass
             else:

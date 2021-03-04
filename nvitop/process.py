@@ -43,8 +43,13 @@ def auto_garbage_clean(default=None):
                 return func(self, *args, **kwargs)
             except psutil.Error:
                 try:
-                    with GProcess.INSTANCE_LOCK:
-                        del GProcess.INSTANCES[(self.pid, self.device)]
+                    with GpuProcess.INSTANCE_LOCK:
+                        del GpuProcess.INSTANCES[(self.pid, self.device)]
+                except KeyError:
+                    pass
+                try:
+                    with HostProcess.INSTANCE_LOCK:
+                        del HostProcess.INSTANCES[self.pid]
                 except KeyError:
                     pass
                 return default
@@ -53,7 +58,31 @@ def auto_garbage_clean(default=None):
     return wrapper
 
 
-class GProcess(psutil.Process):
+class HostProcess(psutil.Process):
+    INSTANCE_LOCK = threading.RLock()
+    INSTANCES = {}
+
+    def __new__(cls, pid):
+        try:
+            return cls.INSTANCES[pid]
+        except KeyError:
+            pass
+
+        instance = super(HostProcess, cls).__new__(cls)
+        instance.__init__(pid)
+        with cls.INSTANCE_LOCK:
+            cls.INSTANCES[pid] = instance
+        return instance
+
+    def __init__(self, pid=None):
+        super(HostProcess, self).__init__(pid)
+        super(HostProcess, self).cpu_percent()
+
+    cpu_percent = ttl_cache(ttl=1.0)(psutil.Process.cpu_percent)
+    memory_percent = ttl_cache(ttl=1.0)(psutil.Process.memory_percent)
+
+
+class GpuProcess(object):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
@@ -63,21 +92,45 @@ class GProcess(psutil.Process):
         except KeyError:
             pass
 
-        instance = super(GProcess, cls).__new__(cls)
-        instance.__init__(pid, device, gpu_memory=gpu_memory, type=type)
+        instance = super(GpuProcess, cls).__new__(cls)
+        instance.__init__(pid, device, gpu_memory, type)
         with cls.INSTANCE_LOCK:
             cls.INSTANCES[(pid, device)] = instance
         return instance
 
     def __init__(self, pid, device, gpu_memory=0, type=''):  # pylint: disable=redefined-builtin
-        super(GProcess, self).__init__(pid)
-        self._ident = (self.pid, self._create_time, device.index)
-        self._hash = None
+        self.host = HostProcess(pid)
+        self._ident = (self.pid, self.host._create_time, device.index)
 
-        super(GProcess, self).cpu_percent()
         self.device = device
         self.set_gpu_memory(gpu_memory)
         self.type = type
+        self._hash = None
+
+    def __str__(self):
+        return "{}.{}(device={}, gpu_memory={}, host_process={})".format(
+            self.__class__.__module__, self.__class__.__name__,
+            self.device, bytes2human(self.gpu_memory()), self.host
+        )
+
+    __repr__ = __str__
+
+    def __eq__(self, other):
+        if not isinstance(other, (GpuProcess, psutil.Process)):
+            return NotImplemented
+        return self._ident == other._ident
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        if self._hash is None:
+            self._hash = hash(self._ident)
+        return self._hash
+
+    @property
+    def pid(self):
+        return self.host.pid
 
     def gpu_memory(self):
         return self._gpu_memory
@@ -104,28 +157,45 @@ class GProcess(psutil.Process):
     def running_time(self):
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
-    username = auto_garbage_clean(default='')(psutil.Process.username)
-    name = auto_garbage_clean(default='')(psutil.Process.name)
-    cpu_percent = ttl_cache(ttl=1.0)(auto_garbage_clean(default=0.0)(psutil.Process.cpu_percent))
-    memory_percent = ttl_cache(ttl=1.0)(auto_garbage_clean(default=0.0)(psutil.Process.memory_percent))
+    @auto_garbage_clean(default=datetime.datetime.fromtimestamp(0.0))
+    def create_time(self):
+        return self.host.create_time()
+
+    @auto_garbage_clean(default='')
+    def username(self):
+        return self.host.username()
+
+    @auto_garbage_clean(default='')
+    def name(self):
+        return self.host.name()
+
+    @auto_garbage_clean(default=0.0)
+    def cpu_percent(self):
+        return self.host.cpu_percent()
+
+    @auto_garbage_clean(default=0.0)
+    def memory_percent(self):
+        return self.host.memory_percent()
 
     @auto_garbage_clean(default=[])
     def cmdline(self):
-        cmdline = super(GProcess, self).cmdline()
+        cmdline = self.host.cmdline()
         if len(cmdline) == 0:
             raise psutil.NoSuchProcess(pid=self.pid)
         return cmdline
 
+    def send_signal(self, sig):
+        self.host.send_signal(sig)
+
     @ttl_cache(ttl=2.0)
     @auto_garbage_clean(default=None)
     def snapshot(self):
-        with self.oneshot():
+        with self.host.oneshot():
             username = self.username()
             name = self.name()
             cmdline = self.cmdline()
             cpu_percent = self.cpu_percent()
             memory_percent = self.memory_percent()
-            gpu_memory = self.gpu_memory()
             running_time = self.running_time()
             running_time_human = timedelta2human(running_time)
             command = ' '.join(map(add_quotes, filter(None, map(str.strip, cmdline))))
@@ -135,6 +205,7 @@ class GProcess(psutil.Process):
         if (self.pid, self.device) not in self.INSTANCES:
             raise psutil.NoSuchProcess(pid=self.pid, name=name)
 
+        gpu_memory = self.gpu_memory()
         return Snapshot(
             real=self,
             identity=self._ident,

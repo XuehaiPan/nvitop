@@ -10,7 +10,7 @@ import psutil
 import pynvml as nvml
 from cachetools.func import ttl_cache
 
-from .process import GProcess
+from .process import GpuProcess
 from .utils import nvml_query, nvml_check_return, bytes2human, Snapshot
 
 
@@ -190,7 +190,7 @@ class Device(object):
             else:
                 for p in running_processes:
                     try:
-                        proc = processes[p.pid] = GProcess(pid=p.pid, device=self)
+                        proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
                     except psutil.Error:
                         try:
                             del processes[p.pid]
