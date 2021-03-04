@@ -190,7 +190,7 @@ class Device(object):
             else:
                 for p in running_processes:
                     try:
-                        proc = processes[p.pid] = GProcess.get(pid=p.pid, device=self)
+                        proc = processes[p.pid] = GProcess(pid=p.pid, device=self)
                     except psutil.Error:
                         try:
                             del processes[p.pid]
@@ -198,7 +198,7 @@ class Device(object):
                             pass
                         continue
                     else:
-                        proc.gpu_memory = p.usedGpuMemory
+                        proc.set_gpu_memory(p.usedGpuMemory)
                         proc.type = proc.type + type
 
         return processes
