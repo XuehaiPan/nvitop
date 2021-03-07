@@ -7,6 +7,7 @@
 
 import copy
 import curses.ascii
+import re
 
 
 DIGITS = set(map(ord, '0123456789'))
@@ -49,12 +50,14 @@ VERY_SPECIAL_KEYS = {
 }
 
 
-def special_keys_init():
+def _special_keys_init():
     for key, val in tuple(SPECIAL_KEYS.items()):
         SPECIAL_KEYS['a-' + key] = (ALT_KEY, val)
+        SPECIAL_KEYS['m-' + key] = (ALT_KEY, val)
 
     for char in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_!{}[],./':
         SPECIAL_KEYS['a-' + char] = (ALT_KEY, ord(char))
+        SPECIAL_KEYS['m-' + char] = (ALT_KEY, ord(char))
 
     for char in 'abcdefghijklmnopqrstuvwxyz_':
         SPECIAL_KEYS['c-' + char] = ord(char) - 96
@@ -65,7 +68,7 @@ def special_keys_init():
         SPECIAL_KEYS['f' + str(n)] = curses.KEY_F0 + n
 
 
-special_keys_init()
+_special_keys_init()
 
 SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)
 del VERY_SPECIAL_KEYS
@@ -102,12 +105,10 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
                 if char == '>':
                     in_brackets = False
                     string = ''.join(bracket_content)
-                    string_lower = string.lower()
-                    if len(string) == 3 and \
-                            (string_lower.startswith('a-') or string_lower.startswith('c-')):
-                        string = '{}-{}'.format(string_lower[0], string[-1])
+                    if re.match('[amc]-.', string, flags=re.IGNORECASE):
+                        string = '%s-%s' % (string[0].lower(), string[-1])
                     else:
-                        string = string_lower
+                        string = string.lower()
                     try:
                         keys = SPECIAL_KEYS[string]
                         for key in keys:

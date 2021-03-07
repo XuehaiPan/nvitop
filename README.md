@@ -135,7 +135,7 @@ optional arguments:
 - `K`: send `signal.SIGKILL` to selected process.
 - `<C-c>`: send `signal.SIGINT` to selected process.
 
-**Note**: Press `<Ctrl>` key to multiply the mouse wheel events by `5`.
+**Note**: Press `CTRL` key to multiply the mouse wheel events by `5`.
 
 ## Screenshots
 
