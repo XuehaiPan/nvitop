@@ -12,7 +12,7 @@ This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop),
 
 This project is currently in the *beta phase*, most features have been tested on Linux. If you are using Windows with CUDA-capable GPUs, please submit feedback on the issue page, thank you very much!
 
-If this repo is useful to you, please star ⭐️ it to let more people kown 🤗.
+If this repo is useful to you, please star ⭐️ it to let more people know 🤗.
 
 ## Features
 
@@ -42,19 +42,19 @@ If this repo is useful to you, please star ⭐️ it to let more people kown �
 
 Install from PyPI:
 
-```console
+```bash
 $ pip install --upgrade nvitop
 ```
 
 Install the latest version from GitHub (*recommended*):
 
-```console
+```bash
 $ pip install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
 Or, clone this repo and install manually:
 
-```console
+```bash
 $ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
 $ cd nvitop
 $ pip install .
@@ -64,7 +64,7 @@ $ pip install .
 
 Query the device and process status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
-```console
+```bash
 # Query status of all devices
 $ nvitop
 
@@ -77,7 +77,7 @@ $ nvitop -ov
 
 Run as a resource monitor, like `htop`:
 
-```console
+```bash
 # Automatically configure the display mode according to the terminal size
 $ nvitop -m
 
