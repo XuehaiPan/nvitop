@@ -196,11 +196,17 @@ class GpuProcess(object):
             cmdline = self.cmdline()
             cpu_percent = self.cpu_percent()
             memory_percent = self.memory_percent()
+            if cpu_percent < 1000.0:
+                cpu_percent = '{:>5.1f}'.format(cpu_percent)
+            elif cpu_percent < 10000:
+                cpu_percent = '{:>5d}'.format(int(cpu_percent))
+            else:
+                cpu_percent = '9999+'
             running_time = self.running_time()
             running_time_human = timedelta2human(running_time)
             command = ' '.join(map(add_quotes, filter(None, map(str.strip, cmdline))))
-            host_info = '{:>5.1f} {:>5.1f}  {:>8}  {}'.format(cpu_percent, memory_percent,
-                                                              running_time_human, command)
+            host_info = '{:>5} {:>5.1f}  {:>8}  {}'.format(cpu_percent, memory_percent,
+                                                           running_time_human, command)
 
         if (self.pid, self.device) not in self.INSTANCES:
             raise psutil.NoSuchProcess(pid=self.pid, name=name)
