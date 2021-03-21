@@ -3,7 +3,7 @@
 
 """An interactive NVIDIA-GPU process viewer."""
 
-__version__ = '0.2.2'
+__version__ = '0.2.3'
 __license__ = 'GPLv3'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
