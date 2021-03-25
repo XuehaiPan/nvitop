@@ -121,7 +121,10 @@ class Top(DisplayableContainer):
             self.win.erase()
             self.addstr(self.y, self.x + 62, '(Press q to quit)')
             self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
-        self.addstr(self.y, self.x, '{:<62}'.format(time.strftime('%a %b %d %H:%M:%S %Y')))
+        time_string = time.strftime('%a %b %d %H:%M:%S %Y')
+        self.addstr(self.y, self.x, '{:<62}'.format(time_string))
+        self.color_at(self.y, self.x + len(time_string) - 11, width=1, attr='blink')
+        self.color_at(self.y, self.x + len(time_string) - 8, width=1, attr='blink')
 
         super().draw()
 

@@ -277,8 +277,7 @@ class ProcessPanel(Displayable):
                         self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
                     else:
                         self.addstr(y, self.x + 1, '=')
-                        self.color_at(y, self.x + 1, width=77, attr='bold')
-                        self.color_at(y, self.x + 2, width=3, fg=color, attr='bold')
+                        self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                 else:
                     self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
