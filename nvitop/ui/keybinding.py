@@ -6,8 +6,8 @@
 # pylint: disable=invalid-name
 
 import copy
+import curses
 import curses.ascii
-import re
 from collections import OrderedDict
 
 
