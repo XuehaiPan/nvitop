@@ -265,8 +265,8 @@ class ProcessPanel(Displayable):
                 else:
                     host_info = host_info[self.cmd_offset:self.cmd_offset + 45]
                 self.addstr(y, self.x,
-                            '│ {:>3} {:<6} {} {:>7} {:>8} {:<45} │'.format(
-                                device_index, cut_string(str(process.pid), maxlen=6, padstr='.'),
+                            '│ {:>3} {:^6} {} {:>7} {:>8} {:<45} │'.format(
+                                device_index, cut_string(process.pid, maxlen=6, padstr='.'),
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info
                             ))
@@ -322,9 +322,9 @@ class ProcessPanel(Displayable):
                         lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
                     prev_device_index = device_index
 
-                lines.append('│ {} {:>6} {} {:>7} {:>8} {:<45} │'.format(
+                lines.append('│ {} {:^6} {} {:>7} {:>8} {:<45} │'.format(
                     colored('{:>3}'.format(device_index), color),
-                    cut_string(str(process.pid), maxlen=6, padstr='.'), process.type,
+                    cut_string(process.pid, maxlen=6, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=45)

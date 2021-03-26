@@ -21,6 +21,9 @@ except ImportError:
 def cut_string(s, maxlen, padstr='...', align='left'):
     assert align in ('left', 'right')
 
+    if not isinstance(s, str):
+        s = str(s)
+
     if len(s) <= maxlen:
         return s
     if align == 'left':
@@ -32,6 +35,9 @@ def cut_string(s, maxlen, padstr='...', align='left'):
 def bytes2human(x):
     if x == 'N/A':
         return x
+
+    if not isinstance(x, int):
+        x = int(x)
 
     if x < (1 << 10):
         return '{}B'.format(x)
