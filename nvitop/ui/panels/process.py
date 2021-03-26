@@ -146,22 +146,73 @@ class ProcessPanel(Displayable):
 
         self.devices = devices
 
-        self.snapshots = []
-        self.snapshot_lock = threading.RLock()
-        self.take_snapshot()
-        self.snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
-                                                target=self._snapshot_target, daemon=True)
-        self.daemon_started = threading.Event()
+        self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
         self.current_user = psutil.Process().username()
         self.selected = Selected(panel=self)
         self.cmd_offset = -1
 
+        self._snapshot_buffer = []
+        self._snapshots = []
+        self.snapshot_lock = threading.RLock()
+        self.snapshots = self.take_snapshots()
+        self._snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
+                                                 target=self._snapshot_target, daemon=True)
+        self._daemon_started = threading.Event()
+
+    @property
+    def snapshots(self):
+        return self._snapshots
+
+    @snapshots.setter
+    def snapshots(self, snapshots):
+        time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
+        time_header = ' ' * (time_length - 4) + 'TIME'
+        info_length = max([len(p.host_info) for p in snapshots], default=0)
+        height = max(6, 5 + len(snapshots) + (len(set([p.device.index for p in snapshots])) - 1))
+
+        with self.snapshot_lock:
+            self._snapshots = snapshots
+            self.need_redraw = (self.need_redraw or self.height > height or self.host_headers[-2] != time_header)
+            self.host_headers[-2] = time_header
+            self.height = height
+            self.cmd_offset = max(-1, min(self.cmd_offset, info_length - 45))
+
+            selected = self.selected
+            selected.index = None
+            for i, process in enumerate(snapshots):
+                if process.identity == selected.identity:
+                    selected.index = i
+                    selected.process = process
+
+    def take_snapshots(self):
+        snapshots = list(filter(None, map(lambda process: process.snapshot(), self.processes.values())))
+
+        time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
+        for snapshot in snapshots:
+            snapshot.host_info = '{:>5} {:>5}  {}  {}'.format(
+                snapshot.cpu_percent_string,
+                snapshot.memory_percent_string,
+                ' ' * (time_length - len(snapshot.running_time_human)) + snapshot.running_time_human,
+                snapshot.command
+            )
+
+        with self.snapshot_lock:
+            self._snapshot_buffer = snapshots
+
+        return snapshots
+
+    def _snapshot_target(self):
+        self._daemon_started.wait()
+        while self._daemon_started.is_set():
+            self.take_snapshots()
+            time.sleep(self.SNAPSHOT_INTERVAL)
+
     def header_lines(self):
         header = [
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ Processes:                                                                  │',
-            '│ GPU  PID  TYPE  USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                │',
+            '│ GPU  PID  TYPE  USER  GPU MEM  {:<44} │'.format('  '.join(self.host_headers)),
             '╞═════════════════════════════════════════════════════════════════════════════╡',
         ]
         if len(self.snapshots) == 0:
@@ -170,20 +221,6 @@ class ProcessPanel(Displayable):
                 '╘═════════════════════════════════════════════════════════════════════════════╛',
             ])
         return header
-
-    def take_snapshot(self):
-        snapshots = list(filter(None, map(lambda process: process.snapshot(), self.processes.values())))
-
-        with self.snapshot_lock:
-            self.snapshots = snapshots
-
-        return snapshots
-
-    def _snapshot_target(self):
-        self.daemon_started.wait()
-        while self.daemon_started.is_set():
-            self.take_snapshot()
-            time.sleep(self.SNAPSHOT_INTERVAL)
 
     @property
     @ttl_cache(ttl=1.0)
@@ -198,27 +235,12 @@ class ProcessPanel(Displayable):
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):
-        if not self.daemon_started.is_set():
-            self.daemon_started.set()
-            self.snapshot_daemon.start()
+        if not self._daemon_started.is_set():
+            self._daemon_started.set()
+            self._snapshot_daemon.start()
 
         with self.snapshot_lock:
-            snapshots = self.snapshots
-
-        n_processes = len(snapshots)
-        n_used_devices = len(set([p.device.index for p in snapshots]))
-        if n_processes > 0:
-            height = 5 + n_processes + n_used_devices - 1
-        else:
-            height = 6
-
-        max_info_len = 0
-        for process in snapshots:
-            max_info_len = max(max_info_len, len(process.host_info))
-        self.cmd_offset = max(-1, min(self.cmd_offset, max_info_len - 45))
-
-        self.need_redraw = (self.need_redraw or self.height > height)
-        self.height = height
+            self.snapshots = self._snapshot_buffer
 
         super().poke()
 
@@ -228,28 +250,17 @@ class ProcessPanel(Displayable):
         if self.need_redraw:
             for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
-
-        if self.cmd_offset < 22:
-            self.addstr(self.y + 2, self.x + 33,
-                        '{:<44}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.cmd_offset, 0):]))
+        if self.cmd_offset < 14 + len(self.host_headers[-2]):
+            host_headers = '  '.join(self.host_headers)
+            self.addstr(self.y + 2, self.x + 33, '{:<44}'.format(host_headers[max(self.cmd_offset, 0):]))
         else:
             self.addstr(self.y + 2, self.x + 33, '{:<44}'.format('COMMAND'))
 
-        with self.snapshot_lock:
-            snapshots = self.snapshots
-
-        selected = self.selected
-        selected.index = None
-        for i, process in enumerate(snapshots):
-            if process.identity == selected.identity:
-                selected.index = i
-                selected.process = process
-
-        if len(snapshots) > 0:
+        if len(self.snapshots) > 0:
             y = self.y + 4
             prev_device_index = None
             color = -1
-            for i, process in enumerate(snapshots):
+            for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index != device_index:
                     color = process.device.display_color
@@ -273,12 +284,11 @@ class ProcessPanel(Displayable):
                 if self.cmd_offset > 0:
                     self.addstr(y, self.x + 32, ' ')
 
-                if selected.is_same_on_host(process):
-                    if selected.is_same(process):
-                        self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
-                    else:
-                        self.addstr(y, self.x + 1, '=')
-                        self.color_at(y, self.x + 1, width=1, attr='bold | blink')
+                if self.selected.is_same(process):
+                    self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
+                elif self.selected.is_same_on_host(process):
+                    self.addstr(y, self.x + 1, '=')
+                    self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                 else:
                     self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
@@ -286,9 +296,8 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 4, self.x,
                         '│  No running compute processes found                                         │')
-            self.cmd_offset = -1
 
-        if selected.owned():
+        if self.selected.owned():
             self.addstr(self.y - 1, self.x + 32, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
             self.color_at(self.y - 1, self.x + 39, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y - 1, self.x + 41, width=4, fg='red', attr='bold')
@@ -304,17 +313,15 @@ class ProcessPanel(Displayable):
 
     def destroy(self):
         super().destroy()
-        self.daemon_started.clear()
+        self._daemon_started.clear()
 
     def print(self):
-        snapshots = self.take_snapshot()
-
         lines = self.header_lines()
 
-        if len(snapshots) > 0:
+        if len(self.snapshots) > 0:
             prev_device_index = None
             color = None
-            for process in snapshots:
+            for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index != device_index:
                     color = process.device.display_color

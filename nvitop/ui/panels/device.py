@@ -44,12 +44,13 @@ class DevicePanel(Displayable):
             '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │',
         ]
 
-        self.snapshots = []
+        self._snapshot_buffer = []
+        self._snapshots = []
         self.snapshot_lock = threading.RLock()
-        self.take_snapshot()
-        self.snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
-                                                target=self._snapshot_target, daemon=True)
-        self.daemon_started = threading.Event()
+        self.snapshots = self.take_snapshots()
+        self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
+                                                 target=self._snapshot_target, daemon=True)
+        self._daemon_started = threading.Event()
 
     @property
     def compact(self):
@@ -61,6 +62,29 @@ class DevicePanel(Displayable):
             self.need_redraw = True
             self._compact = value
             self.height = 3 + (3 - int(self.compact)) * (self.device_count + 1)
+
+    @property
+    def snapshots(self):
+        return self._snapshots
+
+    @snapshots.setter
+    def snapshots(self, snapshots):
+        with self.snapshot_lock:
+            self._snapshots = snapshots
+
+    def take_snapshots(self):
+        snapshots = list(map(lambda device: device.snapshot(), self.devices))
+
+        with self.snapshot_lock:
+            self._snapshot_buffer = snapshots
+
+        return snapshots
+
+    def _snapshot_target(self):
+        self._daemon_started.wait()
+        while self._daemon_started.is_set():
+            self.take_snapshots()
+            time.sleep(self.SNAPSHOT_INTERVAL)
 
     def header_lines(self):
         header = [
@@ -104,24 +128,13 @@ class DevicePanel(Displayable):
             frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
         return frame
 
-    def take_snapshot(self):
-        snapshots = list(map(lambda device: device.snapshot(), self.devices))
+    def poke(self):
+        if not self._daemon_started.is_set():
+            self._daemon_started.set()
+            self._snapshot_daemon.start()
 
         with self.snapshot_lock:
-            self.snapshots = snapshots
-
-        return snapshots
-
-    def _snapshot_target(self):
-        self.daemon_started.wait()
-        while self.daemon_started.is_set():
-            self.take_snapshot()
-            time.sleep(self.SNAPSHOT_INTERVAL)
-
-    def poke(self):
-        if not self.daemon_started.is_set():
-            self.daemon_started.set()
-            self.snapshot_daemon.start()
+            self.snapshots = self._snapshot_buffer
 
         super().poke()
 
@@ -137,9 +150,7 @@ class DevicePanel(Displayable):
         else:
             formats = self.formats_full
 
-        with self.snapshot_lock:
-            snapshots = self.snapshots
-        for index, device in enumerate(snapshots):
+        for index, device in enumerate(self.snapshots):
             device.name = cut_string(device.name, maxlen=18)
             for y, fmt in enumerate(formats, start=self.y + 3 + (len(formats) + 1) * (index + 1)):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
@@ -152,15 +163,13 @@ class DevicePanel(Displayable):
 
     def destroy(self):
         super().destroy()
-        self.daemon_started.clear()
+        self._daemon_started.clear()
 
     def print(self):
-        snapshots = self.take_snapshot()
-
         lines = self.header_lines()
 
         if self.device_count > 0:
-            for device in snapshots:
+            for device in self.snapshots:
                 device.name = cut_string(device.name, maxlen=18)
 
                 def colorize(s):
