@@ -86,7 +86,7 @@ class GpuProcess(object):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
-    def __new__(cls, pid, device, gpu_memory=0, type=''):  # pylint: disable=redefined-builtin
+    def __new__(cls, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
         try:
             return cls.INSTANCES[(pid, device)]
         except KeyError:
@@ -98,13 +98,19 @@ class GpuProcess(object):
             cls.INSTANCES[(pid, device)] = instance
         return instance
 
-    def __init__(self, pid, device, gpu_memory=0, type=''):  # pylint: disable=redefined-builtin
+    def __init__(self, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
         self.host = HostProcess(pid)
         self._ident = (self.pid, self.host._create_time, device.index)
 
         self.device = device
-        self.set_gpu_memory(gpu_memory)
-        self.type = type
+        if gpu_memory is None and not hasattr(self, '_gpu_memory'):
+            gpu_memory = 0
+        if gpu_memory is not None:
+            self.set_gpu_memory(gpu_memory)
+        if type is None and not hasattr(self, '_type'):
+            type = ''
+        if type is not None:
+            self.type = type
         self._hash = None
 
     def __str__(self):
@@ -149,8 +155,8 @@ class GpuProcess(object):
             self._type += 'C'
         if 'G' in value:
             self._type += 'G'
-        if self._type == 'CG':
-            self._type = 'C+G'
+        if 'X' in value or self._type == 'CG':
+            self._type = 'X'
 
     @ttl_cache(ttl=1.0)
     @auto_garbage_clean(default=datetime.timedelta())

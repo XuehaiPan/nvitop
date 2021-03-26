@@ -182,7 +182,7 @@ class Device(object):
         processes = OrderedDict()
 
         for type, func in [('C', nvml.nvmlDeviceGetComputeRunningProcesses),  # pylint: disable=redefined-builtin
-                           ('G', nvml.nvmlDeviceGetComputeRunningProcesses)]:
+                           ('G', nvml.nvmlDeviceGetGraphicsRunningProcesses)]:
             try:
                 running_processes = func(self.handle)
             except nvml.NVMLError:

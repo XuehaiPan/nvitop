@@ -161,7 +161,7 @@ class ProcessPanel(Displayable):
         header = [
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ Processes:                                                                  │',
-            '│ GPU    PID    USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                  │',
+            '│ GPU  PID  TYPE  USER  GPU MEM  %CPU  %MEM      TIME  COMMAND                │',
             '╞═════════════════════════════════════════════════════════════════════════════╡',
         ]
         if len(self.snapshots) == 0:
@@ -215,7 +215,7 @@ class ProcessPanel(Displayable):
         max_info_len = 0
         for process in snapshots:
             max_info_len = max(max_info_len, len(process.host_info))
-        self.cmd_offset = max(-1, min(self.cmd_offset, max_info_len - 47))
+        self.cmd_offset = max(-1, min(self.cmd_offset, max_info_len - 45))
 
         self.need_redraw = (self.need_redraw or self.height > height)
         self.height = height
@@ -230,10 +230,10 @@ class ProcessPanel(Displayable):
                 self.addstr(y, self.x, line)
 
         if self.cmd_offset < 22:
-            self.addstr(self.y + 2, self.x + 31,
-                        '{:<46}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.cmd_offset, 0):]))
+            self.addstr(self.y + 2, self.x + 33,
+                        '{:<44}'.format('%CPU  %MEM      TIME  COMMAND'[max(self.cmd_offset, 0):]))
         else:
-            self.addstr(self.y + 2, self.x + 31, '{:<46}'.format('COMMAND'))
+            self.addstr(self.y + 2, self.x + 33, '{:<44}'.format('COMMAND'))
 
         with self.snapshot_lock:
             snapshots = self.snapshots
@@ -257,20 +257,21 @@ class ProcessPanel(Displayable):
                         self.addstr(y, self.x,
                                     '├─────────────────────────────────────────────────────────────────────────────┤')
                         y += 1
-                prev_device_index = device_index
+                    prev_device_index = device_index
 
                 host_info = process.host_info
                 if self.cmd_offset < 0:
-                    host_info = cut_string(host_info, padstr='..', maxlen=47)
+                    host_info = cut_string(host_info, padstr='..', maxlen=45)
                 else:
-                    host_info = host_info[self.cmd_offset:self.cmd_offset + 47]
+                    host_info = host_info[self.cmd_offset:self.cmd_offset + 45]
                 self.addstr(y, self.x,
-                            '│ {:>3} {:>6} {:>7} {:>8} {:<47} │'.format(
-                                device_index, process.pid, cut_string(process.username, maxlen=7, padstr='+'),
+                            '│ {:>3} {:<6} {} {:>7} {:>8} {:<45} │'.format(
+                                device_index, cut_string(str(process.pid), maxlen=6, padstr='.'),
+                                process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info
                             ))
                 if self.cmd_offset > 0:
-                    self.addstr(y, self.x + 30, ' ')
+                    self.addstr(y, self.x + 32, ' ')
 
                 if selected.is_same_on_host(process):
                     if selected.is_same(process):
@@ -288,8 +289,7 @@ class ProcessPanel(Displayable):
             self.cmd_offset = -1
 
         if selected.owned():
-            self.addstr(self.y - 1, self.x + 32,
-                        '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
+            self.addstr(self.y - 1, self.x + 32, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
             self.color_at(self.y - 1, self.x + 39, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y - 1, self.x + 41, width=4, fg='red', attr='bold')
             self.color_at(self.y - 1, self.x + 47, width=1, fg='magenta', attr='bold | italic')
@@ -320,12 +320,14 @@ class ProcessPanel(Displayable):
                     color = process.device.display_color
                     if prev_device_index is not None:
                         lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
-                prev_device_index = device_index
+                    prev_device_index = device_index
 
-                lines.append('│ {} {:>6} {:>7} {:>8} {:<47} │'.format(
-                    colored('{:>3}'.format(device_index), color), process.pid,
+                lines.append('│ {} {:>6} {} {:>7} {:>8} {:<45} │'.format(
+                    colored('{:>3}'.format(device_index), color),
+                    cut_string(str(process.pid), maxlen=6, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
-                    process.gpu_memory_human, cut_string(process.host_info, padstr='..', maxlen=47)
+                    process.gpu_memory_human,
+                    cut_string(process.host_info, padstr='..', maxlen=45)
                 ))
 
             lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
