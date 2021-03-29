@@ -61,13 +61,10 @@ class Top(DisplayableContainer):
 
         def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
 
-        def cmd_left(top): top.process_panel.cmd_offset -= 1
-        def cmd_right(top): top.process_panel.cmd_offset += 1
-        def cmd_begin(top): top.process_panel.cmd_offset = -1
-        def cmd_end(top):
-            selected = top.process_panel.selected
-            if selected.is_set():
-                top.process_panel.cmd_offset = max(0, len(selected.process.host_info) - 47)
+        def cmd_left(top): top.process_panel.host_offset -= 1
+        def cmd_right(top): top.process_panel.host_offset += 1
+        def cmd_begin(top): top.process_panel.host_offset = -1
+        def cmd_end(top): top.process_panel.host_offset = 1024
 
         def select_up(top): top.process_panel.selected.move(direction=-1)
         def select_down(top): top.process_panel.selected.move(direction=+1)

@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import os
 import signal
 import threading
 import time
@@ -148,9 +149,9 @@ class ProcessPanel(Displayable):
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
-        self.current_user = psutil.Process().username()
+        self.current_user = os.getlogin()
         self.selected = Selected(panel=self)
-        self.cmd_offset = -1
+        self.host_offset = -1
 
         self._snapshot_buffer = []
         self._snapshots = []
@@ -176,7 +177,7 @@ class ProcessPanel(Displayable):
             self.need_redraw = (self.need_redraw or self.height > height or self.host_headers[-2] != time_header)
             self.host_headers[-2] = time_header
             self.height = height
-            self.cmd_offset = max(-1, min(self.cmd_offset, info_length - 45))
+            self.host_offset = max(-1, min(self.host_offset, info_length - 45))
 
             selected = self.selected
             selected.index = None
@@ -212,7 +213,7 @@ class ProcessPanel(Displayable):
         header = [
             '╒═════════════════════════════════════════════════════════════════════════════╕',
             '│ Processes:                                                                  │',
-            '│ GPU  PID  TYPE  USER  GPU MEM  {:<44} │'.format('  '.join(self.host_headers)),
+            '│ GPU    PID      USER  GPU MEM  {:<44} │'.format('  '.join(self.host_headers)),
             '╞═════════════════════════════════════════════════════════════════════════════╡',
         ]
         if len(self.snapshots) == 0:
@@ -250,9 +251,11 @@ class ProcessPanel(Displayable):
         if self.need_redraw:
             for y, line in enumerate(self.header_lines(), start=self.y):
                 self.addstr(y, self.x, line)
-        if self.cmd_offset < 14 + len(self.host_headers[-2]):
+        host_offset = max(self.host_offset, 0)
+        command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
+        if command_offset > 0:
             host_headers = '  '.join(self.host_headers)
-            self.addstr(self.y + 2, self.x + 33, '{:<44}'.format(host_headers[max(self.cmd_offset, 0):]))
+            self.addstr(self.y + 2, self.x + 33, '{:<44}'.format(host_headers[host_offset:]))
         else:
             self.addstr(self.y + 2, self.x + 33, '{:<44}'.format('COMMAND'))
 
@@ -271,25 +274,29 @@ class ProcessPanel(Displayable):
                     prev_device_index = device_index
 
                 host_info = process.host_info
-                if self.cmd_offset < 0:
+                if self.host_offset < 0:
                     host_info = cut_string(host_info, padstr='..', maxlen=45)
                 else:
-                    host_info = host_info[self.cmd_offset:self.cmd_offset + 45]
+                    host_info = host_info[self.host_offset:self.host_offset + 45]
                 self.addstr(y, self.x,
-                            '│ {:>3} {:^6} {} {:>7} {:>8} {:<45} │'.format(
+                            '│ {:>3} {:>6} {} {:>7} {:>8} {:<45} │'.format(
                                 device_index, cut_string(process.pid, maxlen=6, padstr='.'),
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info
                             ))
-                if self.cmd_offset > 0:
+                if not process.is_running and process.command == 'No Such Process':
+                    if command_offset == 0:
+                        self.addstr(y, self.x + 33 + command_offset, process.command)
+                    self.color_at(y, self.x + 33 + command_offset, width=15, fg='red')
+                if self.host_offset > 0:
                     self.addstr(y, self.x + 32, ' ')
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
-                elif self.selected.is_same_on_host(process):
-                    self.addstr(y, self.x + 1, '=')
-                    self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                 else:
+                    if self.selected.is_same_on_host(process):
+                        self.addstr(y, self.x + 1, '=')
+                        self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                     self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
             self.addstr(y, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
@@ -329,13 +336,16 @@ class ProcessPanel(Displayable):
                         lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
                     prev_device_index = device_index
 
-                lines.append('│ {} {:^6} {} {:>7} {:>8} {:<45} │'.format(
+                line = '│ {} {:>6} {} {:>7} {:>8} {:<45} │'.format(
                     colored('{:>3}'.format(device_index), color),
                     cut_string(process.pid, maxlen=6, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=45)
-                ))
+                )
+                if not process.is_running and process.command == 'No Such Process':
+                    line = line.replace(process.command, colored(process.command, color='red'))
+                lines.append(line)
 
             lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
 
@@ -348,7 +358,7 @@ class ProcessPanel(Displayable):
     def click(self, event):
         direction = event.wheel_direction()
         if event.shift():
-            self.cmd_offset += direction
+            self.host_offset += direction
         else:
             self.selected.move(direction=direction)
         return True

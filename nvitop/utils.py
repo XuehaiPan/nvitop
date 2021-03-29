@@ -48,6 +48,9 @@ def bytes2human(x):
 
 
 def timedelta2human(dt):
+    if dt == 'N/A':
+        return dt
+
     if dt.days > 1:
         return '{} days'.format(dt.days)
     else:

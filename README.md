@@ -75,7 +75,7 @@ $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 $ nvitop -ov
 ```
 
-*Note: `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphic processes, and `X` for both (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
+*Note: `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for both (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
 
 Run as a resource monitor, like `htop`:
 

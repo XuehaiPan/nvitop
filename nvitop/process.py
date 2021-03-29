@@ -8,6 +8,7 @@ import datetime
 import functools
 import sys
 import threading
+import time
 
 import psutil
 from cachetools.func import ttl_cache
@@ -74,9 +75,12 @@ class HostProcess(psutil.Process):
             cls.INSTANCES[pid] = instance
         return instance
 
-    def __init__(self, pid=None):
-        super().__init__(pid)
-        super().cpu_percent()
+    def __init__(self, pid=None):  # pylint: disable=super-init-not-called
+        super()._init(pid, True)
+        try:
+            super().cpu_percent()
+        except psutil.Error:
+            pass
 
     cpu_percent = ttl_cache(ttl=1.0)(psutil.Process.cpu_percent)
     memory_percent = ttl_cache(ttl=1.0)(psutil.Process.memory_percent)
@@ -163,15 +167,15 @@ class GpuProcess(object):
     def running_time(self):
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
-    @auto_garbage_clean(default=datetime.datetime.fromtimestamp(0.0))
+    @auto_garbage_clean(default=time.time())
     def create_time(self):
         return self.host.create_time()
 
-    @auto_garbage_clean(default='')
+    @auto_garbage_clean(default='N/A')
     def username(self):
         return self.host.username()
 
-    @auto_garbage_clean(default='')
+    @auto_garbage_clean(default='N/A')
     def name(self):
         return self.host.name()
 
@@ -183,12 +187,15 @@ class GpuProcess(object):
     def memory_percent(self):
         return self.host.memory_percent()
 
-    @auto_garbage_clean(default=[])
+    @auto_garbage_clean(default=('No', 'Such', 'Process'))
     def cmdline(self):
         cmdline = self.host.cmdline()
         if len(cmdline) == 0:
             raise psutil.NoSuchProcess(pid=self.pid)
         return cmdline
+
+    def is_running(self):
+        return self.host.is_running()
 
     def send_signal(self, sig):
         self.host.send_signal(sig)
@@ -201,22 +208,24 @@ class GpuProcess(object):
             name = self.name()
             cmdline = self.cmdline()
             cpu_percent = self.cpu_percent()
-            memory_percent = self.memory_percent()
-            memory_percent_string = '{:.1f}'.format(memory_percent)
             if cpu_percent < 1000.0:
                 cpu_percent_string = '{:.1f}'.format(cpu_percent)
             elif cpu_percent < 10000:
                 cpu_percent_string = '{}'.format(int(cpu_percent))
             else:
                 cpu_percent_string = '9999+'
+            memory_percent = self.memory_percent()
+            memory_percent_string = '{:.1f}'.format(memory_percent)
+            is_running = self.is_running()
             running_time = self.running_time()
-            running_time_human = timedelta2human(running_time)
+            if is_running:
+                running_time_human = timedelta2human(running_time)
+            else:
+                running_time_human = 'N/A'
             command = ' '.join(map(add_quotes, filter(None, map(str.strip, cmdline))))
-            host_info = '{:>5} {:>5}  {:>8}  {}'.format(cpu_percent_string, memory_percent_string,
-                                                        running_time_human, command)
 
-        if (self.pid, self.device) not in self.INSTANCES:
-            raise psutil.NoSuchProcess(pid=self.pid, name=name)
+        host_info = '{:>5} {:>5}  {:>8}  {}'.format(cpu_percent_string, memory_percent_string,
+                                                    running_time_human, command)
 
         gpu_memory = self.gpu_memory()
         return Snapshot(
@@ -235,6 +244,7 @@ class GpuProcess(object):
             cpu_percent_string=cpu_percent_string,
             memory_percent=memory_percent,
             memory_percent_string=memory_percent_string,
+            is_running=is_running,
             running_time=running_time,
             running_time_human=running_time_human,
             host_info=host_info
