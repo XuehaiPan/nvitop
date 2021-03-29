@@ -61,10 +61,10 @@ class Top(DisplayableContainer):
 
         def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
 
-        def cmd_left(top): top.process_panel.host_offset -= 1
-        def cmd_right(top): top.process_panel.host_offset += 1
-        def cmd_begin(top): top.process_panel.host_offset = -1
-        def cmd_end(top): top.process_panel.host_offset = 1024
+        def host_left(top): top.process_panel.host_offset -= 1
+        def host_right(top): top.process_panel.host_offset += 1
+        def host_begin(top): top.process_panel.host_offset = -1
+        def host_end(top): top.process_panel.host_offset = 1024
 
         def select_up(top): top.process_panel.selected.move(direction=-1)
         def select_down(top): top.process_panel.selected.move(direction=+1)
@@ -78,19 +78,19 @@ class Top(DisplayableContainer):
         self.keymaps.copy('top', 'q', 'Q')
         self.keymaps.bind('process', 'q', quit)
         self.keymaps.copy('process', 'q', 'Q')
-        self.keymaps.bind('process', '<left>', cmd_left)
-        self.keymaps.copy('process', '<left>', '[')
-        self.keymaps.bind('process', '<right>', cmd_right)
-        self.keymaps.copy('process', '<right>', ']')
-        self.keymaps.bind('process', '<home>', cmd_begin)
-        self.keymaps.copy('process', '<home>', '<C-a>')
-        self.keymaps.bind('process', '<end>', cmd_end)
-        self.keymaps.copy('process', '<end>', '<C-e>')
-        self.keymaps.bind('process', '<up>', select_up)
-        self.keymaps.copy('process', '<up>', '<S-tab>')
-        self.keymaps.bind('process', '<down>', select_down)
-        self.keymaps.copy('process', '<down>', '<tab>')
-        self.keymaps.bind('process', '<esc>', select_clear)
+        self.keymaps.bind('process', '<Left>', host_left)
+        self.keymaps.copy('process', '<Left>', '[')
+        self.keymaps.bind('process', '<Right>', host_right)
+        self.keymaps.copy('process', '<Right>', ']')
+        self.keymaps.bind('process', '<Home>', host_begin)
+        self.keymaps.copy('process', '<Home>', '<C-a>')
+        self.keymaps.bind('process', '<End>', host_end)
+        self.keymaps.copy('process', '<End>', '<C-e>')
+        self.keymaps.bind('process', '<Up>', select_up)
+        self.keymaps.copy('process', '<Up>', '<S-Tab>')
+        self.keymaps.bind('process', '<Down>', select_down)
+        self.keymaps.copy('process', '<Down>', '<Tab>')
+        self.keymaps.bind('process', '<Esc>', select_clear)
         self.keymaps.bind('process', 'T', terminate)
         self.keymaps.bind('process', 'K', kill)
         self.keymaps.bind('process', '<C-c>', interrupt)

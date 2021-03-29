@@ -15,7 +15,7 @@ DEFAULT_BACKGROUND = curses.COLOR_BLACK
 COLOR_PAIRS = {None: 0}
 
 
-def get_color(fg, bg):
+def _get_color(fg, bg):
     """Returns the curses color pair for the given fg/bg combination."""
 
     global COLOR_PAIRS  # pylint: disable=global-statement
@@ -49,7 +49,7 @@ def get_color(fg, bg):
     return COLOR_PAIRS[key]
 
 
-def get_color_attr(fg=-1, bg=-1, attr=0):
+def _get_color_attr(fg=-1, bg=-1, attr=0):
     """Returns the curses attribute for the given fg/bg/attr combination."""
     if isinstance(attr, str):
         attr_strings = map(str.strip, attr.split('|'))
@@ -58,7 +58,7 @@ def get_color_attr(fg=-1, bg=-1, attr=0):
             attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
     if fg == -1 and bg == -1:
         return attr
-    return curses.color_pair(get_color(fg, bg)) | attr
+    return curses.color_pair(_get_color(fg, bg)) | attr
 
 
 @contextlib.contextmanager
@@ -133,13 +133,13 @@ class CursesShortcuts(object):
     def color_at(self, y, x, width, *args, **kwargs):
         """Change the colors at the specified position"""
         try:
-            self.win.chgat(y, x, width, get_color_attr(*args, **kwargs))
+            self.win.chgat(y, x, width, _get_color_attr(*args, **kwargs))
         except curses.error:
             pass
 
     def set_fg_bg_attr(self, fg=-1, bg=-1, attr=0):
         try:
-            self.win.attrset(get_color_attr(fg, bg, attr))
+            self.win.attrset(_get_color_attr(fg, bg, attr))
         except curses.error:
             pass
 

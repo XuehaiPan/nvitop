@@ -6,6 +6,7 @@
 
 import datetime
 import functools
+import os
 import sys
 import threading
 import time
@@ -17,7 +18,7 @@ from .utils import bytes2human, timedelta2human, Snapshot
 
 
 if sys.platform != 'windows':
-    def add_quotes(s):
+    def _add_quotes(s):
         if '$' not in s and '\\' not in s:
             if ' ' not in s:
                 return s
@@ -27,7 +28,7 @@ if sys.platform != 'windows':
             return "'{}'".format(s)
         return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
 else:
-    def add_quotes(s):
+    def _add_quotes(s):
         if '%' not in s and '^' not in s:
             if ' ' not in s:
                 return s
@@ -36,7 +37,7 @@ else:
         return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
 
 
-def auto_garbage_clean(default=None):
+def _auto_garbage_clean(default=None):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(self, *args, **kwargs):
@@ -63,7 +64,10 @@ class HostProcess(psutil.Process):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
-    def __new__(cls, pid):
+    def __new__(cls, pid=None):
+        if pid is None:
+            pid = os.getpid()
+
         try:
             return cls.INSTANCES[pid]
         except KeyError:
@@ -163,31 +167,31 @@ class GpuProcess(object):
             self._type = 'X'
 
     @ttl_cache(ttl=1.0)
-    @auto_garbage_clean(default=datetime.timedelta())
+    @_auto_garbage_clean(default=datetime.timedelta())
     def running_time(self):
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
-    @auto_garbage_clean(default=time.time())
+    @_auto_garbage_clean(default=time.time())
     def create_time(self):
         return self.host.create_time()
 
-    @auto_garbage_clean(default='N/A')
+    @_auto_garbage_clean(default='N/A')
     def username(self):
         return self.host.username()
 
-    @auto_garbage_clean(default='N/A')
+    @_auto_garbage_clean(default='N/A')
     def name(self):
         return self.host.name()
 
-    @auto_garbage_clean(default=0.0)
+    @_auto_garbage_clean(default=0.0)
     def cpu_percent(self):
         return self.host.cpu_percent()
 
-    @auto_garbage_clean(default=0.0)
+    @_auto_garbage_clean(default=0.0)
     def memory_percent(self):
         return self.host.memory_percent()
 
-    @auto_garbage_clean(default=('No', 'Such', 'Process'))
+    @_auto_garbage_clean(default=('No', 'Such', 'Process'))
     def cmdline(self):
         cmdline = self.host.cmdline()
         if len(cmdline) == 0:
@@ -201,7 +205,7 @@ class GpuProcess(object):
         self.host.send_signal(sig)
 
     @ttl_cache(ttl=2.0)
-    @auto_garbage_clean(default=None)
+    @_auto_garbage_clean(default=None)
     def snapshot(self):
         with self.host.oneshot():
             username = self.username()
@@ -222,7 +226,7 @@ class GpuProcess(object):
                 running_time_human = timedelta2human(running_time)
             else:
                 running_time_human = 'N/A'
-            command = ' '.join(map(add_quotes, filter(None, map(str.strip, cmdline))))
+            command = ' '.join(map(_add_quotes, filter(None, map(str.strip, cmdline))))
 
         host_info = '{:>5} {:>5}  {:>8}  {}'.format(cpu_percent_string, memory_percent_string,
                                                     running_time_human, command)
