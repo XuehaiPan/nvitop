@@ -28,10 +28,7 @@ class Selected(object):
     @property
     def identity(self):
         if self._ident is None:
-            try:
-                self._ident = self.process._ident  # pylint: disable=protected-access
-            except AttributeError:
-                pass
+            self._ident = self.process._ident  # pylint: disable=protected-access
         return self._ident
 
     @property
@@ -56,8 +53,7 @@ class Selected(object):
         if direction == 0:
             return
 
-        with self.panel.snapshot_lock:
-            processes = self.panel.snapshots
+        processes = self.panel.snapshots
         if len(processes) > 0:
             if not self.is_set():
                 if direction > 0:
@@ -80,15 +76,29 @@ class Selected(object):
             except psutil.Error:
                 pass
             else:
-                if sig != signal.SIGINT:
+                time.sleep(0.5)
+                if not self.process.is_running():
                     self.clear()
-                time.sleep(1.0)
-
-    def kill(self):
-        return self.send_signal(signal.SIGKILL)
 
     def terminate(self):
-        return self.send_signal(signal.SIGTERM)
+        if self.owned():
+            try:
+                self.process.terminate()
+            except psutil.Error:
+                pass
+            else:
+                time.sleep(0.5)
+                self.clear()
+
+    def kill(self):
+        if self.owned():
+            try:
+                self.process.kill()
+            except psutil.Error:
+                pass
+            else:
+                time.sleep(0.5)
+                self.clear()
 
     def interrupt(self):
         return self.send_signal(signal.SIGINT)
@@ -179,12 +189,14 @@ class ProcessPanel(Displayable):
             self.height = height
             self.host_offset = max(-1, min(self.host_offset, info_length - 45))
 
-            selected = self.selected
-            selected.index = None
-            for i, process in enumerate(snapshots):
-                if process.identity == selected.identity:
-                    selected.index = i
-                    selected.process = process
+            if self.selected.is_set():
+                identity = self.selected.identity
+                self.selected.clear()
+                for i, process in enumerate(snapshots):
+                    if process.identity == identity:
+                        self.selected.index = i
+                        self.selected.process = process
+                        break
 
     def take_snapshots(self):
         snapshots = list(filter(None, map(lambda process: process.snapshot(), self.processes.values())))

@@ -7,7 +7,6 @@
 import datetime
 import functools
 import os
-import sys
 import threading
 import time
 
@@ -17,7 +16,7 @@ from cachetools.func import ttl_cache
 from .utils import bytes2human, timedelta2human, Snapshot
 
 
-if sys.platform != 'windows':
+if psutil.POSIX:
     def _add_quotes(s):
         if '$' not in s and '\\' not in s:
             if ' ' not in s:
@@ -27,7 +26,7 @@ if sys.platform != 'windows':
         if "'" not in s:
             return "'{}'".format(s)
         return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
-else:
+elif psutil.WINDOWS:
     def _add_quotes(s):
         if '%' not in s and '^' not in s:
             if ' ' not in s:
@@ -35,6 +34,9 @@ else:
             if '"' not in s:
                 return '"{}"'.format(s)
         return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
+else:
+    def _add_quotes(s):
+        return s
 
 
 def _auto_garbage_clean(default=None):
