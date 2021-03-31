@@ -67,8 +67,6 @@ def nvml_query(func, *args, **kwargs):
 
     try:
         retval = func(*args, **kwargs)
-        if retval is None:
-            raise nvml.NVMLError
     except nvml.NVMLError:
         return 'N/A'
     else:
