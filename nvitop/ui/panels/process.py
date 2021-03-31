@@ -242,7 +242,8 @@ class ProcessPanel(Displayable):
         for device in self.devices:
             for p in device.processes.values():
                 try:
-                    processes[(p.device.index, p.username(), p.pid)] = p
+                    username = p.username()
+                    processes[(p.device.index, username != 'N/A', username, p.pid)] = p
                 except psutil.Error:
                     pass
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
@@ -296,7 +297,7 @@ class ProcessPanel(Displayable):
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info
                             ))
-                if not process.is_running and process.command == 'No Such Process':
+                if process.command == 'No Such Process':
                     if command_offset == 0:
                         self.addstr(y, self.x + 33 + command_offset, process.command)
                     self.color_at(y, self.x + 33 + command_offset, width=15, fg='red')
@@ -355,7 +356,7 @@ class ProcessPanel(Displayable):
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=45)
                 )
-                if not process.is_running and process.command == 'No Such Process':
+                if process.command == 'No Such Process':
                     line = line.replace(process.command, colored(process.command, color='red'))
                 lines.append(line)
 

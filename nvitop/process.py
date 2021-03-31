@@ -29,14 +29,14 @@ if psutil.POSIX:
 elif psutil.WINDOWS:
     def _add_quotes(s):
         if '%' not in s and '^' not in s:
-            if ' ' not in s:
+            if ' ' not in s and '/' not in s and '\\' not in s:
                 return s
             if '"' not in s:
                 return '"{}"'.format(s)
         return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
 else:
     def _add_quotes(s):
-        return s
+        return '"{}"'.format(s)
 
 
 def _auto_garbage_clean(default=None):
@@ -232,6 +232,7 @@ class GpuProcess(object):
                 running_time_human = timedelta2human(running_time)
             else:
                 running_time_human = 'N/A'
+                cmdline = ('No', 'Such', 'Process')
             command = ' '.join(map(_add_quotes, filter(None, map(str.strip, cmdline))))
 
         host_info = '{:>5} {:>5}  {:>8}  {}'.format(cpu_percent_string, memory_percent_string,
