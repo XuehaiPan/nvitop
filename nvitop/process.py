@@ -118,7 +118,7 @@ class GpuProcess(object):
 
         self.device = device
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
-            gpu_memory = 0
+            gpu_memory = 'N/A'
         if gpu_memory is not None:
             self.set_gpu_memory(gpu_memory)
         if type is None and not hasattr(self, '_type'):

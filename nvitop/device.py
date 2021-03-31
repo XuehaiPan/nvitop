@@ -198,7 +198,7 @@ class Device(object):
                             pass
                         continue
                     else:
-                        proc.set_gpu_memory(p.usedGpuMemory)
+                        proc.set_gpu_memory(p.usedGpuMemory if p.usedGpuMemory is not None else 'N/A')
                         proc.type = proc.type + type
 
         return processes
