@@ -210,6 +210,12 @@ class GpuProcess(object):
     def send_signal(self, sig):
         self.host.send_signal(sig)
 
+    def terminate(self):
+        self.host.terminate()
+
+    def kill(self):
+        self.host.kill()
+
     @ttl_cache(ttl=2.0)
     @_auto_garbage_clean(default=None)
     def snapshot(self):
