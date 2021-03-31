@@ -6,13 +6,17 @@
 ![Top Language](https://img.shields.io/github/languages/top/XuehaiPan/nvitop?label=Python)
 ![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)
 
-An interactive NVIDIA-GPU process viewer.
+An interactive NVIDIA-GPU process viewer. ([screenshots](#screenshots))
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
 
 This project is currently in the *beta phase*, most features have been tested on Linux. If you are using Windows with CUDA-capable GPUs, please submit feedback on the issue page, thank you very much!
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗.
+
+Compare to `nvidia-smi`:
+
+![Screenshot Monitor](https://user-images.githubusercontent.com/16078332/113161154-b3795d80-9270-11eb-8b54-65ad45122d71.png)
 
 ## Features
 
@@ -141,11 +145,11 @@ optional arguments:
 
 ## Screenshots
 
-![Screen Recording](https://user-images.githubusercontent.com/16078332/107406772-c65e9400-6b43-11eb-876b-40527c64ffe4.gif)
+![Screen Recording](https://user-images.githubusercontent.com/16078332/113173772-508dc380-927c-11eb-84c5-b6f496e54c08.gif)
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/107397202-6a8f0d80-6b39-11eb-8bea-62ff63a44088.png" alt="Screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/113155151-5202c000-926b-11eb-94e6-9763a58fd159.png" alt="Screenshot">
 
 Example output of `nvitop -m`:
 
@@ -155,8 +159,8 @@ Example output of `nvitop -m`:
     <td align="center">Compact</td>
   </tr>
   <tr valign="top">
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107529263-a7b8d580-6bf5-11eb-9ff8-f53f5b5d2471.png" alt="Full"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/107529273-aa1b2f80-6bf5-11eb-8b07-ce7cd4ee82bf.png" alt="Compact"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/113155160-53cc8380-926b-11eb-9ef0-df3e8183f400.png" alt="Full"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/113155172-562edd80-926b-11eb-8eea-8567c0fd2167.png" alt="Compact"></td>
   </tr>
 </table>
 
