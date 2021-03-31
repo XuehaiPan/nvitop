@@ -91,6 +91,10 @@ class HostProcess(psutil.Process):
     cpu_percent = ttl_cache(ttl=1.0)(psutil.Process.cpu_percent)
     memory_percent = ttl_cache(ttl=1.0)(psutil.Process.memory_percent)
 
+    if psutil.WINDOWS:
+        def username(self):
+            return super().username().split('\\')[-1]
+
 
 class GpuProcess(object):
     INSTANCE_LOCK = threading.RLock()

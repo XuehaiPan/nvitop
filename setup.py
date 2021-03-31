@@ -10,7 +10,7 @@ try:
     with open('README.md', mode='r') as doc:
         extra_description['long_description'] = doc.read()
         extra_description['long_description_content_type'] = 'text/markdown'
-except OSError:
+except (OSError, UnicodeError):
     pass
 
 setup(
@@ -28,7 +28,7 @@ setup(
             'nvitop=nvitop.main:main'
         ]
     },
-    install_requires=(['windows-curses'] if sys.platform == 'windows' else []) + [
+    install_requires=(['windows-curses'] if sys.platform.startswith('win') else []) + [
         'nvidia-ml-py==11.*',
         'psutil',
         'cachetools',
