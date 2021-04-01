@@ -18,6 +18,8 @@ from .utils import bytes2human, timedelta2human, Snapshot
 
 if psutil.POSIX:
     def _add_quotes(s):
+        if s == '':
+            return '""'
         if '$' not in s and '\\' not in s:
             if ' ' not in s:
                 return s
@@ -28,8 +30,10 @@ if psutil.POSIX:
         return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
 elif psutil.WINDOWS:
     def _add_quotes(s):
+        if s == '':
+            return '""'
         if '%' not in s and '^' not in s:
-            if ' ' not in s and '/' not in s and '\\' not in s:
+            if ' ' not in s and '\\' not in s:
                 return s
             if '"' not in s:
                 return '"{}"'.format(s)
@@ -197,7 +201,7 @@ class GpuProcess(object):
     def memory_percent(self):
         return self.host.memory_percent()
 
-    @_auto_garbage_clean(default=('No', 'Such', 'Process'))
+    @_auto_garbage_clean(default=('No Such Process',))
     def cmdline(self):
         cmdline = self.host.cmdline()
         if len(cmdline) == 0:
@@ -238,8 +242,13 @@ class GpuProcess(object):
                 running_time_human = timedelta2human(running_time)
             else:
                 running_time_human = 'N/A'
-                cmdline = ('No', 'Such', 'Process')
-            command = ' '.join(map(_add_quotes, filter(None, map(str.strip, cmdline))))
+                cmdline = ('No Such Process',)
+            if set(cmdline[1:]) == {''}:
+                cmdline = cmdline[:1]
+            if len(cmdline) == 1:
+                command = cmdline[0]
+            else:
+                command = ' '.join(map(_add_quotes, cmdline))
 
         host_info = '{:>5} {:>5}  {:>8}  {}'.format(cpu_percent_string, memory_percent_string,
                                                     running_time_human, command)

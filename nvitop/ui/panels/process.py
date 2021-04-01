@@ -297,7 +297,7 @@ class ProcessPanel(Displayable):
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info
                             ))
-                if process.command == 'No Such Process':
+                if not process.is_running and process.command == 'No Such Process':
                     if command_offset == 0:
                         self.addstr(y, self.x + 33 + command_offset, process.command)
                     self.color_at(y, self.x + 33 + command_offset, width=15, fg='red')
@@ -356,7 +356,7 @@ class ProcessPanel(Displayable):
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=45)
                 )
-                if process.command == 'No Such Process':
+                if not process.is_running and process.command == 'No Such Process':
                     line = line.replace(process.command, colored(process.command, color='red'))
                 lines.append(line)
 
