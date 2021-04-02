@@ -243,8 +243,8 @@ class GpuProcess(object):
             else:
                 running_time_human = 'N/A'
                 cmdline = ('No Such Process',)
-            if set(cmdline[1:]) == {''}:
-                cmdline = cmdline[:1]
+            if len(cmdline) > 1:
+                cmdline = '\0'.join(cmdline).strip('\0').split('\0')
             if len(cmdline) == 1:
                 command = cmdline[0]
             else:
