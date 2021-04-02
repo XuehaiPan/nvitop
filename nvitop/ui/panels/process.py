@@ -4,7 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-import os
+import getpass
 import signal
 import threading
 import time
@@ -17,10 +17,18 @@ from ..displayable import Displayable
 from ...utils import colored, cut_string, Snapshot
 
 
+CURRENT_USER = getpass.getuser()
+if psutil.WINDOWS:
+    import ctypes
+    IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
+else:
+    import os
+    IS_SUPERUSER = ((os.geteuid() == 0) if hasattr(os, 'geteuid') else False)
+
+
 class Selected(object):
     def __init__(self, panel):
         self.panel = panel
-        self.current_user = self.panel.current_user
         self.index = None
         self._proc = None
         self._ident = None
@@ -67,7 +75,7 @@ class Selected(object):
             self.clear()
 
     def owned(self):
-        return self.is_set() and self.process.username() == self.current_user
+        return self.is_set() and (IS_SUPERUSER or self.process.username() == CURRENT_USER)
 
     def send_signal(self, sig):
         if self.owned():
@@ -159,7 +167,6 @@ class ProcessPanel(Displayable):
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
-        self.current_user = os.getlogin()
         self.selected = Selected(panel=self)
         self.host_offset = -1
 
@@ -318,6 +325,10 @@ class ProcessPanel(Displayable):
                         '│  No running compute processes found                                         │')
 
         if self.selected.owned():
+            if IS_SUPERUSER:
+                self.addstr(self.y - 1, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
+                self.color_at(self.y - 1, self.x + 1, width=1, fg='red', attr='blink')
+                self.color_at(self.y - 1, self.x + 2, width=29, fg='yellow', attr='italic')
             self.addstr(self.y - 1, self.x + 32, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
             self.color_at(self.y - 1, self.x + 39, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y - 1, self.x + 41, width=4, fg='red', attr='bold')
