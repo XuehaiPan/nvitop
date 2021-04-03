@@ -9,10 +9,10 @@ RUN echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ bionic main univers
 
 RUN apt-get update
 RUN apt-get install -yq python3 python3-pip
-RUN apt-get install -yq git
 
-RUN python3 -m pip install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
+COPY . /nvitop
+WORKDIR /nvitop
+RUN pip3 install .
 
 ENV LANG C.UTF-8
-
-ENTRYPOINT [ "nvitop" ]
+ENTRYPOINT [ "python3", "nvitop.py" ]
