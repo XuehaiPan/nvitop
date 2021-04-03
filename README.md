@@ -1,10 +1,10 @@
 # nvitop
 
 ![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
-![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)
-![status](https://img.shields.io/pypi/status/nvitop)
-![Top Language](https://img.shields.io/github/languages/top/XuehaiPan/nvitop?label=Python)
-![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)
+[![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop)
+![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
+![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)
+[![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
 An interactive NVIDIA-GPU process viewer. ([screenshots](#screenshots))
 
@@ -44,7 +44,7 @@ Compare to `nvidia-smi`:
 
 ## Installation
 
-Install from PyPI:
+Install from PyPI ([https://pypi.org/project/nvitop](https://pypi.org/project/nvitop)):
 
 ```bash
 $ pip install --upgrade nvitop
@@ -101,6 +101,13 @@ $ nvitop -m -ov
 ```
 
 Press `q` to return to the terminal.
+
+For Docker users:
+
+```bash
+$ docker build -t nvitop:latest .
+$ docker run -it --rm --gpus all nvitop:latest -m
+```
 
 Type `nvitop --help` for more information:
 
