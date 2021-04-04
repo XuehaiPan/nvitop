@@ -106,7 +106,7 @@ For Docker users:
 
 ```bash
 $ docker build -t nvitop:latest .
-$ docker run -it --rm --gpus all nvitop:latest -m
+$ docker run -it --rm --gpus all --pid=host nvitop:latest -m
 ```
 
 Type `nvitop --help` for more information:
@@ -156,7 +156,7 @@ optional arguments:
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/113155151-5202c000-926b-11eb-94e6-9763a58fd159.png" alt="Screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/113507180-86cc8b00-957b-11eb-8a30-469674752655.png" alt="Screenshot">
 
 Example output of `nvitop -m`:
 
@@ -167,7 +167,7 @@ Example output of `nvitop -m`:
   </tr>
   <tr valign="top">
     <td align="center"><img src="https://user-images.githubusercontent.com/16078332/113155160-53cc8380-926b-11eb-9ef0-df3e8183f400.png" alt="Full"></td>
-    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/113155172-562edd80-926b-11eb-8eea-8567c0fd2167.png" alt="Compact"></td>
+    <td align="center"><img src="https://user-images.githubusercontent.com/16078332/113507068-eaa28400-957a-11eb-8b76-7f88c2d12672.png" alt="Compact"></td>
   </tr>
 </table>
 

@@ -237,7 +237,7 @@ class ProcessPanel(Displayable):
         ]
         if len(self.snapshots) == 0:
             header.extend([
-                '│  No running compute processes found                                         │',
+                '│  No running processes found                                                 │',
                 '╘═════════════════════════════════════════════════════════════════════════════╛',
             ])
         return header
@@ -322,7 +322,7 @@ class ProcessPanel(Displayable):
             self.addstr(y, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
         else:
             self.addstr(self.y + 4, self.x,
-                        '│  No running compute processes found                                         │')
+                        '│  No running processes found                                                 │')
 
         if self.selected.owned():
             if IS_SUPERUSER:
