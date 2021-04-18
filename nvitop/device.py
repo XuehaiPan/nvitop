@@ -132,7 +132,10 @@ class Device(object):
     def fan_speed(self):
         fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
         if nvml_check_return(fan_speed, int):
-            fan_speed = str(fan_speed) + '%'
+            if fan_speed < 100:
+                fan_speed = str(fan_speed) + '%'
+            else:
+                fan_speed = 'MAX'
         return fan_speed
 
     @property
