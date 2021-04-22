@@ -47,13 +47,13 @@ Compare to `nvidia-smi`:
 Install from PyPI ([https://pypi.org/project/nvitop](https://pypi.org/project/nvitop)):
 
 ```bash
-$ pip install --upgrade nvitop
+$ pip3 install --upgrade nvitop
 ```
 
 Install the latest version from GitHub (*recommended*):
 
 ```bash
-$ pip install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
+$ pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
 Or, clone this repo and install manually:
@@ -61,7 +61,7 @@ Or, clone this repo and install manually:
 ```bash
 $ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
 $ cd nvitop
-$ pip install .
+$ pip3 install .
 ```
 
 ## Usage
