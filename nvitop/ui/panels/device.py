@@ -46,7 +46,7 @@ class DevicePanel(Displayable):
 
         self._snapshot_buffer = []
         self._snapshots = []
-        self.snapshot_lock = threading.RLock()
+        self.snapshot_lock = root.lock
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
@@ -73,7 +73,7 @@ class DevicePanel(Displayable):
             self._snapshots = snapshots
 
     def take_snapshots(self):
-        snapshots = list(map(lambda device: device.snapshot(), self.devices))
+        snapshots = list(map(lambda device: device.take_snapshot(), self.devices))
 
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots

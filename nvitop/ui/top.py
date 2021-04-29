@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import curses
+import threading
 import time
 
 from .displayable import DisplayableContainer
@@ -28,6 +29,8 @@ class Top(DisplayableContainer):
 
         self.devices = devices
         self.device_count = len(self.devices)
+
+        self.lock = threading.RLock()
 
         self.process_panel = ProcessPanel(self.devices, win=win, root=self)
         self.process_panel.focused = True

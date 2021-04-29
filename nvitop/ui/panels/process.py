@@ -172,7 +172,7 @@ class ProcessPanel(Displayable):
 
         self._snapshot_buffer = []
         self._snapshots = []
-        self.snapshot_lock = threading.RLock()
+        self.snapshot_lock = root.lock
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
@@ -206,7 +206,7 @@ class ProcessPanel(Displayable):
                         break
 
     def take_snapshots(self):
-        snapshots = list(filter(None, map(lambda process: process.snapshot(), self.processes.values())))
+        snapshots = list(filter(None, map(lambda process: process.take_snapshot(), self.processes.values())))
 
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         for snapshot in snapshots:
@@ -286,7 +286,7 @@ class ProcessPanel(Displayable):
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index != device_index:
-                    color = process.device.display_color
+                    color = process.device.last_snapshot.display_color
                     if prev_device_index is not None:
                         self.addstr(y, self.x,
                                     '├─────────────────────────────────────────────────────────────────────────────┤')
@@ -355,7 +355,7 @@ class ProcessPanel(Displayable):
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index != device_index:
-                    color = process.device.display_color
+                    color = process.device.last_snapshot.display_color
                     if prev_device_index is not None:
                         lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
                     prev_device_index = device_index

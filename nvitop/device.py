@@ -32,6 +32,7 @@ class Device(object):
 
         self._ident = (self.index, self.bus_id)
         self._hash = None
+        self._last_snapshot = None
 
     def __str__(self):
         return 'GPU({}, {}, {})'.format(self.index, self.name, bytes2human(self.memory_total))
@@ -207,8 +208,15 @@ class Device(object):
         return processes
 
     @ttl_cache(ttl=1.0)
-    def snapshot(self):
-        return Snapshot(real=self, **{key: getattr(self, key) for key in self._snapshot_keys})
+    def take_snapshot(self):
+        self._last_snapshot = Snapshot(real=self, **{key: getattr(self, key) for key in self._snapshot_keys})
+        return self._last_snapshot
+
+    @property
+    def last_snapshot(self):
+        if self._last_snapshot is None:
+            self.take_snapshot()
+        return self._last_snapshot
 
     _snapshot_keys = ['index', 'name', 'loading_intensity', 'display_color',
                       'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',

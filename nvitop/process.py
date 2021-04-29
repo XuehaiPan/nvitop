@@ -222,7 +222,7 @@ class GpuProcess(object):
 
     @ttl_cache(ttl=2.0)
     @_auto_garbage_clean(default=None)
-    def snapshot(self):
+    def take_snapshot(self):
         with self.host.oneshot():
             username = self.username()
             name = self.name()
