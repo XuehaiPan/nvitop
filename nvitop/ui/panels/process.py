@@ -14,6 +14,7 @@ import psutil
 from cachetools.func import ttl_cache
 
 from ..displayable import Displayable
+from ...process import GpuProcess
 from ...utils import colored, cut_string, Snapshot
 
 
@@ -206,6 +207,7 @@ class ProcessPanel(Displayable):
                         break
 
     def take_snapshots(self):
+        GpuProcess.clear_host_snapshots()
         snapshots = list(filter(None, map(lambda process: process.take_snapshot(), self.processes.values())))
 
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))

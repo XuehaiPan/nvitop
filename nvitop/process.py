@@ -17,7 +17,7 @@ from .utils import bytes2human, timedelta2human, Snapshot
 
 
 if psutil.POSIX:
-    def _add_quotes(s):
+    def add_quotes(s):
         if s == '':
             return '""'
         if '$' not in s and '\\' not in s:
@@ -29,7 +29,7 @@ if psutil.POSIX:
             return "'{}'".format(s)
         return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
 elif psutil.WINDOWS:
-    def _add_quotes(s):
+    def add_quotes(s):
         if s == '':
             return '""'
         if '%' not in s and '^' not in s:
@@ -39,11 +39,11 @@ elif psutil.WINDOWS:
                 return '"{}"'.format(s)
         return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
 else:
-    def _add_quotes(s):
+    def add_quotes(s):
         return '"{}"'.format(s)
 
 
-def _auto_garbage_clean(default=None):
+def auto_garbage_clean(default=None):
     def wrapper(func):
         @functools.wraps(func)
         def wrapped(self, *args, **kwargs):
@@ -103,6 +103,8 @@ class HostProcess(psutil.Process):
 class GpuProcess(object):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
+    SNAPSHOT_LOCK = threading.RLock()
+    HOST_SNAPSHOTS = {}
 
     def __new__(cls, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
         try:
@@ -177,31 +179,31 @@ class GpuProcess(object):
             self._type = 'X'
 
     @ttl_cache(ttl=1.0)
-    @_auto_garbage_clean(default=datetime.timedelta())
+    @auto_garbage_clean(default=datetime.timedelta())
     def running_time(self):
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
-    @_auto_garbage_clean(default=time.time())
+    @auto_garbage_clean(default=time.time())
     def create_time(self):
         return self.host.create_time()
 
-    @_auto_garbage_clean(default='N/A')
+    @auto_garbage_clean(default='N/A')
     def username(self):
         return self.host.username()
 
-    @_auto_garbage_clean(default='N/A')
+    @auto_garbage_clean(default='N/A')
     def name(self):
         return self.host.name()
 
-    @_auto_garbage_clean(default=0.0)
+    @auto_garbage_clean(default=0.0)
     def cpu_percent(self):
         return self.host.cpu_percent()
 
-    @_auto_garbage_clean(default=0.0)
+    @auto_garbage_clean(default=0.0)
     def memory_percent(self):
         return self.host.memory_percent()
 
-    @_auto_garbage_clean(default=('No Such Process',))
+    @auto_garbage_clean(default=('No Such Process',))
     def cmdline(self):
         cmdline = self.host.cmdline()
         if len(cmdline) == 0:
@@ -220,38 +222,54 @@ class GpuProcess(object):
     def kill(self):
         self.host.kill()
 
-    @ttl_cache(ttl=2.0)
-    @_auto_garbage_clean(default=None)
-    def take_snapshot(self):
-        with self.host.oneshot():
-            username = self.username()
-            name = self.name()
-            cmdline = self.cmdline()
-            cpu_percent = self.cpu_percent()
-            if cpu_percent < 1000.0:
-                cpu_percent_string = '{:.1f}'.format(cpu_percent)
-            elif cpu_percent < 10000:
-                cpu_percent_string = '{}'.format(int(cpu_percent))
-            else:
-                cpu_percent_string = '9999+'
-            memory_percent = self.memory_percent()
-            memory_percent_string = '{:.1f}'.format(memory_percent)
-            is_running = self.is_running()
-            running_time = self.running_time()
-            if is_running:
-                running_time_human = timedelta2human(running_time)
-            else:
-                running_time_human = 'N/A'
-                cmdline = ('No Such Process',)
-            if len(cmdline) > 1:
-                cmdline = '\0'.join(cmdline).strip('\0').split('\0')
-            if len(cmdline) == 1:
-                command = cmdline[0]
-            else:
-                command = ' '.join(map(_add_quotes, cmdline))
+    @classmethod
+    def clear_host_snapshots(cls):
+        with cls.SNAPSHOT_LOCK:
+            cls.HOST_SNAPSHOTS.clear()
 
-        host_info = '{:>5} {:>5}  {:>8}  {}'.format(cpu_percent_string, memory_percent_string,
-                                                    running_time_human, command)
+    @ttl_cache(ttl=2.0)
+    @auto_garbage_clean(default=None)
+    def take_snapshot(self):
+        with self.SNAPSHOT_LOCK:
+            if self.pid in self.HOST_SNAPSHOTS:
+                host = self.HOST_SNAPSHOTS[self.pid]
+            else:
+                host = Snapshot(real=self.host)
+                with self.host.oneshot():
+                    host.username = self.username()
+                    host.name = self.name()
+                    host.cmdline = self.cmdline()
+                    host.cpu_percent = self.cpu_percent()
+                    host.memory_percent = self.memory_percent()
+                    host.is_running = self.is_running()
+                    host.running_time = self.running_time()
+
+                    if host.cpu_percent < 1000.0:
+                        host.cpu_percent_string = '{:.1f}'.format(host.cpu_percent)
+                    elif host.cpu_percent < 10000:
+                        host.cpu_percent_string = '{}'.format(int(host.cpu_percent))
+                    else:
+                        host.cpu_percent_string = '9999+'
+                    host.memory_percent_string = '{:.1f}'.format(host.memory_percent)
+
+                    if host.is_running:
+                        host.running_time_human = timedelta2human(host.running_time)
+                    else:
+                        host.running_time_human = 'N/A'
+                        host.cmdline = ('No Such Process',)
+                    if len(host.cmdline) > 1:
+                        host.cmdline = '\0'.join(host.cmdline).strip('\0').split('\0')
+                    if len(host.cmdline) == 1:
+                        host.command = host.cmdline[0]
+                    else:
+                        host.command = ' '.join(map(add_quotes, host.cmdline))
+
+                    host.info = '{:>5} {:>5}  {:>8}  {}'.format(host.cpu_percent_string,
+                                                                host.memory_percent_string,
+                                                                host.running_time_human,
+                                                                host.command)
+
+                self.HOST_SNAPSHOTS[self.pid] = host
 
         gpu_memory = self.gpu_memory()
         return Snapshot(
@@ -262,16 +280,16 @@ class GpuProcess(object):
             gpu_memory=gpu_memory,
             gpu_memory_human=bytes2human(gpu_memory),
             type=self.type,
-            username=username,
-            name=name,
-            cmdline=cmdline,
-            command=command,
-            cpu_percent=cpu_percent,
-            cpu_percent_string=cpu_percent_string,
-            memory_percent=memory_percent,
-            memory_percent_string=memory_percent_string,
-            is_running=is_running,
-            running_time=running_time,
-            running_time_human=running_time_human,
-            host_info=host_info
+            username=host.username,
+            name=host.name,
+            cmdline=host.cmdline,
+            command=host.command,
+            cpu_percent=host.cpu_percent,
+            cpu_percent_string=host.cpu_percent_string,
+            memory_percent=host.memory_percent,
+            memory_percent_string=host.memory_percent_string,
+            is_running=host.is_running,
+            running_time=host.running_time,
+            running_time_human=host.running_time_human,
+            host_info=host.info
         )
