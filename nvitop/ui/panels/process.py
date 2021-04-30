@@ -186,7 +186,7 @@ class ProcessPanel(Displayable):
     @width.setter
     def width(self, value):
         width = max(79, value)
-        if width != self.width and self.visible:
+        if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
 

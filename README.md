@@ -138,17 +138,20 @@ optional arguments:
 
 #### Keybindings for monitor mode
 
-- `q`: quit and return to the terminal.
-- (`<Left>` `<Right>`) / (`[` `]`) / `<S-Wheel>`: scroll the host information of processes.
-- `<Home>` / `<C-a>`: scroll the host information of processes to the beginning of line.
-- `<End>` / `<C-e>`: scroll the host information of selected processes to the end of line.
-- (`<Up>` `<Down>`) / (`<Tab>` `<S-Tab>`) / `<Wheel>`: select and highlight process.
-- `<Esc>`: clear selection.
-- `T`: send `signal.SIGTERM` to selected process.
-- `K`: send `signal.SIGKILL` to selected process.
-- `<C-c>`: send `signal.SIGINT` to selected process.
+|                                                       Key | Binding                                                               |
+| --------------------------------------------------------: | :-------------------------------------------------------------------- |
+|                                                       `q` | Quit and return to the terminal.                                      |
+|                                           `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.               |
+|      `<Left>` / `<Right>` <br> `[` / `]` <br> `<S-Wheel>` | Scroll the host information of processes.                             |
+|                            `<Home>` <br> `<C-a>` <br> `^` | Scroll the host information of processes to the beginning of line.    |
+|                             `<End>` <br> `<C-e>` <br> `$` | Scroll the host information of selected processes to the end of line. |
+| `<Up>` / `<Down>` <br> `<Tab>` / `<S-Tab>` <br> `<Wheel>` | Select and highlight process.                                         |
+|                                                   `<Esc>` | Clear selection.                                                      |
+|                                                       `T` | Send `signal.SIGTERM` to the selected process (terminate).            |
+|                                                       `K` | Send `signal.SIGKILL` to the selected process (kill).                 |
+|                                          `I` <br> `<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).             |
 
-**Note**: Press `CTRL` key to multiply the mouse wheel events by `5`.
+**Note**: Press the `CTRL` key to multiply the mouse wheel events by `5`.
 
 ## Screenshots
 

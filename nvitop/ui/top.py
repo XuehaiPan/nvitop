@@ -29,7 +29,7 @@ class Top(DisplayableContainer):
 
         assert mode in ('auto', 'full', 'compact')
         compact = (mode == 'compact')
-        self.mode = mode
+        self._mode = mode
         self._compact = compact
 
         self.devices = devices
@@ -37,22 +37,23 @@ class Top(DisplayableContainer):
 
         self.lock = threading.RLock()
 
-        self.process_panel = ProcessPanel(self.devices, win=win, root=self)
-        self.process_panel.focused = True
-        self.add_child(self.process_panel)
-
         self.device_panel = DevicePanel(self.devices, compact, win=win, root=self)
         self.device_panel.focused = False
         self.add_child(self.device_panel)
+
+        self.process_panel = ProcessPanel(self.devices, win=win, root=self)
+        self.process_panel.focused = False
+        self.add_child(self.process_panel)
 
         self.device_panel.y = 1
         self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
 
-        self.keybuffer = KeyBuffer()
-        self.keymaps = KeyMaps(self.keybuffer)
-        self.last_input_time = time.time()
-        self.init_keybindings()
+        if win is not None:
+            self.keybuffer = KeyBuffer()
+            self.keymaps = KeyMaps(self.keybuffer)
+            self.last_input_time = time.time()
+            self.init_keybindings()
 
     @property
     def compact(self):
@@ -64,10 +65,24 @@ class Top(DisplayableContainer):
             self.need_redraw = True
             self._compact = value
 
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, value):
+        if self._mode != value:
+            self._mode = value
+            self.update_size()
+
     def init_keybindings(self):
         # pylint: disable=multiple-statements
 
         def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
+
+        def auto_mode(top): top.mode = 'auto'
+        def full_mode(top): top.mode = 'full'
+        def compact_mode(top): top.mode = 'compact'
 
         def host_left(top): top.process_panel.host_offset -= 1
         def host_right(top): top.process_panel.host_offset += 1
@@ -82,34 +97,44 @@ class Top(DisplayableContainer):
         def kill(top): top.process_panel.selected.kill()
         def interrupt(top): top.process_panel.selected.interrupt()
 
-        self.keymaps.bind('top', 'q', quit)
-        self.keymaps.copy('top', 'q', 'Q')
-        self.keymaps.bind('process', 'q', quit)
-        self.keymaps.copy('process', 'q', 'Q')
-        self.keymaps.bind('process', '<Left>', host_left)
-        self.keymaps.copy('process', '<Left>', '[')
-        self.keymaps.bind('process', '<Right>', host_right)
-        self.keymaps.copy('process', '<Right>', ']')
-        self.keymaps.bind('process', '<Home>', host_begin)
-        self.keymaps.copy('process', '<Home>', '<C-a>')
-        self.keymaps.bind('process', '<End>', host_end)
-        self.keymaps.copy('process', '<End>', '<C-e>')
-        self.keymaps.bind('process', '<Up>', select_up)
-        self.keymaps.copy('process', '<Up>', '<S-Tab>')
-        self.keymaps.bind('process', '<Down>', select_down)
-        self.keymaps.copy('process', '<Down>', '<Tab>')
-        self.keymaps.bind('process', '<Esc>', select_clear)
-        self.keymaps.bind('process', 'T', terminate)
-        self.keymaps.bind('process', 'K', kill)
-        self.keymaps.bind('process', '<C-c>', interrupt)
+        self.keymaps.bind('root', 'q', quit)
+        self.keymaps.copy('root', 'q', 'Q')
+        self.keymaps.bind('root', 'a', auto_mode)
+        self.keymaps.bind('root', 'f', full_mode)
+        self.keymaps.bind('root', 'c', compact_mode)
+
+        self.keymaps.bind('root', '<Left>', host_left)
+        self.keymaps.copy('root', '<Left>', '[')
+        self.keymaps.bind('root', '<Right>', host_right)
+        self.keymaps.copy('root', '<Right>', ']')
+        self.keymaps.bind('root', '<Home>', host_begin)
+        self.keymaps.copy('root', '<Home>', '<C-a>')
+        self.keymaps.copy('root', '<Home>', '^')
+        self.keymaps.bind('root', '<End>', host_end)
+        self.keymaps.copy('root', '<End>', '<C-e>')
+        self.keymaps.copy('root', '<End>', '$')
+        self.keymaps.bind('root', '<Up>', select_up)
+        self.keymaps.copy('root', '<Up>', '<S-Tab>')
+        self.keymaps.bind('root', '<Down>', select_down)
+        self.keymaps.copy('root', '<Down>', '<Tab>')
+        self.keymaps.bind('root', '<Esc>', select_clear)
+
+        self.keymaps.bind('root', 'T', terminate)
+        self.keymaps.bind('root', 'K', kill)
+        self.keymaps.bind('root', '<C-c>', interrupt)
+        self.keymaps.copy('root', '<C-c>', 'I')
+
+        self.keymaps.use_keymap('root')
 
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, self.width = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
             self.compact = (n_term_lines < 1 + self.device_panel.full_height + 1 + self.process_panel.height)
-            self.device_panel.compact = self.compact
-            self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
+        else:
+            self.compact = (self.mode == 'compact')
+        self.device_panel.compact = self.compact
+        self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
         self.process_panel.width = self.width
         if self.termsize != termsize:
@@ -178,7 +203,7 @@ class Top(DisplayableContainer):
         if key < 0:
             self.keybuffer.clear()
         elif not super().press(key):
-            self.keymaps.use_keymap('top')
+            self.keymaps.use_keymap('root')
             self.press(key)
 
     def handle_keys(self, *keys):
