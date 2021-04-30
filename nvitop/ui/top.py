@@ -100,12 +100,13 @@ class Top(DisplayableContainer):
 
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
-        n_term_lines, _ = termsize = self.win.getmaxyx()
+        n_term_lines, self.width = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
             self.compact = (n_term_lines < 1 + self.device_panel.full_height + 1 + self.process_panel.height)
             self.device_panel.compact = self.compact
             self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
+        self.process_panel.width = self.width
         if self.termsize != termsize:
             self.termsize = termsize
             self.need_redraw = True

@@ -48,7 +48,7 @@ class Displayable(CursesShortcuts):
         self._visible = True
         self.x = 0
         self.y = 0
-        self.width = 0
+        self._width = 0
         self.height = 0
 
         self.win = win
@@ -133,6 +133,16 @@ class Displayable(CursesShortcuts):
             self._need_redraw = value
             if value and self.parent is not None:
                 self.parent.need_redraw = True
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        if self.width != value and self.visible:
+            self.need_redraw = True
+        self._width = value
 
     def __str__(self):
         return self.__class__.__name__

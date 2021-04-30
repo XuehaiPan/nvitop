@@ -180,6 +180,17 @@ class ProcessPanel(Displayable):
         self._daemon_started = threading.Event()
 
     @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        width = max(79, value)
+        if width != self.width and self.visible:
+            self.need_redraw = True
+        self._width = width
+
+    @property
     def snapshots(self):
         return self._snapshots
 
@@ -195,7 +206,7 @@ class ProcessPanel(Displayable):
             self.need_redraw = (self.need_redraw or self.height > height or self.host_headers[-2] != time_header)
             self.host_headers[-2] = time_header
             self.height = height
-            self.host_offset = max(-1, min(self.host_offset, info_length - 45))
+            self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 34))
 
             if self.selected.is_set():
                 identity = self.selected.identity
@@ -232,15 +243,15 @@ class ProcessPanel(Displayable):
 
     def header_lines(self):
         header = [
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ Processes:                                                                  │',
-            '│ GPU    PID      USER  GPU MEM  {:<44} │'.format('  '.join(self.host_headers)),
-            '╞═════════════════════════════════════════════════════════════════════════════╡',
+            '╒' + '═' * (self.width - 2) + '╕',
+            '│ {} │'.format('Processes:'.ljust(self.width - 4)),
+            '│ GPU    PID      USER  GPU MEM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 35)),
+            '╞' + '═' * (self.width - 2) + '╡',
         ]
         if len(self.snapshots) == 0:
             header.extend([
-                '│  No running processes found                                                 │',
-                '╘═════════════════════════════════════════════════════════════════════════════╛',
+                '│ {} │'.format(' No running processes found '.ljust(self.width - 4)),
+                '╘' + '═' * (self.width - 2) + '╛',
             ])
         return header
 
@@ -277,9 +288,9 @@ class ProcessPanel(Displayable):
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
             host_headers = '  '.join(self.host_headers)
-            self.addstr(self.y + 2, self.x + 33, '{:<44}'.format(host_headers[host_offset:]))
+            self.addstr(self.y + 2, self.x + 33, '{}'.format(host_headers[host_offset:].ljust(self.width - 35)))
         else:
-            self.addstr(self.y + 2, self.x + 33, '{:<44}'.format('COMMAND'))
+            self.addstr(self.y + 2, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
 
         if len(self.snapshots) > 0:
             y = self.y + 4
@@ -290,21 +301,20 @@ class ProcessPanel(Displayable):
                 if prev_device_index != device_index:
                     color = process.device.last_snapshot.display_color
                     if prev_device_index is not None:
-                        self.addstr(y, self.x,
-                                    '├─────────────────────────────────────────────────────────────────────────────┤')
+                        self.addstr(y, self.x, '├' + '─' * (self.width - 2) + '┤')
                         y += 1
                     prev_device_index = device_index
 
                 host_info = process.host_info
                 if self.host_offset < 0:
-                    host_info = cut_string(host_info, padstr='..', maxlen=45)
+                    host_info = cut_string(host_info, padstr='..', maxlen=self.width - 34)
                 else:
-                    host_info = host_info[self.host_offset:self.host_offset + 45]
+                    host_info = host_info[self.host_offset:self.host_offset + self.width - 34]
                 self.addstr(y, self.x,
-                            '│ {:>3} {:>6} {} {:>7} {:>8} {:<45} │'.format(
+                            '│ {:>3} {:>6} {} {:>7} {:>8} {} │'.format(
                                 device_index, cut_string(process.pid, maxlen=6, padstr='.'),
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
-                                process.gpu_memory_human, host_info
+                                process.gpu_memory_human, host_info.ljust(self.width - 34)
                             ))
                 if not process.is_running and process.command == 'No Such Process':
                     if command_offset == 0:
@@ -314,30 +324,30 @@ class ProcessPanel(Displayable):
                     self.addstr(y, self.x + 32, ' ')
 
                 if self.selected.is_same(process):
-                    self.color_at(y, self.x + 1, width=77, fg='cyan', attr='bold | reverse')
+                    self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
                 else:
                     if self.selected.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=')
                         self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                     self.color_at(y, self.x + 2, width=3, fg=color)
                 y += 1
-            self.addstr(y, self.x, '╘═════════════════════════════════════════════════════════════════════════════╛')
+            self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
         else:
-            self.addstr(self.y + 4, self.x,
-                        '│  No running processes found                                                 │')
+            self.addstr(self.y + 4, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
 
         if self.selected.owned():
             if IS_SUPERUSER:
                 self.addstr(self.y - 1, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
                 self.color_at(self.y - 1, self.x + 1, width=1, fg='red', attr='blink')
                 self.color_at(self.y - 1, self.x + 2, width=29, fg='yellow', attr='italic')
-            self.addstr(self.y - 1, self.x + 32, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
-            self.color_at(self.y - 1, self.x + 39, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 41, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, self.x + 47, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 49, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, self.x + 55, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, self.x + 58, width=3, fg='red', attr='bold')
+            offset = self.x + self.width - 47
+            self.addstr(self.y - 1, offset, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
+            self.color_at(self.y - 1, offset + 7, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, offset + 9, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, offset + 15, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, offset + 17, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, offset + 23, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, offset + 26, width=3, fg='red', attr='bold')
         else:
             self.addstr(self.y - 1, self.x, ' ' * self.width)
 
@@ -359,21 +369,21 @@ class ProcessPanel(Displayable):
                 if prev_device_index != device_index:
                     color = process.device.last_snapshot.display_color
                     if prev_device_index is not None:
-                        lines.append('├─────────────────────────────────────────────────────────────────────────────┤')
+                        lines.append('├' + '─' * (self.width - 2) + '┤')
                     prev_device_index = device_index
 
-                line = '│ {} {:>6} {} {:>7} {:>8} {:<45} │'.format(
+                line = '│ {} {:>6} {} {:>7} {:>8} {} │'.format(
                     colored('{:>3}'.format(device_index), color),
                     cut_string(process.pid, maxlen=6, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
                     process.gpu_memory_human,
-                    cut_string(process.host_info, padstr='..', maxlen=45)
+                    cut_string(process.host_info, padstr='..', maxlen=self.width - 34).ljust(self.width - 34)
                 )
                 if not process.is_running and process.command == 'No Such Process':
                     line = line.replace(process.command, colored(process.command, color='red'))
                 lines.append(line)
 
-            lines.append('╘═════════════════════════════════════════════════════════════════════════════╛')
+            lines.append('╘' + '═' * (self.width - 2) + '╛')
 
         print('\n'.join(lines))
 
