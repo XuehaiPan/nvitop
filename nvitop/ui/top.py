@@ -6,6 +6,8 @@
 import curses
 import threading
 import time
+import shutil
+import sys
 
 from .displayable import DisplayableContainer
 from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
@@ -20,6 +22,9 @@ class BreakLoop(Exception):
 class Top(DisplayableContainer):
     def __init__(self, devices, mode='auto', win=None):
         super().__init__(win, root=self)
+        self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns)
+        if not sys.stdout.isatty():
+            self.width = 1024
         self.termsize = None
 
         assert mode in ('auto', 'full', 'compact')

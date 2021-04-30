@@ -161,7 +161,7 @@ class ProcessPanel(Displayable):
 
     def __init__(self, devices, win=None, root=None):
         super().__init__(win, root)
-        self.width = 79
+        self.width = max(79, root.width)
         self.height = 6
 
         self.devices = devices
@@ -359,6 +359,8 @@ class ProcessPanel(Displayable):
         self._daemon_started.clear()
 
     def print(self):
+        self.width = min(self.width, max((34 + len(process.host_info) for process in self.snapshots), default=79))
+
         lines = self.header_lines()
 
         if len(self.snapshots) > 0:
