@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import curses
 import getpass
 import signal
 import threading
@@ -206,7 +207,10 @@ class ProcessPanel(Displayable):
             self.need_redraw = (self.need_redraw or self.height > height or self.host_headers[-2] != time_header)
             self.host_headers[-2] = time_header
             self.height = height
+            old_host_offset = self.host_offset
             self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 34))
+            if self.host_offset != old_host_offset and old_host_offset != 1024:
+                curses.beep()
 
             if self.selected.is_set():
                 identity = self.selected.identity
