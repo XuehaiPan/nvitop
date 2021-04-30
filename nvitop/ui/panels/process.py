@@ -316,12 +316,12 @@ class ProcessPanel(Displayable):
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, host_info.ljust(self.width - 34)
                             ))
-                if not process.is_running and process.command == 'No Such Process':
-                    if command_offset == 0:
-                        self.addstr(y, self.x + 33 + command_offset, process.command)
-                    self.color_at(y, self.x + 33 + command_offset, width=15, fg='red')
                 if self.host_offset > 0:
                     self.addstr(y, self.x + 32, ' ')
+
+                is_gone = (not process.is_running and process.command == 'No Such Process')
+                if is_gone and command_offset == 0:
+                    self.addstr(y, self.x + 33, process.command)
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
@@ -330,6 +330,10 @@ class ProcessPanel(Displayable):
                         self.addstr(y, self.x + 1, '=')
                         self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                     self.color_at(y, self.x + 2, width=3, fg=color)
+                    if process.username != CURRENT_USER and not IS_SUPERUSER:
+                        self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
+                    if is_gone:
+                        self.color_at(y, self.x + 33 + command_offset, width=15, fg='red')
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
         else:
@@ -340,14 +344,14 @@ class ProcessPanel(Displayable):
                 self.addstr(self.y - 1, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
                 self.color_at(self.y - 1, self.x + 1, width=1, fg='red', attr='blink')
                 self.color_at(self.y - 1, self.x + 2, width=29, fg='yellow', attr='italic')
-            offset = self.x + self.width - 47
-            self.addstr(self.y - 1, offset, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
-            self.color_at(self.y - 1, offset + 7, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, offset + 9, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, offset + 15, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, offset + 17, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, offset + 23, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, offset + 26, width=3, fg='red', attr='bold')
+            text_offset = self.x + self.width - 47
+            self.addstr(self.y - 1, text_offset, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
+            self.color_at(self.y - 1, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, text_offset + 9, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, text_offset + 15, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, text_offset + 17, width=4, fg='red', attr='bold')
+            self.color_at(self.y - 1, text_offset + 23, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y - 1, text_offset + 26, width=3, fg='red', attr='bold')
         else:
             self.addstr(self.y - 1, self.x, ' ' * self.width)
 
@@ -374,16 +378,18 @@ class ProcessPanel(Displayable):
                         lines.append('├' + '─' * (self.width - 2) + '┤')
                     prev_device_index = device_index
 
-                line = '│ {} {:>6} {} {:>7} {:>8} {} │'.format(
-                    colored('{:>3}'.format(device_index), color),
+                info = '{:>6} {} {:>7} {:>8} {}'.format(
                     cut_string(process.pid, maxlen=6, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=self.width - 34).ljust(self.width - 34)
                 )
                 if not process.is_running and process.command == 'No Such Process':
-                    line = line.replace(process.command, colored(process.command, color='red'))
-                lines.append(line)
+                    info = map(lambda item: colored(item, attrs=('dark',)), info.split(process.command))
+                    info = colored(process.command, color='red').join(info)
+                elif process.username != CURRENT_USER and not IS_SUPERUSER:
+                    info = colored(info, attrs=('dark',))
+                lines.append('│ {} {} │'.format(colored('{:>3}'.format(device_index), color), info))
 
             lines.append('╘' + '═' * (self.width - 2) + '╛')
 
