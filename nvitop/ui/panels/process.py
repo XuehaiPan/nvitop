@@ -14,10 +14,9 @@ from collections import OrderedDict
 import psutil
 from cachetools.func import ttl_cache
 
-from ..displayable import Displayable
 from ...process import GpuProcess
-from ...utils import colored, cut_string, Snapshot
-
+from ...utils import Snapshot, colored, cut_string
+from ..displayable import Displayable
 
 CURRENT_USER = getpass.getuser()
 if psutil.WINDOWS:
@@ -162,10 +161,12 @@ class ProcessPanel(Displayable):
 
     def __init__(self, devices, win=None, root=None):
         super().__init__(win, root)
+
+        self.devices = devices
+
         self.width = max(79, root.width)
         self.height = 6
 
-        self.devices = devices
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 

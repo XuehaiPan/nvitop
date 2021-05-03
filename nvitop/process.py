@@ -13,7 +13,7 @@ import time
 import psutil
 from cachetools.func import ttl_cache
 
-from .utils import bytes2human, timedelta2human, Snapshot
+from .utils import Snapshot, bytes2human, timedelta2human
 
 
 if psutil.POSIX:

@@ -28,8 +28,7 @@ def cut_string(s, maxlen, padstr='...', align='left'):
         return s
     if align == 'left':
         return s[:maxlen - len(padstr)] + padstr
-    else:
-        return padstr + s[-(maxlen - len(padstr)):]
+    return padstr + s[-(maxlen - len(padstr)):]
 
 
 def bytes2human(x):
@@ -43,22 +42,20 @@ def bytes2human(x):
         return '{}B'.format(x)
     if x < (1 << 20):
         return '{}KiB'.format(x >> 10)
-    else:
-        return '{}MiB'.format(x >> 20)
+    return '{}MiB'.format(x >> 20)
 
 
 def timedelta2human(dt):
     if dt == 'N/A':
         return dt
 
-    if dt.days > 1:
-        return '{} days'.format(dt.days)
+    if dt.days >= 4:
+        return '{:.1f} days'.format(dt.days + dt.seconds / 86400)
     else:
         hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)
         if hours > 0:
             return '{:d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
-        else:
-            return '{:d}:{:02d}'.format(*divmod(seconds, 60))
+        return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
 def nvml_query(func, *args, **kwargs):

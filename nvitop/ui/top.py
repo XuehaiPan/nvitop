@@ -4,10 +4,10 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import curses
-import threading
-import time
 import shutil
 import sys
+import threading
+import time
 
 from .displayable import DisplayableContainer
 from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
@@ -136,6 +136,7 @@ class Top(DisplayableContainer):
         self.device_panel.compact = self.compact
         self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
+        self.device_panel.width = self.width
         self.process_panel.width = self.width
         if self.termsize != termsize:
             self.termsize = termsize

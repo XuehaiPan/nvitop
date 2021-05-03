@@ -11,12 +11,13 @@ import pynvml as nvml
 from cachetools.func import ttl_cache
 
 from .process import GpuProcess
-from .utils import nvml_query, nvml_check_return, bytes2human, Snapshot
+from .utils import Snapshot, bytes2human, nvml_check_return, nvml_query
 
 
 class Device(object):
     MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
     GPU_UTILIZATION_THRESHOLDS = (10, 75)
+    INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
 
     def __init__(self, index):
         self.index = index
@@ -53,30 +54,43 @@ class Device(object):
         return self._hash
 
     @property
+    def memory_loading_intensity(self):
+        memory_utilization = self.memory_utilization
+        if memory_utilization == 'N/A':
+            return 'heavy'
+        memory_utilization = int(memory_utilization[:-1])
+        if memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLDS[-1]:
+            return 'heavy'
+        elif memory_utilization >= self.MEMORY_UTILIZATION_THRESHOLDS[0]:
+            return 'moderate'
+        return 'light'
+
+    @property
+    def gpu_loading_intensity(self):
+        gpu_utilization = self.gpu_utilization
+        if gpu_utilization == 'N/A':
+            return 'heavy'
+        gpu_utilization = int(gpu_utilization[:-1])
+        if gpu_utilization >= self.GPU_UTILIZATION_THRESHOLDS[-1]:
+            return 'heavy'
+        elif gpu_utilization >= self.GPU_UTILIZATION_THRESHOLDS[0]:
+            return 'moderate'
+        return 'light'
+
+    @property
     @ttl_cache(ttl=1.0)
     def loading_intensity(self):
-        gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
-        memory_used = self.memory_used
-        memory_total = self.memory_total
-        if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
-            memory_utilization = 100 * memory_used // memory_total
-        else:
-            memory_utilization = 'N/A'
-
-        if not (nvml_check_return(gpu_utilization, int) and nvml_check_return(memory_utilization, int)):
+        loading_intensity = (self.memory_loading_intensity, self.gpu_loading_intensity)
+        if 'heavy' in loading_intensity:
             return 'heavy'
-        if gpu_utilization >= Device.GPU_UTILIZATION_THRESHOLDS[-1] or \
-                memory_utilization >= Device.MEMORY_UTILIZATION_THRESHOLDS[-1]:
-            return 'heavy'
-        if gpu_utilization >= Device.GPU_UTILIZATION_THRESHOLDS[0] or \
-                memory_utilization >= Device.MEMORY_UTILIZATION_THRESHOLDS[0]:
+        elif 'moderate' in loading_intensity:
             return 'moderate'
         return 'light'
 
     @property
     @ttl_cache(ttl=1.0)
     def display_color(self):
-        return {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}.get(self.loading_intensity)
+        return self.INTENSITY2COLOR.get(self.loading_intensity)
 
     @property
     @ttl_cache(ttl=60.0)
@@ -125,8 +139,7 @@ class Device(object):
         power_limit = self.power_limit
         if nvml_check_return(power_usage, int) and nvml_check_return(power_limit, int):
             return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
-        else:
-            return 'N/A'
+        return 'N/A'
 
     @property
     @ttl_cache(ttl=5.0)
@@ -159,8 +172,7 @@ class Device(object):
         memory_total = self.memory_total
         if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
             return '{} / {}'.format(bytes2human(memory_used), bytes2human(memory_total))
-        else:
-            return 'N/A'
+        return 'N/A'
 
     @property
     @ttl_cache(ttl=1.0)
@@ -169,16 +181,15 @@ class Device(object):
         memory_total = self.memory_total
         if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
             return str(100 * memory_used // memory_total) + '%'
-        else:
-            return 'N/A'
+        return 'N/A'
 
     @property
     @ttl_cache(ttl=1.0)
     def gpu_utilization(self):
         gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
         if nvml_check_return(gpu_utilization, int):
-            gpu_utilization = str(gpu_utilization) + '%'
-        return gpu_utilization
+            return str(gpu_utilization) + '%'
+        return 'N/A'
 
     @property
     @ttl_cache(ttl=2.0)
@@ -218,9 +229,11 @@ class Device(object):
             self.take_snapshot()
         return self._last_snapshot
 
-    _snapshot_keys = ['index', 'name', 'loading_intensity', 'display_color',
+    _snapshot_keys = ['index', 'name',
                       'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
                       'fan_speed', 'temperature', 'performance_state',
                       'power_usage', 'power_limit', 'power_state',
-                      'memory_used', 'memory_total', 'memory_usage',
-                      'gpu_utilization', 'compute_mode']
+                      'memory_used', 'memory_total', 'memory_usage', 'memory_utilization',
+                      'gpu_utilization', 'compute_mode',
+                      'memory_loading_intensity', 'gpu_loading_intensity',
+                      'loading_intensity', 'display_color']

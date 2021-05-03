@@ -7,8 +7,9 @@
 import threading
 import time
 
-from ..displayable import Displayable
+from ...device import Device
 from ...utils import colored, cut_string, nvml_check_return, nvml_query
+from ..displayable import Displayable
 
 
 class DevicePanel(Displayable):
@@ -19,8 +20,9 @@ class DevicePanel(Displayable):
 
         self.devices = devices
         self.device_count = len(self.devices)
+
         self._compact = compact
-        self.width = 79
+        self.width = max(79, root.width)
         self.height = 3 + (3 - int(compact)) * (self.device_count + 1)
         self.full_height = 3 + 3 * (self.device_count + 1)
         if self.device_count == 0:
@@ -51,6 +53,17 @@ class DevicePanel(Displayable):
         self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_started = threading.Event()
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        width = max(79, value)
+        if self._width != width and self.visible:
+            self.need_redraw = True
+        self._width = width
 
     @property
     def compact(self):
@@ -150,13 +163,53 @@ class DevicePanel(Displayable):
         else:
             formats = self.formats_full
 
+        remaining_width = self.width - 79
+
         for index, device in enumerate(self.snapshots):
+            y_start = self.y + 3 + (len(formats) + 1) * (index + 1)
+
             device.name = cut_string(device.name, maxlen=18)
-            for y, fmt in enumerate(formats, start=self.y + 3 + (len(formats) + 1) * (index + 1)):
+            for y, fmt in enumerate(formats, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, 1, width=31, fg=device.display_color)
                 self.color_at(y, 33, width=22, fg=device.display_color)
                 self.color_at(y, 56, width=22, fg=device.display_color)
+
+            remaining_width = self.width - 79
+            if remaining_width - 2 >= 20:
+                if index == 0:
+                    self.addstr(y_start - 1, self.x + 78, '╪' + '═' * (remaining_width - 1) + '╕')
+                else:
+                    self.addstr(y_start - 1, self.x + 78, '┼' + '─' * (remaining_width - 1) + '┤')
+
+                block_chars = ' ▏▎▍▌▋▊▉'
+                matrix = [
+                    ('MEM', device.memory_utilization,
+                     Device.INTENSITY2COLOR[device.memory_loading_intensity]),
+                    ('GPU', device.gpu_utilization,
+                     Device.INTENSITY2COLOR[device.gpu_loading_intensity]),
+                ]
+                for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
+                    offset = self.x + 79
+                    self.addstr(y, offset, ' {}: '.format(prefix).ljust(remaining_width - 1) + '│')
+                    if utilization != 'N/A':
+                        percentage = float(utilization[:-1]) / 100.0
+                        quotient, remainder = divmod(max(1, int(8 * (remaining_width - 12) * percentage)), 8)
+                        offset += 6
+                        self.addstr(y, offset, '█' * quotient)
+                        offset += quotient
+                        if remainder > 0:
+                            self.addstr(y, offset, block_chars[remainder])
+                            offset += 1
+                        self.addstr(y, offset + 1, utilization.replace('100%', 'MAX'))
+                    else:
+                        self.addstr(y, offset + 6, '░' * (remaining_width - 6) + ' N/A')
+
+                    self.color_at(y, self.x + 79, width=remaining_width - 2, fg=color)
+
+                if index == len(self.snapshots) - 1:
+                    self.addstr(y_start - 1 + (len(formats) + 1), self.x + 78,
+                                '╧' + '═' * (remaining_width - 1) + '╛')
 
     def finalize(self):
         self.need_redraw = False
