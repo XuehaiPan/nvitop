@@ -232,7 +232,6 @@ class GpuProcess(object):
         with cls.SNAPSHOT_LOCK:
             cls.HOST_SNAPSHOTS.clear()
 
-    @ttl_cache(ttl=2.0)
     @auto_garbage_clean(default=None)
     def take_snapshot(self):
         with self.SNAPSHOT_LOCK:

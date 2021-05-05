@@ -167,7 +167,6 @@ class ProcessPanel(Displayable):
         self.width = max(79, root.width)
         self.height = 6
 
-
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
         self.selected = Selected(panel=self)
@@ -222,6 +221,7 @@ class ProcessPanel(Displayable):
                         self.selected.process = process
                         break
 
+    @ttl_cache(ttl=2.0)
     def take_snapshots(self):
         GpuProcess.clear_host_snapshots()
         snapshots = list(filter(None, map(lambda process: process.take_snapshot(), self.processes.values())))
