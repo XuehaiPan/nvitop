@@ -116,6 +116,11 @@ class GpuProcess(object):
         instance.__init__(pid, device, gpu_memory, type)
         with cls.INSTANCE_LOCK:
             cls.INSTANCES[(pid, device)] = instance
+            with cls.SNAPSHOT_LOCK:
+                try:
+                    del cls.HOST_SNAPSHOTS[pid]
+                except KeyError:
+                    pass
         return instance
 
     def __init__(self, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
@@ -231,43 +236,45 @@ class GpuProcess(object):
     @auto_garbage_clean(default=None)
     def take_snapshot(self):
         with self.SNAPSHOT_LOCK:
-            if self.pid in self.HOST_SNAPSHOTS:
+            try:
                 host = self.HOST_SNAPSHOTS[self.pid]
-            else:
-                host = Snapshot(real=self.host)
+            except KeyError:
                 with self.host.oneshot():
-                    host.username = self.username()
-                    host.name = self.name()
-                    host.cmdline = self.cmdline()
-                    host.cpu_percent = self.cpu_percent()
-                    host.memory_percent = self.memory_percent()
-                    host.is_running = self.is_running()
-                    host.running_time = self.running_time()
+                    host = Snapshot(
+                        real=self.host,
+                        username=self.username(),
+                        name=self.name(),
+                        cmdline=self.cmdline(),
+                        cpu_percent=self.cpu_percent(),
+                        memory_percent=self.memory_percent(),
+                        is_running=self.is_running(),
+                        running_time=self.running_time()
+                    )
 
-                    if host.cpu_percent < 1000.0:
-                        host.cpu_percent_string = '{:.1f}'.format(host.cpu_percent)
-                    elif host.cpu_percent < 10000:
-                        host.cpu_percent_string = '{}'.format(int(host.cpu_percent))
-                    else:
-                        host.cpu_percent_string = '9999+'
-                    host.memory_percent_string = '{:.1f}'.format(host.memory_percent)
+                if host.cpu_percent < 1000.0:
+                    host.cpu_percent_string = '{:.1f}'.format(host.cpu_percent)
+                elif host.cpu_percent < 10000:
+                    host.cpu_percent_string = '{}'.format(int(host.cpu_percent))
+                else:
+                    host.cpu_percent_string = '9999+'
+                host.memory_percent_string = '{:.1f}'.format(host.memory_percent)
 
-                    if host.is_running:
-                        host.running_time_human = timedelta2human(host.running_time)
-                    else:
-                        host.running_time_human = 'N/A'
-                        host.cmdline = ('No Such Process',)
-                    if len(host.cmdline) > 1:
-                        host.cmdline = '\0'.join(host.cmdline).strip('\0').split('\0')
-                    if len(host.cmdline) == 1:
-                        host.command = host.cmdline[0]
-                    else:
-                        host.command = ' '.join(map(add_quotes, host.cmdline))
+                if host.is_running:
+                    host.running_time_human = timedelta2human(host.running_time)
+                else:
+                    host.running_time_human = 'N/A'
+                    host.cmdline = ('No Such Process',)
+                if len(host.cmdline) > 1:
+                    host.cmdline = '\0'.join(host.cmdline).strip('\0').split('\0')
+                if len(host.cmdline) == 1:
+                    host.command = host.cmdline[0]
+                else:
+                    host.command = ' '.join(map(add_quotes, host.cmdline))
 
-                    host.info = '{:>5} {:>5}  {:>8}  {}'.format(host.cpu_percent_string,
-                                                                host.memory_percent_string,
-                                                                host.running_time_human,
-                                                                host.command)
+                host.info = '{:>5} {:>5}  {:>8}  {}'.format(host.cpu_percent_string,
+                                                            host.memory_percent_string,
+                                                            host.running_time_human,
+                                                            host.command)
 
                 self.HOST_SNAPSHOTS[self.pid] = host
 
