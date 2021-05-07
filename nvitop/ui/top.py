@@ -129,12 +129,15 @@ class Top(DisplayableContainer):
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, self.width = termsize = self.win.getmaxyx()
+        full_full_height = 1 + self.device_panel.full_height + 1 + self.process_panel.full_height
+        compact_full_height = 1 + self.device_panel.compact_height + 1 + self.process_panel.full_height
         if self.mode == 'auto':
-            self.compact = (n_term_lines < 1 + self.device_panel.full_height + 1 + self.process_panel.full_height)
+            self.compact = (n_term_lines < full_full_height)
+            self.process_panel.compact = (n_term_lines < compact_full_height)
         else:
             self.compact = (self.mode == 'compact')
+            self.process_panel.compact = self.compact
         self.device_panel.compact = self.compact
-        self.process_panel.compact = self.compact
         self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
         self.device_panel.width = self.width
@@ -146,7 +149,7 @@ class Top(DisplayableContainer):
     def poke(self):
         super().poke()
 
-        if self.termsize is None or self.height != self.device_panel.height + 1 + self.process_panel.height:
+        if self.termsize is None or self.height != 1 + self.device_panel.height + 1 + self.process_panel.height:
             self.update_size()
 
     def draw(self):

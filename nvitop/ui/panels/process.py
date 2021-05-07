@@ -166,7 +166,7 @@ class ProcessPanel(Displayable):
 
         self._compact = compact
         self.width = max(79, root.width)
-        self.height = self.full_height = 6
+        self.height = self.full_height = self.compact_height = 6
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
@@ -202,10 +202,10 @@ class ProcessPanel(Displayable):
             self.need_redraw = True
             self._compact = value
             processes = self.snapshots
-            height = 5 + len(processes)
-            if not self.compact:
-                height += len(set(p.device.index for p in processes)) - 1
-            self.height = max(6, height)
+            n_processes, n_devices = len(processes), len(set(p.device.index for p in processes))
+            self.full_height = max(6, 5 + n_processes + n_devices - 1)
+            self.compact_height = max(6, 5 + n_processes)
+            self.height = (self.compact_height if self.compact else self.full_height)
 
     @property
     def snapshots(self):
@@ -217,9 +217,9 @@ class ProcessPanel(Displayable):
         time_header = ' ' * (time_length - 4) + 'TIME'
         info_length = max([len(p.host_info) for p in snapshots], default=0)
         n_processes, n_devices = len(snapshots), len(set(p.device.index for p in snapshots))
-        height = self.full_height = max(6, 5 + n_processes + n_devices - 1)
-        if self.compact:
-            height = max(6, 5 + n_processes)
+        self.full_height = max(6, 5 + n_processes + n_devices - 1)
+        self.compact_height = max(6, 5 + n_processes)
+        height = (self.compact_height if self.compact else self.full_height)
 
         with self.snapshot_lock:
             self._snapshots = snapshots

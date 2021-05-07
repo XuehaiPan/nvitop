@@ -23,12 +23,13 @@ class DevicePanel(Displayable):
 
         self._compact = compact
         self.width = max(79, root.width)
-        self.height = 3 + (3 - int(compact)) * (self.device_count + 1)
         self.full_height = 3 + 3 * (self.device_count + 1)
+        self.compact_height = 3 + 2 * (self.device_count + 1)
+        self.height = (self.compact_height if compact else self.full_height)
         if self.device_count == 0:
-            self.height = self.full_height = 5
+            self.height = self.full_height = self.compact_height = 5
 
-        self.driver_version = str(nvml_query('nvmlSystemGetDriverVersion'))
+        self.driver_version = nvml_query('nvmlSystemGetDriverVersion')
         cuda_version = nvml_query('nvmlSystemGetCudaDriverVersion')
         if nvml_check_return(cuda_version, int):
             self.cuda_version = str(cuda_version // 1000 + (cuda_version % 1000) / 100)
@@ -74,7 +75,7 @@ class DevicePanel(Displayable):
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
-            self.height = 3 + (3 - int(self.compact)) * (self.device_count + 1)
+            self.height = (self.compact_height if self.compact else self.full_height)
 
     @property
     def snapshots(self):
