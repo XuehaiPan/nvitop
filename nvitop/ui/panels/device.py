@@ -189,6 +189,8 @@ class DevicePanel(Displayable):
                     ('GPU', device.gpu_utilization,
                      Device.INTENSITY2COLOR[device.gpu_loading_intensity]),
                 ]
+                if self.compact:
+                    matrix.pop()
                 for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
                     offset = self.x + 79
                     self.addstr(y, offset, ' {}: '.format(prefix).ljust(remaining_width - 1) + '│')

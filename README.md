@@ -170,7 +170,7 @@ Example output of `nvitop -m`:
   </tr>
   <tr valign="top" align="center">
     <td><img src="https://user-images.githubusercontent.com/16078332/116979064-1b4f1800-acf7-11eb-84b8-efe09355e7f1.png" alt="Full"></td>
-    <td><img src="https://user-images.githubusercontent.com/16078332/116979076-1db17200-acf7-11eb-92e8-c4c9a2e9bf45.png" alt="Compact"></td>
+    <td><img src="https://user-images.githubusercontent.com/16078332/117409087-5c3b6c80-af43-11eb-8f4d-4e4645209b83.png" alt="Compact"></td>
   </tr>
 </table>
 

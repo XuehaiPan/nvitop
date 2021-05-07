@@ -159,13 +159,14 @@ class Selected(object):
 class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
-    def __init__(self, devices, win=None, root=None):
+    def __init__(self, devices, compact, win=None, root=None):
         super().__init__(win, root)
 
         self.devices = devices
 
+        self._compact = compact
         self.width = max(79, root.width)
-        self.height = 6
+        self.height = self.full_height = 6
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
@@ -192,6 +193,21 @@ class ProcessPanel(Displayable):
         self._width = width
 
     @property
+    def compact(self):
+        return self._compact
+
+    @compact.setter
+    def compact(self, value):
+        if self._compact != value:
+            self.need_redraw = True
+            self._compact = value
+            processes = self.snapshots
+            height = 5 + len(processes)
+            if not self.compact:
+                height += len(set(p.device.index for p in processes)) - 1
+            self.height = max(6, height)
+
+    @property
     def snapshots(self):
         return self._snapshots
 
@@ -200,7 +216,10 @@ class ProcessPanel(Displayable):
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         time_header = ' ' * (time_length - 4) + 'TIME'
         info_length = max([len(p.host_info) for p in snapshots], default=0)
-        height = max(6, 5 + len(snapshots) + (len(set([p.device.index for p in snapshots])) - 1))
+        n_processes, n_devices = len(snapshots), len(set(p.device.index for p in snapshots))
+        height = self.full_height = max(6, 5 + n_processes + n_devices - 1)
+        if self.compact:
+            height = max(6, 5 + n_processes)
 
         with self.snapshot_lock:
             self._snapshots = snapshots
@@ -305,7 +324,7 @@ class ProcessPanel(Displayable):
                 device_index = process.device.index
                 if prev_device_index != device_index:
                     color = process.device.last_snapshot.display_color
-                    if prev_device_index is not None:
+                    if not self.compact and prev_device_index is not None:
                         self.addstr(y, self.x, '├' + '─' * (self.width - 2) + '┤')
                         y += 1
                     prev_device_index = device_index

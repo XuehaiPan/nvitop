@@ -41,7 +41,7 @@ class Top(DisplayableContainer):
         self.device_panel.focused = False
         self.add_child(self.device_panel)
 
-        self.process_panel = ProcessPanel(self.devices, win=win, root=self)
+        self.process_panel = ProcessPanel(self.devices, compact, win=win, root=self)
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
@@ -130,10 +130,11 @@ class Top(DisplayableContainer):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, self.width = termsize = self.win.getmaxyx()
         if self.mode == 'auto':
-            self.compact = (n_term_lines < 1 + self.device_panel.full_height + 1 + self.process_panel.height)
+            self.compact = (n_term_lines < 1 + self.device_panel.full_height + 1 + self.process_panel.full_height)
         else:
             self.compact = (self.mode == 'compact')
         self.device_panel.compact = self.compact
+        self.process_panel.compact = self.compact
         self.process_panel.y = self.device_panel.y + self.device_panel.height + 1
         self.height = 1 + self.device_panel.height + 1 + self.process_panel.height
         self.device_panel.width = self.width
