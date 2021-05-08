@@ -16,7 +16,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 Compare to `nvidia-smi`:
 
-![Screenshot Comparison](https://user-images.githubusercontent.com/16078332/116978805-c9a68d80-acf6-11eb-9b5a-bb12e300c11c.png)
+![Screenshot Comparison](https://user-images.githubusercontent.com/16078332/117540921-039fc880-b044-11eb-8181-024c9eeed44b.png)
 
 ## Features
 
@@ -162,7 +162,7 @@ optional arguments:
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/116978935-f5297800-acf6-11eb-8679-b09ba7907726.png" alt="Screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/117540922-05698c00-b044-11eb-8eb6-0ab515e3b1a4.png" alt="Screenshot">
 
 Example output of `nvitop -m`:
 
@@ -172,8 +172,8 @@ Example output of `nvitop -m`:
     <td>Compact</td>
   </tr>
   <tr valign="top" align="center">
-    <td><img src="https://user-images.githubusercontent.com/16078332/116979064-1b4f1800-acf7-11eb-84b8-efe09355e7f1.png" alt="Full"></td>
-    <td><img src="https://user-images.githubusercontent.com/16078332/117409087-5c3b6c80-af43-11eb-8f4d-4e4645209b83.png" alt="Compact"></td>
+    <td><img src="https://user-images.githubusercontent.com/16078332/117540923-07334f80-b044-11eb-8242-7719f9c65fb7.png" alt="Full"></td>
+    <td><img src="https://user-images.githubusercontent.com/16078332/117540924-08fd1300-b044-11eb-98d9-b124820b7a3e.png" alt="Compact"></td>
   </tr>
 </table>
 

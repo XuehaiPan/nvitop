@@ -107,8 +107,8 @@ class CursesShortcuts(object):
     addstr(*args) -- failsafe version of self.win.addstr(*args)
     """
 
-    ASCII_TRANSTABLE = str.maketrans('═' + '─' + '╒╕╘╛╪╧┼┬' + '│╞╡├┤▏▎▍▌▋▊▉█',
-                                     '=' + '-' + '++++++++' + '|||||||||||||')
+    ASCII_TRANSTABLE = str.maketrans('═' + '─' + '╒╕╘╛╪╧┼┬' + '│╞╡├┤▏▎▍▌▋▊▉█░',
+                                     '=' + '-' + '++++++++' + '||||||||||||||')
 
     def __init__(self):
         self.win = None
