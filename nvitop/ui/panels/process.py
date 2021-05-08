@@ -166,7 +166,7 @@ class ProcessPanel(Displayable):
 
         self._compact = compact
         self.width = max(79, root.width)
-        self.height = self.full_height = self.compact_height = 6
+        self.height = self.full_height = self.compact_height = 7
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
@@ -203,8 +203,8 @@ class ProcessPanel(Displayable):
             self._compact = value
             processes = self.snapshots
             n_processes, n_devices = len(processes), len(set(p.device.index for p in processes))
-            self.full_height = max(6, 5 + n_processes + n_devices - 1)
-            self.compact_height = max(6, 5 + n_processes)
+            self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
+            self.compact_height = 1 + max(6, 5 + n_processes)
             self.height = (self.compact_height if self.compact else self.full_height)
 
     @property
@@ -217,8 +217,8 @@ class ProcessPanel(Displayable):
         time_header = ' ' * (time_length - 4) + 'TIME'
         info_length = max([len(p.host_info) for p in snapshots], default=0)
         n_processes, n_devices = len(snapshots), len(set(p.device.index for p in snapshots))
-        self.full_height = max(6, 5 + n_processes + n_devices - 1)
-        self.compact_height = max(6, 5 + n_processes)
+        self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
+        self.compact_height = 1 + max(6, 5 + n_processes)
         height = (self.compact_height if self.compact else self.full_height)
 
         with self.snapshot_lock:
@@ -306,18 +306,18 @@ class ProcessPanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            for y, line in enumerate(self.header_lines(), start=self.y):
+            for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
             host_headers = '  '.join(self.host_headers)
-            self.addstr(self.y + 2, self.x + 33, '{}'.format(host_headers[host_offset:].ljust(self.width - 35)))
+            self.addstr(self.y + 3, self.x + 33, '{}'.format(host_headers[host_offset:].ljust(self.width - 35)))
         else:
-            self.addstr(self.y + 2, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
+            self.addstr(self.y + 3, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
 
         if len(self.snapshots) > 0:
-            y = self.y + 4
+            y = self.y + 5
             prev_device_index = None
             color = -1
             for process in self.snapshots:
@@ -361,23 +361,23 @@ class ProcessPanel(Displayable):
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
         else:
-            self.addstr(self.y + 4, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
+            self.addstr(self.y + 5, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
 
         if self.selected.owned():
             if IS_SUPERUSER:
-                self.addstr(self.y - 1, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
-                self.color_at(self.y - 1, self.x + 1, width=1, fg='red', attr='blink')
-                self.color_at(self.y - 1, self.x + 2, width=29, fg='yellow', attr='italic')
+                self.addstr(self.y, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
+                self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
+                self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
             text_offset = self.x + self.width - 47
-            self.addstr(self.y - 1, text_offset, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
-            self.color_at(self.y - 1, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, text_offset + 9, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, text_offset + 15, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, text_offset + 17, width=4, fg='red', attr='bold')
-            self.color_at(self.y - 1, text_offset + 23, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y - 1, text_offset + 26, width=3, fg='red', attr='bold')
+            self.addstr(self.y, text_offset, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
+            self.color_at(self.y, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y, text_offset + 9, width=4, fg='red', attr='bold')
+            self.color_at(self.y, text_offset + 15, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y, text_offset + 17, width=4, fg='red', attr='bold')
+            self.color_at(self.y, text_offset + 23, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y, text_offset + 26, width=3, fg='red', attr='bold')
         else:
-            self.addstr(self.y - 1, self.x, ' ' * self.width)
+            self.addstr(self.y, self.x, ' ' * self.width)
 
     def finalize(self):
         self.need_redraw = False
@@ -389,7 +389,7 @@ class ProcessPanel(Displayable):
     def print(self):
         self.width = min(self.width, max((34 + len(process.host_info) for process in self.snapshots), default=79))
 
-        lines = self.header_lines()
+        lines = ['', *self.header_lines()]
 
         if len(self.snapshots) > 0:
             prev_device_index = None
