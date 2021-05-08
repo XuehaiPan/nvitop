@@ -246,7 +246,14 @@ class DevicePanel(Displayable):
             lines.pop()
             lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
-        print('\n'.join(lines))
+        lines = '\n'.join(lines)
+        if self.ascii:
+            lines = lines.translate(self.ASCII_TRANSTABLE)
+
+        try:
+            print(lines)
+        except UnicodeError:
+            print(lines.translate(self.ASCII_TRANSTABLE))
 
     def press(self, key):
         self.root.keymaps.use_keymap('device')

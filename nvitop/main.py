@@ -22,8 +22,8 @@ def parse_arguments():
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-m', '--monitor', type=str, default='notpresented',
                         nargs='?', choices=['auto', 'full', 'compact'],
-                        help='Run as a resource monitor. Continuously report query data,\n' +
-                             'rather than the default of just once.\n' +
+                        help='Run as a resource monitor. Continuously report query data,\n'
+                             'rather than the default of just once.\n'
                              'If no argument is given, the default mode `auto` is used.')
     parser.add_argument('-o', '--only', type=int, nargs='+', metavar='idx',
                         help='Only show the specified devices, suppress option `-ov`.')
@@ -38,6 +38,9 @@ def parse_arguments():
                         help='Thresholds of GPU memory utilization to distinguish load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
+    parser.add_argument('--ascii', action='store_true',
+                        help='Use ASCII characters only.\n'
+                             'This option is useful for terminals that do not support Unicode symbols.')
     args = parser.parse_args()
     if args.monitor is None:
         args.monitor = 'auto'
@@ -83,10 +86,10 @@ def main():
 
     if args.monitor != 'notpresented' and len(devices) > 0:
         with libcurses() as win:
-            top = Top(devices, mode=args.monitor, win=win)
+            top = Top(devices, ascii=args.ascii, mode=args.monitor, win=win)
             top.loop()
     else:
-        top = Top(devices)
+        top = Top(devices, ascii=args.ascii)
     top.print()
     top.destroy()
 

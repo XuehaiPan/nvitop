@@ -20,8 +20,9 @@ class BreakLoop(Exception):
 
 
 class Top(DisplayableContainer):
-    def __init__(self, devices, mode='auto', win=None):
+    def __init__(self, devices, ascii=False, mode='auto', win=None):
         super().__init__(win, root=self)
+
         self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns)
         if not sys.stdout.isatty():
             self.width = 1024
@@ -48,6 +49,10 @@ class Top(DisplayableContainer):
         self.device_panel.y = self.y
         self.process_panel.y = self.device_panel.y + self.device_panel.height
         self.height = self.device_panel.height + self.process_panel.height
+
+        self.ascii = ascii
+        self.device_panel.ascii = self.ascii
+        self.process_panel.ascii = self.ascii
 
         if win is not None:
             self.keybuffer = KeyBuffer()

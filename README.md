@@ -114,6 +114,7 @@ Type `nvitop --help` for more information:
 ```
 usage: nvitop [-h] [-m [{auto,full,compact}]] [-o idx [idx ...]] [-ov]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
+              [--ascii]
 
 A interactive NVIDIA-GPU process viewer.
 
@@ -134,6 +135,8 @@ optional arguments:
                         Thresholds of GPU memory utilization to distinguish load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
+  --ascii               Use ASCII characters only.
+                        This option is useful for terminals that do not support Unicode symbols.
 ```
 
 #### Keybindings for monitor mode

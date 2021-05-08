@@ -6,6 +6,7 @@
 
 import contextlib
 import curses
+import locale
 import os
 import signal
 
@@ -64,6 +65,7 @@ def _get_color_attr(fg=-1, bg=-1, attr=0):
 @contextlib.contextmanager
 def libcurses():
     os.environ.setdefault('ESCDELAY', '25')
+    locale.setlocale(locale.LC_ALL, '')
 
     win = curses.initscr()
     win.nodelay(True)
@@ -105,22 +107,38 @@ class CursesShortcuts(object):
     addstr(*args) -- failsafe version of self.win.addstr(*args)
     """
 
+    ASCII_TRANSTABLE = str.maketrans('═' + '─' + '╒╕╘╛╪╧┼┬' + '│╞╡├┤▏▎▍▌▋▊▉█',
+                                     '=' + '-' + '++++++++' + '|||||||||||||')
+
     def __init__(self):
         self.win = None
+        self.ascii = False
 
     def addstr(self, *args, **kwargs):
+        if self.ascii:
+            args = [arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
+                    for arg in args]
+
         try:
             self.win.addstr(*args, **kwargs)
         except curses.error:
             pass
 
     def addnstr(self, *args, **kwargs):
+        if self.ascii:
+            args = [arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
+                    for arg in args]
+
         try:
             self.win.addnstr(*args, **kwargs)
         except curses.error:
             pass
 
     def addch(self, *args, **kwargs):
+        if self.ascii:
+            args = [arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
+                    for arg in args]
+
         try:
             self.win.addch(*args, **kwargs)
         except curses.error:
