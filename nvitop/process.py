@@ -212,7 +212,7 @@ class GpuProcess(object):
     def cmdline(self):
         cmdline = self.host.cmdline()
         if len(cmdline) == 0:
-            raise psutil.NoSuchProcess(pid=self.pid)
+            cmdline = ('Zombie Process',)
         return cmdline
 
     def is_running(self):

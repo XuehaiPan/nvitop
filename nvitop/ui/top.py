@@ -186,9 +186,12 @@ class Top(DisplayableContainer):
                 break
 
     def print(self):
-        device_panel_width = self.device_panel.print_width()
-        process_panel_width = self.process_panel.print_width()
-        self.width = min(device_panel_width, process_panel_width)
+        if len(self.devices) > 0:
+            device_panel_width = self.device_panel.print_width()
+            process_panel_width = self.process_panel.print_width()
+            self.width = max(min(device_panel_width, process_panel_width), min(self.width, 101))
+        else:
+            self.width = 79
         self.device_panel.width = self.width
         self.process_panel.width = self.width
 

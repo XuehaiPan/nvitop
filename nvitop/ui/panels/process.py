@@ -343,8 +343,9 @@ class ProcessPanel(Displayable):
                 if self.host_offset > 0:
                     self.addstr(y, self.x + 32, ' ')
 
-                is_gone = (not process.is_running and process.command == 'No Such Process')
-                if is_gone and command_offset == 0:
+                is_zombie = (process.is_running and process.cmdline == ('Zombie Process',))
+                is_gone = (not process.is_running and process.cmdline == ('No Such Process',))
+                if (is_zombie or is_gone) and command_offset == 0:
                     self.addstr(y, self.x + 33, process.command)
 
                 if self.selected.is_same(process):
@@ -356,8 +357,8 @@ class ProcessPanel(Displayable):
                     self.color_at(y, self.x + 2, width=3, fg=color)
                     if process.username != CURRENT_USER and not IS_SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
-                    if is_gone:
-                        self.color_at(y, self.x + 33 + command_offset, width=15, fg='red')
+                    if is_zombie or is_gone:
+                        self.color_at(y, self.x + 33 + command_offset, width=15, fg=('red' if is_gone else 'yellow'))
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
         else:
@@ -409,9 +410,11 @@ class ProcessPanel(Displayable):
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=self.width - 34).ljust(self.width - 34)
                 )
-                if not process.is_running and process.command == 'No Such Process':
+                is_zombie = (process.is_running and process.cmdline == ('Zombie Process',))
+                is_gone = (not process.is_running and process.cmdline == ('No Such Process',))
+                if is_zombie or is_gone:
                     info = map(lambda item: colored(item, attrs=('dark',)), info.split(process.command))
-                    info = colored(process.command, color='red').join(info)
+                    info = colored(process.command, color=('red' if is_gone else 'yellow')).join(info)
                 elif process.username != CURRENT_USER and not IS_SUPERUSER:
                     info = colored(info, attrs=('dark',))
                 lines.append('│ {} {} │'.format(colored('{:>3}'.format(device_index), color), info))
