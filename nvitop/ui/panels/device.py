@@ -2,13 +2,14 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name,line-too-long
+# pylint: disable=disallowed-name,invalid-name,line-too-long
 
 import threading
 import time
 
 from ...device import Device
-from ...utils import colored, cut_string, nvml_check_return, nvml_query
+from ...utils import (colored, cut_string, make_bar,
+                      nvml_check_return, nvml_query)
 from ..displayable import Displayable
 
 
@@ -132,20 +133,25 @@ class DevicePanel(Displayable):
             compact = self.compact
 
         frame = self.header_lines(compact)
+
+        remaining_width = self.width - 79
+        data_line = '│                               │                      │                      │'
+        separator_line = '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+        if remaining_width >= 22:
+            data_line += ' ' * (remaining_width - 1) + '│'
+            separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
+
         if self.device_count > 0:
             if compact:
-                frame.extend(self.device_count * [
-                    '│                               │                      │                      │',
-                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
-                ])
+                frame.extend(self.device_count * [data_line, separator_line])
             else:
-                frame.extend(self.device_count * [
-                    '│                               │                      │                      │',
-                    '│                               │                      │                      │',
-                    '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
-                ])
+                frame.extend(self.device_count * [data_line, data_line, separator_line])
             frame.pop()
             frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
+            if remaining_width >= 22:
+                frame[5 - int(compact)] = frame[5 - int(compact)][:-1] + '╪' + '═' * (remaining_width - 1) + '╕'
+                frame[-1] = frame[-1][:-1] + '╧' + '═' * (remaining_width - 1) + '╛'
+
         return frame
 
     def poke(self):
@@ -189,40 +195,19 @@ class DevicePanel(Displayable):
 
         remaining_width = self.width - 79
         if remaining_width >= 22:
-            block_chars = ' ▏▎▍▌▋▊▉'
             for index, device in enumerate(self.snapshots):
                 y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
 
-                if index == 0:
-                    self.addstr(y_start - 1, self.x + 78, '╪' + '═' * (remaining_width - 1) + '╕')
-                else:
-                    self.addstr(y_start - 1, self.x + 78, '┼' + '─' * (remaining_width - 1) + '┤')
-
                 matrix = [
-                    ('MEM', device.memory_utilization,
-                     Device.INTENSITY2COLOR[device.memory_loading_intensity]),
-                    ('GPU', device.gpu_utilization,
-                     Device.INTENSITY2COLOR[device.gpu_loading_intensity]),
+                    ('MEM', device.memory_utilization, device.memory_display_color),
+                    ('UTL', device.gpu_utilization, device.gpu_display_color),
                 ]
                 if self.compact:
                     matrix.pop()
                 for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
-                    bar = ' {}: '.format(prefix)
-                    if utilization != 'N/A':
-                        percentage = float(utilization[:-1]) / 100.0
-                        quotient, remainder = divmod(max(1, int(8 * (remaining_width - 12) * percentage)), 8)
-                        bar += '█' * quotient
-                        if remainder > 0:
-                            bar += block_chars[remainder]
-                        bar += ' ' + utilization.replace('100%', 'MAX')
-                    else:
-                        bar += '░' * (remaining_width - 6) + ' N/A'
-                    self.addstr(y, self.x + 79, bar.ljust(remaining_width - 1) + '│')
+                    bar = make_bar(prefix, utilization, width=remaining_width - 3)
+                    self.addstr(y, self.x + 80, bar + ' │')
                     self.color_at(y, self.x + 80, width=remaining_width - 3, fg=color)
-
-                if index == len(self.snapshots) - 1:
-                    self.addstr(y_start + len(formats), self.x + 78,
-                                '╧' + '═' * (remaining_width - 1) + '╛')
 
     def finalize(self):
         self.need_redraw = False
@@ -232,7 +217,7 @@ class DevicePanel(Displayable):
         self._daemon_started.clear()
 
     def print_width(self):
-        if len(self.devices) > 0 and self.width >= 101:
+        if self.device_count > 0 and self.width >= 101:
             return self.width
         else:
             return 79
@@ -259,7 +244,6 @@ class DevicePanel(Displayable):
 
             remaining_width = self.width - 79
             if remaining_width >= 22:
-                block_chars = ' ▏▎▍▌▋▊▉'
                 for index, device in enumerate(self.snapshots):
                     y_start = 4 + 3 * (index + 1)
                     lines[y_start - 1] = lines[y_start - 1][:-1]
@@ -272,21 +256,12 @@ class DevicePanel(Displayable):
                     matrix = [
                         ('MEM', device.memory_utilization,
                          Device.INTENSITY2COLOR[device.memory_loading_intensity]),
-                        ('GPU', device.gpu_utilization,
+                        ('UTL', device.gpu_utilization,
                          Device.INTENSITY2COLOR[device.gpu_loading_intensity]),
                     ]
                     for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
-                        bar = ' {}: '.format(prefix)
-                        if utilization != 'N/A':
-                            percentage = float(utilization[:-1]) / 100.0
-                            quotient, remainder = divmod(max(1, int(8 * (remaining_width - 12) * percentage)), 8)
-                            bar += '█' * quotient
-                            if remainder > 0:
-                                bar += block_chars[remainder]
-                            bar += ' ' + utilization.replace('100%', 'MAX')
-                        else:
-                            bar += '░' * (remaining_width - 6) + ' N/A'
-                        lines[y] += colored(bar.ljust(remaining_width - 1), color) + '│'
+                        bar = make_bar(prefix, utilization, width=remaining_width - 3)
+                        lines[y] += ' {} │'.format(colored(bar, color))
 
                     if index == len(self.snapshots) - 1:
                         lines[y_start + 2] = lines[y_start + 2][:-1] + '╧' + '═' * (remaining_width - 1) + '╛'

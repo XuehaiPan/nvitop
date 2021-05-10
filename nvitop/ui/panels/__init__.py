@@ -4,4 +4,5 @@
 # pylint: disable=missing-module-docstring
 
 from .device import DevicePanel
+from .host import HostPanel
 from .process import ProcessPanel

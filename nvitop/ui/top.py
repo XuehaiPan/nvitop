@@ -12,7 +12,7 @@ import time
 from .displayable import DisplayableContainer
 from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
 from .mouse import MouseEvent
-from .panels import DevicePanel, ProcessPanel
+from .panels import DevicePanel, HostPanel, ProcessPanel
 
 
 class BreakLoop(Exception):
@@ -20,7 +20,7 @@ class BreakLoop(Exception):
 
 
 class Top(DisplayableContainer):
-    def __init__(self, devices, ascii=False, mode='auto', win=None):
+    def __init__(self, devices, ascii=False, mode='auto', win=None):  # pylint: disable=redefined-builtin
         super().__init__(win, root=self)
 
         self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns)
@@ -42,22 +42,32 @@ class Top(DisplayableContainer):
         self.device_panel.focused = False
         self.add_child(self.device_panel)
 
+        self.host_panel = HostPanel(self.devices, compact, win=win, root=self)
+        self.host_panel.focused = False
+        self.add_child(self.host_panel)
+
         self.process_panel = ProcessPanel(self.devices, compact, win=win, root=self)
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
-        self.device_panel.y = self.y
-        self.process_panel.y = self.device_panel.y + self.device_panel.height
-        self.height = self.device_panel.height + self.process_panel.height
-
         self.ascii = ascii
         self.device_panel.ascii = self.ascii
+        self.host_panel.ascii = self.ascii
         self.process_panel.ascii = self.ascii
+        if ascii:
+            self.host_panel.full_height = self.host_panel.height = self.host_panel.compact_height
+
+        self.selected = self.process_panel.selected
+
+        self.device_panel.y = self.y
+        self.host_panel.y = self.device_panel.y + self.device_panel.height
+        self.process_panel.y = self.host_panel.y + self.host_panel.height
+        self.height = self.device_panel.height + self.host_panel.height + self.process_panel.height
 
         if win is not None:
             self.keybuffer = KeyBuffer()
             self.keymaps = KeyMaps(self.keybuffer)
-            self.last_input_time = time.time()
+            self.last_input_time = time.monotonic()
             self.init_keybindings()
 
     @property
@@ -94,13 +104,13 @@ class Top(DisplayableContainer):
         def host_begin(top): top.process_panel.host_offset = -1
         def host_end(top): top.process_panel.host_offset = 1024
 
-        def select_up(top): top.process_panel.selected.move(direction=-1)
-        def select_down(top): top.process_panel.selected.move(direction=+1)
-        def select_clear(top): top.process_panel.selected.clear()
+        def select_up(top): top.selected.move(direction=-1)
+        def select_down(top): top.selected.move(direction=+1)
+        def select_clear(top): top.selected.clear()
 
-        def terminate(top): top.process_panel.selected.terminate()
-        def kill(top): top.process_panel.selected.kill()
-        def interrupt(top): top.process_panel.selected.interrupt()
+        def terminate(top): top.selected.terminate()
+        def kill(top): top.selected.kill()
+        def interrupt(top): top.selected.interrupt()
 
         self.keymaps.bind('root', 'q', quit)
         self.keymaps.copy('root', 'q', 'Q')
@@ -134,18 +144,25 @@ class Top(DisplayableContainer):
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, self.width = termsize = self.win.getmaxyx()
-        full_full_height = self.device_panel.full_height + self.process_panel.full_height
-        compact_full_height = self.device_panel.compact_height + self.process_panel.full_height
+        heights = [
+            self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
+            self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,
+            self.device_panel.compact_height + self.host_panel.compact_height + self.process_panel.full_height,
+        ]
         if self.mode == 'auto':
-            self.compact = (n_term_lines < full_full_height)
-            self.process_panel.compact = (n_term_lines < compact_full_height)
+            self.compact = (n_term_lines < heights[0])
+            self.host_panel.compact = (n_term_lines < heights[1])
+            self.process_panel.compact = (n_term_lines < heights[-1])
         else:
             self.compact = (self.mode == 'compact')
+            self.host_panel.compact = self.compact
             self.process_panel.compact = self.compact
         self.device_panel.compact = self.compact
-        self.process_panel.y = self.device_panel.y + self.device_panel.height
+        self.host_panel.y = self.device_panel.y + self.device_panel.height
+        self.process_panel.y = self.host_panel.y + self.host_panel.height
         self.height = self.device_panel.height + self.process_panel.height
         self.device_panel.width = self.width
+        self.host_panel.width = self.width
         self.process_panel.width = self.width
         if self.termsize != termsize:
             self.termsize = termsize
@@ -154,7 +171,8 @@ class Top(DisplayableContainer):
     def poke(self):
         super().poke()
 
-        if self.termsize is None or self.height != self.device_panel.height + self.process_panel.height:
+        height = self.device_panel.height + self.host_panel.height + self.process_panel.height
+        if self.termsize is None or self.height != height:
             self.update_size()
 
     def draw(self):
@@ -180,22 +198,26 @@ class Top(DisplayableContainer):
             try:
                 self.redraw()
                 self.handle_input()
-                if time.time() - self.last_input_time > 1.0:
+                if time.monotonic() - self.last_input_time > 1.0:
                     time.sleep(0.25)
             except BreakLoop:
                 break
 
     def print(self):
-        if len(self.devices) > 0:
+        if self.device_count > 0:
             device_panel_width = self.device_panel.print_width()
+            host_panel_width = self.host_panel.print_width()
             process_panel_width = self.process_panel.print_width()
-            self.width = max(min(device_panel_width, process_panel_width), min(self.width, 101))
+            print_width = min(device_panel_width, host_panel_width, process_panel_width)
+            self.width = max(print_width, min(self.width, 101))
         else:
             self.width = 79
         self.device_panel.width = self.width
+        self.host_panel.width = self.width
         self.process_panel.width = self.width
 
         self.device_panel.print()
+        self.host_panel.print()
         self.process_panel.print()
 
     def handle_mouse(self):
@@ -241,7 +263,7 @@ class Top(DisplayableContainer):
         if key == curses.ERR:
             return
 
-        self.last_input_time = time.time()
+        self.last_input_time = time.monotonic()
         if key == curses.KEY_ENTER:
             key = ord('\n')
         if key == 27 or (128 <= key < 256):

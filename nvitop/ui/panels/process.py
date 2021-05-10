@@ -18,6 +18,7 @@ from ...process import GpuProcess
 from ...utils import Snapshot, colored, cut_string
 from ..displayable import Displayable
 
+
 CURRENT_USER = getpass.getuser()
 if psutil.WINDOWS:
     import ctypes
@@ -228,7 +229,7 @@ class ProcessPanel(Displayable):
             self.height = height
             old_host_offset = self.host_offset
             self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 34))
-            if self.host_offset != old_host_offset and old_host_offset != 1024:
+            if old_host_offset not in (self.host_offset, 1024):
                 curses.beep()
 
             if self.selected.is_set():
@@ -284,7 +285,7 @@ class ProcessPanel(Displayable):
     def processes(self):
         processes = {}
         for device in self.devices:
-            for p in device.processes.values():
+            for p in device.processes().values():
                 try:
                     username = p.username()
                     processes[(p.device.index, username != 'N/A', username, p.pid)] = p
@@ -370,7 +371,7 @@ class ProcessPanel(Displayable):
                 self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
                 self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
             text_offset = self.x + self.width - 47
-            self.addstr(self.y, text_offset, '(Press T(TERM)/K(KILL)/^c(INT) to send signals)')
+            self.addstr(self.y, text_offset, '(Press T(TERM)/K(KILL)/^C(INT) to send signals)')
             self.color_at(self.y, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y, text_offset + 9, width=4, fg='red', attr='bold')
             self.color_at(self.y, text_offset + 15, width=1, fg='magenta', attr='bold | italic')

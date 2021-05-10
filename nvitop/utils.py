@@ -2,7 +2,7 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name
+# pylint: disable=disallowed-name,invalid-name
 
 import sys
 
@@ -31,6 +31,25 @@ def cut_string(s, maxlen, padstr='...', align='left'):
     return padstr + s[-(maxlen - len(padstr)):]
 
 
+BLOCK_CHARS = ' ▏▎▍▌▋▊▉'
+
+
+def make_bar(prefix, percent, width):
+    bar = '{}: '.format(prefix)
+    if percent != 'N/A':
+        if isinstance(percent, str) and percent.endswith('%'):
+            percent = percent[:-1]
+        percentage = float(percent) / 100.0
+        quotient, remainder = divmod(max(1, int(8 * (width - len(bar) - 4) * percentage)), 8)
+        bar += '█' * quotient
+        if remainder > 0:
+            bar += BLOCK_CHARS[remainder]
+        bar += ' {:d}%'.format(int(percent)).replace('100%', 'MAX')
+    else:
+        bar += '░' * (width - len(bar) - 4) + ' N/A'
+    return bar.ljust(width)
+
+
 def bytes2human(x):
     if x == 'N/A':
         return x
@@ -51,11 +70,11 @@ def timedelta2human(dt):
 
     if dt.days >= 4:
         return '{:.1f} days'.format(dt.days + dt.seconds / 86400)
-    else:
-        hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)
-        if hours > 0:
-            return '{:d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
-        return '{:d}:{:02d}'.format(*divmod(seconds, 60))
+
+    hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)
+    if hours > 0:
+        return '{:d}:{:02d}:{:02d}'.format(hours, *divmod(seconds, 60))
+    return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
 def nvml_query(func, *args, **kwargs):
