@@ -6,7 +6,7 @@
 ![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-An interactive NVIDIA-GPU process viewer. ([screenshots](#screenshots))
+An interactive NVIDIA-GPU process viewer, aimed to provide a one-stop solution for GPU process management. ([screenshots](#screenshots))
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop), a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
 
@@ -16,7 +16,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 Compare to `nvidia-smi`:
 
-![Screenshot Comparison](https://user-images.githubusercontent.com/16078332/117540921-039fc880-b044-11eb-8181-024c9eeed44b.png)
+![Screenshot Comparison](https://user-images.githubusercontent.com/16078332/117765245-3f16de80-b260-11eb-99c7-077cd5519074.png)
 
 ## Features
 
@@ -162,7 +162,7 @@ optional arguments:
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/117540922-05698c00-b044-11eb-8eb6-0ab515e3b1a4.png" alt="Screenshot">
+<img src="https://user-images.githubusercontent.com/16078332/117765250-41793880-b260-11eb-8a1b-9c32868a46d4.png" alt="Screenshot">
 
 Example output of `nvitop -m`:
 
@@ -172,8 +172,8 @@ Example output of `nvitop -m`:
     <td>Compact</td>
   </tr>
   <tr valign="top" align="center">
-    <td><img src="https://user-images.githubusercontent.com/16078332/117540923-07334f80-b044-11eb-8242-7719f9c65fb7.png" alt="Full"></td>
-    <td><img src="https://user-images.githubusercontent.com/16078332/117540924-08fd1300-b044-11eb-98d9-b124820b7a3e.png" alt="Compact"></td>
+    <td><img src="https://user-images.githubusercontent.com/16078332/117765260-4342fc00-b260-11eb-9198-7bcfdd1db113.png" alt="Full"></td>
+    <td><img src="https://user-images.githubusercontent.com/16078332/117765274-476f1980-b260-11eb-9afd-877cca54e0bc.png" alt="Compact"></td>
   </tr>
 </table>
 
