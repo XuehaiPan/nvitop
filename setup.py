@@ -23,11 +23,7 @@ setup(
     author_email=nvitop.__email__,
     url="https://github.com/XuehaiPan/nvitop.git",
     packages=find_packages(include=['nvitop', 'nvitop.*']),
-    entry_points={
-        'console_scripts': [
-            'nvitop=nvitop.main:main'
-        ]
-    },
+    entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
     install_requires=(['windows-curses'] if sys.platform.startswith('win') else []) + [
         'nvidia-ml-py==11.*',
         'psutil',

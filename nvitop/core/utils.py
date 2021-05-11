@@ -6,8 +6,6 @@
 
 import sys
 
-import pynvml as nvml
-
 
 try:
     if not sys.stdout.isatty():
@@ -77,24 +75,6 @@ def timedelta2human(dt):
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
-def nvml_query(func, *args, **kwargs):
-    if isinstance(func, str):
-        func = getattr(nvml, func)
-
-    try:
-        retval = func(*args, **kwargs)
-    except nvml.NVMLError:
-        return 'N/A'
-    else:
-        if isinstance(retval, bytes):
-            retval = retval.decode('UTF-8')
-        return retval
-
-
-def nvml_check_return(retval, types=None):
-    if types is None:
-        return retval != 'N/A'
-    return retval != 'N/A' and isinstance(retval, types)
 
 
 class Snapshot(object):

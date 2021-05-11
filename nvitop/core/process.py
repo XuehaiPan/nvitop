@@ -99,6 +99,9 @@ class HostProcess(psutil.Process):
         def username(self):
             return super().username().split('\\')[-1]
 
+    def __str__(self):
+        return super().__str__().replace(self.__class__.__module__ + '.', '', 1)
+
 
 class GpuProcess(object):
     INSTANCE_LOCK = threading.RLock()
@@ -139,9 +142,9 @@ class GpuProcess(object):
         self._hash = None
 
     def __str__(self):
-        return "{}.{}(device={}, gpu_memory={}, host_process={})".format(
-            self.__class__.__module__, self.__class__.__name__,
-            self.device, bytes2human(self.gpu_memory()), self.host
+        return '{}(device={}, gpu_memory={}, host={})'.format(
+            self.__class__.__name__,
+            self.device, self.gpu_memory_human(), self.host
         )
 
     __repr__ = __str__
@@ -166,8 +169,12 @@ class GpuProcess(object):
     def gpu_memory(self):
         return self._gpu_memory
 
+    def gpu_memory_human(self):
+        return self._gpu_memory_human
+
     def set_gpu_memory(self, value):
         self._gpu_memory = value
+        self._gpu_memory_human = bytes2human(self.gpu_memory())
 
     @property
     def type(self):
@@ -277,14 +284,13 @@ class GpuProcess(object):
 
                 self.HOST_SNAPSHOTS[self.pid] = host
 
-        gpu_memory = self.gpu_memory()
         return Snapshot(
             real=self,
             identity=self._ident,
             pid=self.pid,
             device=self.device,
-            gpu_memory=gpu_memory,
-            gpu_memory_human=bytes2human(gpu_memory),
+            gpu_memory=self.gpu_memory(),
+            gpu_memory_human=self.gpu_memory_human(),
             type=self.type,
             username=host.username,
             name=host.name,

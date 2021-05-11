@@ -1,17 +1,15 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-module-docstring,missing-function-docstring
 
 import argparse
 import os
 import sys
 
-import pynvml as nvml
-
-from .device import Device
+from .core import Device
+from .core.utils import colored
 from .ui import Top, libcurses
-from .utils import colored
 
 
 def parse_arguments():
@@ -59,19 +57,7 @@ def main():
         print('ERROR: Must run nvitop monitor mode from terminal.', file=sys.stderr)
         return 1
 
-    try:
-        nvml.nvmlInit()
-    except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
-        print('ERROR: NVIDIA Management Library (NVML) not found.\n'
-              'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
-              '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
-              '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
-              '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
-              '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.',
-              file=sys.stderr)
-        return 1
-
-    device_count = nvml.nvmlDeviceGetCount()
+    device_count = Device.count()
     if args.only is not None:
         visible_devices = set(args.only)
     elif args.only_visible:
@@ -82,7 +68,8 @@ def main():
             visible_devices = set(range(device_count))
     else:
         visible_devices = set(range(device_count))
-    devices = list(map(Device, sorted(set(range(device_count)).intersection(visible_devices))))
+    visible_devices = sorted(set(range(device_count)).intersection(visible_devices))
+    devices = Device.from_indices(visible_devices)
 
     if args.monitor != 'notpresented' and len(devices) > 0:
         with libcurses() as win:
@@ -92,8 +79,6 @@ def main():
         top = Top(devices, ascii=args.ascii)
     top.print()
     top.destroy()
-
-    nvml.nvmlShutdown()
 
 
 if __name__ == '__main__':

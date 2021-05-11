@@ -14,8 +14,8 @@ from collections import OrderedDict
 import psutil
 from cachetools.func import ttl_cache
 
-from ...process import GpuProcess
-from ...utils import Snapshot, colored, cut_string
+from ...core import GpuProcess
+from ...core.utils import Snapshot, colored, cut_string
 from ..displayable import Displayable
 
 
@@ -324,7 +324,7 @@ class ProcessPanel(Displayable):
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index != device_index:
-                    color = process.device.last_snapshot.display_color
+                    color = process.device.snapshot.display_color
                     if not self.compact and prev_device_index is not None:
                         self.addstr(y, self.x, '├' + '─' * (self.width - 2) + '┤')
                         y += 1
@@ -400,7 +400,7 @@ class ProcessPanel(Displayable):
             for process in self.snapshots:
                 device_index = process.device.index
                 if prev_device_index != device_index:
-                    color = process.device.last_snapshot.display_color
+                    color = process.device.snapshot.display_color
                     if prev_device_index is not None:
                         lines.append('├' + '─' * (self.width - 2) + '┤')
                     prev_device_index = device_index

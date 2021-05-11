@@ -6,13 +6,12 @@
 
 from collections import OrderedDict
 
-import psutil
-import pynvml as nvml
 from cachetools.func import ttl_cache
 
-from .history import BufferedHistoryGraph
+from .libnvml import nvml
 from .process import GpuProcess
-from .utils import Snapshot, bytes2human, nvml_check_return, nvml_query
+from .history import BufferedHistoryGraph
+from .utils import Snapshot, bytes2human
 
 
 class Device(object):
@@ -20,22 +19,64 @@ class Device(object):
     GPU_UTILIZATION_THRESHOLDS = (10, 75)
     INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
 
-    def __init__(self, index):
-        self.index = index
-        try:
-            self.handle = nvml.nvmlDeviceGetHandleByIndex(index)
-        except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
-            self.handle = None
+    @staticmethod
+    def count():
+        return nvml.nvmlQuery('nvmlDeviceGetCount')
 
-        self._name = nvml_query(nvml.nvmlDeviceGetName, self.handle)
-        self._bus_id = nvml_query(lambda handle: nvml.nvmlDeviceGetPciInfo(handle).busId, self.handle)
-        self._memory_total = nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).total, self.handle)
+    @classmethod
+    def from_indices(cls, indices=None):
+        if indices is None:
+            indices = range(cls.count())
+        return list(map(cls, indices))
+
+    @classmethod
+    def all(cls):
+        return cls.from_indices()
+
+    @staticmethod
+    def driver_version():
+        return nvml.nvmlQuery('nvmlSystemGetDriverVersion')
+
+    @staticmethod
+    def cuda_version():
+        cuda_version = nvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
+        if nvml.nvmlCheckReturn(cuda_version, int):
+            return str(cuda_version // 1000 + (cuda_version % 1000) / 100)
+        return 'N/A'
+
+    def __init__(self, index=None, serial=None, uuid=None, bus_id=None):
+        index, serial, uuid, bus_id = [arg.encode() if isinstance(arg, str) else arg
+                                       for arg in (index, serial, uuid, bus_id)]
+        if index is not None:
+            self.index = index
+            try:
+                self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByIndex', index, catch_error=False)
+            except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
+                self.handle = None
+        else:
+            try:
+                if serial is not None:
+                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleBySerial', serial, catch_error=False)
+                elif uuid is not None:
+                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, catch_error=False)
+                elif bus_id is not None:
+                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, catch_error=False)
+            except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
+                self.handle = None
+            else:
+                self.index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
+
+        self._name = nvml.nvmlQuery('nvmlDeviceGetName', self.handle)
+        self._serial = nvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
+        self._uuid = nvml.nvmlQuery('nvmlDeviceGetUUID', self.handle)
+        self._bus_id = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetPciInfo(handle).busId, self.handle)
+        self._memory_total = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).total, self.handle)
         self._memory_total_human = bytes2human(self.memory_total())
-        self._power_limit = nvml_query(nvml.nvmlDeviceGetPowerManagementLimit, self.handle)
+        self._power_limit = nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
 
         self._ident = (self.index, self.bus_id())
         self._hash = None
-        self._last_snapshot = None
+        self._snapshot = None
 
         def get_value(value):
             if value != 'N/A':
@@ -69,7 +110,10 @@ class Device(object):
         )
 
     def __str__(self):
-        return 'GPU({}, {}, {})'.format(self.index, self.name(), self.memory_total_human())
+        return '{}(index={}, name="{}", total_memory={})'.format(
+            self.__class__.__name__,
+            self.index, self.name(), self.memory_total_human()
+        )
 
     __repr__ = __str__
 
@@ -86,8 +130,37 @@ class Device(object):
             self._hash = hash(self._ident)
         return self._hash
 
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            if self.handle is None:
+                return 'N/A'
+
+            try:
+                func = getattr(nvml, 'nvmlDeviceGet' + name.title().replace('_', ''))
+            except AttributeError:
+                pascal_case = ''.join(part[:1].upper() + part[1:] for part in filter(None, name.split('_')))
+                func = getattr(nvml, 'nvmlDeviceGet' + pascal_case)
+
+            @ttl_cache(ttl=1.0)
+            def attribute(*args, **kwargs):
+                try:
+                    return nvml.nvmlQuery(func, self.handle, *args, **kwargs, catch_error=False)
+                except nvml.NVMLError_NotSupported:  # pylint: disable=no-member
+                    return 'N/A'
+
+            setattr(self, name, attribute)
+            return attribute
+
     def name(self):
         return self._name
+
+    def serial(self):
+        return self._serial
+
+    def uuid(self):
+        return self._uuid
 
     def bus_id(self):
         return self._bus_id
@@ -114,7 +187,7 @@ class Device(object):
         loading_intensity = (self.memory_loading_intensity(), self.gpu_loading_intensity())
         if 'heavy' in loading_intensity:
             return 'heavy'
-        elif 'moderate' in loading_intensity:
+        if 'moderate' in loading_intensity:
             return 'moderate'
         return 'light'
 
@@ -132,17 +205,17 @@ class Device(object):
 
     @ttl_cache(ttl=60.0)
     def display_active(self):
-        return {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetDisplayActive, self.handle), 'N/A')
+        return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), 'N/A')
 
     @ttl_cache(ttl=60.0)
     def persistence_mode(self):
-        return {0: 'Off', 1: 'On'}.get(nvml_query(nvml.nvmlDeviceGetPersistenceMode, self.handle), 'N/A')
+        return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self.handle), 'N/A')
 
     @ttl_cache(ttl=5.0)
     def ecc_errors(self):
-        return nvml_query(nvml.nvmlDeviceGetTotalEccErrors, self.handle,
-                          nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
-                          nvml.NVML_VOLATILE_ECC)
+        return nvml.nvmlQuery('nvmlDeviceGetTotalEccErrors', self.handle,
+                              nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
+                              nvml.NVML_VOLATILE_ECC)
 
     @ttl_cache(ttl=60.0)
     def compute_mode(self):
@@ -151,31 +224,31 @@ class Device(object):
             nvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD: 'E. Thread',
             nvml.NVML_COMPUTEMODE_PROHIBITED: 'Prohibited',
             nvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'E. Process',
-        }.get(nvml_query(nvml.nvmlDeviceGetComputeMode, self.handle), 'N/A')
+        }.get(nvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), 'N/A')
 
     @ttl_cache(ttl=5.0)
     def performance_state(self):
-        performance_state = nvml_query(nvml.nvmlDeviceGetPerformanceState, self.handle)
-        if nvml_check_return(performance_state, int):
+        performance_state = nvml.nvmlQuery('nvmlDeviceGetPerformanceState', self.handle)
+        if nvml.nvmlCheckReturn(performance_state, int):
             performance_state = 'P' + str(performance_state)
         return performance_state
 
     @ttl_cache(ttl=5.0)
     def power_usage(self):
-        return nvml_query(nvml.nvmlDeviceGetPowerUsage, self.handle)
+        return nvml.nvmlQuery('nvmlDeviceGetPowerUsage', self.handle)
 
     @ttl_cache(ttl=5.0)
     def power_state(self):
         power_usage = self.power_usage()
         power_limit = self.power_limit()
-        if nvml_check_return(power_usage, int) and nvml_check_return(power_limit, int):
+        if nvml.nvmlCheckReturn(power_usage, int) and nvml.nvmlCheckReturn(power_limit, int):
             return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
         return 'N/A'
 
     @ttl_cache(ttl=5.0)
     def fan_speed(self):
-        fan_speed = nvml_query(nvml.nvmlDeviceGetFanSpeed, self.handle)
-        if nvml_check_return(fan_speed, int):
+        fan_speed = nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
+        if nvml.nvmlCheckReturn(fan_speed, int):
             if fan_speed < 100:
                 fan_speed = str(fan_speed) + '%'
             else:
@@ -184,20 +257,20 @@ class Device(object):
 
     @ttl_cache(ttl=5.0)
     def temperature(self):
-        temperature = nvml_query(nvml.nvmlDeviceGetTemperature, self.handle, nvml.NVML_TEMPERATURE_GPU)
-        if nvml_check_return(temperature, int):
+        temperature = nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
+        if nvml.nvmlCheckReturn(temperature, int):
             temperature = str(temperature) + 'C'
         return temperature
 
     @ttl_cache(ttl=1.0)
     def memory_used(self):
-        return nvml_query(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
+        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
 
     @ttl_cache(ttl=1.0)
     def memory_usage(self):
         memory_used = self.memory_used()
         memory_total = self.memory_total()
-        if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
+        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
             return '{} / {}'.format(bytes2human(memory_used), bytes2human(memory_total))
         return 'N/A'
 
@@ -205,14 +278,14 @@ class Device(object):
     def memory_utilization(self):
         memory_used = self.memory_used()
         memory_total = self.memory_total()
-        if nvml_check_return(memory_used, int) and nvml_check_return(memory_total, int):
+        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
             return str(100 * memory_used // memory_total) + '%'
         return 'N/A'
 
     @ttl_cache(ttl=1.0)
     def gpu_utilization(self):
-        gpu_utilization = nvml_query(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
-        if nvml_check_return(gpu_utilization, int):
+        gpu_utilization = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
+        if nvml.nvmlCheckReturn(gpu_utilization, int):
             return str(gpu_utilization) + '%'
         return 'N/A'
 
@@ -228,17 +301,9 @@ class Device(object):
                 pass
             else:
                 for p in running_processes:
-                    try:
-                        proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
-                    except psutil.Error:
-                        try:
-                            del processes[p.pid]
-                        except KeyError:
-                            pass
-                        continue
-                    else:
-                        proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int) else 'N/A')
-                        proc.type = proc.type + type
+                    proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
+                    proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int) else 'N/A')
+                    proc.type = proc.type + type
 
         return processes
 
@@ -263,15 +328,15 @@ class Device(object):
 
     @ttl_cache(ttl=1.0)
     def take_snapshot(self):
-        self._last_snapshot = Snapshot(real=self, index=self.index,
-                                       **{key: getattr(self, key)() for key in self._snapshot_keys})
-        return self._last_snapshot
+        self._snapshot = Snapshot(real=self, index=self.index,
+                                  **{key: getattr(self, key)() for key in self._snapshot_keys})
+        return self._snapshot
 
     @property
-    def last_snapshot(self):
-        if self._last_snapshot is None:
+    def snapshot(self):
+        if self._snapshot is None:
             self.take_snapshot()
-        return self._last_snapshot
+        return self._snapshot
 
     _snapshot_keys = [
         'name',

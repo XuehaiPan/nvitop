@@ -7,9 +7,8 @@
 import threading
 import time
 
-from ...device import Device
-from ...utils import (colored, cut_string, make_bar,
-                      nvml_check_return, nvml_query)
+from ...core import Device
+from ...core.utils import colored, cut_string, make_bar
 from ..displayable import Displayable
 
 
@@ -30,12 +29,8 @@ class DevicePanel(Displayable):
         if self.device_count == 0:
             self.height = self.full_height = self.compact_height = 6
 
-        self.driver_version = nvml_query('nvmlSystemGetDriverVersion')
-        cuda_version = nvml_query('nvmlSystemGetCudaDriverVersion')
-        if nvml_check_return(cuda_version, int):
-            self.cuda_version = str(cuda_version // 1000 + (cuda_version % 1000) / 100)
-        else:
-            self.cuda_version = 'N/A'
+        self.driver_version = Device.driver_version()
+        self.cuda_version = Device.cuda_version()
 
         self.formats_compact = [
             '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_state:>12} '
@@ -219,8 +214,7 @@ class DevicePanel(Displayable):
     def print_width(self):
         if self.device_count > 0 and self.width >= 101:
             return self.width
-        else:
-            return 79
+        return 79
 
     def print(self):
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]

@@ -7,10 +7,8 @@
 import threading
 import time
 
-from ... import host
-from ...device import Device
-from ...history import BufferedHistoryGraph
-from ...utils import colored, make_bar
+from ...core import BufferedHistoryGraph, Device, host
+from ...core.utils import colored, make_bar
 from ..displayable import Displayable
 
 
@@ -97,8 +95,8 @@ class HostPanel(Displayable):
             memory_utilizations = []
             gpu_utilizations = []
             for device in self.devices:
-                memory_utilization = device.last_snapshot.memory_utilization
-                gpu_utilization = device.last_snapshot.gpu_utilization
+                memory_utilization = device.snapshot.memory_utilization
+                gpu_utilization = device.snapshot.gpu_utilization
                 if memory_utilization != 'N/A':
                     memory_utilizations.append(float(memory_utilization[:-1]))
                 if gpu_utilization != 'N/A':
@@ -204,8 +202,8 @@ class HostPanel(Displayable):
                 device = self.root.selected.process.device
                 memory_utilization = device.memory_utilization.history
                 gpu_utilization = device.gpu_utilization.history
-                memory_display_color = device.last_snapshot.memory_display_color
-                gpu_display_color = device.last_snapshot.gpu_display_color
+                memory_display_color = device.snapshot.memory_display_color
+                gpu_display_color = device.snapshot.gpu_display_color
             else:
                 memory_utilization = self.average_memory_utilization
                 gpu_utilization = self.average_gpu_utilization
