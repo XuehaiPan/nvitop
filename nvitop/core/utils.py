@@ -4,6 +4,8 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import time
+
 
 def bytes2human(x):
     if x is None or x == 'N/A':
@@ -35,18 +37,28 @@ def timedelta2human(dt):
 class Snapshot(object):
     def __init__(self, real, **items):
         self.real = real
+        self.timestamp = time.monotonic()
         for key, value in items.items():
             setattr(self, key, value)
-
-    def __bool__(self):
-        return bool(self.__dict__)
 
     def __str__(self):
         keys = set(self.__dict__.keys())
         keys.remove('real')
-        return '{}({})'.format(
-            self.__class__.__name__,
-            ', '.join('{}={!r}'.format(key, getattr(self, key)) for key in ['real', *sorted(keys)])
+        keys.remove('timestamp')
+        return '{}{}(\n    {}\n)'.format(
+            self.real.__class__.__name__, self.__class__.__name__,
+            ', \n    '.join('{}={!r}'.format(key, getattr(self, key)) for key in ['real', *sorted(keys)])
         )
 
     __repr__ = __str__
+
+    def __getattr__(self, name):
+        try:
+            return super().__getattr__(name)
+        except AttributeError:
+            attribute = getattr(self.real, name)
+            if callable(attribute):
+                attribute = attribute()
+
+            setattr(self, name, attribute)
+            return attribute

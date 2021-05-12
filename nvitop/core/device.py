@@ -244,6 +244,14 @@ class Device(object):
         return bytes2human(self.memory_used())
 
     @ttl_cache(ttl=1.0)
+    def memory_free(self):
+        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).free, self.handle)
+
+    @ttl_cache(ttl=1.0)
+    def memory_free_human(self):
+        return bytes2human(self.memory_free())
+
+    @ttl_cache(ttl=1.0)
     def memory_usage(self):
         memory_used = self.memory_used()
         memory_total = self.memory_total()
@@ -315,7 +323,7 @@ class Device(object):
         return Device.INTENSITY2COLOR.get(Device.loading_intensity_of(utilization, type=type))
 
     @ttl_cache(ttl=1.0)
-    def take_snapshot(self):
+    def as_snapshot(self):
         self._snapshot = Snapshot(real=self, index=self.index,
                                   **{key: getattr(self, key)() for key in self._snapshot_keys})
         return self._snapshot
@@ -323,7 +331,7 @@ class Device(object):
     @property
     def snapshot(self):
         if self._snapshot is None:
-            self.take_snapshot()
+            self.as_snapshot()
         return self._snapshot
 
     _snapshot_keys = [
@@ -331,7 +339,7 @@ class Device(object):
         'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
         'fan_speed', 'temperature', 'performance_state',
         'power_usage', 'power_limit', 'power_state', 'compute_mode',
-        'memory_used', 'memory_total', 'memory_usage',
+        'memory_used', 'memory_free', 'memory_total', 'memory_usage',
         'memory_utilization', 'memory_utilization_string',
         'gpu_utilization', 'gpu_utilization_string',
         'memory_loading_intensity', 'gpu_loading_intensity', 'loading_intensity',

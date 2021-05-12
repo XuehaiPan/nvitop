@@ -83,7 +83,7 @@ class DevicePanel(Displayable):
             self._snapshots = snapshots
 
     def take_snapshots(self):
-        snapshots = list(map(lambda device: device.take_snapshot(), self.devices))
+        snapshots = list(map(lambda device: device.as_snapshot(), self.devices))
 
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots

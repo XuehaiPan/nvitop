@@ -96,6 +96,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     def __str__(self):
         return super().__str__().replace(self.__class__.__module__ + '.', '', 1)
 
+    __repr__ = __str__
+
     cpu_percent = ttl_cache(ttl=1.0)(host.Process.cpu_percent)
 
     memory_percent = ttl_cache(ttl=1.0)(host.Process.memory_percent)
@@ -111,6 +113,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         if len(cmdline) == 1:
             return cmdline[0]
         return ' '.join(map(add_quotes, cmdline))
+
+    def as_snapshot(self):
+        return Snapshot(real=self, **self.as_dict())
 
 
 class GpuProcess(object):
@@ -177,7 +182,7 @@ class GpuProcess(object):
 
     def __getattr__(self, name):
         try:
-            return object.__getattr__(name)
+            return super().__getattr__(name)
         except AttributeError:
             return getattr(self.host, name)
 
@@ -192,8 +197,14 @@ class GpuProcess(object):
         return self._gpu_memory_human
 
     def set_gpu_memory(self, value):
-        self._gpu_memory = value
-        self._gpu_memory_human = bytes2human(self.gpu_memory())
+        self._gpu_memory = value  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
+
+    def update_gpu_memory(self):
+        self._gpu_memory = 'N/A'  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_human = 'N/A'  # pylint: disable=attribute-defined-outside-init
+        self.device.processes()
+        return self.gpu_memory()
 
     @property
     def type(self):
@@ -255,7 +266,7 @@ class GpuProcess(object):
             cls.HOST_SNAPSHOTS.clear()
 
     @auto_garbage_clean(default=None)
-    def take_snapshot(self):
+    def as_snapshot(self):
         with self.SNAPSHOT_LOCK:
             try:
                 host_snapshot = self.HOST_SNAPSHOTS[self.pid]

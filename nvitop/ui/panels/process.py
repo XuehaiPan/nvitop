@@ -244,7 +244,7 @@ class ProcessPanel(Displayable):
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
         GpuProcess.clear_host_snapshots()
-        snapshots = list(filter(None, map(lambda process: process.take_snapshot(), self.processes.values())))
+        snapshots = list(filter(None, map(GpuProcess.as_snapshot, self.processes.values())))
 
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         for snapshot in snapshots:
