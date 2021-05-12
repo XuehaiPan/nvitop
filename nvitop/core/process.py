@@ -152,6 +152,7 @@ class GpuProcess(object):
         if type is not None:
             self.type = type
         self._hash = None
+        self._username = None
 
     def __str__(self):
         return '{}(device={}, gpu_memory={}, host={})'.format(
@@ -222,7 +223,9 @@ class GpuProcess(object):
 
     @auto_garbage_clean(default='N/A')
     def username(self):
-        return self.host.username()
+        if self._username is None:
+            self._username = self.host.username()
+        return self._username
 
     @auto_garbage_clean(default='N/A')
     def name(self):
