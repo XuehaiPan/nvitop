@@ -8,6 +8,8 @@
 
 An interactive NVIDIA-GPU process viewer, aimed to provide a one-stop solution for GPU process management. ([screenshots](#screenshots))
 
+![Screenshot Monitor](https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png)
+
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for integration.
 
 [nvidia-htop](https://github.com/peci1/nvidia-htop) a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
@@ -310,7 +312,7 @@ Out[29]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, si
 
 Example output of `nvitop`:
 
-<img src="https://user-images.githubusercontent.com/16078332/117765250-41793880-b260-11eb-8a1b-9c32868a46d4.png" alt="Screenshot">
+![Screenshot](https://user-images.githubusercontent.com/16078332/117765250-41793880-b260-11eb-8a1b-9c32868a46d4.png)
 
 Example output of `nvitop -m`:
 
