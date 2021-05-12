@@ -11,16 +11,16 @@ import threading
 import time
 from collections import OrderedDict
 
-import psutil
 from cachetools.func import ttl_cache
 
-from ...core import GpuProcess
-from ...core.utils import Snapshot, colored, cut_string
+from ...core import GpuProcess, host
+from ...core.utils import Snapshot
 from ..displayable import Displayable
+from ..utils import colored, cut_string
 
 
 CURRENT_USER = getpass.getuser()
-if psutil.WINDOWS:
+if host.WINDOWS:  # pylint: disable=no-member
     import ctypes
     IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
 else:
@@ -83,7 +83,7 @@ class Selected(object):
         if self.owned():
             try:
                 self.process.send_signal(sig)
-            except psutil.Error:
+            except host.PsutilError:
                 pass
             else:
                 time.sleep(0.5)
@@ -94,7 +94,7 @@ class Selected(object):
         if self.owned():
             try:
                 self.process.terminate()
-            except psutil.Error:
+            except host.PsutilError:
                 pass
             else:
                 time.sleep(0.5)
@@ -104,7 +104,7 @@ class Selected(object):
         if self.owned():
             try:
                 self.process.kill()
-            except psutil.Error:
+            except host.PsutilError:
                 pass
             else:
                 time.sleep(0.5)
@@ -289,7 +289,7 @@ class ProcessPanel(Displayable):
                 try:
                     username = p.username()
                     processes[(p.device.index, username != 'N/A', username, p.pid)] = p
-                except psutil.Error:
+                except host.PsutilError:
                     pass
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 

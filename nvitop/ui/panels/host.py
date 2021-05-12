@@ -7,9 +7,10 @@
 import threading
 import time
 
-from ...core import BufferedHistoryGraph, Device, host
-from ...core.utils import colored, make_bar
+from ...core import Device, GpuProcess, host
 from ..displayable import Displayable
+from ..history import BufferedHistoryGraph
+from ..utils import colored, make_bar
 
 
 class HostPanel(Displayable):
@@ -20,6 +21,109 @@ class HostPanel(Displayable):
 
         self.devices = devices
         self.device_count = len(self.devices)
+
+        if win is not None:
+            self.average_memory_utilization = None
+            self.average_gpu_utilization = None
+            self.enable_history()
+
+        self._compact = compact
+        self.width = max(79, root.width)
+        self.full_height = 12
+        self.compact_height = 2
+        self.height = (self.compact_height if compact else self.full_height)
+
+        self.cpu_percent = None
+        self.virtual_memory = None
+        self.swap_memory = None
+        self.load_average = None
+        self.snapshot_lock = root.lock
+        self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
+                                                 target=self._snapshot_target, daemon=True)
+        self._daemon_started = threading.Event()
+
+    @property
+    def width(self):
+        return self._width
+
+    @width.setter
+    def width(self, value):
+        width = max(79, value)
+        if self._width != width and self.visible:
+            self.need_redraw = True
+            graph_width = max(width - 80, 20)
+            if self.win is not None:
+                self.average_memory_utilization.width = graph_width
+                self.average_gpu_utilization.width = graph_width
+                for device in self.devices:
+                    device.memory_utilization.history.width = graph_width
+                    device.gpu_utilization.history.width = graph_width
+        self._width = width
+
+    @property
+    def compact(self):
+        return self._compact
+
+    @compact.setter
+    def compact(self, value):
+        if self._compact != value:
+            self.need_redraw = True
+            self._compact = value
+            self.height = (self.compact_height if self.compact else self.full_height)
+
+    def enable_history(self):
+        GpuProcess.CLI_MODE = True
+        host.cpu_percent = BufferedHistoryGraph(
+            baseline=0.0,
+            upperbound=100.0,
+            width=77, height=5,
+            dynamic_bound=True,
+            format='CPU: {:.1f}%'.format
+        )(host.cpu_percent)
+        host.virtual_memory = BufferedHistoryGraph(
+            baseline=0.0,
+            upperbound=100.0,
+            width=77, height=4,
+            dynamic_bound=False,
+            upsidedown=True,
+            format='MEM: {:.1f}%'.format
+        )(
+            host.virtual_memory,
+            get_value=lambda ret: ret.percent
+        )
+        host.swap_memory = BufferedHistoryGraph(
+            baseline=0.0,
+            upperbound=100.0,
+            width=77, height=1,
+            dynamic_bound=False,
+            upsidedown=False,
+            format='SWP: {:.1f}%'.format
+        )(
+            host.swap_memory,
+            get_value=lambda ret: ret.percent
+        )
+
+        def enable_history(device):
+            device.memory_utilization = BufferedHistoryGraph(
+                baseline=0.0,
+                upperbound=100.0,
+                width=32,
+                height=5,
+                dynamic_bound=False,
+                format=('GPU ' + str(device.index) + ' MEM: {}%').format
+            )(device.memory_utilization)
+            device.gpu_utilization = BufferedHistoryGraph(
+                baseline=0.0,
+                upperbound=100.0,
+                width=32,
+                height=5,
+                dynamic_bound=False,
+                upsidedown=True,
+                format=('GPU ' + str(device.index) + ' UTL: {}%').format
+            )(device.gpu_utilization)
+
+        for device in self.devices:
+            enable_history(device)
 
         prefix = ('AVG ' if self.device_count > 1 else '')
         self.average_memory_utilization = BufferedHistoryGraph(
@@ -40,50 +144,6 @@ class HostPanel(Displayable):
             format=(prefix + 'GPU UTL: {:.1f}%').format
         )
 
-        self._compact = compact
-        self.width = max(79, root.width)
-        self.full_height = 12
-        self.compact_height = 2
-        self.height = (self.compact_height if compact else self.full_height)
-
-        self.cpu_percent = None
-        self.virtual_memory = None
-        self.swap_memory = None
-        self.load_average = None
-        self.snapshot_lock = root.lock
-        self.take_snapshots()
-        self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
-                                                 target=self._snapshot_target, daemon=True)
-        self._daemon_started = threading.Event()
-
-    @property
-    def width(self):
-        return self._width
-
-    @width.setter
-    def width(self, value):
-        width = max(79, value)
-        if self._width != width and self.visible:
-            self.need_redraw = True
-            graph_width = max(width - 80, 20)
-            self.average_memory_utilization.width = graph_width
-            self.average_gpu_utilization.width = graph_width
-            for device in self.devices:
-                device.memory_utilization.history.width = graph_width
-                device.gpu_utilization.history.width = graph_width
-        self._width = width
-
-    @property
-    def compact(self):
-        return self._compact
-
-    @compact.setter
-    def compact(self, value):
-        if self._compact != value:
-            self.need_redraw = True
-            self._compact = value
-            self.height = (self.compact_height if self.compact else self.full_height)
-
     def take_snapshots(self):
         with self.snapshot_lock:
             host.cpu_percent()
@@ -98,9 +158,9 @@ class HostPanel(Displayable):
                 memory_utilization = device.snapshot.memory_utilization
                 gpu_utilization = device.snapshot.gpu_utilization
                 if memory_utilization != 'N/A':
-                    memory_utilizations.append(float(memory_utilization[:-1]))
+                    memory_utilizations.append(float(memory_utilization))
                 if gpu_utilization != 'N/A':
-                    gpu_utilizations.append(float(gpu_utilization[:-1]))
+                    gpu_utilizations.append(float(gpu_utilization))
             if len(memory_utilizations) > 0:
                 self.average_memory_utilization.add(sum(memory_utilizations) / len(memory_utilizations))
             if len(gpu_utilizations) > 0:
@@ -230,6 +290,9 @@ class HostPanel(Displayable):
 
     def print(self):
         self.cpu_percent = host.cpu_percent()
+        self.virtual_memory = host.virtual_memory()
+        self.swap_memory = host.swap_memory()
+        self.load_average = host.load_average()
 
         if self.load_average is not None:
             load_average = tuple('{:5.2f}'.format(value) if value < 100.0 else '100.0'

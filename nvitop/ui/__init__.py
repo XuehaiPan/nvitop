@@ -6,3 +6,4 @@
 from .libcurses import libcurses
 from .panels import DevicePanel, ProcessPanel
 from .top import Top
+from .utils import colored

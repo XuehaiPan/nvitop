@@ -8,8 +8,8 @@ import threading
 import time
 
 from ...core import Device
-from ...core.utils import colored, cut_string, make_bar
 from ..displayable import Displayable
+from ..utils import colored, cut_string, make_bar
 
 
 class DevicePanel(Displayable):
@@ -34,13 +34,13 @@ class DevicePanel(Displayable):
 
         self.formats_compact = [
             '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_state:>12} '
-            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │',
+            '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full = [
             '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
             '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
             '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_state:>12} '
-            '│ {memory_usage:>20} │ {gpu_utilization:>7}  {compute_mode:>11} │',
+            '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 
         self._snapshot_buffer = []

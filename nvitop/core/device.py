@@ -10,7 +10,6 @@ from cachetools.func import ttl_cache
 
 from .libnvml import nvml
 from .process import GpuProcess
-from .history import BufferedHistoryGraph
 from .utils import Snapshot, bytes2human
 
 
@@ -27,7 +26,10 @@ class Device(object):
     def from_indices(cls, indices=None):
         if indices is None:
             indices = range(cls.count())
-        return list(map(cls, indices))
+        devices = []
+        for index in indices:
+            devices.append(cls(index))
+        return devices
 
     @classmethod
     def all(cls):
@@ -45,8 +47,10 @@ class Device(object):
         return 'N/A'
 
     def __init__(self, index=None, serial=None, uuid=None, bus_id=None):
+        args = (index, serial, uuid, bus_id)
+        assert args.count(None) == 3
         index, serial, uuid, bus_id = [arg.encode() if isinstance(arg, str) else arg
-                                       for arg in (index, serial, uuid, bus_id)]
+                                       for arg in args]
         if index is not None:
             self.index = index
             try:
@@ -77,37 +81,6 @@ class Device(object):
         self._ident = (self.index, self.bus_id())
         self._hash = None
         self._snapshot = None
-
-        def get_value(value):
-            if value != 'N/A':
-                value = float(value[:-1])
-            return value
-
-        memory_prefix = 'GPU ' + str(self.index) + ' MEM: '
-        self.memory_utilization = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=32,
-            height=5,
-            dynamic_bound=False,
-            format=lambda x: memory_prefix + str(int(x)) + '%'
-        )(
-            self.memory_utilization,
-            get_value=get_value
-        )
-        gpu_prefix = 'GPU ' + str(self.index) + ' UTL: '
-        self.gpu_utilization = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=32,
-            height=5,
-            dynamic_bound=False,
-            upsidedown=True,
-            format=lambda x: gpu_prefix + str(int(x)) + '%'
-        )(
-            self.gpu_utilization,
-            get_value=get_value
-        )
 
     def __str__(self):
         return '{}(index={}, name="{}", total_memory={})'.format(
@@ -267,6 +240,10 @@ class Device(object):
         return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
 
     @ttl_cache(ttl=1.0)
+    def memory_used_human(self):
+        return bytes2human(self.memory_used())
+
+    @ttl_cache(ttl=1.0)
     def memory_usage(self):
         memory_used = self.memory_used()
         memory_total = self.memory_total()
@@ -279,12 +256,23 @@ class Device(object):
         memory_used = self.memory_used()
         memory_total = self.memory_total()
         if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
-            return str(100 * memory_used // memory_total) + '%'
+            return 100 * memory_used // memory_total
+        return 'N/A'
+
+    @ttl_cache(ttl=1.0)
+    def memory_utilization_string(self):
+        memory_utilization = self.memory_utilization()
+        if nvml.nvmlCheckReturn(memory_utilization, int):
+            return str(memory_utilization) + '%'
         return 'N/A'
 
     @ttl_cache(ttl=1.0)
     def gpu_utilization(self):
-        gpu_utilization = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
+        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
+
+    @ttl_cache(ttl=1.0)
+    def gpu_utilization_string(self):
+        gpu_utilization = self.gpu_utilization()
         if nvml.nvmlCheckReturn(gpu_utilization, int):
             return str(gpu_utilization) + '%'
         return 'N/A'
@@ -342,9 +330,10 @@ class Device(object):
         'name',
         'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
         'fan_speed', 'temperature', 'performance_state',
-        'power_usage', 'power_limit', 'power_state',
-        'memory_used', 'memory_total', 'memory_usage', 'memory_utilization',
-        'gpu_utilization', 'compute_mode',
+        'power_usage', 'power_limit', 'power_state', 'compute_mode',
+        'memory_used', 'memory_total', 'memory_usage',
+        'memory_utilization', 'memory_utilization_string',
+        'gpu_utilization', 'gpu_utilization_string',
         'memory_loading_intensity', 'gpu_loading_intensity', 'loading_intensity',
         'memory_display_color', 'gpu_display_color', 'display_color'
     ]

@@ -45,7 +45,7 @@ class libnvml(object):
                   '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
                   '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.',
                   file=sys.stderr)
-            sys.exit(1)
+            raise
         else:
             self._initialized = True
 

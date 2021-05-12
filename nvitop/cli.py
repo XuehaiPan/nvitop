@@ -7,9 +7,8 @@ import argparse
 import os
 import sys
 
-from .core import Device
-from .core.utils import colored
-from .ui import Top, libcurses
+from .core import Device, NVMLError
+from .ui import Top, libcurses, colored
 
 
 def parse_arguments():
@@ -50,14 +49,19 @@ def parse_arguments():
     return args
 
 
-def main():
+def main():  # pylint: disable=inconsistent-return-statements
+
     args = parse_arguments()
 
     if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
         print('ERROR: Must run nvitop monitor mode from terminal.', file=sys.stderr)
         return 1
 
-    device_count = Device.count()
+    try:
+        device_count = Device.count()
+    except NVMLError:
+        return 1
+
     if args.only is not None:
         visible_devices = set(args.only)
     elif args.only_visible:
@@ -69,9 +73,10 @@ def main():
     else:
         visible_devices = set(range(device_count))
     visible_devices = sorted(set(range(device_count)).intersection(visible_devices))
+
     devices = Device.from_indices(visible_devices)
 
-    if args.monitor != 'notpresented' and len(devices) > 0:
+    if args.monitor != 'notpresented' and len(visible_devices) > 0:
         with libcurses() as win:
             top = Top(devices, ascii=args.ascii, mode=args.monitor, win=win)
             top.loop()
