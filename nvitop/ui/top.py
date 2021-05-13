@@ -182,7 +182,32 @@ class Top(DisplayableContainer):
         if self.need_redraw:
             self.win.erase()
 
-        super().draw()
+        if self.width >= 79:
+            super().draw()
+        else:
+            n_term_lines, n_term_cols = self.termsize
+            message = 'nvitop needs at least a width of 79 to render, the current width is {}.'.format(self.width)
+            width = min(max(n_term_cols, 40), n_term_cols, 60) - 10
+            lines = ['nvitop']
+            for word in message.split()[1:]:
+                if len(lines[-1]) + len(word) + 1 <= width:
+                    lines[-1] += ' ' + word
+                else:
+                    lines[-1] = lines[-1].strip()
+                    lines.append(word)
+            height, width = len(lines) + 4, max(map(len, lines)) + 4
+            lines = ['│ {} |'.format(line.ljust(width - 4)) for line in lines]
+            lines = [
+                '╒' + '═' * (width - 2) + '╕',
+                '|' + ' ' * (width - 2) + '|',
+                *lines,
+                '|' + ' ' * (width - 2) + '|',
+                '╘' + '═' * (width - 2) + '╛',
+            ]
+
+            y_start, x_start = (n_term_lines - height) // 2, (n_term_cols - width) // 2
+            for y, line in enumerate(lines, start=y_start):
+                self.addstr(y, x_start, line)
 
     def finalize(self):
         super().finalize()
@@ -212,7 +237,7 @@ class Top(DisplayableContainer):
             host_panel_width = self.host_panel.print_width()
             process_panel_width = self.process_panel.print_width()
             print_width = min(device_panel_width, host_panel_width, process_panel_width)
-            self.width = max(print_width, min(self.width, 101))
+            self.width = max(print_width, min(self.width, 100))
         else:
             self.width = 79
         self.device_panel.width = self.width

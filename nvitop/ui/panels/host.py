@@ -183,7 +183,7 @@ class HostPanel(Displayable):
         remaining_width = self.width - 79
         data_line = '│                                                                             │'
         separator_line = '├────────────╴120s├─────────────────────────╴60s├──────────╴30s├──────────────┤'
-        if remaining_width >= 22:
+        if self.width >= 100:
             data_line += ' ' * (remaining_width - 1) + '│'
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
@@ -194,7 +194,7 @@ class HostPanel(Displayable):
             data_line, data_line, data_line, data_line, data_line,
             '╘═════════════════════════════════════════════════════════════════════════════╛'
         ]
-        if remaining_width >= 22:
+        if self.width >= 100:
             frame[0] = frame[0][:-1] + '╪' + '═' * (remaining_width - 1) + '╡'
             frame[-1] = frame[-1][:-1] + '╧' + '═' * (remaining_width - 1) + '╛'
 
@@ -239,10 +239,12 @@ class HostPanel(Displayable):
             self.color_at(self.y + 5, self.x + 14, width=4, attr='dim')
             self.color_at(self.y + 5, self.x + 45, width=3, attr='dim')
             self.color_at(self.y + 5, self.x + 60, width=3, attr='dim')
-            for offset, string in [(20, '╴30s├'), (35, '╴60s├'), (66, '╴120s├'), (126, '╴240s├')]:
-                if offset <= remaining_width:
-                    self.addstr(self.y + 5, self.x + self.width - offset, string)
-                    self.color_at(self.y + 5, self.x + self.width - offset + 1, width=len(string) - 2, attr='dim')
+
+            if self.width >= 100:
+                for offset, string in [(20, '╴30s├'), (35, '╴60s├'), (66, '╴120s├'), (126, '╴240s├')]:
+                    if offset <= remaining_width:
+                        self.addstr(self.y + 5, self.x + self.width - offset, string)
+                        self.color_at(self.y + 5, self.x + self.width - offset + 1, width=len(string) - 2, attr='dim')
 
         for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
             self.addstr(y, self.x + 1, line)
@@ -259,7 +261,7 @@ class HostPanel(Displayable):
             self.color_at(y, self.x + 1, width=77, fg='blue')
         self.addstr(self.y + 10, self.x + 1, ' {} '.format(host.swap_memory.history.last_value_string()))
 
-        if remaining_width >= 22:
+        if self.width >= 100:
             if self.device_count > 1 and self.root.selected.is_set():
                 device = self.root.selected.process.device
                 memory_utilization = device.memory_utilization.history
@@ -286,7 +288,7 @@ class HostPanel(Displayable):
         self.need_redraw = False
 
     def print_width(self):
-        if self.device_count > 0 and self.width >= 101:
+        if self.device_count > 0 and self.width >= 100:
             return self.width
         return 79
 

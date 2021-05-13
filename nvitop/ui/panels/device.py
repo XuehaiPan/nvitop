@@ -132,7 +132,7 @@ class DevicePanel(Displayable):
         remaining_width = self.width - 79
         data_line = '│                               │                      │                      │'
         separator_line = '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-        if remaining_width >= 22:
+        if self.width >= 100:
             data_line += ' ' * (remaining_width - 1) + '│'
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
@@ -143,7 +143,7 @@ class DevicePanel(Displayable):
                 frame.extend(self.device_count * [data_line, data_line, separator_line])
             frame.pop()
             frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
-            if remaining_width >= 22:
+            if self.width >= 100:
                 frame[5 - int(compact)] = frame[5 - int(compact)][:-1] + '╪' + '═' * (remaining_width - 1) + '╕'
                 frame[-1] = frame[-1][:-1] + '╧' + '═' * (remaining_width - 1) + '╛'
 
@@ -179,7 +179,7 @@ class DevicePanel(Displayable):
             formats = self.formats_full
 
         remaining_width = self.width - 79
-        draw_bars = (remaining_width >= 22)
+        draw_bars = (self.width >= 100)
         selected_device = (self.root.selected.process.device if self.root.selected.is_set() else None)
         for index, device in enumerate(self.snapshots):
             y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
@@ -213,7 +213,7 @@ class DevicePanel(Displayable):
         self._daemon_started.clear()
 
     def print_width(self):
-        if self.device_count > 0 and self.width >= 101:
+        if self.device_count > 0 and self.width >= 100:
             return self.width
         return 79
 
@@ -237,8 +237,8 @@ class DevicePanel(Displayable):
             lines.pop()
             lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
-            remaining_width = self.width - 79
-            if remaining_width >= 22:
+            if self.width >= 100:
+                remaining_width = self.width - 79
                 for index, device in enumerate(self.snapshots):
                     y_start = 4 + 3 * (index + 1)
                     lines[y_start - 1] = lines[y_start - 1][:-1]

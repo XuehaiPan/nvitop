@@ -49,7 +49,6 @@ class HistoryGraph(object):
     def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin
                  baseline=0.0, dynamic_bound=True, upsidedown=False):
         assert baseline < upperbound
-        assert width <= self.MAX_WIDTH
 
         self.format = format
 
@@ -91,13 +90,15 @@ class HistoryGraph(object):
     @width.setter
     def width(self, value):
         if self._width != value:
-            assert isinstance(value, int) and 1 <= value <= self.MAX_WIDTH
+            assert isinstance(value, int) and value >= 1
             self._width = value
             with self.write_lock:
                 self.maxlen = 2 * self.width + 1
-                self.reversed_history = deque([self.baseline] * self.maxlen, maxlen=self.maxlen)
-                self._max_value_maintainer = deque([self.baseline] * self.maxlen, maxlen=self.maxlen)
-                for history in itertools.islice(self.history, self.history.maxlen - self.maxlen, self.history.maxlen):
+                self.reversed_history = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
+                self._max_value_maintainer = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
+                for history in itertools.islice(self.history,
+                                                max(0, self.history.maxlen - self.maxlen),
+                                                self.history.maxlen):
                     if self.reversed_history[-1] == self._max_value_maintainer[0]:
                         self._max_value_maintainer.popleft()
                     while len(self._max_value_maintainer) > 0 and self._max_value_maintainer[-1] < history:
