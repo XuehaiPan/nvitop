@@ -1,5 +1,3 @@
-import sys
-
 from setuptools import setup, find_packages
 
 import nvitop
@@ -21,16 +19,17 @@ setup(
     license=nvitop.__license__,
     author=nvitop.__author__,
     author_email=nvitop.__email__,
-    url="https://github.com/XuehaiPan/nvitop.git",
+    url="https://github.com/XuehaiPan/nvitop",
     packages=find_packages(include=['nvitop', 'nvitop.*']),
     entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
-    install_requires=(['windows-curses'] if sys.platform.startswith('win') else []) + [
-        'nvidia-ml-py==11.*',
+    install_requires=[
+        'nvidia-ml-py == 11.450.51',
         'psutil',
         'cachetools',
         'termcolor',
+        'windows-curses; platform_system == "Windows"'
     ],
-    python_requires='>=3.5, <4',
+    python_requires='>=3.5',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -49,7 +48,7 @@ setup(
         'Topic :: System :: Systems Administration',
         'Topic :: Utilities',
     ],
-    keywords='nvidia, nvidia-smi, GPU, top, htop',
+    keywords='nvidia, nvidia-smi, NVIDIA, NVML, CUDA, GPU, top',
     project_urls={
         'Bug Reports': 'https://github.com/XuehaiPan/nvitop/issues',
         'Source': 'https://github.com/XuehaiPan/nvitop',

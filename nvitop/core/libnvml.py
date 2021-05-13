@@ -56,7 +56,7 @@ class libnvml(object):
         pynvml.nvmlShutdown()
         self._initialized = False
 
-    def nvmlQuery(self, func, *args, catch_error=True, **kwargs):
+    def nvmlQuery(self, func, *args, default='N/A', catch_error=True, **kwargs):
         if isinstance(func, str):
             func = getattr(pynvml, func)
 
@@ -64,9 +64,16 @@ class libnvml(object):
 
         try:
             retval = func(*args, **kwargs)
+        except pynvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
+            print('ERROR: Function Not Found.\n'
+                  'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
+                  file=sys.stderr)
+            if catch_error:
+                return default
+            raise
         except pynvml.NVMLError:
             if catch_error:
-                return 'N/A'
+                return default
             raise
         else:
             if isinstance(retval, bytes):

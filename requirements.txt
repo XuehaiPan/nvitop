@@ -1,5 +1,5 @@
-nvidia-ml-py==11.*
+nvidia-ml-py == 11.450.51
 psutil
 cachetools
 termcolor
-windows-curses; sys_platform == 'win32'
+windows-curses; platform_system == 'Windows'

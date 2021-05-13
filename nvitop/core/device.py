@@ -261,17 +261,12 @@ class Device(object):
     def processes(self):
         processes = OrderedDict()
 
-        for type, func in [('C', nvml.nvmlDeviceGetComputeRunningProcesses),  # pylint: disable=redefined-builtin
-                           ('G', nvml.nvmlDeviceGetGraphicsRunningProcesses)]:
-            try:
-                running_processes = func(self.handle)
-            except nvml.NVMLError:
-                pass
-            else:
-                for p in running_processes:
-                    proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
-                    proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int) else 'N/A')
-                    proc.type = proc.type + type
+        for type, func in [('C', 'nvmlDeviceGetComputeRunningProcesses'),  # pylint: disable=redefined-builtin
+                           ('G', 'nvmlDeviceGetGraphicsRunningProcesses')]:
+            for p in nvml.nvmlQuery(func, self.handle, default=()):
+                proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
+                proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int) else 'N/A')
+                proc.type = proc.type + type
 
         return processes
 

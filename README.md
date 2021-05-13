@@ -6,7 +6,7 @@
 ![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-An interactive NVIDIA-GPU process viewer, aimed to provide a one-stop solution for GPU process management. ([screenshots](#screenshots))
+An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
 
 ![Screenshot Monitor](https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png)
 
@@ -14,7 +14,7 @@ This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) 
 
 [nvidia-htop](https://github.com/peci1/nvidia-htop) a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
 
-This project is currently in the *beta phase*, and most features have been tested on Linux. If you are using Windows with CUDA-capable GPUs, please submit feedback on the issue page, thank you very much!
+So far, `nvitop` is in the *beta phase*, and most features have been tested on Linux. If you are using Windows with NVIDIA-GPUs, please submit feedback on the issue page, thank you very much!
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗.
 
@@ -69,6 +69,8 @@ $ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
 $ cd nvitop
 $ pip3 install .
 ```
+
+**IMPORTANT**: `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/#history), and install the compatible version manually.
 
 ## Usage
 
