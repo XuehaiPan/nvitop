@@ -12,7 +12,7 @@ def bytes2human(x):
         return 'N/A'
 
     if not isinstance(x, int):
-        x = int(x)
+        x = round(float(x))
 
     if x < (1 << 10):
         return '{}B'.format(x)

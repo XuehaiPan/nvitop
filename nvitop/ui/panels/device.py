@@ -178,21 +178,22 @@ class DevicePanel(Displayable):
         else:
             formats = self.formats_full
 
+        remaining_width = self.width - 79
+        draw_bars = (remaining_width >= 22)
+        selected_device = (self.root.selected.process.device if self.root.selected.is_set() else None)
         for index, device in enumerate(self.snapshots):
             y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
+            attr = ('bold' if device.real == selected_device else 0)
 
             device.name = cut_string(device.name, maxlen=18)
+            device.fan_speed = device.fan_speed.replace('100%', 'MAX')
             for y, fmt in enumerate(formats, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
-                self.color_at(y, 1, width=31, fg=device.display_color)
-                self.color_at(y, 33, width=22, fg=device.display_color)
-                self.color_at(y, 56, width=22, fg=device.display_color)
+                self.color_at(y, self.x + 1, width=31, fg=device.display_color, attr=attr)
+                self.color_at(y, self.x + 33, width=22, fg=device.display_color, attr=attr)
+                self.color_at(y, self.x + 56, width=22, fg=device.display_color, attr=attr)
 
-        remaining_width = self.width - 79
-        if remaining_width >= 22:
-            for index, device in enumerate(self.snapshots):
-                y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
-
+            if draw_bars:
                 matrix = [
                     ('MEM', device.memory_utilization, device.memory_display_color),
                     ('UTL', device.gpu_utilization, device.gpu_display_color),
@@ -202,7 +203,7 @@ class DevicePanel(Displayable):
                 for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
                     bar = make_bar(prefix, utilization, width=remaining_width - 3)
                     self.addstr(y, self.x + 80, bar + ' │')
-                    self.color_at(y, self.x + 80, width=remaining_width - 3, fg=color)
+                    self.color_at(y, self.x + 80, width=remaining_width - 3, fg=color, attr=attr)
 
     def finalize(self):
         self.need_redraw = False

@@ -38,7 +38,7 @@ def make_bar(prefix, percent, width):
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent[:-1]
         percentage = float(percent) / 100.0
-        quotient, remainder = divmod(max(1, int(8 * (width - len(bar) - 4) * percentage)), 8)
+        quotient, remainder = divmod(max(1, round(8 * (width - len(bar) - 4) * percentage)), 8)
         bar += '█' * quotient
         if remainder > 0:
             bar += BLOCK_CHARS[remainder]

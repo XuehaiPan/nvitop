@@ -67,6 +67,7 @@ class Device(object):
                     self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, catch_error=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
                 self.handle = None
+                self.index = 'N/A'
             else:
                 self.index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
 
@@ -147,35 +148,6 @@ class Device(object):
     def power_limit(self):
         return self._power_limit
 
-    @ttl_cache(ttl=1.0)
-    def memory_loading_intensity(self):
-        return self.loading_intensity_of(self.memory_utilization(), type='memory')
-
-    @ttl_cache(ttl=1.0)
-    def gpu_loading_intensity(self):
-        return self.loading_intensity_of(self.gpu_utilization(), type='gpu')
-
-    @ttl_cache(ttl=1.0)
-    def loading_intensity(self):
-        loading_intensity = (self.memory_loading_intensity(), self.gpu_loading_intensity())
-        if 'heavy' in loading_intensity:
-            return 'heavy'
-        if 'moderate' in loading_intensity:
-            return 'moderate'
-        return 'light'
-
-    @ttl_cache(ttl=1.0)
-    def display_color(self):
-        return self.INTENSITY2COLOR.get(self.loading_intensity())
-
-    @ttl_cache(ttl=1.0)
-    def memory_display_color(self):
-        return self.INTENSITY2COLOR.get(self.memory_loading_intensity())
-
-    @ttl_cache(ttl=1.0)
-    def gpu_display_color(self):
-        return self.INTENSITY2COLOR.get(self.gpu_loading_intensity())
-
     @ttl_cache(ttl=60.0)
     def display_active(self):
         return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), 'N/A')
@@ -222,10 +194,7 @@ class Device(object):
     def fan_speed(self):
         fan_speed = nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
         if nvml.nvmlCheckReturn(fan_speed, int):
-            if fan_speed < 100:
-                fan_speed = str(fan_speed) + '%'
-            else:
-                fan_speed = 'MAX'
+            fan_speed = str(fan_speed) + '%'
         return fan_speed
 
     @ttl_cache(ttl=5.0)
@@ -303,6 +272,47 @@ class Device(object):
 
         return processes
 
+    @ttl_cache(ttl=1.0)
+    def as_snapshot(self):
+        self._snapshot = Snapshot(real=self, index=self.index,
+                                  **{key: getattr(self, key)() for key in self._snapshot_keys})
+        return self._snapshot
+
+    @property
+    def snapshot(self):
+        if self._snapshot is None:
+            self.as_snapshot()
+        return self._snapshot
+
+    @ttl_cache(ttl=1.0)
+    def memory_loading_intensity(self):
+        return self.loading_intensity_of(self.memory_utilization(), type='memory')
+
+    @ttl_cache(ttl=1.0)
+    def gpu_loading_intensity(self):
+        return self.loading_intensity_of(self.gpu_utilization(), type='gpu')
+
+    @ttl_cache(ttl=1.0)
+    def loading_intensity(self):
+        loading_intensity = (self.memory_loading_intensity(), self.gpu_loading_intensity())
+        if 'heavy' in loading_intensity:
+            return 'heavy'
+        if 'moderate' in loading_intensity:
+            return 'moderate'
+        return 'light'
+
+    @ttl_cache(ttl=1.0)
+    def display_color(self):
+        return self.INTENSITY2COLOR.get(self.loading_intensity())
+
+    @ttl_cache(ttl=1.0)
+    def memory_display_color(self):
+        return self.INTENSITY2COLOR.get(self.memory_loading_intensity())
+
+    @ttl_cache(ttl=1.0)
+    def gpu_display_color(self):
+        return self.INTENSITY2COLOR.get(self.gpu_loading_intensity())
+
     @staticmethod
     def loading_intensity_of(utilization, type='memory'):  # pylint: disable=redefined-builtin
         thresholds = {'memory': Device.MEMORY_UTILIZATION_THRESHOLDS,
@@ -321,18 +331,6 @@ class Device(object):
     @staticmethod
     def color_of(utilization, type='memory'):  # pylint: disable=redefined-builtin
         return Device.INTENSITY2COLOR.get(Device.loading_intensity_of(utilization, type=type))
-
-    @ttl_cache(ttl=1.0)
-    def as_snapshot(self):
-        self._snapshot = Snapshot(real=self, index=self.index,
-                                  **{key: getattr(self, key)() for key in self._snapshot_keys})
-        return self._snapshot
-
-    @property
-    def snapshot(self):
-        if self._snapshot is None:
-            self.as_snapshot()
-        return self._snapshot
 
     _snapshot_keys = [
         'name',

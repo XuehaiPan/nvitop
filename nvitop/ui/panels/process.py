@@ -249,8 +249,8 @@ class ProcessPanel(Displayable):
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         for snapshot in snapshots:
             snapshot.host_info = '{:>5} {:>5}  {}  {}'.format(
-                snapshot.cpu_percent_string,
-                snapshot.memory_percent_string,
+                snapshot.cpu_percent_string[:-1],
+                snapshot.memory_percent_string[:-1],
                 ' ' * (time_length - len(snapshot.running_time_human)) + snapshot.running_time_human,
                 snapshot.command
             )

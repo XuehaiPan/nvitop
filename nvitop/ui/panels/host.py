@@ -147,9 +147,11 @@ class HostPanel(Displayable):
     def take_snapshots(self):
         with self.snapshot_lock:
             host.cpu_percent()
+            host.virtual_memory()
+            host.swap_memory()
             self.cpu_percent = host.cpu_percent.history.last_value
-            self.virtual_memory = host.virtual_memory()
-            self.swap_memory = host.swap_memory()
+            self.virtual_memory = host.virtual_memory.history.last_value
+            self.swap_memory = host.swap_memory.history.last_value
             self.load_average = host.load_average()
 
             memory_utilizations = []
@@ -219,8 +221,8 @@ class HostPanel(Displayable):
             width_right = len(load_average) + 4
             width_left = self.width - 2 - width_right
             cpu_bar = '[ {} ]'.format(make_bar('CPU', self.cpu_percent, width_left - 4))
-            memory_bar = '[ {} ]'.format(make_bar('MEM', self.virtual_memory.percent, width_left - 4))
-            swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory.percent, width_right - 4))
+            memory_bar = '[ {} ]'.format(make_bar('MEM', self.virtual_memory, width_left - 4))
+            swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory, width_right - 4))
             self.addstr(self.y, self.x, '{}  ( {} )'.format(cpu_bar, load_average))
             self.addstr(self.y + 1, self.x, '{}  {}'.format(memory_bar, swap_bar))
             self.color_at(self.y, self.x, width=len(cpu_bar), fg='cyan', attr='bold')
@@ -290,8 +292,8 @@ class HostPanel(Displayable):
 
     def print(self):
         self.cpu_percent = host.cpu_percent()
-        self.virtual_memory = host.virtual_memory()
-        self.swap_memory = host.swap_memory()
+        self.virtual_memory = host.virtual_memory().percent
+        self.swap_memory = host.swap_memory().percent
         self.load_average = host.load_average()
 
         if self.load_average is not None:
@@ -304,8 +306,8 @@ class HostPanel(Displayable):
         width_right = len(load_average) + 4
         width_left = self.width - 2 - width_right
         cpu_bar = '[ {} ]'.format(make_bar('CPU', self.cpu_percent, width_left - 4))
-        memory_bar = '[ {} ]'.format(make_bar('MEM', self.virtual_memory.percent, width_left - 4))
-        swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory.percent, width_right - 4))
+        memory_bar = '[ {} ]'.format(make_bar('MEM', self.virtual_memory, width_left - 4))
+        swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory, width_right - 4))
 
         lines = [
             '{}  {}'.format(colored(cpu_bar, color='cyan', attrs=('bold',)),

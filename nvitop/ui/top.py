@@ -50,6 +50,8 @@ class Top(DisplayableContainer):
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
+        self.selected = self.process_panel.selected
+
         self.ascii = ascii
         self.device_panel.ascii = self.ascii
         self.host_panel.ascii = self.ascii
@@ -57,8 +59,8 @@ class Top(DisplayableContainer):
         if ascii:
             self.host_panel.full_height = self.host_panel.height = self.host_panel.compact_height
 
-        self.selected = self.process_panel.selected
-
+        self.x = self.y = 0
+        self.device_panel.x = self.host_panel.x = self.process_panel.x = self.x
         self.device_panel.y = self.y
         self.host_panel.y = self.device_panel.y + self.device_panel.height
         self.process_panel.y = self.host_panel.y + self.host_panel.height
@@ -143,7 +145,8 @@ class Top(DisplayableContainer):
 
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
-        n_term_lines, self.width = termsize = self.win.getmaxyx()
+        n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
+        self.width = n_term_cols - self.x
         heights = [
             self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
             self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,

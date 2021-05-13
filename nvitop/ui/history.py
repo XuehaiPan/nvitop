@@ -194,8 +194,8 @@ class HistoryGraph(object):
             value2 = max(value2, 0.2)
         bar = []  # pylint: disable=disallowed-name
         for h in range(self.height):
-            s1 = min(max(int(5 * (value1 - h)), 0), 4)
-            s2 = min(max(int(5 * (value2 - h)), 0), 4)
+            s1 = min(max(round(5 * (value1 - h)), 0), 4)
+            s2 = min(max(round(5 * (value2 - h)), 0), 4)
             bar.append(self.value2symbol[(s1, s2)])
         if not self.upsidedown:
             bar.reverse()
@@ -236,6 +236,13 @@ class BufferedHistoryGraph(HistoryGraph):
         self.start_time = time.monotonic()
         self.last_update_time = self.start_time
         self.buffer = []
+
+    @property
+    def last_value(self):
+        last_value = super().last_value
+        if last_value < self.baseline and len(self.buffer) > 0:
+            return sum(self.buffer) / len(self.buffer)
+        return last_value
 
     def add(self, value):
         if not isinstance(value, (int, float)):

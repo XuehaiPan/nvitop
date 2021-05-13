@@ -285,12 +285,12 @@ class GpuProcess(object):
                     )
 
                 if host_snapshot.cpu_percent < 1000.0:
-                    host_snapshot.cpu_percent_string = '{:.1f}'.format(host_snapshot.cpu_percent)
+                    host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
                 elif host_snapshot.cpu_percent < 10000:
-                    host_snapshot.cpu_percent_string = '{}'.format(int(host_snapshot.cpu_percent))
+                    host_snapshot.cpu_percent_string = '{}%'.format(int(host_snapshot.cpu_percent))
                 else:
-                    host_snapshot.cpu_percent_string = '9999+'
-                host_snapshot.memory_percent_string = '{:.1f}'.format(host_snapshot.memory_percent)
+                    host_snapshot.cpu_percent_string = '9999+%'
+                host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
 
                 if host_snapshot.is_running:
                     host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
