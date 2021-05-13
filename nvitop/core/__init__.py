@@ -14,4 +14,5 @@ __all__ = ['nvml', 'NVMLError', 'Device',
            'host', 'HostProcess', 'GpuProcess',
            'Snapshot', 'bytes2human', 'timedelta2human']
 
+
 NVMLError = nvml.NVMLError  # pylint: disable=no-member

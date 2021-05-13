@@ -9,6 +9,9 @@ import sys
 import pynvml
 
 
+__all__ = ['libnvml', 'nvml']
+
+
 class libnvml(object):
     def __init__(self):
         self._initialized = False

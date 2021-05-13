@@ -17,6 +17,9 @@ from . import host
 from .utils import Snapshot, bytes2human, timedelta2human
 
 
+__all__ = ['HostProcess', 'GpuProcess']
+
+
 if host.POSIX:
     def add_quotes(s):
         if s == '':
@@ -76,22 +79,41 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             pid = os.getpid()
 
         try:
-            return cls.INSTANCES[pid]
+            instance = cls.INSTANCES[pid]
+            if not instance._gone:
+                return instance
         except KeyError:
             pass
 
         instance = super().__new__(cls)
         instance.__init__(pid)
-        with cls.INSTANCE_LOCK:
-            cls.INSTANCES[pid] = instance
+        if not instance._gone:
+            with cls.INSTANCE_LOCK:
+                cls.INSTANCES[pid] = instance
         return instance
 
     def __init__(self, pid=None):  # pylint: disable=super-init-not-called
+        self._super_gone = False
+
         super()._init(pid, True)
         try:
             super().cpu_percent()
         except host.PsutilError:
             pass
+
+    @property
+    def _gone(self):
+        return self._super_gone
+
+    @_gone.setter
+    def _gone(self, value):
+        if value:
+            with self.INSTANCE_LOCK:
+                try:
+                    del self.INSTANCES[self.pid]
+                except KeyError:
+                    pass
+        self._super_gone = value
 
     def __str__(self):
         return super().__str__().replace(self.__class__.__module__ + '.', '', 1)
@@ -114,8 +136,14 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             return cmdline[0]
         return ' '.join(map(add_quotes, cmdline))
 
-    def as_snapshot(self):
-        return Snapshot(real=self, **self.as_dict())
+    def parent(self):
+        parent = super().parent()
+        if parent is not None:
+            return HostProcess(parent.pid)
+        return None
+
+    def as_snapshot(self, attrs=None, ad_value=None):
+        return Snapshot(real=self, **self.as_dict(attrs=attrs, ad_value=ad_value))
 
 
 class GpuProcess(object):
@@ -127,7 +155,9 @@ class GpuProcess(object):
 
     def __new__(cls, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
         try:
-            return cls.INSTANCES[(pid, device)]
+            instance = cls.INSTANCES[(pid, device)]
+            if not instance._gone:
+                return instance
         except KeyError:
             pass
 
@@ -160,9 +190,9 @@ class GpuProcess(object):
         self._username = None
 
     def __str__(self):
-        return '{}(device={}, gpu_memory={}, host={})'.format(
+        return '{}(pid={}, device={}, gpu_memory={}, host={})'.format(
             self.__class__.__name__,
-            self.device, self.gpu_memory_human(), self.host
+            self.pid, self.device, self.gpu_memory_human(), self.host
         )
 
     __repr__ = __str__

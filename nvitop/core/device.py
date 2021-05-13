@@ -13,6 +13,9 @@ from .process import GpuProcess
 from .utils import Snapshot, bytes2human
 
 
+__all__ = ['Device']
+
+
 class Device(object):
     MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
     GPU_UTILIZATION_THRESHOLDS = (10, 75)
