@@ -32,6 +32,7 @@ class Selected(object):
     def __init__(self, panel):
         self.panel = panel
         self.index = None
+        self.out_of_bounds = False
         self._proc = None
         self._ident = None
 
@@ -80,7 +81,7 @@ class Selected(object):
         return self.is_set() and (IS_SUPERUSER or self.process.username() == CURRENT_USER)
 
     def send_signal(self, sig):
-        if self.owned():
+        if self.owned() and not self.out_of_bounds:
             try:
                 self.process.send_signal(sig)
             except host.PsutilError:
@@ -91,7 +92,7 @@ class Selected(object):
                     self.clear()
 
     def terminate(self):
-        if self.owned():
+        if self.owned() and not self.out_of_bounds:
             try:
                 self.process.terminate()
             except host.PsutilError:
@@ -101,7 +102,7 @@ class Selected(object):
                 self.clear()
 
     def kill(self):
-        if self.owned():
+        if self.owned() and not self.out_of_bounds:
             try:
                 self.process.kill()
             except host.PsutilError:
@@ -114,9 +115,7 @@ class Selected(object):
         return self.send_signal(signal.SIGINT)
 
     def clear(self):
-        self.index = None
-        self._proc = None
-        self._ident = None
+        self.__init__(self.panel)
 
     reset = clear
 
@@ -307,8 +306,14 @@ class ProcessPanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
+            if IS_SUPERUSER:
+                self.addstr(self.y, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
+                self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
+                self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
+
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
+
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
@@ -317,6 +322,7 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 3, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
 
+        self.selected.out_of_bounds = True
         if len(self.snapshots) > 0:
             y = self.y + 5
             prev_device_index = None
@@ -351,6 +357,7 @@ class ProcessPanel(Displayable):
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
+                    self.selected.out_of_bounds = not (0 <= y < self.root.termsize[0])
                 else:
                     if self.selected.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=')
@@ -365,12 +372,8 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 5, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
 
-        if self.selected.owned():
-            if IS_SUPERUSER:
-                self.addstr(self.y, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
-                self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
-                self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
-            text_offset = self.x + self.width - 47
+        text_offset = self.x + self.width - 47
+        if self.selected.owned() and not self.selected.out_of_bounds:
             self.addstr(self.y, text_offset, '(Press T(TERM)/K(KILL)/^C(INT) to send signals)')
             self.color_at(self.y, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y, text_offset + 9, width=4, fg='red', attr='bold')
@@ -379,7 +382,7 @@ class ProcessPanel(Displayable):
             self.color_at(self.y, text_offset + 23, width=2, fg='magenta', attr='bold | italic')
             self.color_at(self.y, text_offset + 26, width=3, fg='red', attr='bold')
         else:
-            self.addstr(self.y, self.x, ' ' * self.width)
+            self.addstr(self.y, text_offset, ' ' * 47)
 
     def finalize(self):
         self.need_redraw = False
