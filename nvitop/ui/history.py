@@ -10,6 +10,8 @@ import threading
 import time
 from collections import deque
 
+from ..core import NA
+
 
 BOUND_UPDATE_INTERVAL = 1.0
 
@@ -130,13 +132,13 @@ class HistoryGraph(object):
         last_value = self.last_value
         if last_value >= self.baseline:
             return self.format(last_value)
-        return 'N/A'
+        return NA
 
     def max_value_string(self):
         max_value = self.max_value
         if max_value >= self.baseline:
             return self.format(max_value)
-        return 'N/A'
+        return NA
 
     def add(self, value):
         if not isinstance(value, (int, float)):

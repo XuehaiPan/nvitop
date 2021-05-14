@@ -7,12 +7,12 @@ from . import host
 from .libnvml import nvml
 from .device import Device
 from .process import HostProcess, GpuProcess
-from .utils import Snapshot, bytes2human, timedelta2human
+from .utils import NA, Snapshot, bytes2human, timedelta2human
 
 
 __all__ = ['nvml', 'NVMLError', 'Device',
            'host', 'HostProcess', 'GpuProcess',
-           'Snapshot', 'bytes2human', 'timedelta2human']
+           'NA', 'Snapshot', 'bytes2human', 'timedelta2human']
 
 
 NVMLError = nvml.NVMLError  # pylint: disable=no-member

@@ -7,12 +7,23 @@
 import time
 
 
-__all__ = ['bytes2human', 'timedelta2human', 'Snapshot']
+__all__ = ['NA', 'NaType', 'bytes2human', 'timedelta2human', 'Snapshot']
+
+
+class NotApplicableType(str):
+    def __new__(cls):
+        if not hasattr(cls, '_instance'):
+            cls._instance = super().__new__(cls, 'N/A')
+        return cls._instance
+
+
+NaType = NotApplicableType
+NA = NotApplicable = NotApplicableType()
 
 
 def bytes2human(x):
-    if x is None or x == 'N/A':
-        return 'N/A'
+    if x is None or x == NA:
+        return NA
 
     if not isinstance(x, int):
         x = round(float(x))
@@ -25,8 +36,8 @@ def bytes2human(x):
 
 
 def timedelta2human(dt):
-    if dt is None or dt == 'N/A':
-        return 'N/A'
+    if dt is None or dt == NA:
+        return NA
 
     if dt.days >= 4:
         return '{:.1f} days'.format(dt.days + dt.seconds / 86400)

@@ -7,7 +7,7 @@
 import threading
 import time
 
-from ...core import Device, GpuProcess, host
+from ...core import NA, host, Device, GpuProcess
 from ..displayable import Displayable
 from ..history import BufferedHistoryGraph
 from ..utils import colored, make_bar
@@ -72,7 +72,7 @@ class HostPanel(Displayable):
             self.height = (self.compact_height if self.compact else self.full_height)
 
     def enable_history(self):
-        GpuProcess.CLI_MODE = True
+        GpuProcess.CACHE_HOST = True
         host.cpu_percent = BufferedHistoryGraph(
             baseline=0.0,
             upperbound=100.0,
@@ -159,9 +159,9 @@ class HostPanel(Displayable):
             for device in self.devices:
                 memory_utilization = device.snapshot.memory_utilization
                 gpu_utilization = device.snapshot.gpu_utilization
-                if memory_utilization != 'N/A':
+                if memory_utilization is not NA:
                     memory_utilizations.append(float(memory_utilization))
-                if gpu_utilization != 'N/A':
+                if gpu_utilization is not NA:
                     gpu_utilizations.append(float(gpu_utilization))
             if len(memory_utilizations) > 0:
                 self.average_memory_utilization.add(sum(memory_utilizations) / len(memory_utilizations))
@@ -214,7 +214,7 @@ class HostPanel(Displayable):
             load_average = tuple('{:5.2f}'.format(value) if value < 100.0 else '100.0'
                                  for value in self.load_average)
         else:
-            load_average = ('N/A',) * 3
+            load_average = (NA,) * 3
         load_average = 'Load Average: {} {} {}'.format(*load_average)
 
         if self.compact or self.ascii:
@@ -302,7 +302,7 @@ class HostPanel(Displayable):
             load_average = tuple('{:5.2f}'.format(value) if value < 100.0 else '100.0'
                                  for value in self.load_average)
         else:
-            load_average = ('N/A',) * 3
+            load_average = (NA,) * 3
         load_average = 'Load Average: {} {} {}'.format(*load_average)
 
         width_right = len(load_average) + 4

@@ -6,6 +6,8 @@
 
 import sys
 
+from ..core import NA
+
 
 try:
     if not sys.stdout.isatty():
@@ -34,7 +36,7 @@ BLOCK_CHARS = ' ▏▎▍▌▋▊▉'
 
 def make_bar(prefix, percent, width):
     bar = '{}: '.format(prefix)
-    if percent != 'N/A':
+    if percent != NA:
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent[:-1]
         percentage = float(percent) / 100.0

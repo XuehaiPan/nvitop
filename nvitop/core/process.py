@@ -8,20 +8,24 @@ import datetime
 import functools
 import os
 import threading
-import time
 from abc import ABCMeta
+from typing import List, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
 
 from cachetools.func import ttl_cache
 
 from . import host
-from .utils import Snapshot, bytes2human, timedelta2human
+from .utils import NA, NaType, Snapshot, bytes2human, timedelta2human
+
+
+if TYPE_CHECKING:
+    from .device import Device
 
 
 __all__ = ['HostProcess', 'GpuProcess']
 
 
 if host.POSIX:
-    def add_quotes(s):
+    def add_quotes(s: str) -> str:
         if s == '':
             return '""'
         if '$' not in s and '\\' not in s:
@@ -33,7 +37,7 @@ if host.POSIX:
             return "'{}'".format(s)
         return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
 elif host.WINDOWS:
-    def add_quotes(s):
+    def add_quotes(s: str) -> str:
         if s == '':
             return '""'
         if '%' not in s and '^' not in s:
@@ -43,14 +47,14 @@ elif host.WINDOWS:
                 return '"{}"'.format(s)
         return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
 else:
-    def add_quotes(s):
+    def add_quotes(s: str) -> str:
         return '"{}"'.format(s)
 
 
-def auto_garbage_clean(default=None):
-    def wrapper(func):
+def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapped(self, *args, **kwargs):
+        def wrapped(self: 'GpuProcess', *args, **kwargs) -> Any:
             try:
                 return func(self, *args, **kwargs)
             except host.PsutilError:
@@ -64,6 +68,8 @@ def auto_garbage_clean(default=None):
                         del HostProcess.INSTANCES[self.pid]
                 except KeyError:
                     pass
+                if isinstance(default, tuple):
+                    default = list(default)
                 return default
         return wrapped
 
@@ -74,7 +80,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
-    def __new__(cls, pid=None):
+    def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
         if pid is None:
             pid = os.getpid()
 
@@ -86,13 +92,11 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             pass
 
         instance = super().__new__(cls)
-        instance.__init__(pid)
-        if not instance._gone:
-            with cls.INSTANCE_LOCK:
-                cls.INSTANCES[pid] = instance
+        with cls.INSTANCE_LOCK:
+            cls.INSTANCES[pid] = instance
         return instance
 
-    def __init__(self, pid=None):  # pylint: disable=super-init-not-called
+    def __init__(self, pid: Optional[int] = None) -> None:  # pylint: disable=super-init-not-called
         self._super_gone = False
 
         super()._init(pid, True)
@@ -102,11 +106,11 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             pass
 
     @property
-    def _gone(self):
+    def _gone(self) -> bool:
         return self._super_gone
 
     @_gone.setter
-    def _gone(self, value):
+    def _gone(self, value: str) -> None:
         if value:
             with self.INSTANCE_LOCK:
                 try:
@@ -115,7 +119,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                     pass
         self._super_gone = value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return super().__str__().replace(self.__class__.__module__ + '.', '', 1)
 
     __repr__ = __str__
@@ -125,10 +129,10 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     memory_percent = ttl_cache(ttl=1.0)(host.Process.memory_percent)
 
     if host.WINDOWS:
-        def username(self):
+        def username(self) -> str:
             return super().username().split('\\')[-1]
 
-    def command(self):
+    def command(self) -> str:
         cmdline = self.cmdline()
         if len(cmdline) > 1:
             cmdline = '\0'.join(cmdline).strip('\0').split('\0')
@@ -136,24 +140,26 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             return cmdline[0]
         return ' '.join(map(add_quotes, cmdline))
 
-    def parent(self):
+    def parent(self) -> Union['HostProcess', None]:
         parent = super().parent()
         if parent is not None:
             return HostProcess(parent.pid)
         return None
 
-    def as_snapshot(self, attrs=None, ad_value=None):
+    def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
         return Snapshot(real=self, **self.as_dict(attrs=attrs, ad_value=ad_value))
 
 
 class GpuProcess(object):
-    CLI_MODE = False
+    CACHE_HOST = False
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
     SNAPSHOT_LOCK = threading.RLock()
     HOST_SNAPSHOTS = {}
 
-    def __new__(cls, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
+    def __new__(cls, pid: int, device: 'Device',
+                gpu_memory: Optional[Union[int, NaType]] = None,  # pylint: disable=unused-argument
+                type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=unused-argument,redefined-builtin
         try:
             instance = cls.INSTANCES[(pid, device)]
             if not instance._gone:
@@ -162,7 +168,6 @@ class GpuProcess(object):
             pass
 
         instance = super().__new__(cls)
-        instance.__init__(pid, device, gpu_memory, type)
         with cls.INSTANCE_LOCK:
             cls.INSTANCES[(pid, device)] = instance
             with cls.SNAPSHOT_LOCK:
@@ -172,131 +177,135 @@ class GpuProcess(object):
                     pass
         return instance
 
-    def __init__(self, pid, device, gpu_memory=None, type=None):  # pylint: disable=redefined-builtin
+    def __init__(self, pid: int, device: 'Device',
+                 gpu_memory: Optional[Union[int, NaType]] = None,
+                 type: Optional[Union[str, NaType]] = None) -> None:  # pylint: disable=redefined-builtin
         self._pid = pid
         self.host = HostProcess(pid)
         self._ident = (*self.host._ident, device.index)
 
         self.device = device
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
-            gpu_memory = 'N/A'
+            gpu_memory = NA
         if gpu_memory is not None:
             self.set_gpu_memory(gpu_memory)
         if type is None and not hasattr(self, '_type'):
-            type = ''
+            type = NA
         if type is not None:
             self.type = type
         self._hash = None
         self._username = None
 
-    def __str__(self):
-        return '{}(pid={}, device={}, gpu_memory={}, host={})'.format(
+    def __str__(self) -> str:
+        return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
             self.__class__.__name__,
-            self.pid, self.device, self.gpu_memory_human(), self.host
+            self.pid, self.gpu_memory_human(), self.type,
+            self.device, self.host
         )
 
     __repr__ = __str__
 
-    def __eq__(self, other):
+    def __eq__(self, other: Union[host.Process, 'GpuProcess']) -> bool:
         if not isinstance(other, (GpuProcess, host.Process)):
             return NotImplemented
         return self._ident == other._ident
 
-    def __ne__(self, other):
+    def __ne__(self, other: Union[host.Process, 'GpuProcess']) -> bool:
         return not self == other
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         if self._hash is None:
             self._hash = hash(self._ident)
         return self._hash
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
         try:
             return super().__getattr__(name)
         except AttributeError:
             return getattr(self.host, name)
 
     @property
-    def pid(self):
+    def pid(self) -> int:
         return self._pid
 
-    def gpu_memory(self):
+    def gpu_memory(self) -> Union[int, NaType]:
         return self._gpu_memory
 
-    def gpu_memory_human(self):
+    def gpu_memory_human(self) -> Union[str, NaType]:
         return self._gpu_memory_human
 
-    def set_gpu_memory(self, value):
+    def set_gpu_memory(self, value: Union[int, NaType]) -> None:
         self._gpu_memory = value  # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
 
-    def update_gpu_memory(self):
-        self._gpu_memory = 'N/A'  # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_human = 'N/A'  # pylint: disable=attribute-defined-outside-init
+    def update_gpu_status(self) -> Union[int, NaType]:
+        self._gpu_memory = NA  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_human = NA  # pylint: disable=attribute-defined-outside-init
         self.device.processes()
         return self.gpu_memory()
 
     @property
-    def type(self):
+    def type(self) -> Union[str, NaType]:
         return self._type
 
     @type.setter
-    def type(self, value):
-        self._type = ''
-        if 'C' in value:
-            self._type += 'C'
-        if 'G' in value:
-            self._type += 'G'
-        if 'X' in value or self._type == 'CG':
-            self._type = 'X'
+    def type(self, value: Union[str, NaType]) -> None:
+        if 'C' in value and 'G' in value:
+            self._type = 'C+G'
+        elif 'C' in value:
+            self._type = 'C'
+        elif 'G' in value:
+            self._type = 'G'
+        else:
+            self._type = NA
 
     @ttl_cache(ttl=1.0)
-    @auto_garbage_clean(default=datetime.timedelta())
-    def running_time(self):
+    @auto_garbage_clean(default=NA)
+    def running_time(self) -> Union[datetime.timedelta, NaType]:
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
-    def running_time_human(self):
+    def running_time_human(self) -> Union[str, NaType]:
         return timedelta2human(self.running_time())
 
-    @auto_garbage_clean(default=time.time())
-    def create_time(self):
+    @auto_garbage_clean(default=NA)
+    def create_time(self) -> Union[float, NaType]:
         return self.host.create_time()
 
-    @auto_garbage_clean(default='N/A')
-    def username(self):
+    @auto_garbage_clean(default=NA)
+    def username(self) -> Union[str, NaType]:
         if self._username is None:
             self._username = self.host.username()
         return self._username
 
-    @auto_garbage_clean(default='N/A')
-    def name(self):
+    @auto_garbage_clean(default=NA)
+    def name(self) -> Union[str, NaType]:
         return self.host.name()
 
     @auto_garbage_clean(default=0.0)
-    def cpu_percent(self):
+    def cpu_percent(self) -> float:
         return self.host.cpu_percent()
 
     @auto_garbage_clean(default=0.0)
-    def memory_percent(self):
+    def memory_percent(self) -> float:
         return self.host.memory_percent()
 
     @auto_garbage_clean(default=('No Such Process',))
-    def cmdline(self):
+    def cmdline(self) -> List[str]:
         cmdline = self.host.cmdline()
         if len(cmdline) == 0:
             cmdline = ('Zombie Process',)
         return cmdline
 
-    def command(self):
+    def command(self) -> str:
         return HostProcess.command(self)
 
     @classmethod
-    def clear_host_snapshots(cls):
+    def clear_host_snapshots(cls) -> None:
         with cls.SNAPSHOT_LOCK:
             cls.HOST_SNAPSHOTS.clear()
 
     @auto_garbage_clean(default=None)
-    def as_snapshot(self):
+    def as_snapshot(self) -> Snapshot:
         with self.SNAPSHOT_LOCK:
             try:
                 host_snapshot = self.HOST_SNAPSHOTS[self.pid]
@@ -325,8 +334,8 @@ class GpuProcess(object):
                 if host_snapshot.is_running:
                     host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
                 else:
-                    host_snapshot.running_time_human = 'N/A'
-                    host_snapshot.cmdline = ('No Such Process',)
+                    host_snapshot.running_time_human = NA
+                    host_snapshot.cmdline = ['No Such Process']
                 if len(host_snapshot.cmdline) > 1:
                     host_snapshot.cmdline = '\0'.join(host_snapshot.cmdline).strip('\0').split('\0')
                 if len(host_snapshot.cmdline) == 1:
@@ -334,7 +343,7 @@ class GpuProcess(object):
                 else:
                     host_snapshot.command = ' '.join(map(add_quotes, host_snapshot.cmdline))
 
-                if self.CLI_MODE:
+                if self.CACHE_HOST:
                     self.HOST_SNAPSHOTS[self.pid] = host_snapshot
 
         return Snapshot(

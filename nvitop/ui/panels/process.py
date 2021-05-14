@@ -13,8 +13,7 @@ from collections import OrderedDict
 
 from cachetools.func import ttl_cache
 
-from ...core import GpuProcess, host
-from ...core.utils import Snapshot
+from ...core import NA, host, GpuProcess, Snapshot
 from ..displayable import Displayable
 from ..utils import colored, cut_string
 
@@ -247,6 +246,7 @@ class ProcessPanel(Displayable):
 
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         for snapshot in snapshots:
+            snapshot.type = snapshot.type.replace('C+G', 'X')
             snapshot.host_info = '{:>5} {:>5}  {}  {}'.format(
                 snapshot.cpu_percent_string[:-1],
                 snapshot.memory_percent_string[:-1],
@@ -287,7 +287,7 @@ class ProcessPanel(Displayable):
             for p in device.processes().values():
                 try:
                     username = p.username()
-                    processes[(p.device.index, username != 'N/A', username, p.pid)] = p
+                    processes[(p.device.index, username != NA, username, p.pid)] = p
                 except host.PsutilError:
                     pass
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])

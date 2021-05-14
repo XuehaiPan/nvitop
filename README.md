@@ -211,10 +211,10 @@ In [9]: nvidia0.gpu_utilization()  # in percentage
 Out[9]: 5
 
 In [10]: nvidia0.processes()
-Out[10]: OrderedDict([
-    (52059, GpuProcess(pid=52059, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=7885MiB, host=HostProcess(pid=52059, name='ipython3', status='sleeping', pid=tatus, started='14:31:22'))),
-    (53002, GpuProcess(pid=53002, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=967MiB, host=HostProcess(pid=53002, name='python', status='running', started='14:31:59')))
-])
+Out[10]: {
+    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', pid=tatus, started='14:31:22')),
+    53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
+}
 
 In [11]: nvidia1 = Device(bus_id='00000000:05:00.0')  # from PCI bus ID
     ...: nvidia1
@@ -239,9 +239,12 @@ Out[12]: DeviceSnapshot(
     memory_display_color='green',
     memory_loading_intensity='light',
     memory_free=10462232576,
+    memory_free_human='9977MiB',
     memory_total=11554717696,
+    memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,
+    memory_used_human='1041MiB',
     memory_utilization=9,
     memory_utilization_string='9%',
     name='GeForce RTX 2080 Ti',
@@ -256,7 +259,7 @@ Out[12]: DeviceSnapshot(
 In [13]: nvidia1_snapshot.memory_utilization_string  # snapshot uses properties instead of function calls
 Out[13]: '9%'
 
-In [14]: nvidia1_snapshot.encoder_utilization  # snapshot will automatically retrieve unpresented attributes from `real`
+In [14]: nvidia1_snapshot.encoder_utilization  # snapshot will automatically retrieve not presented attributes from `real`
 Out[14]: [0, 1000000]
 
 In [15]: nvidia1_snapshot
@@ -278,9 +281,12 @@ Out[15]: DeviceSnapshot(
     memory_display_color='green',
     memory_loading_intensity='light',
     memory_free=10462232576,
+    memory_free_human='9977MiB',
     memory_total=11554717696,
+    memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,
+    memory_used_human='1041MiB',
     memory_utilization=9,
     memory_utilization_string='9%',
     name='GeForce RTX 2080 Ti',
@@ -298,13 +304,13 @@ Out[15]: DeviceSnapshot(
 ```python
 In [16]: processes = nvidia1.processes()
     ...: processes
-Out[16]: OrderedDict([
-    (23266, GpuProcess(pid=23266, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=1031MiB, host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')))
-])
+Out[16]: {
+    23266: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
+}
 
 In [17]: process = processes[23266]
     ...: process
-Out[17]: GpuProcess(pid=23266, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=1031MiB, host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
+Out[17]: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
 
 In [18]: process.status()
 Out[18]: 'running'
@@ -323,7 +329,7 @@ Out[22]: '1031MiB'
 
 In [23]: process.as_snapshot()
 Out[23]: GpuProcessSnapshot(
-    real=GpuProcess(pid=23266, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=1031MiB, host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
+    real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
     cpu_percent=98.5,
@@ -347,23 +353,23 @@ In [24]: process.kill()
 
 In [25]: list(map(Device.processes, all_devices))  # all processes
 Out[25]: [
-    OrderedDict([
-        (52059, GpuProcess(pid=52059, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=7885MiB, host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22'))),
-        (53002, GpuProcess(pid=53002, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=967MiB, host=HostProcess(pid=53002, name='python', status='running', started='14:31:59')))
-    ]),
-    OrderedDict(),
-    OrderedDict(),
-    OrderedDict(),
-    OrderedDict(),
-    OrderedDict(),
-    OrderedDict(),
-    OrderedDict(),
-    OrderedDict([
-        (84748, GpuProcess(pid=84748, device=Device(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=8975MiB, host=HostProcess(pid=84748, name='python', status='running', started='11:13:38')))
-    ]),
-    OrderedDict([
-        (84748, GpuProcess(pid=84748, device=Device(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=8341MiB, host=HostProcess(pid=84748, name='python', status='running', started='11:13:38')))
-    ])
+    {
+        52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
+        53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
+    },
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {},
+    {
+        84748: GpuProcess(pid=84748, gpu_memory=8975MiB, type=C, device=Device(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
+    },
+    {
+        84748: GpuProcess(pid=84748, gpu_memory=8341MiB, type=C, device=Device(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
+    }
 ]
 
 In [26]: import os
@@ -381,13 +387,13 @@ In [28]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
     ...: this = GpuProcess(os.getpid(), nvidia0)  # explicitly construct from GpuProcess rather than device.processes() call
     ...: this
-Out[28]: GpuProcess(pid=35783, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=N/A, host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[28]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [29]: this.update_gpu_memory()  # update used GPU memory from driver query
+In [29]: this.update_gpu_status()  # update used GPU memory from new driver query
 Out[29]: 267386880
 
 In [30]: this
-Out[30]: GpuProcess(pid=35783, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), gpu_memory=255MiB, host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[30]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
 In [31]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: instance will be reused while process is running
 Out[31]: True

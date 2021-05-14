@@ -5,38 +5,47 @@
 # pylint: disable=invalid-name
 
 import sys
+import threading
+from typing import Tuple, Callable, Union, Optional, Any
 
 import pynvml
+
+from .utils import NA
 
 
 __all__ = ['libnvml', 'nvml']
 
 
 class libnvml(object):
-    def __init__(self):
-        self._initialized = False
+    def __new__(cls) -> 'libnvml':
+        if not hasattr(cls, '_instance'):
+            instance = cls._instance = super().__new__(cls)
+            instance._initialized = False
+            instance._lib_lock = threading.RLock()
+        return cls._instance
 
-    def __del__(self):
+    def __del__(self) -> None:
         try:
             self.nvmlShutdown()
         except pynvml.NVMLError:
             pass
 
-    def __enter__(self):
+    def __enter__(self) -> 'libnvml':
         return self
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
+    def __exit__(self, *args, **kwargs) -> None:
         self.__del__()
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
         try:
             return super().__getattr__(name)
         except AttributeError:
             return getattr(pynvml, name)
 
-    def nvmlInit(self):
-        if self._initialized:
-            return
+    def nvmlInit(self) -> None:
+        with self._lib_lock:
+            if self._initialized:
+                return
 
         try:
             pynvml.nvmlInit()
@@ -50,13 +59,16 @@ class libnvml(object):
                   file=sys.stderr)
             raise
         else:
-            self._initialized = True
+            with self._lib_lock:
+                self._initialized = True  # pylint: disable=attribute-defined-outside-init
 
-    def nvmlShutdown(self):
+    def nvmlShutdown(self) -> None:
         pynvml.nvmlShutdown()
-        self._initialized = False
+        with self._lib_lock:
+            self._initialized = False  # pylint: disable=attribute-defined-outside-init
 
-    def nvmlQuery(self, func, *args, default='N/A', catch_error=True, **kwargs):
+    def nvmlQuery(self, func: Union[str, Callable[..., Any]], *args,
+                  default: Any = NA, ignore_errors: bool = True, **kwargs) -> Any:
         if isinstance(func, str):
             func = getattr(pynvml, func)
 
@@ -68,11 +80,11 @@ class libnvml(object):
             print('ERROR: Function Not Found.\n'
                   'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
                   file=sys.stderr)
-            if catch_error:
+            if ignore_errors:
                 return default
             raise
         except pynvml.NVMLError:
-            if catch_error:
+            if ignore_errors:
                 return default
             raise
         else:
@@ -81,10 +93,10 @@ class libnvml(object):
             return retval
 
     @staticmethod
-    def nvmlCheckReturn(retval, types=None):
+    def nvmlCheckReturn(retval: Any, types: Optional[Union[type, Tuple[type, ...]]] = None) -> bool:
         if types is None:
-            return retval != 'N/A'
-        return retval != 'N/A' and isinstance(retval, types)
+            return retval != NA
+        return retval != NA and isinstance(retval, types)
 
 
 nvml = libnvml()
