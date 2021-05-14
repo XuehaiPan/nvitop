@@ -4,7 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-import sys
+import logging
 import threading
 from typing import Tuple, Callable, Union, Optional, Any
 
@@ -17,6 +17,9 @@ __all__ = ['libnvml', 'nvml']
 
 
 class libnvml(object):
+    LOGGER = logging.getLogger('NVML')
+    UNKNOWN_FUNCTIONS = set()
+
     def __new__(cls) -> 'libnvml':
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
@@ -50,13 +53,14 @@ class libnvml(object):
         try:
             pynvml.nvmlInit()
         except pynvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
-            print('ERROR: NVIDIA Management Library (NVML) not found.\n'
-                  'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
-                  '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
-                  '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
-                  '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
-                  '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.',
-                  file=sys.stderr)
+            self.LOGGER.critical(
+                'FATAL ERROR: NVIDIA Management Library (NVML) not found.\n'
+                'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
+                '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
+                '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
+                '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
+                '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.'
+            )
             raise
         else:
             with self._lib_lock:
@@ -77,9 +81,13 @@ class libnvml(object):
         try:
             retval = func(*args, **kwargs)
         except pynvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
-            print('ERROR: Function Not Found.\n'
-                  'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
-                  file=sys.stderr)
+            if func not in self.UNKNOWN_FUNCTIONS:
+                self.UNKNOWN_FUNCTIONS.add(func)
+                self.LOGGER.error(
+                    'ERROR: A FunctionNotFound error occurred while calling %s.\n'
+                    'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
+                    'nvmlQuery({!r}, *args, **kwargs)'.format(func)
+                )
             if ignore_errors:
                 return default
             raise

@@ -152,12 +152,12 @@ class Device(object):
             self._bus_id = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetPciInfo(handle).busId, self.handle)
         return self._bus_id
 
-    def memory_total(self) -> Union[int, NaType]:
+    def memory_total(self) -> Union[int, NaType]:  # in bytes
         if self._memory_total is NA:
             self._memory_total = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).total, self.handle)
         return self._memory_total
 
-    def memory_total_human(self) -> Union[str, NaType]:
+    def memory_total_human(self) -> Union[str, NaType]:  # in human readable
         if self._memory_total_human is NA:
             self._memory_total_human = bytes2human(self.memory_total())
         return self._memory_total_human
@@ -193,62 +193,63 @@ class Device(object):
         return performance_state
 
     @ttl_cache(ttl=5.0)
-    def power_usage(self) -> Union[int, NaType]:
+    def power_draw(self) -> Union[int, NaType]:  # in milliwatts (mW)
         return nvml.nvmlQuery('nvmlDeviceGetPowerUsage', self.handle)
 
     @ttl_cache(ttl=60.0)
-    def power_limit(self) -> Union[int, NaType]:
+    def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
         return nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
 
-    def power_state(self) -> Union[str, NaType]:
-        power_usage = self.power_usage()
+    def power_usage(self) -> Union[str, NaType]:  # string of power draw over power limit in watts (W)
+        power_draw = self.power_draw()
         power_limit = self.power_limit()
-        if nvml.nvmlCheckReturn(power_usage, int) and nvml.nvmlCheckReturn(power_limit, int):
-            return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
+        if nvml.nvmlCheckReturn(power_draw, int) and nvml.nvmlCheckReturn(power_limit, int):
+            return '{}W / {}W'.format(power_draw // 1000, power_limit // 1000)
         return NA
 
     @ttl_cache(ttl=5.0)
-    def fan_speed(self) -> Union[str, NaType]:
+    def fan_speed(self) -> Union[str, NaType]:  # in percentage
         fan_speed = nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
         if nvml.nvmlCheckReturn(fan_speed, int):
             fan_speed = str(fan_speed) + '%'
         return fan_speed
 
     @ttl_cache(ttl=5.0)
-    def temperature(self) -> Union[str, NaType]:
+    def temperature(self) -> Union[str, NaType]:  # in Celsius
         temperature = nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
         if nvml.nvmlCheckReturn(temperature, int):
             temperature = str(temperature) + 'C'
         return temperature
 
     @ttl_cache(ttl=1.0)
-    def memory_used(self) -> Union[int, NaType]:
+    def memory_used(self) -> Union[int, NaType]:  # in bytes
         return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
 
     def memory_used_human(self) -> Union[str, NaType]:
         return bytes2human(self.memory_used())
 
     @ttl_cache(ttl=1.0)
-    def memory_free(self) -> Union[int, NaType]:
+    def memory_free(self) -> Union[int, NaType]:  # in bytes
         return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).free, self.handle)
 
     def memory_free_human(self) -> Union[str, NaType]:
         return bytes2human(self.memory_free())
 
-    def memory_usage(self) -> Union[str, NaType]:
+    def memory_usage(self) -> Union[str, NaType]:  # string of used memory over total memory (in human readable)
         memory_used_human = self.memory_used_human()
         memory_total_human = self.memory_total_human()
         if NA not in (memory_used_human, memory_total_human):
             return '{} / {}'.format(memory_used_human, memory_total_human)
         return NA
 
-    def memory_utilization(self) -> Union[int, NaType]:
+    def memory_utilization(self) -> Union[int, NaType]:  # used memory over total memory (in percentage)
         memory_used = self.memory_used()
         memory_total = self.memory_total()
         if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
             return 100 * memory_used // memory_total
         return NA
 
+    # string of used memory over total memory (in percentage)
     def memory_utilization_string(self) -> Union[str, NaType]:
         memory_utilization = self.memory_utilization()
         if nvml.nvmlCheckReturn(memory_utilization, int):
@@ -256,10 +257,10 @@ class Device(object):
         return NA
 
     @ttl_cache(ttl=1.0)
-    def gpu_utilization(self) -> Union[int, NaType]:
+    def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
         return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
 
-    def gpu_utilization_string(self) -> Union[str, NaType]:
+    def gpu_utilization_string(self) -> Union[str, NaType]:  # in percentage
         gpu_utilization = self.gpu_utilization()
         if nvml.nvmlCheckReturn(gpu_utilization, int):
             return str(gpu_utilization) + '%'
@@ -281,7 +282,7 @@ class Device(object):
     @ttl_cache(ttl=1.0)
     def as_snapshot(self) -> Snapshot:
         self._snapshot = Snapshot(real=self, index=self.index,
-                                  **{key: getattr(self, key)() for key in self._snapshot_keys})
+                                  **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
         return self._snapshot
 
     @property
@@ -289,6 +290,17 @@ class Device(object):
         if self._snapshot is None:
             self.as_snapshot()
         return self._snapshot
+
+    SNAPSHOT_KEYS = [
+        'name',
+        'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
+        'fan_speed', 'temperature', 'performance_state',
+        'power_draw', 'power_limit', 'power_usage', 'compute_mode',
+        'memory_used', 'memory_free', 'memory_total',
+        'memory_used_human', 'memory_free_human', 'memory_total_human', 'memory_usage',
+        'memory_utilization', 'gpu_utilization',
+        'memory_utilization_string', 'gpu_utilization_string'
+    ]
 
     def memory_loading_intensity(self) -> str:
         return self.loading_intensity_of(self.memory_utilization(), type='memory')
@@ -333,16 +345,3 @@ class Device(object):
     def color_of(utilization: Union[int, float, str, NaType],
                  type: str = 'memory') -> str:  # pylint: disable=redefined-builtin
         return Device.INTENSITY2COLOR.get(Device.loading_intensity_of(utilization, type=type))
-
-    _snapshot_keys = [
-        'name',
-        'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
-        'fan_speed', 'temperature', 'performance_state',
-        'power_usage', 'power_limit', 'power_state', 'compute_mode',
-        'memory_used', 'memory_free', 'memory_total',
-        'memory_used_human', 'memory_free_human', 'memory_total_human', 'memory_usage',
-        'memory_utilization', 'gpu_utilization',
-        'memory_utilization_string', 'gpu_utilization_string',
-        'memory_loading_intensity', 'gpu_loading_intensity', 'loading_intensity',
-        'memory_display_color', 'gpu_display_color', 'display_color'
-    ]

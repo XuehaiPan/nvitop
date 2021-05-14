@@ -7,7 +7,7 @@ import argparse
 import os
 import sys
 
-from .core import Device, NVMLError
+from .core import nvml, Device
 from .ui import Top, libcurses, colored
 
 
@@ -49,8 +49,7 @@ def parse_arguments():
     return args
 
 
-def main():  # pylint: disable=inconsistent-return-statements
-
+def main():
     args = parse_arguments()
 
     if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
@@ -59,7 +58,7 @@ def main():  # pylint: disable=inconsistent-return-statements
 
     try:
         device_count = Device.count()
-    except NVMLError:
+    except nvml.NVMLError:
         return 1
 
     if args.only is not None:
@@ -84,6 +83,18 @@ def main():  # pylint: disable=inconsistent-return-statements
         top = Top(devices, ascii=args.ascii)
     top.print()
     top.destroy()
+
+    if len(nvml.UNKNOWN_FUNCTIONS) > 0:
+        if len(nvml.UNKNOWN_FUNCTIONS) == 1:
+            print('ERROR: A FunctionNotFound error occurred while calling:', file=sys.stderr)
+        else:
+            print('ERROR: Some FunctionNotFound errors occurred while calling:', file=sys.stderr)
+        for func in nvml.UNKNOWN_FUNCTIONS:
+            print('    nvmlQuery({!r}, *args, **kwargs)'.format(func.__name__), file=sys.stderr)
+        print('Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
+              file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == '__main__':

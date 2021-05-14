@@ -201,7 +201,7 @@ In [6]: nvidia0 = Device(0)  # from device index
    ...: nvidia0
 Out[6]: Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
-In [7]: nvidia0.memory_used()
+In [7]: nvidia0.memory_used()  # in bytes
 Out[7]: 9293398016
 
 In [8]: nvidia0.memory_used_human()
@@ -227,33 +227,27 @@ Out[12]: DeviceSnapshot(
     bus_id='00000000:05:00.0',
     compute_mode='Default',
     display_active='Off',
-    display_color='yellow',
     ecc_errors='N/A',
-    fan_speed='22%',
-    gpu_display_color='yellow',
-    gpu_loading_intensity='moderate',
-    gpu_utilization=17,
-    gpu_utilization_string='17%',
+    fan_speed='22%',                    # in percentage
+    gpu_utilization=17,                 # in percentage
+    gpu_utilization_string='17%',       # in percentage
     index=1,
-    loading_intensity='moderate',
-    memory_display_color='green',
-    memory_loading_intensity='light',
-    memory_free=10462232576,
+    memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
-    memory_total=11554717696,
+    memory_total=11554717696,           # in bytes
     memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
-    memory_used=1092485120,
+    memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
-    memory_utilization=9,
-    memory_utilization_string='9%',
+    memory_utilization=9,               # in percentage
+    memory_utilization_string='9%',     # in percentage
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
-    power_limit=250000,
-    power_state='66W / 250W',
-    power_usage=66051,
-    temperature='39C'
+    power_limit=250000,                 # in milliwatts (mW)
+    power_usage='66W / 250W',           # in watts (W)
+    power_draw=66051,                   # in milliwatts (mW)
+    temperature='39C'                   # in Celsius
 )
 
 In [13]: nvidia1_snapshot.memory_utilization_string  # snapshot uses properties instead of function calls
@@ -268,34 +262,28 @@ Out[15]: DeviceSnapshot(
     bus_id='00000000:05:00.0',
     compute_mode='Default',
     display_active='Off',
-    display_color='yellow',
     ecc_errors='N/A',
-    encoder_utilization=[0, 1000000],  # <-- new entry
-    fan_speed='22%',
-    gpu_display_color='yellow',
-    gpu_loading_intensity='moderate',
-    gpu_utilization=17,
-    gpu_utilization_string='17%',
+    encoder_utilization=[0, 1000000],   ##### <-- new entry #####
+    fan_speed='22%',                    # in percentage
+    gpu_utilization=17,                 # in percentage
+    gpu_utilization_string='17%',       # in percentage
     index=1,
-    loading_intensity='moderate',
-    memory_display_color='green',
-    memory_loading_intensity='light',
-    memory_free=10462232576,
+    memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
-    memory_total=11554717696,
+    memory_total=11554717696,           # in bytes
     memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
-    memory_used=1092485120,
+    memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
-    memory_utilization=9,
-    memory_utilization_string='9%',
+    memory_utilization=9,               # in percentage
+    memory_utilization_string='9%',     # in percentage
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
-    power_limit=250000,
-    power_state='66W / 250W',
-    power_usage=66051,
-    temperature='39C'
+    power_limit=250000,                 # in milliwatts (mW)
+    power_usage='66W / 250W',           # in watts (W)
+    power_draw=66051,                   # in milliwatts (mW)
+    temperature='39C'                   # in Celsius
 )
 ```
 
@@ -335,7 +323,7 @@ Out[23]: GpuProcessSnapshot(
     cpu_percent=98.5,
     cpu_percent_string='98.5%',
     device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    gpu_memory=1081081856,
+    gpu_memory=1081081856,  # in bytes
     gpu_memory_human='1031MiB',
     identity=(23266, 1620651760.15, 1),
     is_running=True,

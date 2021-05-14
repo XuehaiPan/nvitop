@@ -228,10 +228,10 @@ class GpuProcess(object):
     def pid(self) -> int:
         return self._pid
 
-    def gpu_memory(self) -> Union[int, NaType]:
+    def gpu_memory(self) -> Union[int, NaType]:  # in bytes
         return self._gpu_memory
 
-    def gpu_memory_human(self) -> Union[str, NaType]:
+    def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
         return self._gpu_memory_human
 
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:

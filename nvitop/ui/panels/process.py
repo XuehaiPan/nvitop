@@ -31,7 +31,7 @@ class Selected(object):
     def __init__(self, panel):
         self.panel = panel
         self.index = None
-        self.out_of_bounds = False
+        self.within_window = True
         self._proc = None
         self._ident = None
 
@@ -80,7 +80,7 @@ class Selected(object):
         return self.is_set() and (IS_SUPERUSER or self.process.username() == CURRENT_USER)
 
     def send_signal(self, sig):
-        if self.owned() and not self.out_of_bounds:
+        if self.owned() and self.within_window:
             try:
                 self.process.send_signal(sig)
             except host.PsutilError:
@@ -91,7 +91,7 @@ class Selected(object):
                     self.clear()
 
     def terminate(self):
-        if self.owned() and not self.out_of_bounds:
+        if self.owned() and self.within_window:
             try:
                 self.process.terminate()
             except host.PsutilError:
@@ -101,7 +101,7 @@ class Selected(object):
                 self.clear()
 
     def kill(self):
-        if self.owned() and not self.out_of_bounds:
+        if self.owned() and self.within_window:
             try:
                 self.process.kill()
             except host.PsutilError:
@@ -322,7 +322,7 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 3, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
 
-        self.selected.out_of_bounds = True
+        self.selected.within_window = False
         if len(self.snapshots) > 0:
             y = self.y + 5
             prev_device_index = None
@@ -357,7 +357,7 @@ class ProcessPanel(Displayable):
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
-                    self.selected.out_of_bounds = not (0 <= y < self.root.termsize[0])
+                    self.selected.within_window = (0 <= y < self.root.termsize[0])
                 else:
                     if self.selected.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=')
@@ -373,7 +373,7 @@ class ProcessPanel(Displayable):
             self.addstr(self.y + 5, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
 
         text_offset = self.x + self.width - 47
-        if self.selected.owned() and not self.selected.out_of_bounds:
+        if self.selected.owned() and self.selected.within_window:
             self.addstr(self.y, text_offset, '(Press T(TERM)/K(KILL)/^C(INT) to send signals)')
             self.color_at(self.y, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y, text_offset + 9, width=4, fg='red', attr='bold')
