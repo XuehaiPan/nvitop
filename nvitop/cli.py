@@ -7,6 +7,7 @@ import argparse
 import os
 import sys
 
+from . import __version__
 from .core import nvml, Device
 from .ui import Top, libcurses, colored
 
@@ -17,14 +18,15 @@ def parse_arguments():
                                                                colored('heavy', 'red'))
     parser = argparse.ArgumentParser(prog='nvitop', description='A interactive NVIDIA-GPU process viewer.',
                                      formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-m', '--monitor', type=str, default='notpresented',
+    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(__version__))
+    parser.add_argument('--monitor', '-m', dest='monitor', type=str, default=argparse.SUPPRESS,
                         nargs='?', choices=['auto', 'full', 'compact'],
                         help='Run as a resource monitor. Continuously report query data,\n'
                              'rather than the default of just once.\n'
                              'If no argument is given, the default mode `auto` is used.')
-    parser.add_argument('-o', '--only', type=int, nargs='+', metavar='idx',
-                        help='Only show the specified devices, suppress option `-ov`.')
-    parser.add_argument('-ov', '--only-visible', action='store_true',
+    parser.add_argument('--only', '-o', dest='only', type=int, nargs='+', metavar='idx',
+                        help='Only show the specified devices, suppress option `--only-visible`.')
+    parser.add_argument('--only-visible', '-ov', dest='only_visible', action='store_true',
                         help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
     parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
                         help='Thresholds of GPU utilization to distinguish load intensity.\n' +
@@ -36,10 +38,9 @@ def parse_arguments():
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
     parser.add_argument('--ascii', action='store_true',
-                        help='Use ASCII characters only.\n'
-                             'This option is useful for terminals that do not support Unicode symbols.')
+                        help='Use ASCII characters only, which is useful for terminals without Unicode support.')
     args = parser.parse_args()
-    if args.monitor is None:
+    if hasattr(args, 'monitor') and args.monitor is None:
         args.monitor = 'auto'
     if args.gpu_util_thresh is not None:
         Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
@@ -52,8 +53,8 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    if args.monitor != 'notpresented' and not (sys.stdin.isatty() and sys.stdout.isatty()):
-        print('ERROR: Must run nvitop monitor mode from terminal.', file=sys.stderr)
+    if hasattr(args, 'monitor') and not (sys.stdin.isatty() and sys.stdout.isatty()):
+        print('ERROR: You must run monitor mode from a terminal.', file=sys.stderr)
         return 1
 
     try:
@@ -75,7 +76,7 @@ def main():
 
     devices = Device.from_indices(visible_devices)
 
-    if args.monitor != 'notpresented' and len(visible_devices) > 0:
+    if hasattr(args, 'monitor') and len(visible_devices) > 0:
         with libcurses() as win:
             top = Top(devices, ascii=args.ascii, mode=args.monitor, win=win)
             top.loop()

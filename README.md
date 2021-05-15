@@ -53,21 +53,21 @@ Compare to `nvidia-smi`:
 Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop) / ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)):
 
 ```bash
-$ pip3 install --upgrade nvitop
+pip3 install --upgrade nvitop
 ```
 
 Install the latest version from GitHub (*recommended*):
 
 ```bash
-$ pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
+pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
 Or, clone this repo and install manually:
 
 ```bash
-$ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
-$ cd nvitop
-$ pip3 install .
+git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
+cd nvitop
+pip3 install .
 ```
 
 **IMPORTANT**: `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/#history), and install the compatible version manually.
@@ -89,7 +89,7 @@ $ nvitop -ov
 
 *Note: `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for both (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
 
-Run as a resource monitor, like `htop`:
+Run as a resource monitor:
 
 ```bash
 # Automatically configure the display mode according to the terminal size
@@ -119,22 +119,24 @@ $ docker run -it --rm --gpus all --pid=host nvitop:latest -m
 
 Type `nvitop --help` for more information:
 
-```
-usage: nvitop [-h] [-m [{auto,full,compact}]] [-o idx [idx ...]] [-ov]
+```text
+usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]]
+              [--only idx [idx ...]] [--only-visible]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--ascii]
 
 A interactive NVIDIA-GPU process viewer.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -m [{auto,full,compact}], --monitor [{auto,full,compact}]
+  --help, -h            show this help message and exit
+  --version             show program's version number and exit
+  --monitor [{auto,full,compact}], -m [{auto,full,compact}]
                         Run as a resource monitor. Continuously report query data,
                         rather than the default of just once.
                         If no argument is given, the default mode `auto` is used.
-  -o idx [idx ...], --only idx [idx ...]
-                        Only show the specified devices, suppress option `-ov`.
-  -ov, --only-visible   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
+  --only idx [idx ...], -o idx [idx ...]
+                        Only show the specified devices, suppress option `--only-visible`.
+  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to distinguish load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
@@ -143,8 +145,7 @@ optional arguments:
                         Thresholds of GPU memory utilization to distinguish load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
-  --ascii               Use ASCII characters only.
-                        This option is useful for terminals that do not support Unicode symbols.
+  --ascii               Use ASCII characters only, which is useful for terminals without Unicode support.
 ```
 
 #### Keybindings for monitor mode
