@@ -51,6 +51,14 @@ else:
         return '"{}"'.format(s)
 
 
+def command_join(cmdline: Iterable[str]) -> str:
+    if len(cmdline) > 1:
+        cmdline = '\0'.join(cmdline).strip('\0').split('\0')
+    if len(cmdline) == 1:
+        return cmdline[0]
+    return ' '.join(map(add_quotes, cmdline))
+
+
 def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
@@ -137,12 +145,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             return super().username().split('\\')[-1]
 
     def command(self) -> str:
-        cmdline = self.cmdline()
-        if len(cmdline) > 1:
-            cmdline = '\0'.join(cmdline).strip('\0').split('\0')
-        if len(cmdline) == 1:
-            return cmdline[0]
-        return ' '.join(map(add_quotes, cmdline))
+        return command_join(self.cmdline())
 
     def parent(self) -> Union['HostProcess', None]:
         parent = super().parent()
@@ -332,6 +335,7 @@ class GpuProcess(object):
                         running_time=self.running_time()
                     )
 
+                host_snapshot.command = command_join(host_snapshot.cmdline)
                 if host_snapshot.cpu_percent < 1000.0:
                     host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
                 elif host_snapshot.cpu_percent < 10000:
@@ -339,18 +343,7 @@ class GpuProcess(object):
                 else:
                     host_snapshot.cpu_percent_string = '9999+%'
                 host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
-
-                if host_snapshot.is_running:
-                    host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
-                elif self.CLIENT_MODE:
-                    host_snapshot.running_time_human = NA
-                    host_snapshot.cmdline = ['No Such Process']
-                if len(host_snapshot.cmdline) > 1:
-                    host_snapshot.cmdline = '\0'.join(host_snapshot.cmdline).strip('\0').split('\0')
-                if len(host_snapshot.cmdline) == 1:
-                    host_snapshot.command = host_snapshot.cmdline[0]
-                else:
-                    host_snapshot.command = ' '.join(map(add_quotes, host_snapshot.cmdline))
+                host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
 
                 if self.CLIENT_MODE:
                     self.HOST_SNAPSHOTS[self.pid] = host_snapshot
