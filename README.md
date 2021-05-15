@@ -50,7 +50,7 @@ Compare to `nvidia-smi`:
 
 ## Installation
 
-Install from PyPI ([https://pypi.org/project/nvitop](https://pypi.org/project/nvitop)):
+Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop) / ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)):
 
 ```bash
 $ pip3 install --upgrade nvitop

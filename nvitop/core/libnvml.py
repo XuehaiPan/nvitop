@@ -6,6 +6,7 @@
 
 import logging
 import threading
+from types import FunctionType
 from typing import Tuple, Callable, Union, Optional, Any
 
 import pynvml
@@ -18,6 +19,7 @@ __all__ = ['libnvml', 'nvml']
 
 class libnvml(object):
     LOGGER = logging.getLogger('NVML')
+    FLAGS = set()
     UNKNOWN_FUNCTIONS = set()
 
     def __new__(cls) -> 'libnvml':
@@ -25,6 +27,12 @@ class libnvml(object):
             instance = cls._instance = super().__new__(cls)
             instance._initialized = False
             instance._lib_lock = threading.RLock()
+            for name, attr in vars(pynvml).items():
+                if name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
+                    continue
+                if name.startswith('NVML_') or (name.startswith('nvml') and isinstance(attr, FunctionType)):
+                    setattr(instance, name, attr)
+
         return cls._instance
 
     def __del__(self) -> None:
@@ -46,12 +54,15 @@ class libnvml(object):
             return getattr(pynvml, name)
 
     def nvmlInit(self) -> None:
+        self.nvmlInitWithFlags(0)
+
+    def nvmlInitWithFlags(self, flags: int) -> None:
         with self._lib_lock:
-            if self._initialized:
+            if self._initialized and flags in self.FLAGS:
                 return
 
         try:
-            pynvml.nvmlInit()
+            pynvml.nvmlInitWithFlags(flags)
         except pynvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
             self.LOGGER.critical(
                 'FATAL ERROR: NVIDIA Management Library (NVML) not found.\n'
@@ -65,6 +76,7 @@ class libnvml(object):
         else:
             with self._lib_lock:
                 self._initialized = True  # pylint: disable=attribute-defined-outside-init
+                self.FLAGS.add(flags)
 
     def nvmlShutdown(self) -> None:
         pynvml.nvmlShutdown()

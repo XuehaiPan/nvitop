@@ -17,6 +17,9 @@ class NotApplicableType(str):
         return cls._instance
 
 
+# isinstance(NA, str)       -> True
+# NA == 'N/A'               -> True
+# NA is NotApplicableType() -> True (NotApplicableType is a singleton class)
 NaType = NotApplicableType
 NA = NotApplicable = NotApplicableType()
 

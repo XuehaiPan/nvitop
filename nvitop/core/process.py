@@ -94,16 +94,15 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         instance = super().__new__(cls)
         with cls.INSTANCE_LOCK:
             cls.INSTANCES[pid] = instance
-        return instance
 
-    def __init__(self, pid: Optional[int] = None) -> None:  # pylint: disable=super-init-not-called
-        self._super_gone = False
-
-        super()._init(pid, True)
+        instance._super_gone = False
+        host.Process._init(instance, pid, True)
         try:
-            super().cpu_percent()
+            host.Process.cpu_percent(instance)
         except host.PsutilError:
             pass
+
+        return instance
 
     @property
     def _gone(self) -> bool:
@@ -160,6 +159,9 @@ class GpuProcess(object):
     def __new__(cls, pid: int, device: 'Device',
                 gpu_memory: Optional[Union[int, NaType]] = None,  # pylint: disable=unused-argument
                 type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=unused-argument,redefined-builtin
+        if pid is None:
+            pid = os.getpid()
+
         try:
             instance = cls.INSTANCES[(pid, device)]
             if not instance._gone:
@@ -175,16 +177,20 @@ class GpuProcess(object):
                     del cls.HOST_SNAPSHOTS[pid]
                 except KeyError:
                     pass
+
+        instance._pid = pid
+        instance.host = HostProcess(pid)
+        instance._ident = (*instance.host._ident, device.index)
+        instance.device = device
+
+        instance._hash = None
+        instance._username = None
+
         return instance
 
-    def __init__(self, pid: int, device: 'Device',
+    def __init__(self, pid: int, device: 'Device',  # pylint: disable=unused-argument
                  gpu_memory: Optional[Union[int, NaType]] = None,
                  type: Optional[Union[str, NaType]] = None) -> None:  # pylint: disable=redefined-builtin
-        self._pid = pid
-        self.host = HostProcess(pid)
-        self._ident = (*self.host._ident, device.index)
-
-        self.device = device
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
             gpu_memory = NA
         if gpu_memory is not None:
@@ -193,8 +199,6 @@ class GpuProcess(object):
             type = NA
         if type is not None:
             self.type = type
-        self._hash = None
-        self._username = None
 
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
