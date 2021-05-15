@@ -68,8 +68,10 @@ def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[...,
                         del HostProcess.INSTANCES[self.pid]
                 except KeyError:
                     pass
+                if not GpuProcess.CLIENT_MODE:
+                    raise
                 if isinstance(default, tuple):
-                    default = list(default)
+                    return list(default)
                 return default
         return wrapped
 
@@ -103,6 +105,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             pass
 
         return instance
+
+    def __init__(self, pid: Optional[int] = None) -> None:  # pylint: disable=unused-argument,super-init-not-called
+        pass
 
     @property
     def _gone(self) -> bool:
@@ -150,7 +155,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
 
 class GpuProcess(object):
-    CACHE_HOST = False
+    CLIENT_MODE = False
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
     SNAPSHOT_LOCK = threading.RLock()
@@ -218,8 +223,8 @@ class GpuProcess(object):
         return not self == other
 
     def __hash__(self) -> int:
-        if self._hash is None:
-            self._hash = hash(self._ident)
+        if self._hash is None:  # pylint: disable=access-member-before-definition
+            self._hash = hash(self._ident)  # pylint: disable=attribute-defined-outside-init
         return self._hash
 
     def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
@@ -277,8 +282,8 @@ class GpuProcess(object):
 
     @auto_garbage_clean(default=NA)
     def username(self) -> Union[str, NaType]:
-        if self._username is None:
-            self._username = self.host.username()
+        if self._username is None:  # pylint: disable=access-member-before-definition
+            self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
         return self._username
 
     @auto_garbage_clean(default=NA)
@@ -296,8 +301,8 @@ class GpuProcess(object):
     @auto_garbage_clean(default=('No Such Process',))
     def cmdline(self) -> List[str]:
         cmdline = self.host.cmdline()
-        if len(cmdline) == 0:
-            cmdline = ('Zombie Process',)
+        if self.CLIENT_MODE and len(cmdline) == 0:
+            cmdline = ['Zombie Process']
         return cmdline
 
     def command(self) -> str:
@@ -337,7 +342,7 @@ class GpuProcess(object):
 
                 if host_snapshot.is_running:
                     host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
-                else:
+                elif self.CLIENT_MODE:
                     host_snapshot.running_time_human = NA
                     host_snapshot.cmdline = ['No Such Process']
                 if len(host_snapshot.cmdline) > 1:
@@ -347,7 +352,7 @@ class GpuProcess(object):
                 else:
                     host_snapshot.command = ' '.join(map(add_quotes, host_snapshot.cmdline))
 
-                if self.CACHE_HOST:
+                if self.CLIENT_MODE:
                     self.HOST_SNAPSHOTS[self.pid] = host_snapshot
 
         return Snapshot(

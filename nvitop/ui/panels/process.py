@@ -162,6 +162,7 @@ class ProcessPanel(Displayable):
         super().__init__(win, root)
 
         self.devices = devices
+        GpuProcess.CLIENT_MODE = True
 
         self._compact = compact
         self.width = max(79, root.width)

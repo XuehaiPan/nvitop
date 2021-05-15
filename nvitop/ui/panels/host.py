@@ -72,7 +72,6 @@ class HostPanel(Displayable):
             self.height = (self.compact_height if self.compact else self.full_height)
 
     def enable_history(self):
-        GpuProcess.CACHE_HOST = True
         host.cpu_percent = BufferedHistoryGraph(
             baseline=0.0,
             upperbound=100.0,
