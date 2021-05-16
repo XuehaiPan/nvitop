@@ -10,7 +10,7 @@ import time
 from cachetools.func import ttl_cache
 
 from ...core import Device
-from ..displayable import Displayable
+from ..lib import Displayable
 from ..utils import colored, cut_string, make_bar
 
 

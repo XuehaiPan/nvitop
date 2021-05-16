@@ -9,9 +9,9 @@ import sys
 import threading
 import time
 
-from .displayable import DisplayableContainer
-from .keybinding import ALT_KEY, KeyBuffer, KeyMaps
-from .mouse import MouseEvent
+from .lib import (DisplayableContainer,
+                  ALT_KEY, KeyBuffer, KeyMaps,
+                  MouseEvent)
 from .panels import DevicePanel, HostPanel, ProcessPanel
 
 

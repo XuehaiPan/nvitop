@@ -7,9 +7,8 @@
 import threading
 import time
 
-from ...core import NA, host, Device, GpuProcess
-from ..displayable import Displayable
-from ..history import BufferedHistoryGraph
+from ...core import NA, host, Device
+from ..lib import Displayable, BufferedHistoryGraph
 from ..utils import colored, make_bar
 
 

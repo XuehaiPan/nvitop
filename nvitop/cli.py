@@ -9,7 +9,7 @@ import sys
 
 from . import __version__
 from .core import nvml, Device
-from .ui import Top, libcurses, colored
+from .gui import Top, libcurses, colored
 
 
 def parse_arguments():

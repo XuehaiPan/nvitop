@@ -14,7 +14,7 @@ from collections import OrderedDict
 from cachetools.func import ttl_cache
 
 from ...core import NA, host, GpuProcess, Snapshot
-from ..displayable import Displayable
+from ..lib import Displayable
 from ..utils import colored, cut_string
 
 
