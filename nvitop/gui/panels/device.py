@@ -190,7 +190,10 @@ class DevicePanel(Displayable):
         selected_device = (self.root.selected.process.device if self.root.selected.is_set() else None)
         for index, device in enumerate(self.snapshots):
             y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
-            attr = ('bold' if device.real == selected_device else 0)
+            if selected_device is not None:
+                attr = 'bold' if device.real == selected_device else 'dim'
+            else:
+                attr = 0
 
             device.name = cut_string(device.name, maxlen=18)
             device.fan_speed = device.fan_speed.replace('100%', 'MAX')

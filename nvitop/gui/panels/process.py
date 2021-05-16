@@ -351,8 +351,8 @@ class ProcessPanel(Displayable):
                 if self.host_offset > 0:
                     self.addstr(y, self.x + 32, ' ')
 
-                is_zombie = (process.is_running and process.cmdline == ('Zombie Process',))
-                is_gone = (not process.is_running and process.cmdline == ('No Such Process',))
+                is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
+                is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
                 if (is_zombie or is_gone) and command_offset == 0:
                     self.addstr(y, self.x + 33, process.command)
 
@@ -415,8 +415,8 @@ class ProcessPanel(Displayable):
                     process.gpu_memory_human,
                     cut_string(process.host_info, padstr='..', maxlen=self.width - 34).ljust(self.width - 34)
                 )
-                is_zombie = (process.is_running and process.cmdline == ('Zombie Process',))
-                is_gone = (not process.is_running and process.cmdline == ('No Such Process',))
+                is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
+                is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
                 if is_zombie or is_gone:
                     info = map(lambda item: colored(item, attrs=('dark',)), info.split(process.command))
                     info = colored(process.command, color=('red' if is_gone else 'yellow')).join(info)
