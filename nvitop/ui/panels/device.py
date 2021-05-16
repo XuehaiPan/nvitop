@@ -7,6 +7,8 @@
 import threading
 import time
 
+from cachetools.func import ttl_cache
+
 from ...core import Device
 from ..displayable import Displayable
 from ..utils import colored, cut_string, make_bar
@@ -86,6 +88,7 @@ class DevicePanel(Displayable):
         with self.snapshot_lock:
             self._snapshots = snapshots
 
+    @ttl_cache(ttl=1.0)
     def take_snapshots(self):
         snapshots = list(map(lambda device: device.as_snapshot(), self.devices))
 

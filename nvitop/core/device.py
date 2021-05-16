@@ -279,7 +279,6 @@ class Device(object):
 
         return processes
 
-    @ttl_cache(ttl=1.0)
     def as_snapshot(self) -> Snapshot:
         self._snapshot = Snapshot(real=self, index=self.index,
                                   **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})

@@ -184,7 +184,7 @@ class Top(DisplayableContainer):
 
         if self.width >= 79:
             super().draw()
-        else:
+        elif self.need_redraw:
             n_term_lines, n_term_cols = self.termsize
             message = 'nvitop needs at least a width of 79 to render, the current width is {}.'.format(self.width)
             width = min(max(n_term_cols, 40), n_term_cols, 60) - 10
@@ -196,12 +196,12 @@ class Top(DisplayableContainer):
                     lines[-1] = lines[-1].strip()
                     lines.append(word)
             height, width = len(lines) + 4, max(map(len, lines)) + 4
-            lines = ['│ {} |'.format(line.ljust(width - 4)) for line in lines]
+            lines = ['│ {} │'.format(line.ljust(width - 4)) for line in lines]
             lines = [
                 '╒' + '═' * (width - 2) + '╕',
-                '|' + ' ' * (width - 2) + '|',
+                '│' + ' ' * (width - 2) + '│',
                 *lines,
-                '|' + ' ' * (width - 2) + '|',
+                '│' + ' ' * (width - 2) + '│',
                 '╘' + '═' * (width - 2) + '╛',
             ]
 

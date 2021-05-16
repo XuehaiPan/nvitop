@@ -53,9 +53,11 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
+    error_messages = []
+
     if hasattr(args, 'monitor') and not (sys.stdin.isatty() and sys.stdout.isatty()):
-        print('ERROR: You must run monitor mode from a terminal.', file=sys.stderr)
-        return 1
+        error_messages.append('ERROR: You must run monitor mode from a terminal.')
+        del args.monitor
 
     try:
         device_count = Device.count()
@@ -87,13 +89,16 @@ def main():
 
     if len(nvml.UNKNOWN_FUNCTIONS) > 0:
         if len(nvml.UNKNOWN_FUNCTIONS) == 1:
-            print('ERROR: A FunctionNotFound error occurred while calling:', file=sys.stderr)
+            error_messages.append('ERROR: A FunctionNotFound error occurred while calling:')
         else:
-            print('ERROR: Some FunctionNotFound errors occurred while calling:', file=sys.stderr)
-        for func in nvml.UNKNOWN_FUNCTIONS:
-            print('    nvmlQuery({!r}, *args, **kwargs)'.format(func.__name__), file=sys.stderr)
-        print('Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
-              file=sys.stderr)
+            error_messages.append('ERROR: Some FunctionNotFound errors occurred while calling:')
+        error_messages.extend([
+            *list(map('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format, nvml.UNKNOWN_FUNCTIONS)),
+            'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.'
+        ])
+    if len(error_messages) > 0:
+        for message in error_messages:
+            print(message, file=sys.stderr)
         return 1
     return 0
 

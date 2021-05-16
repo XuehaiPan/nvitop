@@ -10,6 +10,22 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 
 ![Screenshot Monitor](https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png)
 
+### Table of Contents  <!-- omit in toc -->
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Usage](#usage)
+    - [Device and Process Status](#device-and-process-status)
+    - [Resource Monitor](#resource-monitor)
+        - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
+    - [More than Monitoring](#more-than-monitoring)
+        - [Device](#device)
+        - [Process](#process)
+        - [Host (inherited from psutil)](#host-inherited-from-psutil)
+- [Screenshots](#screenshots)
+- [License](#license)
+
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for integration.
 
 [nvidia-htop](https://github.com/peci1/nvidia-htop) a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
@@ -74,6 +90,8 @@ pip3 install .
 
 ## Usage
 
+### Device and Process Status
+
 Query the device and process status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
@@ -88,6 +106,8 @@ $ nvitop -ov
 ```
 
 *Note: `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for both (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
+
+### Resource Monitor
 
 Run as a resource monitor:
 
@@ -113,9 +133,11 @@ Press `q` to return to the terminal.
 For Docker users:
 
 ```bash
-$ docker build -t nvitop:latest .
-$ docker run -it --rm --gpus all --pid=host nvitop:latest -m
+docker build --tag nvitop:latest .
+docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m
 ```
+
+**Note**: Don't forget to add `--pid=host` option when run the container.
 
 Type `nvitop --help` for more information:
 
@@ -154,22 +176,22 @@ optional arguments:
 | --------------------------------------------------------: | :-------------------------------------------------------------------- |
 |                                                       `q` | Quit and return to the terminal.                                      |
 |                                           `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.               |
-|      `<Left>` / `<Right>` <br> `[` / `]` <br> `<S-Wheel>` | Scroll the host information of processes.                             |
-|                            `<Home>` <br> `<C-a>` <br> `^` | Scroll the host information of processes to the beginning of line.    |
-|                             `<End>` <br> `<C-e>` <br> `$` | Scroll the host information of selected processes to the end of line. |
-| `<Up>` / `<Down>` <br> `<Tab>` / `<S-Tab>` <br> `<Wheel>` | Select and highlight process.                                         |
+|          `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                             |
+|                                `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.    |
+|                                 `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line. |
+| `<Up>` / `<Down>` <br> `<Tab>` / `<S-Tab>` <br> `<Wheel>` | Select and highlight a process.                                       |
 |                                                   `<Esc>` | Clear selection.                                                      |
 |                                                       `T` | Send `signal.SIGTERM` to the selected process (terminate).            |
 |                                                       `K` | Send `signal.SIGKILL` to the selected process (kill).                 |
-|                                          `I` <br> `<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).             |
+|                                            `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).             |
 
 **Note**: Press the `CTRL` key to multiply the mouse wheel events by `5`.
 
-## More than Monitoring
+### More than Monitoring
 
 `nvitop` can be easily integrated into other applications like [gpustat](https://github.com/wookayin/gpustat).
 
-### Device
+#### Device
 
 ```python
 In [1]: from nvitop.core import host, Device, HostProcess, GpuProcess
@@ -288,7 +310,7 @@ Out[15]: DeviceSnapshot(
 )
 ```
 
-### Process
+#### Process
 
 ```python
 In [16]: processes = nvidia1.processes()
@@ -388,7 +410,7 @@ In [31]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: instance
 Out[31]: True
 ```
 
-### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
+#### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
 ```python
 In [32]: host.cpu_count()
