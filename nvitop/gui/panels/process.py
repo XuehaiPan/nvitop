@@ -10,10 +10,9 @@ import signal
 import threading
 import time
 from collections import OrderedDict
+from operator import attrgetter
 
 from cachetools.func import ttl_cache
-
-from operator import attrgetter
 
 from ...core import NA, host, GpuProcess, Snapshot
 from ..lib import Displayable
@@ -160,13 +159,13 @@ class Selected(object):
 class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
-        'natural': (attrgetter('device.index', '_gone', 'pid', 'username'), False),
-        'pid': (attrgetter('_gone', 'pid', 'device.index'), False),
-        'username': (attrgetter('_gone', 'username', 'pid', 'device.index'), False),
-        'cpu_percent': (attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'), True),
-        'memory_percent': (attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'), True),
-        'gpu_memory': (attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'), True),
-        'time': (attrgetter('_gone', 'running_time', 'pid', 'device.index'), True),
+        'natural': (attrgetter('device.index', '_gone', 'pid', 'username'), False, 2),
+        'pid': (attrgetter('_gone', 'pid', 'device.index'), False, 9),
+        'username': (attrgetter('_gone', 'username', 'pid', 'device.index'), False, 18),
+        'gpu_memory': (attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'), True, 24),
+        'cpu_percent': (attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'), True, 33),
+        'memory_percent': (attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'), True, 39),
+        'time': (attrgetter('_gone', 'running_time', 'pid', 'device.index'), True, 45),
     }
 
     def __init__(self, devices, compact, win=None, root=None):
@@ -244,7 +243,7 @@ class ProcessPanel(Displayable):
         self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
         self.compact_height = 1 + max(6, 5 + n_processes)
         height = (self.compact_height if self.compact else self.full_height)
-        key, reverse = self.ORDERS[self.order]
+        key, reverse, _ = self.ORDERS[self.order]
         snapshots.sort(key=key, reverse=(not reverse if self.reverse else reverse))
 
         with self.snapshot_lock:
@@ -338,6 +337,7 @@ class ProcessPanel(Displayable):
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
+        self.addstr(self.y + 3, self.x + 1, ' GPU    PID      USER  GPU MEM')
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
@@ -345,6 +345,17 @@ class ProcessPanel(Displayable):
             self.addstr(self.y + 3, self.x + 33, '{}'.format(host_headers[host_offset:].ljust(self.width - 35)))
         else:
             self.addstr(self.y + 3, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
+
+        _, reverse, offset = self.ORDERS[self.order]
+        char = '▼' if (not reverse if self.reverse else reverse) else '▲'
+        if (self.order == 'natural' and reverse) or self.order in ('pid', 'username', 'gpu_memory'):
+            self.addstr(self.y + 3, self.x + offset - 1, char)
+        elif self.order != 'natural':
+            offset -= host_offset
+            if self.order == 'time':
+                offset += len(self.host_headers[-2]) - 4
+            if offset > 33 or host_offset == 0:
+                self.addstr(self.y + 3, self.x + offset - 1, char)
 
         self.selected.within_window = False
         if len(self.snapshots) > 0:
@@ -422,7 +433,7 @@ class ProcessPanel(Displayable):
         lines = ['', *self.header_lines()]
 
         if len(self.snapshots) > 0:
-            key, reverse = self.ORDERS['natural']
+            key, reverse, _ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)
             prev_device_index = None
             color = None
