@@ -35,13 +35,13 @@ class DevicePanel(Displayable):
         self.cuda_version = Device.cuda_version()
 
         self.formats_compact = [
-            '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_usage:>12} '
+            '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full = [
             '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
             '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
-            '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_usage:>12} '
+            '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 

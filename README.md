@@ -16,13 +16,13 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-    - [Device and Process Status](#device-and-process-status)
-    - [Resource Monitor](#resource-monitor)
-        - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
-    - [More than Monitoring](#more-than-monitoring)
-        - [Device](#device)
-        - [Process](#process)
-        - [Host (inherited from psutil)](#host-inherited-from-psutil)
+  - [Device and Process Status](#device-and-process-status)
+  - [Resource Monitor](#resource-monitor)
+    - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
+  - [More than Monitoring](#more-than-monitoring)
+    - [Device](#device)
+    - [Process](#process)
+    - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
 
@@ -86,7 +86,7 @@ cd nvitop
 pip3 install .
 ```
 
-**IMPORTANT**: `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/#history), and install the compatible version manually.
+**IMPORTANT**: `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
 
 ## Usage
 
@@ -137,7 +137,7 @@ docker build --tag nvitop:latest .
 docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m
 ```
 
-**Note**: Don't forget to add `--pid=host` option when run the container.
+**Note**: Don't forget to add `--pid=host` option when running the container.
 
 Type `nvitop --help` for more information:
 
@@ -172,24 +172,24 @@ optional arguments:
 
 #### Keybindings for monitor mode
 
-|                                                       Key | Binding                                                               |
-| --------------------------------------------------------: | :-------------------------------------------------------------------- |
-|                                                       `q` | Quit and return to the terminal.                                      |
-|                                           `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.               |
-|          `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                             |
-|                                `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.    |
-|                                 `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line. |
-| `<Up>` / `<Down>` <br> `<Tab>` / `<S-Tab>` <br> `<Wheel>` | Select and highlight a process.                                       |
-|                                                   `<Esc>` | Clear selection.                                                      |
-|                                                       `T` | Send `signal.SIGTERM` to the selected process (terminate).            |
-|                                                       `K` | Send `signal.SIGKILL` to the selected process (kill).                 |
-|                                            `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).             |
+|                                                   Key | Binding                                                               |
+| ----------------------------------------------------: | :-------------------------------------------------------------------- |
+|                                                   `q` | Quit and return to the terminal.                                      |
+|                                       `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.               |
+|      `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                             |
+|                            `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.    |
+|                             `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line. |
+| `<Up>` / `<Down>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                       |
+|                                               `<Esc>` | Clear selection.                                                      |
+|                                                   `T` | Send `signal.SIGTERM` to the selected process (terminate).            |
+|                                                   `K` | Send `signal.SIGKILL` to the selected process (kill).                 |
+|                                        `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).             |
 
 **Note**: Press the `CTRL` key to multiply the mouse wheel events by `5`.
 
 ### More than Monitoring
 
-`nvitop` can be easily integrated into other applications like [gpustat](https://github.com/wookayin/gpustat).
+`nvitop` can be easily integrated into other applications.
 
 #### Device
 
@@ -268,8 +268,8 @@ Out[12]: DeviceSnapshot(
     performance_state='P2',
     persistence_mode='Off',
     power_limit=250000,                 # in milliwatts (mW)
-    power_usage='66W / 250W',           # in watts (W)
-    power_draw=66051,                   # in milliwatts (mW)
+    power_status='66W / 250W',          # in watts (W)
+    power_usage=66051,                  # in milliwatts (mW)
     temperature='39C'                   # in Celsius
 )
 
@@ -304,8 +304,8 @@ Out[15]: DeviceSnapshot(
     performance_state='P2',
     persistence_mode='Off',
     power_limit=250000,                 # in milliwatts (mW)
-    power_usage='66W / 250W',           # in watts (W)
-    power_draw=66051,                   # in milliwatts (mW)
+    power_status='66W / 250W',          # in watts (W)
+    power_usage=66051,                  # in milliwatts (mW)
     temperature='39C'                   # in Celsius
 )
 ```

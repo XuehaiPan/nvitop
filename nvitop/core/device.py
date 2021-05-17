@@ -193,18 +193,20 @@ class Device(object):
         return performance_state
 
     @ttl_cache(ttl=5.0)
-    def power_draw(self) -> Union[int, NaType]:  # in milliwatts (mW)
+    def power_usage(self) -> Union[int, NaType]:  # in milliwatts (mW)
         return nvml.nvmlQuery('nvmlDeviceGetPowerUsage', self.handle)
+
+    power_draw = power_usage  # in milliwatts (mW)
 
     @ttl_cache(ttl=60.0)
     def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
         return nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
 
-    def power_usage(self) -> Union[str, NaType]:  # string of power draw over power limit in watts (W)
-        power_draw = self.power_draw()
+    def power_status(self) -> Union[str, NaType]:  # string of power draw over power limit in watts (W)
+        power_usage = self.power_usage()
         power_limit = self.power_limit()
-        if nvml.nvmlCheckReturn(power_draw, int) and nvml.nvmlCheckReturn(power_limit, int):
-            return '{}W / {}W'.format(power_draw // 1000, power_limit // 1000)
+        if nvml.nvmlCheckReturn(power_usage, int) and nvml.nvmlCheckReturn(power_limit, int):
+            return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
         return NA
 
     @ttl_cache(ttl=5.0)
@@ -294,7 +296,7 @@ class Device(object):
         'name',
         'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
         'fan_speed', 'temperature', 'performance_state',
-        'power_draw', 'power_limit', 'power_usage', 'compute_mode',
+        'power_usage', 'power_limit', 'power_status', 'compute_mode',
         'memory_used', 'memory_free', 'memory_total',
         'memory_used_human', 'memory_free_human', 'memory_total_human', 'memory_usage',
         'memory_utilization', 'gpu_utilization',
