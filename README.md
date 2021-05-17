@@ -16,13 +16,13 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Device and Process Status](#device-and-process-status)
-  - [Resource Monitor](#resource-monitor)
-    - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
-  - [More than Monitoring](#more-than-monitoring)
-    - [Device](#device)
-    - [Process](#process)
-    - [Host (inherited from psutil)](#host-inherited-from-psutil)
+    - [Device and Process Status](#device-and-process-status)
+    - [Resource Monitor](#resource-monitor)
+        - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
+    - [More than Monitoring](#more-than-monitoring)
+        - [Device](#device)
+        - [Process](#process)
+        - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
 
@@ -172,18 +172,25 @@ optional arguments:
 
 #### Keybindings for monitor mode
 
-|                                                   Key | Binding                                                               |
-| ----------------------------------------------------: | :-------------------------------------------------------------------- |
-|                                                   `q` | Quit and return to the terminal.                                      |
-|                                       `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.               |
-|      `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                             |
-|                            `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.    |
-|                             `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line. |
-| `<Up>` / `<Down>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                       |
-|                                               `<Esc>` | Clear selection.                                                      |
-|                                                   `T` | Send `signal.SIGTERM` to the selected process (terminate).            |
-|                                                   `K` | Send `signal.SIGKILL` to the selected process (kill).                 |
-|                                        `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).             |
+|                                                   Key | Binding                                                                              |
+| ----------------------------------------------------: | :----------------------------------------------------------------------------------- |
+|                                                   `q` | Quit and return to the terminal.                                                     |
+|                                       `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
+|      `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
+|                            `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.                   |
+|                             `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line.                |
+| `<Up>` / `<Down>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                      |
+|                                               `<Esc>` | Clear selection.                                                                     |
+|                                                   `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
+|                                                   `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
+|                                        `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
+|                                           `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`. |
+|                                           `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                            |
+|                                           `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                             |
+|                                           `og` (`oG`) | Sort processes by `GPU MEM` in descending (ascending) order.                         |
+|                                           `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                            |
+|                                           `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
+|                                           `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
 **Note**: Press the `CTRL` key to multiply the mouse wheel events by `5`.
 

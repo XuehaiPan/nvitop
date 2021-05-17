@@ -61,10 +61,11 @@ class HostPanel(Displayable):
 
     @property
     def compact(self):
-        return self._compact
+        return self._compact or self.ascii
 
     @compact.setter
     def compact(self, value):
+        value = value or self.ascii
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
@@ -72,52 +73,31 @@ class HostPanel(Displayable):
 
     def enable_history(self):
         host.cpu_percent = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=77, height=5,
-            dynamic_bound=True,
+            interval=1.0, width=77, height=5, upsidedown=False,
+            baseline=0.0, upperbound=100.0, dynamic_bound=True,
             format='CPU: {:.1f}%'.format
         )(host.cpu_percent)
         host.virtual_memory = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=77, height=4,
-            dynamic_bound=False,
-            upsidedown=True,
+            interval=1.0, width=77, height=4, upsidedown=True,
+            baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format='MEM: {:.1f}%'.format
-        )(
-            host.virtual_memory,
-            get_value=lambda ret: ret.percent
-        )
+        )(host.virtual_memory, get_value=lambda ret: ret.percent)
         host.swap_memory = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=77, height=1,
-            dynamic_bound=False,
-            upsidedown=False,
+            interval=1.0, width=77, height=1, upsidedown=False,
+            baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format='SWP: {:.1f}%'.format
-        )(
-            host.swap_memory,
-            get_value=lambda ret: ret.percent
-        )
+        )(host.swap_memory, get_value=lambda ret: ret.percent)
 
         def enable_history(device):
             device.memory_utilization = BufferedHistoryGraph(
-                baseline=0.0,
-                upperbound=100.0,
-                width=32,
-                height=5,
-                dynamic_bound=False,
-                format=('GPU ' + str(device.index) + ' MEM: {}%').format
+                interval=1.0, width=20, height=5, upsidedown=False,
+                baseline=0.0, upperbound=100.0, dynamic_bound=False,
+                format=('GPU ' + str(device.index) + ' MEM: {:.1f}%').format
             )(device.memory_utilization)
             device.gpu_utilization = BufferedHistoryGraph(
-                baseline=0.0,
-                upperbound=100.0,
-                width=32,
-                height=5,
-                dynamic_bound=False,
-                upsidedown=True,
-                format=('GPU ' + str(device.index) + ' UTL: {}%').format
+                interval=1.0, width=20, height=5, upsidedown=True,
+                baseline=0.0, upperbound=100.0, dynamic_bound=False,
+                format=('GPU ' + str(device.index) + ' UTL: {:.1f}%').format
             )(device.gpu_utilization)
 
         for device in self.devices:
@@ -125,20 +105,13 @@ class HostPanel(Displayable):
 
         prefix = ('AVG ' if self.device_count > 1 else '')
         self.average_memory_utilization = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=32,
-            height=5,
-            dynamic_bound=False,
+            interval=1.0, width=20, height=5, upsidedown=False,
+            baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format=(prefix + 'GPU MEM: {:.1f}%').format
         )
         self.average_gpu_utilization = BufferedHistoryGraph(
-            baseline=0.0,
-            upperbound=100.0,
-            width=32,
-            height=5,
-            dynamic_bound=False,
-            upsidedown=True,
+            interval=1.0, width=32, height=5, upsidedown=True,
+            baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format=(prefix + 'GPU UTL: {:.1f}%').format
         )
 
@@ -215,7 +188,7 @@ class HostPanel(Displayable):
             load_average = (NA,) * 3
         load_average = 'Load Average: {} {} {}'.format(*load_average)
 
-        if self.compact or self.ascii:
+        if self.compact:
             width_right = len(load_average) + 4
             width_left = self.width - 2 - width_right
             cpu_bar = '[ {} ]'.format(make_bar('CPU', self.cpu_percent, width_left - 4))

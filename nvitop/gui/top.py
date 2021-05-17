@@ -8,10 +8,9 @@ import shutil
 import sys
 import threading
 import time
+from functools import partial
 
-from .lib import (DisplayableContainer,
-                  ALT_KEY, KeyBuffer, KeyMaps,
-                  MouseEvent)
+from .lib import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
 from .panels import DevicePanel, HostPanel, ProcessPanel
 
 
@@ -30,7 +29,7 @@ class Top(DisplayableContainer):
 
         assert mode in ('auto', 'full', 'compact')
         compact = (mode == 'compact')
-        self._mode = mode
+        self.mode = mode
         self._compact = compact
 
         self.devices = devices
@@ -82,24 +81,14 @@ class Top(DisplayableContainer):
             self.need_redraw = True
             self._compact = value
 
-    @property
-    def mode(self):
-        return self._mode
-
-    @mode.setter
-    def mode(self, value):
-        if self._mode != value:
-            self._mode = value
-            self.update_size()
-
     def init_keybindings(self):
         # pylint: disable=multiple-statements
 
         def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
 
-        def auto_mode(top): top.mode = 'auto'
-        def full_mode(top): top.mode = 'full'
-        def compact_mode(top): top.mode = 'compact'
+        def change_mode(top, mode):
+            top.mode = mode
+            top.update_size()
 
         def host_left(top): top.process_panel.host_offset -= 1
         def host_right(top): top.process_panel.host_offset += 1
@@ -114,11 +103,16 @@ class Top(DisplayableContainer):
         def kill(top): top.selected.kill()
         def interrupt(top): top.selected.interrupt()
 
+        def sort_by(top, order, reverse):
+            top.process_panel.order = order
+            top.process_panel.reverse = reverse
+            top.update_size()
+
         self.keymaps.bind('root', 'q', quit)
         self.keymaps.copy('root', 'q', 'Q')
-        self.keymaps.bind('root', 'a', auto_mode)
-        self.keymaps.bind('root', 'f', full_mode)
-        self.keymaps.bind('root', 'c', compact_mode)
+        self.keymaps.bind('root', 'a', partial(change_mode, mode='auto'))
+        self.keymaps.bind('root', 'f', partial(change_mode, mode='full'))
+        self.keymaps.bind('root', 'c', partial(change_mode, mode='compact'))
 
         self.keymaps.bind('root', '<Left>', host_left)
         self.keymaps.copy('root', '<Left>', '[')
@@ -141,16 +135,23 @@ class Top(DisplayableContainer):
         self.keymaps.bind('root', '<C-c>', interrupt)
         self.keymaps.copy('root', '<C-c>', 'I')
 
+        for order in ProcessPanel.ORDERS:
+            self.keymaps.bind('root', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))
+            self.keymaps.bind('root', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True))
+
         self.keymaps.use_keymap('root')
 
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
         self.width = n_term_cols - self.x
+        full_height = self.process_panel.full_height
+        if self.process_panel.order != 'natural':
+            full_height = self.process_panel.compact_height
         heights = [
-            self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
-            self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,
-            self.device_panel.compact_height + self.host_panel.compact_height + self.process_panel.full_height,
+            self.device_panel.full_height + self.host_panel.full_height + full_height,
+            self.device_panel.compact_height + self.host_panel.full_height + full_height,
+            self.device_panel.compact_height + self.host_panel.compact_height + full_height,
         ]
         if self.mode == 'auto':
             self.compact = (n_term_lines < heights[0])

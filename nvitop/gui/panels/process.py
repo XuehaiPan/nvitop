@@ -13,6 +13,8 @@ from collections import OrderedDict
 
 from cachetools.func import ttl_cache
 
+from operator import attrgetter
+
 from ...core import NA, host, GpuProcess, Snapshot
 from ..lib import Displayable
 from ..utils import colored, cut_string
@@ -157,6 +159,15 @@ class Selected(object):
 
 class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
+    ORDERS = {
+        'natural': (attrgetter('device.index', '_gone', 'pid', 'username'), False),
+        'pid': (attrgetter('_gone', 'pid', 'device.index'), False),
+        'username': (attrgetter('_gone', 'username', 'pid', 'device.index'), False),
+        'cpu_percent': (attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'), True),
+        'memory_percent': (attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'), True),
+        'gpu_memory': (attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'), True),
+        'time': (attrgetter('_gone', 'running_time', 'pid', 'device.index'), True),
+    }
 
     def __init__(self, devices, compact, win=None, root=None):
         super().__init__(win, root)
@@ -172,6 +183,9 @@ class ProcessPanel(Displayable):
 
         self.selected = Selected(panel=self)
         self.host_offset = -1
+
+        self._order = 'natural'
+        self.reverse = False
 
         self._snapshot_buffer = []
         self._snapshots = []
@@ -194,17 +208,27 @@ class ProcessPanel(Displayable):
 
     @property
     def compact(self):
-        return self._compact
+        return self._compact or self.order != 'natural'
 
     @compact.setter
     def compact(self, value):
-        if self._compact != value:
+        if self.compact != value or self._compact != value:
             self.need_redraw = True
             self._compact = value
             processes = self.snapshots
             n_processes, n_devices = len(processes), len(set(p.device.index for p in processes))
             self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
             self.compact_height = 1 + max(6, 5 + n_processes)
+            self.height = (self.compact_height if self.compact else self.full_height)
+
+    @property
+    def order(self):
+        return self._order
+
+    @order.setter
+    def order(self, value):
+        if self._order != value:
+            self._order = value
             self.height = (self.compact_height if self.compact else self.full_height)
 
     @property
@@ -220,6 +244,8 @@ class ProcessPanel(Displayable):
         self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
         self.compact_height = 1 + max(6, 5 + n_processes)
         height = (self.compact_height if self.compact else self.full_height)
+        key, reverse = self.ORDERS[self.order]
+        snapshots.sort(key=key, reverse=(not reverse if self.reverse else reverse))
 
         with self.snapshot_lock:
             self._snapshots = snapshots
@@ -286,11 +312,8 @@ class ProcessPanel(Displayable):
         processes = {}
         for device in self.devices:
             for p in device.processes().values():
-                try:
-                    username = p.username()
-                    processes[(p.device.index, username != NA, username, p.pid)] = p
-                except host.PsutilError:
-                    pass
+                username = p.username()
+                processes[(p.device.index, username != NA, username, p.pid)] = p
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):
@@ -399,6 +422,8 @@ class ProcessPanel(Displayable):
         lines = ['', *self.header_lines()]
 
         if len(self.snapshots) > 0:
+            key, reverse = self.ORDERS['natural']
+            self.snapshots.sort(key=key, reverse=reverse)
             prev_device_index = None
             color = None
             for process in self.snapshots:
