@@ -108,6 +108,15 @@ class Top(DisplayableContainer):
             top.process_panel.reverse = reverse
             top.update_size()
 
+        def order_previous(top):
+            sort_by(top, order=top.process_panel.ORDERS[top.process_panel.order].previous, reverse=False)
+
+        def order_next(top):
+            sort_by(top, order=top.process_panel.ORDERS[top.process_panel.order].next, reverse=False)
+
+        def order_reverse(top):
+            sort_by(top, order=top.process_panel.order, reverse=(not top.process_panel.reverse))
+
         self.keymaps.bind('root', 'q', quit)
         self.keymaps.copy('root', 'q', 'Q')
         self.keymaps.bind('root', 'a', partial(change_mode, mode='auto'))
@@ -135,6 +144,9 @@ class Top(DisplayableContainer):
         self.keymaps.bind('root', '<C-c>', interrupt)
         self.keymaps.copy('root', '<C-c>', 'I')
 
+        self.keymaps.bind('root', ',', order_previous)
+        self.keymaps.bind('root', '.', order_next)
+        self.keymaps.bind('root', '/', order_reverse)
         for order in ProcessPanel.ORDERS:
             self.keymaps.bind('root', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))
             self.keymaps.bind('root', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True))
@@ -145,13 +157,10 @@ class Top(DisplayableContainer):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
         self.width = n_term_cols - self.x
-        full_height = self.process_panel.full_height
-        if self.process_panel.order != 'natural':
-            full_height = self.process_panel.compact_height
         heights = [
-            self.device_panel.full_height + self.host_panel.full_height + full_height,
-            self.device_panel.compact_height + self.host_panel.full_height + full_height,
-            self.device_panel.compact_height + self.host_panel.compact_height + full_height,
+            self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
+            self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,
+            self.device_panel.compact_height + self.host_panel.compact_height + self.process_panel.full_height,
         ]
         if self.mode == 'auto':
             self.compact = (n_term_lines < heights[0])

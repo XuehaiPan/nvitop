@@ -9,8 +9,8 @@ import getpass
 import signal
 import threading
 import time
-from collections import OrderedDict
-from operator import attrgetter
+from collections import OrderedDict, namedtuple
+from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
 
@@ -91,6 +91,9 @@ class Selected(object):
                 if not self.process.is_running():
                     self.clear()
 
+    def interrupt(self):
+        return self.send_signal(signal.SIGINT)
+
     def terminate(self):
         if self.owned() and self.within_window:
             try:
@@ -110,9 +113,6 @@ class Selected(object):
             else:
                 time.sleep(0.5)
                 self.clear()
-
-    def interrupt(self):
-        return self.send_signal(signal.SIGINT)
 
     def clear(self):
         self.__init__(self.panel)
@@ -156,16 +156,33 @@ class Selected(object):
         return False
 
 
+Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
+
+
 class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
-        'natural': (attrgetter('device.index', '_gone', 'pid', 'username'), False, 2),
-        'pid': (attrgetter('_gone', 'pid', 'device.index'), False, 9),
-        'username': (attrgetter('_gone', 'username', 'pid', 'device.index'), False, 18),
-        'gpu_memory': (attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'), True, 24),
-        'cpu_percent': (attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'), True, 33),
-        'memory_percent': (attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'), True, 39),
-        'time': (attrgetter('_gone', 'running_time', 'pid', 'device.index'), True, 45),
+        'natural':
+        Order(key=attrgetter('device.index', '_gone', 'pid', 'username'),
+              reverse=False, offset=3, column='ID', previous='time', next='pid'),
+        'pid':
+        Order(key=attrgetter('_gone', 'pid', 'device.index'),
+              reverse=False, offset=9, column='PID', previous='natural', next='username'),
+        'username':
+        Order(key=attrgetter('_gone', 'username', 'pid', 'device.index'),
+              reverse=False, offset=18, column='USER', previous='pid', next='gpu_memory'),
+        'gpu_memory':
+        Order(key=attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'),
+              reverse=True, offset=24, column='GPU-MEM', previous='username', next='cpu_percent'),
+        'cpu_percent':
+        Order(key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'),
+              reverse=True, offset=33, column='%CPU', previous='gpu_memory', next='memory_percent'),
+        'memory_percent':
+        Order(key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'),
+              reverse=True, offset=39, column='%MEM', previous='cpu_percent', next='time'),
+        'time':
+        Order(key=attrgetter('_gone', 'running_time', 'pid', 'device.index'),
+              reverse=True, offset=45, column='TIME', previous='memory_percent', next='natural'),
     }
 
     def __init__(self, devices, compact, win=None, root=None):
@@ -176,7 +193,7 @@ class ProcessPanel(Displayable):
 
         self._compact = compact
         self.width = max(79, root.width)
-        self.height = self.full_height = self.compact_height = 7
+        self.height = self._full_height = self.compact_height = 7
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
@@ -221,6 +238,14 @@ class ProcessPanel(Displayable):
             self.height = (self.compact_height if self.compact else self.full_height)
 
     @property
+    def full_height(self):
+        return self._full_height if self.order == 'natural' else self.compact_height
+
+    @full_height.setter
+    def full_height(self, value):
+        self._full_height = value
+
+    @property
     def order(self):
         return self._order
 
@@ -243,8 +268,8 @@ class ProcessPanel(Displayable):
         self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
         self.compact_height = 1 + max(6, 5 + n_processes)
         height = (self.compact_height if self.compact else self.full_height)
-        key, reverse, _ = self.ORDERS[self.order]
-        snapshots.sort(key=key, reverse=(not reverse if self.reverse else reverse))
+        key, reverse, *_ = self.ORDERS[self.order]
+        snapshots.sort(key=key, reverse=xor(reverse, self.reverse))
 
         with self.snapshot_lock:
             self._snapshots = snapshots
@@ -295,7 +320,7 @@ class ProcessPanel(Displayable):
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
-            '│ GPU    PID      USER  GPU MEM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 35)),
+            '│ GPU    PID      USER  GPU-MEM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 35)),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
         if len(self.snapshots) == 0:
@@ -337,7 +362,7 @@ class ProcessPanel(Displayable):
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-        self.addstr(self.y + 3, self.x + 1, ' GPU    PID      USER  GPU MEM')
+        self.addstr(self.y + 3, self.x + 1, ' GPU    PID      USER  GPU-MEM  ')
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
@@ -346,16 +371,29 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y + 3, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
 
-        _, reverse, offset = self.ORDERS[self.order]
-        char = '▼' if (not reverse if self.reverse else reverse) else '▲'
+        _, reverse, offset, column, *_ = self.ORDERS[self.order]
+        column_width = len(column)
+        reverse = xor(reverse, self.reverse)
+        indicator = '▼' if reverse else '▲'
         if (self.order == 'natural' and reverse) or self.order in ('pid', 'username', 'gpu_memory'):
-            self.addstr(self.y + 3, self.x + offset - 1, char)
+            self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
+            self.color_at(self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline')
+            self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
         elif self.order != 'natural':
             offset -= host_offset
             if self.order == 'time':
                 offset += len(self.host_headers[-2]) - 4
             if offset > 33 or host_offset == 0:
-                self.addstr(self.y + 3, self.x + offset - 1, char)
+                self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
+                self.color_at(self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline')
+            elif offset <= 33 < offset + column_width:
+                self.addstr(self.y + 3, self.x + 33, (column + indicator)[34 - offset:])
+                if offset + column_width >= 35:
+                    self.color_at(self.y + 3, self.x + 33, width=offset + column_width - 34, attr='bold | underline')
+            if offset + column_width >= 34:
+                self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
+        else:
+            self.color_at(self.y + 3, self.x + 2, width=3, attr='bold')
 
         self.selected.within_window = False
         if len(self.snapshots) > 0:
@@ -409,13 +447,13 @@ class ProcessPanel(Displayable):
 
         text_offset = self.x + self.width - 47
         if self.selected.owned() and self.selected.within_window:
-            self.addstr(self.y, text_offset, '(Press T(TERM)/K(KILL)/^C(INT) to send signals)')
-            self.color_at(self.y, text_offset + 7, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y, text_offset + 9, width=4, fg='red', attr='bold')
+            self.addstr(self.y, text_offset, '(Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
+            self.color_at(self.y, text_offset + 7, width=2, fg='magenta', attr='bold | italic')
+            self.color_at(self.y, text_offset + 10, width=3, fg='red', attr='bold')
             self.color_at(self.y, text_offset + 15, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y, text_offset + 17, width=4, fg='red', attr='bold')
-            self.color_at(self.y, text_offset + 23, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y, text_offset + 26, width=3, fg='red', attr='bold')
+            self.color_at(self.y, text_offset + 23, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y, text_offset + 25, width=4, fg='red', attr='bold')
         else:
             self.addstr(self.y, text_offset, ' ' * 47)
 
@@ -433,7 +471,7 @@ class ProcessPanel(Displayable):
         lines = ['', *self.header_lines()]
 
         if len(self.snapshots) > 0:
-            key, reverse, _ = self.ORDERS['natural']
+            key, reverse, *_ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)
             prev_device_index = None
             color = None

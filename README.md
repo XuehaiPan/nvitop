@@ -176,14 +176,19 @@ optional arguments:
 | ----------------------------------------------------: | :----------------------------------------------------------------------------------- |
 |                                                   `q` | Quit and return to the terminal.                                                     |
 |                                       `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
+|                                                       |                                                                                      |
 |      `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
 |                            `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.                   |
 |                             `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line.                |
 | `<Up>` / `<Down>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                      |
-|                                               `<Esc>` | Clear selection.                                                                     |
+|                                               `<Esc>` | Clear process selection.                                                             |
+|                                                       |                                                                                      |
+|                                        `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                   `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
 |                                                   `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
-|                                        `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
+|                                                       |                                                                                      |
+|                                             `,` / `.` | Select the sort column.                                                              |
+|                                                   `/` | Reverse the sort order.                                                              |
 |                                           `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`. |
 |                                           `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                            |
 |                                           `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                             |
