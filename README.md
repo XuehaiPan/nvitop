@@ -16,13 +16,13 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
-    - [Device and Process Status](#device-and-process-status)
-    - [Resource Monitor](#resource-monitor)
-        - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
-    - [More than Monitoring](#more-than-monitoring)
-        - [Device](#device)
-        - [Process](#process)
-        - [Host (inherited from psutil)](#host-inherited-from-psutil)
+  - [Device and Process Status](#device-and-process-status)
+  - [Resource Monitor](#resource-monitor)
+    - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
+  - [More than Monitoring](#more-than-monitoring)
+    - [Device](#device)
+    - [Process](#process)
+    - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
 
@@ -469,4 +469,6 @@ Example output of `nvitop -m`:
 
 ## License
 
-GNU General Public License, version 3 (GPLv3)
+`nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
+
+**Note**: Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
