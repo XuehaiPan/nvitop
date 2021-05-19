@@ -304,6 +304,8 @@ class ProcessPanel(Displayable):
                 ' ' * (time_length - len(snapshot.running_time_human)) + snapshot.running_time_human,
                 snapshot.command
             )
+            if snapshot.gpu_memory_human is NA and host.WINDOWS:
+                snapshot.gpu_memory_human = 'WDDM:N/A'
 
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots

@@ -39,12 +39,16 @@ def make_bar(prefix, percent, width):
     if percent != NA:
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent[:-1]
+            percent = float(percent) if '.' in percent else int(percent)
         percentage = float(percent) / 100.0
         quotient, remainder = divmod(max(1, round(8 * (width - len(bar) - 4) * percentage)), 8)
         bar += '█' * quotient
         if remainder > 0:
             bar += BLOCK_CHARS[remainder]
-        bar += ' {:d}%'.format(int(percent)).replace('100%', 'MAX')
+        if isinstance(percent, float) and len('{} {:.1f}%'.format(bar, percent)) <= width:
+            bar += ' {:.1f}%'.format(percent)
+        else:
+            bar += ' {:d}%'.format(int(percent)).replace('100%', 'MAX')
     else:
         bar += '░' * (width - len(bar) - 4) + ' N/A'
     return bar.ljust(width)

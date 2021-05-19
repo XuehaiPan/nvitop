@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import math
 import time
 
 
@@ -15,6 +16,29 @@ class NotApplicableType(str):
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
         return cls._instance
+
+    def __float__(self):
+        return math.nan
+
+    def __lt__(self, x):
+        if isinstance(x, (int, float)):
+            return False
+        return super().__lt__(x)
+
+    def __le__(self, x):
+        if isinstance(x, (int, float)):
+            return False
+        return super().__le__(x)
+
+    def __gt__(self, x):
+        if isinstance(x, (int, float)):
+            return True
+        return super().__gt__(x)
+
+    def __ge__(self, x):
+        if isinstance(x, (int, float)):
+            return True
+        return super().__ge__(x)
 
 
 # isinstance(NA, str)       -> True

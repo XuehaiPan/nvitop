@@ -276,7 +276,8 @@ class Device(object):
                            ('G', 'nvmlDeviceGetGraphicsRunningProcesses')]:
             for p in nvml.nvmlQuery(func, self.handle, default=()):
                 proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
-                proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int) else NA)
+                proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
+                                    else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
                 proc.type = proc.type + type
 
         return processes
