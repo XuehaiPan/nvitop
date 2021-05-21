@@ -48,18 +48,37 @@ NaType = NotApplicableType
 NA = NotApplicable = NotApplicableType()
 
 
-def bytes2human(x):
+KiB = 1 << 10
+MiB = 1 << 20
+GiB = 1 << 30
+TiB = 1 << 40
+PiB = 1 << 50
+
+
+def bytes2human(x):  # pylint: disable=too-many-return-statements
     if x is None or x == NA:
         return NA
 
     if not isinstance(x, int):
         x = round(float(x))
 
-    if x < (1 << 10):
+    if x < KiB:
         return '{}B'.format(x)
-    if x < (1 << 20):
-        return '{}KiB'.format(x >> 10)
-    return '{}MiB'.format(x >> 20)
+    if x < MiB:
+        return '{}KiB'.format(round(x / KiB))
+    if x <= 20 * GiB:
+        return '{}MiB'.format(round(x / MiB))
+    if x < 100 * GiB:
+        return '{:.2f}GiB'.format(round(x / GiB, 2))
+    if x < 1000 * GiB:
+        return '{:.1f}GiB'.format(round(x / GiB, 1))
+    if x < 100 * TiB:
+        return '{:.2f}TiB'.format(round(x / TiB, 2))
+    if x < 1000 * TiB:
+        return '{:.1f}TiB'.format(round(x / TiB, 1))
+    if x < 100 * PiB:
+        return '{:.2f}PiB'.format(round(x / PiB, 2))
+    return '{:.1f}PiB'.format(round(x / PiB, 1))
 
 
 def timedelta2human(dt):

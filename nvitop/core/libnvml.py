@@ -30,7 +30,11 @@ class libnvml(object):
             for name, attr in vars(pynvml).items():
                 if name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
                     continue
-                if name.startswith('NVML_') or (name.startswith('nvml') and isinstance(attr, FunctionType)):
+                if (
+                    name.startswith('NVML_') or name.startswith('NVMLError')
+                ) or (
+                    name.startswith('nvml') and isinstance(attr, FunctionType)
+                ):
                     setattr(instance, name, attr)
 
         return cls._instance
