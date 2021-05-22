@@ -62,7 +62,7 @@ Compare to `nvidia-smi`:
 - curses
 - termcolor
 
-**Note**: The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
+**NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
 
 ## Installation
 
@@ -86,7 +86,7 @@ cd nvitop
 pip3 install .
 ```
 
-**IMPORTANT**: `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
+**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
 
 ## Usage
 
@@ -105,7 +105,7 @@ $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 $ nvitop -ov
 ```
 
-*Note: `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
+***NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
 
 ### Resource Monitor
 
@@ -137,7 +137,7 @@ docker build --tag nvitop:latest .
 docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m
 ```
 
-**Note**: Don't forget to add `--pid=host` option when running the container.
+**NOTE:** Don't forget to add `--pid=host` option when running the container.
 
 Type `nvitop --help` for more information:
 
@@ -147,7 +147,7 @@ usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--ascii]
 
-A interactive NVIDIA-GPU process viewer.
+An interactive NVIDIA-GPU process viewer.
 
 optional arguments:
   --help, -h            show this help message and exit
@@ -197,7 +197,7 @@ optional arguments:
 |                                           `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
 |                                           `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
-**Note**: Press the `CTRL` key to multiply the mouse wheel events by `5`.
+**NOTE:** Press the `CTRL` key to multiply the mouse wheel events by `5`.
 
 ### More than Monitoring
 
@@ -471,4 +471,4 @@ Example output of `nvitop -m`:
 
 `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
 
-**Note**: Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
+**NOTE:** Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
