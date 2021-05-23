@@ -51,7 +51,7 @@ else:
         return '"{}"'.format(s)
 
 
-def command_join(cmdline: Iterable[str]) -> str:
+def command_join(cmdline: List[str]) -> str:
     if len(cmdline) > 1:
         cmdline = '\0'.join(cmdline).strip('\0').split('\0')
     if len(cmdline) == 1:
@@ -81,6 +81,7 @@ def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[...,
                 if isinstance(default, tuple):
                     return list(default)
                 return default
+
         return wrapped
 
     return wrapper
@@ -152,6 +153,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         if parent is not None:
             return HostProcess(parent.pid)
         return None
+
+    def children(self, recursive: bool = False) -> List['HostProcess']:
+        return [HostProcess(child.pid) for child in super().children(recursive)]
 
     def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
         return Snapshot(real=self, **self.as_dict(attrs=attrs, ad_value=ad_value))

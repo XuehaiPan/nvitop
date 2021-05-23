@@ -162,27 +162,34 @@ Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', '
 class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
-        'natural':
-        Order(key=attrgetter('device.index', '_gone', 'pid', 'username'),
-              reverse=False, offset=3, column='ID', previous='time', next='pid'),
-        'pid':
-        Order(key=attrgetter('_gone', 'pid', 'device.index'),
-              reverse=False, offset=9, column='PID', previous='natural', next='username'),
-        'username':
-        Order(key=attrgetter('_gone', 'username', 'pid', 'device.index'),
-              reverse=False, offset=18, column='USER', previous='pid', next='gpu_memory'),
-        'gpu_memory':
-        Order(key=attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'),
-              reverse=True, offset=24, column='GPU-MEM', previous='username', next='cpu_percent'),
-        'cpu_percent':
-        Order(key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'),
-              reverse=True, offset=33, column='%CPU', previous='gpu_memory', next='memory_percent'),
-        'memory_percent':
-        Order(key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'),
-              reverse=True, offset=39, column='%MEM', previous='cpu_percent', next='time'),
-        'time':
-        Order(key=attrgetter('_gone', 'running_time', 'pid', 'device.index'),
-              reverse=True, offset=45, column='TIME', previous='memory_percent', next='natural'),
+        'natural': Order(
+            key=attrgetter('device.index', '_gone', 'pid', 'username'),
+            reverse=False, offset=3, column='ID', previous='time', next='pid'
+        ),
+        'pid': Order(
+            key=attrgetter('_gone', 'pid', 'device.index'),
+            reverse=False, offset=9, column='PID', previous='natural', next='username'
+        ),
+        'username': Order(
+            key=attrgetter('_gone', 'username', 'pid', 'device.index'),
+            reverse=False, offset=18, column='USER', previous='pid', next='gpu_memory'
+        ),
+        'gpu_memory': Order(
+            key=attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'),
+            reverse=True, offset=24, column='GPU-MEM', previous='username', next='cpu_percent'
+        ),
+        'cpu_percent': Order(
+            key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'),
+            reverse=True, offset=33, column='%CPU', previous='gpu_memory', next='memory_percent'
+        ),
+        'memory_percent': Order(
+            key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'),
+            reverse=True, offset=39, column='%MEM', previous='cpu_percent', next='time'
+        ),
+        'time': Order(
+            key=attrgetter('_gone', 'running_time', 'pid', 'device.index'),
+            reverse=True, offset=45, column='TIME', previous='memory_percent', next='natural'
+        ),
     }
 
     def __init__(self, devices, compact, win=None, root=None):
