@@ -14,7 +14,8 @@ from typing import List, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
 from cachetools.func import ttl_cache
 
 from . import host
-from .utils import NA, NaType, Snapshot, bytes2human, timedelta2human
+from .libnvml import nvml
+from .utils import NA, NaType, Snapshot, bytes2human, timedelta2human, utilization2string
 
 
 if TYPE_CHECKING:
@@ -211,6 +212,7 @@ class GpuProcess(object):
             type = NA
         if type is not None:
             self.type = type
+        self.set_gpu_utilization()
 
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
@@ -250,13 +252,48 @@ class GpuProcess(object):
     def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
         return self._gpu_memory_human
 
+    def gpu_memory_utilization(self) -> Union[int, NaType]:  # in percentage
+        return self._gpu_memory_utilization
+
+    def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
+        return self._gpu_sm_utilization
+
+    def gpu_encoder_utilization(self) -> Union[int, NaType]:  # in percentage
+        return self._gpu_encoder_utilization
+
+    def gpu_decoder_utilization(self) -> Union[int, NaType]:  # in percentage
+        return self._gpu_decoder_utilization
+
+    def gpu_memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.gpu_memory_utilization())
+
+    def gpu_sm_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.gpu_sm_utilization())
+
+    def gpu_encoder_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.gpu_encoder_utilization())
+
+    def gpu_decoder_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.gpu_decoder_utilization())
+
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
-        self._gpu_memory = value  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory = memory_used = value  # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
+        memory_total = self.device.memory_total()
+        self._gpu_memory_utilization = NA  # pylint: disable=attribute-defined-outside-init
+        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
+            self._gpu_memory_utilization = 100 * memory_used // memory_total  # pylint: disable=attribute-defined-outside-init
+
+    def set_gpu_utilization(self, gpu_sm_utilization=NA,
+                            gpu_encoder_utilization=NA, gpu_decoder_utilization=NA) -> None:
+        self._gpu_sm_utilization = gpu_sm_utilization  # pylint: disable=attribute-defined-outside-init
+        self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
+        self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
     def update_gpu_status(self) -> Union[int, NaType]:
         self._gpu_memory = NA  # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = NA  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_utilization = NA  # pylint: disable=attribute-defined-outside-init
         self.device.processes()
         return self.gpu_memory()
 
@@ -359,6 +396,14 @@ class GpuProcess(object):
             device=self.device,
             gpu_memory=self.gpu_memory(),
             gpu_memory_human=self.gpu_memory_human(),
+            gpu_memory_utilization=self.gpu_memory_utilization(),
+            gpu_memory_utilization_string=self.gpu_memory_utilization_string(),
+            gpu_sm_utilization=self.gpu_sm_utilization(),
+            gpu_sm_utilization_string=self.gpu_sm_utilization_string(),
+            gpu_encoder_utilization=self.gpu_encoder_utilization(),
+            gpu_encoder_utilization_string=self.gpu_encoder_utilization_string(),
+            gpu_decoder_utilization=self.gpu_decoder_utilization(),
+            gpu_decoder_utilization_string=self.gpu_decoder_utilization_string(),
             type=self.type,
             username=host_snapshot.username,
             name=host_snapshot.name,

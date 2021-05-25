@@ -145,7 +145,9 @@ class Top(DisplayableContainer):
         self.keymaps.copy('root', '<C-c>', 'I')
 
         self.keymaps.bind('root', ',', order_previous)
+        self.keymaps.copy('root', ',', '<')
         self.keymaps.bind('root', '.', order_next)
+        self.keymaps.copy('root', '.', '>')
         self.keymaps.bind('root', '/', order_reverse)
         for order in ProcessPanel.ORDERS:
             self.keymaps.bind('root', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))

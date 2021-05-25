@@ -175,20 +175,24 @@ class ProcessPanel(Displayable):
             reverse=False, offset=18, column='USER', previous='pid', next='gpu_memory'
         ),
         'gpu_memory': Order(
-            key=attrgetter('_gone', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'),
-            reverse=True, offset=24, column='GPU-MEM', previous='username', next='cpu_percent'
+            key=attrgetter('_gone', 'gpu_memory', 'gpu_sm_utilization', 'cpu_percent', 'pid', 'device.index'),
+            reverse=True, offset=24, column='GPU-MEM', previous='username', next='sm_utilization'
+        ),
+        'sm_utilization': Order(
+            key=attrgetter('_gone', 'gpu_sm_utilization', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'),
+            reverse=True, offset=33, column='SM', previous='gpu_memory', next='cpu_percent'
         ),
         'cpu_percent': Order(
             key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'),
-            reverse=True, offset=33, column='%CPU', previous='gpu_memory', next='memory_percent'
+            reverse=True, offset=37, column='%CPU', previous='sm_utilization', next='memory_percent'
         ),
         'memory_percent': Order(
             key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'),
-            reverse=True, offset=39, column='%MEM', previous='cpu_percent', next='time'
+            reverse=True, offset=43, column='%MEM', previous='cpu_percent', next='time'
         ),
         'time': Order(
             key=attrgetter('_gone', 'running_time', 'pid', 'device.index'),
-            reverse=True, offset=45, column='TIME', previous='memory_percent', next='natural'
+            reverse=True, offset=49, column='TIME', previous='memory_percent', next='natural'
         ),
     }
 
@@ -284,7 +288,7 @@ class ProcessPanel(Displayable):
             self.host_headers[-2] = time_header
             self.height = height
             old_host_offset = self.host_offset
-            self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 34))
+            self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 38))
             if old_host_offset not in (self.host_offset, 1024):
                 curses.beep()
 
@@ -329,7 +333,7 @@ class ProcessPanel(Displayable):
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
-            '│ GPU    PID      USER  GPU-MEM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 35)),
+            '│ GPU    PID      USER  GPU-MEM %SM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 39)),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
         if len(self.snapshots) == 0:
@@ -371,14 +375,14 @@ class ProcessPanel(Displayable):
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-        self.addstr(self.y + 3, self.x + 1, ' GPU    PID      USER  GPU-MEM  ')
+        self.addstr(self.y + 3, self.x + 1, ' GPU    PID      USER  GPU-MEM %SM  ')
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
             host_headers = '  '.join(self.host_headers)
-            self.addstr(self.y + 3, self.x + 33, '{}'.format(host_headers[host_offset:].ljust(self.width - 35)))
+            self.addstr(self.y + 3, self.x + 37, '{}'.format(host_headers[host_offset:].ljust(self.width - 39)))
         else:
-            self.addstr(self.y + 3, self.x + 33, '{}'.format('COMMAND'.ljust(self.width - 35)))
+            self.addstr(self.y + 3, self.x + 37, '{}'.format('COMMAND'.ljust(self.width - 39)))
 
         _, reverse, offset, column, *_ = self.ORDERS[self.order]
         column_width = len(column)
@@ -392,14 +396,14 @@ class ProcessPanel(Displayable):
             offset -= host_offset
             if self.order == 'time':
                 offset += len(self.host_headers[-2]) - 4
-            if offset > 33 or host_offset == 0:
+            if offset > 37 or host_offset == 0:
                 self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
                 self.color_at(self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline')
-            elif offset <= 33 < offset + column_width:
-                self.addstr(self.y + 3, self.x + 33, (column + indicator)[34 - offset:])
-                if offset + column_width >= 35:
-                    self.color_at(self.y + 3, self.x + 33, width=offset + column_width - 34, attr='bold | underline')
-            if offset + column_width >= 34:
+            elif offset <= 37 < offset + column_width:
+                self.addstr(self.y + 3, self.x + 37, (column + indicator)[38 - offset:])
+                if offset + column_width >= 39:
+                    self.color_at(self.y + 3, self.x + 37, width=offset + column_width - 38, attr='bold | underline')
+            if offset + column_width >= 38:
                 self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
         else:
             self.color_at(self.y + 3, self.x + 2, width=3, attr='bold')
@@ -420,22 +424,23 @@ class ProcessPanel(Displayable):
 
                 host_info = process.host_info
                 if self.host_offset < 0:
-                    host_info = cut_string(host_info, padstr='..', maxlen=self.width - 34)
+                    host_info = cut_string(host_info, padstr='..', maxlen=self.width - 38)
                 else:
-                    host_info = host_info[self.host_offset:self.host_offset + self.width - 34]
+                    host_info = host_info[self.host_offset:self.host_offset + self.width - 38]
                 self.addstr(y, self.x,
-                            '│ {:>3} {:>6} {} {:>7} {:>8} {} │'.format(
+                            '│ {:>3} {:>6} {} {:>7} {:>8} {:>3} {} │'.format(
                                 device_index, cut_string(process.pid, maxlen=6, padstr='.'),
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
-                                process.gpu_memory_human, host_info.ljust(self.width - 34)
+                                process.gpu_memory_human, process.gpu_sm_utilization_string.replace('%', ''),
+                                host_info.ljust(self.width - 38)
                             ))
                 if self.host_offset > 0:
-                    self.addstr(y, self.x + 32, ' ')
+                    self.addstr(y, self.x + 36, ' ')
 
                 is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
                 is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
                 if (is_zombie or is_gone) and command_offset == 0:
-                    self.addstr(y, self.x + 33, process.command)
+                    self.addstr(y, self.x + 37, process.command)
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
@@ -448,7 +453,7 @@ class ProcessPanel(Displayable):
                     if process.username != CURRENT_USER and not IS_SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
                     if is_zombie or is_gone:
-                        self.color_at(y, self.x + 33 + command_offset, width=15, fg=('red' if is_gone else 'yellow'))
+                        self.color_at(y, self.x + 37 + command_offset, width=15, fg=('red' if is_gone else 'yellow'))
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
         else:
@@ -492,16 +497,18 @@ class ProcessPanel(Displayable):
                         lines.append('├' + '─' * (self.width - 2) + '┤')
                     prev_device_index = device_index
 
-                info = '{:>6} {} {:>7} {:>8} {}'.format(
+                info = '{:>6} {} {:>7} {:>8} {:>3} {}'.format(
                     cut_string(process.pid, maxlen=6, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
-                    process.gpu_memory_human,
-                    cut_string(process.host_info, padstr='..', maxlen=self.width - 34).ljust(self.width - 34)
+                    process.gpu_memory_human, process.gpu_sm_utilization_string.replace('%', ''),
+                    cut_string(process.host_info, padstr='..', maxlen=self.width - 38).ljust(self.width - 38)
                 )
                 is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
                 is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
                 if is_zombie or is_gone:
-                    info = map(lambda item: colored(item, attrs=('dark',)), info.split(process.command))
+                    info = info.split(process.command)
+                    if process.username != CURRENT_USER and not IS_SUPERUSER:
+                        info = map(lambda item: colored(item, attrs=('dark',)), info)
                     info = colored(process.command, color=('red' if is_gone else 'yellow')).join(info)
                 elif process.username != CURRENT_USER and not IS_SUPERUSER:
                     info = colored(info, attrs=('dark',))

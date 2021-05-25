@@ -94,6 +94,15 @@ def timedelta2human(dt):
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
+def utilization2string(utilization):
+    if utilization != NA:
+        if isinstance(utilization, int):
+            return '{}%'.format(utilization)
+        if isinstance(utilization, float):
+            return '{:.1f}%'.format(utilization)
+    return NA
+
+
 class Snapshot(object):
     def __init__(self, real, **items):
         self.real = real

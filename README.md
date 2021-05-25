@@ -192,7 +192,8 @@ optional arguments:
 |                                           `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`. |
 |                                           `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                            |
 |                                           `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                             |
-|                                           `og` (`oG`) | Sort processes by `GPU MEM` in descending (ascending) order.                         |
+|                                           `og` (`oG`) | Sort processes by `GPU-MEM` in descending (ascending) order.                         |
+|                                           `os` (`oS`) | Sort processes by `%SM` in descending (ascending) order.                             |
 |                                           `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                            |
 |                                           `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
 |                                           `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
@@ -358,8 +359,16 @@ Out[23]: GpuProcessSnapshot(
     cpu_percent=98.5,
     cpu_percent_string='98.5%',
     device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    gpu_encoder_utilization=0,
+    gpu_encoder_utilization_string='0%',
+    gpu_decoder_utilization=0,
+    gpu_decoder_utilization_string='0%',
     gpu_memory=1081081856,  # in bytes
     gpu_memory_human='1031MiB',
+    gpu_memory_utilization=9,
+    gpu_memory_utilization_string='9%',
+    gpu_sm_utilization=0,
+    gpu_sm_utilization_string='0%',
     identity=(23266, 1620651760.15, 1),
     is_running=True,
     memory_percent=1.6849018430285683,

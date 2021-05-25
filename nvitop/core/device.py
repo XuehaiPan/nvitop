@@ -10,7 +10,7 @@ from cachetools.func import ttl_cache
 
 from .libnvml import nvml
 from .process import GpuProcess
-from .utils import NA, NaType, Snapshot, bytes2human
+from .utils import NA, NaType, Snapshot, bytes2human, utilization2string
 
 
 __all__ = ['Device']
@@ -23,7 +23,7 @@ class Device(object):
 
     @staticmethod
     def count() -> int:
-        return nvml.nvmlQuery('nvmlDeviceGetCount')
+        return nvml.nvmlQuery('nvmlDeviceGetCount', default=0)
 
     @classmethod
     def from_indices(cls, indices: Optional[Iterable[int]] = None) -> List['Device']:
@@ -83,6 +83,7 @@ class Device(object):
         self._bus_id = NA
         self._memory_total = NA
         self._memory_total_human = NA
+        self._timestamp = 0
 
         self._ident = (self.index, self.bus_id())
         self._hash = None
@@ -211,10 +212,7 @@ class Device(object):
 
     @ttl_cache(ttl=5.0)
     def fan_speed(self) -> Union[str, NaType]:  # in percentage
-        fan_speed = nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
-        if nvml.nvmlCheckReturn(fan_speed, int):
-            fan_speed = str(fan_speed) + '%'
-        return fan_speed
+        return utilization2string(nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle))
 
     @ttl_cache(ttl=5.0)
     def temperature(self) -> Union[str, NaType]:  # in Celsius
@@ -251,22 +249,15 @@ class Device(object):
             return 100 * memory_used // memory_total
         return NA
 
-    # string of used memory over total memory (in percentage)
-    def memory_utilization_string(self) -> Union[str, NaType]:
-        memory_utilization = self.memory_utilization()
-        if nvml.nvmlCheckReturn(memory_utilization, int):
-            return str(memory_utilization) + '%'
-        return NA
+    def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.memory_utilization())
 
     @ttl_cache(ttl=1.0)
     def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
         return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
 
     def gpu_utilization_string(self) -> Union[str, NaType]:  # in percentage
-        gpu_utilization = self.gpu_utilization()
-        if nvml.nvmlCheckReturn(gpu_utilization, int):
-            return str(gpu_utilization) + '%'
-        return NA
+        return utilization2string(self.gpu_utilization())
 
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
@@ -279,6 +270,14 @@ class Device(object):
                 proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
                                     else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
                 proc.type = proc.type + type
+
+        samples = nvml.nvmlQuery('nvmlDeviceGetProcessUtilization', self.handle, self._timestamp, default=())
+        self._timestamp = min((s.timeStamp for s in samples), default=0)
+        for p in samples:
+            try:
+                processes[p.pid].set_gpu_utilization(p.smUtil, p.encUtil, p.decUtil)
+            except KeyError:
+                pass
 
         return processes
 
