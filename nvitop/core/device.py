@@ -272,10 +272,10 @@ class Device(object):
                 proc.type = proc.type + type
 
         samples = nvml.nvmlQuery('nvmlDeviceGetProcessUtilization', self.handle, self._timestamp, default=())
-        self._timestamp = min((s.timeStamp for s in samples), default=0)
-        for p in samples:
+        self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 1000000, 0)
+        for s in samples:
             try:
-                processes[p.pid].set_gpu_utilization(p.smUtil, p.encUtil, p.decUtil)
+                processes[s.pid].set_gpu_utilization(s.smUtil, s.encUtil, s.decUtil)
             except KeyError:
                 pass
 
