@@ -18,7 +18,9 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 - [Usage](#usage)
   - [Device and Process Status](#device-and-process-status)
   - [Resource Monitor](#resource-monitor)
-    - [Keybindings for monitor mode](#keybindings-for-monitor-mode)
+    - [For Docker Users](#for-docker-users)
+    - [For SSH Users](#for-ssh-users)
+    - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
   - [More than Monitoring](#more-than-monitoring)
     - [Device](#device)
     - [Process](#process)
@@ -130,7 +132,9 @@ $ nvitop -m -ov
 
 Press `q` to return to the terminal.
 
-For Docker users:
+#### For Docker Users
+
+Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/nvidia-docker):
 
 ```bash
 docker build --tag nvitop:latest .
@@ -138,6 +142,17 @@ docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvito
 ```
 
 **NOTE:** Don't forget to add `--pid=host` option when running the container.
+
+#### For SSH Users
+
+Run `nvitop` directly on the SSH session instead of a login shell:
+
+```bash
+ssh user@host -t nvitop -m                 # installed by `sudo pip3 install ...`
+ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user ...`
+```
+
+**NOTE:** Users need to add `-t` option to allocate a pseudo-terminal over the SSH session for monitor mode.
 
 Type `nvitop --help` for more information:
 
@@ -170,7 +185,7 @@ optional arguments:
   --ascii               Use ASCII characters only, which is useful for terminals without Unicode support.
 ```
 
-#### Keybindings for monitor mode
+#### Keybindings for Monitor Mode
 
 |                                                   Key | Binding                                                                              |
 | ----------------------------------------------------: | :----------------------------------------------------------------------------------- |
