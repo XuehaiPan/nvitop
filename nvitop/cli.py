@@ -53,10 +53,10 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
-    error_messages = []
+    messages = []
 
     if hasattr(args, 'monitor') and not (sys.stdin.isatty() and sys.stdout.isatty()):
-        error_messages.append('ERROR: You must run monitor mode from a terminal.')
+        messages.append('ERROR: You must run monitor mode from a terminal.')
         del args.monitor
 
     try:
@@ -88,16 +88,22 @@ def main():
     top.destroy()
 
     if len(nvml.UNKNOWN_FUNCTIONS) > 0:
-        if len(nvml.UNKNOWN_FUNCTIONS) == 1:
-            error_messages.append('ERROR: A FunctionNotFound error occurred while calling:')
-        else:
-            error_messages.append('ERROR: Some FunctionNotFound errors occurred while calling:')
-        error_messages.extend([
+        messages.append('ERROR: A FunctionNotFound error occurred while calling:')
+        if len(nvml.UNKNOWN_FUNCTIONS) > 1:
+            messages[-1] = messages[-1].replace('A FunctionNotFound error', 'Some FunctionNotFound errors')
+        messages.extend([
             *list(map('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format, nvml.UNKNOWN_FUNCTIONS)),
-            'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.'
+            ('Please verify whether the {0} package is compatible with your NVIDIA driver version.\n'
+             'You can check the release history of {0} at {1},\n'
+             'and install the compatible version manually.').format(
+                colored('nvidia-ml-py', attrs=('bold',)),
+                colored('https://pypi.org/project/nvidia-ml-py/#history', attrs=('underline',))
+            )
         ])
-    if len(error_messages) > 0:
-        for message in error_messages:
+    if len(messages) > 0:
+        for message in messages:
+            if message.startswith('ERROR:'):
+                message = message.replace('ERROR:', colored('ERROR:', color='red', attrs=('bold',)), 1)
             print(message, file=sys.stderr)
         return 1
     return 0
