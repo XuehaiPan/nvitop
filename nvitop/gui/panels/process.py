@@ -163,7 +163,7 @@ class ProcessPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
         'natural': Order(
-            key=attrgetter('device.index', '_gone', 'pid', 'username'),
+            key=attrgetter('device.index', '_gone', 'username', 'pid'),
             reverse=False, offset=3, column='ID', previous='time', next='pid'
         ),
         'pid': Order(
@@ -349,8 +349,7 @@ class ProcessPanel(Displayable):
         processes = {}
         for device in self.devices:
             for p in device.processes().values():
-                username = p.username()
-                processes[(p.device.index, username != NA, username, p.pid)] = p
+                processes[(p.device.index, p._gone, p.username(), p.pid)] = p  # pylint: disable=protected-access
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):

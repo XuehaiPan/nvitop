@@ -271,13 +271,14 @@ class Device(object):
                                     else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
                 proc.type = proc.type + type
 
-        samples = nvml.nvmlQuery('nvmlDeviceGetProcessUtilization', self.handle, self._timestamp, default=())
-        self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 1000000, 0)
-        for s in samples:
-            try:
-                processes[s.pid].set_gpu_utilization(s.smUtil, s.encUtil, s.decUtil)
-            except KeyError:
-                pass
+        if len(processes) > 0:
+            samples = nvml.nvmlQuery('nvmlDeviceGetProcessUtilization', self.handle, self._timestamp, default=())
+            self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 500000, 0)
+            for s in samples:
+                try:
+                    processes[s.pid].set_gpu_utilization(s.smUtil, s.encUtil, s.decUtil)
+                except KeyError:
+                    pass
 
         return processes
 
