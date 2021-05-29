@@ -279,7 +279,8 @@ Out[12]: DeviceSnapshot(
     compute_mode='Default',
     display_active='Off',
     ecc_errors='N/A',
-    fan_speed='22%',                    # in percentage
+    fan_speed=22,                       # in percentage
+    fan_speed_string='22%',             # in percentage
     gpu_utilization=17,                 # in percentage
     gpu_utilization_string='17%',       # in percentage
     index=1,
@@ -298,7 +299,8 @@ Out[12]: DeviceSnapshot(
     power_limit=250000,                 # in milliwatts (mW)
     power_status='66W / 250W',          # in watts (W)
     power_usage=66051,                  # in milliwatts (mW)
-    temperature='39C'                   # in Celsius
+    temperature=39,                     # in Celsius
+    temperature_string='39C'            # in Celsius
 )
 
 In [13]: nvidia1_snapshot.memory_utilization_string  # snapshot uses properties instead of function calls
@@ -315,7 +317,8 @@ Out[15]: DeviceSnapshot(
     display_active='Off',
     ecc_errors='N/A',
     encoder_utilization=[0, 1000000],   ##### <-- new entry #####
-    fan_speed='22%',                    # in percentage
+    fan_speed=22,                       # in percentage
+    fan_speed_string='22%',             # in percentage
     gpu_utilization=17,                 # in percentage
     gpu_utilization_string='17%',       # in percentage
     index=1,
@@ -334,7 +337,8 @@ Out[15]: DeviceSnapshot(
     power_limit=250000,                 # in milliwatts (mW)
     power_status='66W / 250W',          # in watts (W)
     power_usage=66051,                  # in milliwatts (mW)
-    temperature='39C'                   # in Celsius
+    temperature=39,                     # in Celsius
+    temperature_string='39C'            # in Celsius
 )
 ```
 

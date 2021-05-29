@@ -3,17 +3,16 @@
 
 # pylint: disable=missing-module-docstring
 
-from . import host
+from . import host, utils
 from .libnvml import nvml
 from .device import Device
 from .process import HostProcess, GpuProcess
-from .utils import NA, NaType, Snapshot, bytes2human, timedelta2human
+from .utils import *
 
 
 __all__ = ['nvml', 'NVMLError', 'Device',
-           'host', 'HostProcess', 'GpuProcess',
-           'NA', 'NaType', 'Snapshot',
-           'bytes2human', 'timedelta2human']
+           'host', 'HostProcess', 'GpuProcess']
+__all__.extend(utils.__all__)
 
 
 NVMLError = nvml.NVMLError  # pylint: disable=no-member

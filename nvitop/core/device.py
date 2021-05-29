@@ -212,11 +212,17 @@ class Device(object):
 
     @ttl_cache(ttl=5.0)
     def fan_speed(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle))
+        return nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
+
+    def fan_speed_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.fan_speed())
 
     @ttl_cache(ttl=5.0)
     def temperature(self) -> Union[str, NaType]:  # in Celsius
-        temperature = nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
+        return nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
+
+    def temperature_string(self) -> Union[str, NaType]:  # in Celsius
+        temperature = self.temperature()
         if nvml.nvmlCheckReturn(temperature, int):
             temperature = str(temperature) + 'C'
         return temperature
@@ -294,10 +300,11 @@ class Device(object):
         return self._snapshot
 
     SNAPSHOT_KEYS = [
-        'name',
-        'persistence_mode', 'bus_id', 'display_active', 'ecc_errors',
-        'fan_speed', 'temperature', 'performance_state',
-        'power_usage', 'power_limit', 'power_status', 'compute_mode',
+        'name', 'bus_id',
+        'persistence_mode', 'display_active', 'ecc_errors',
+        'performance_state', 'compute_mode',
+        'fan_speed', 'fan_speed_string', 'temperature', 'temperature_string',
+        'power_usage', 'power_limit', 'power_status',
         'memory_used', 'memory_free', 'memory_total',
         'memory_used_human', 'memory_free_human', 'memory_total_human', 'memory_usage',
         'memory_utilization', 'gpu_utilization',

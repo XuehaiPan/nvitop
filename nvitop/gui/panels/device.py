@@ -35,13 +35,13 @@ class DevicePanel(Displayable):
         self.cuda_version = Device.cuda_version()
 
         self.formats_compact = [
-            '│ {index:>3} {fan_speed:>3} {temperature:>4} {performance_state:>3} {power_status:>12} '
+            '│ {index:>3} {fan_speed_string:>3} {temperature_string:>4} {performance_state:>3} {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full = [
             '│ {index:>3}  {name:>18}  {persistence_mode:<4} '
             '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
-            '│ {fan_speed:>3}  {temperature:>4}  {performance_state:>4}  {power_status:>12} '
+            '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 
@@ -196,7 +196,7 @@ class DevicePanel(Displayable):
                 attr = 0
 
             device.name = cut_string(device.name, maxlen=18)
-            device.fan_speed = device.fan_speed.replace('100%', 'MAX')
+            device.fan_speed_string = device.fan_speed_string.replace('100%', 'MAX')
             for y, fmt in enumerate(formats, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, self.x + 1, width=31, fg=device.display_color, attr=attr)

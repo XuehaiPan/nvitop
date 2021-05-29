@@ -4,11 +4,13 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import datetime
 import math
 import time
 
 
-__all__ = ['NA', 'NaType', 'bytes2human', 'timedelta2human', 'Snapshot']
+__all__ = ['NA', 'NaType', 'bytes2human', 'timedelta2human', 'Snapshot',
+           'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
 
 
 class NotApplicableType(str):
@@ -60,7 +62,10 @@ def bytes2human(x):  # pylint: disable=too-many-return-statements
         return NA
 
     if not isinstance(x, int):
-        x = round(float(x))
+        try:
+            x = round(float(x))
+        except ValueError:
+            return NA
 
     if x < KiB:
         return '{}B'.format(x)
@@ -82,7 +87,7 @@ def bytes2human(x):  # pylint: disable=too-many-return-statements
 
 
 def timedelta2human(dt):
-    if dt is None or dt == NA:
+    if not isinstance(dt, datetime.timedelta):
         return NA
 
     if dt.days >= 4:
