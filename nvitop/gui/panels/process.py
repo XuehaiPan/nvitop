@@ -478,7 +478,7 @@ class ProcessPanel(Displayable):
         self._daemon_started.clear()
 
     def print_width(self):
-        return min(self.width, max((34 + len(process.host_info) for process in self.snapshots), default=79))
+        return min(self.width, max((38 + len(process.host_info) for process in self.snapshots), default=79))
 
     def print(self):
         lines = ['', *self.header_lines()]
