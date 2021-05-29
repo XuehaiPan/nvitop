@@ -248,11 +248,11 @@ class Device(object):
             return '{} / {}'.format(memory_used_human, memory_total_human)
         return NA
 
-    def memory_utilization(self) -> Union[int, NaType]:  # used memory over total memory (in percentage)
+    def memory_utilization(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
         memory_used = self.memory_used()
         memory_total = self.memory_total()
         if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
-            return 100 * memory_used // memory_total
+            return round(100.0 * memory_used / memory_total, 1)
         return NA
 
     def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage

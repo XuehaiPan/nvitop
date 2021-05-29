@@ -252,7 +252,7 @@ class GpuProcess(object):
     def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
         return self._gpu_memory_human
 
-    def gpu_memory_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_memory_utilization(self) -> Union[float, NaType]:  # in percentage
         return self._gpu_memory_utilization
 
     def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
@@ -280,12 +280,14 @@ class GpuProcess(object):
         self._gpu_memory = memory_used = value  # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
         memory_total = self.device.memory_total()
-        self._gpu_memory_utilization = NA  # pylint: disable=attribute-defined-outside-init
+        gpu_memory_utilization = NA
         if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
-            self._gpu_memory_utilization = 100 * memory_used // memory_total  # pylint: disable=attribute-defined-outside-init
+            gpu_memory_utilization = round(100.0 * memory_used / memory_total, 1)
+        self._gpu_memory_utilization = gpu_memory_utilization  # pylint: disable=attribute-defined-outside-init
 
     def set_gpu_utilization(self, gpu_sm_utilization=NA,
-                            gpu_encoder_utilization=NA, gpu_decoder_utilization=NA) -> None:
+                            gpu_encoder_utilization=NA,
+                            gpu_decoder_utilization=NA) -> None:
         self._gpu_sm_utilization = gpu_sm_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init

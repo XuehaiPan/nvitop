@@ -291,8 +291,8 @@ Out[12]: DeviceSnapshot(
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
-    memory_utilization=9,               # in percentage
-    memory_utilization_string='9%',     # in percentage
+    memory_utilization=9.5,               # in percentage
+    memory_utilization_string='9.5%',     # in percentage
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
@@ -329,8 +329,8 @@ Out[15]: DeviceSnapshot(
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
-    memory_utilization=9,               # in percentage
-    memory_utilization_string='9%',     # in percentage
+    memory_utilization=9.5,               # in percentage
+    memory_utilization_string='9.5%',     # in percentage
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
@@ -384,8 +384,8 @@ Out[23]: GpuProcessSnapshot(
     gpu_decoder_utilization_string='0%',
     gpu_memory=1081081856,  # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_utilization=9,
-    gpu_memory_utilization_string='9%',
+    gpu_memory_utilization=9.4,
+    gpu_memory_utilization_string='9.4%',
     gpu_sm_utilization=0,
     gpu_sm_utilization_string='0%',
     identity=(23266, 1620651760.15, 1),
