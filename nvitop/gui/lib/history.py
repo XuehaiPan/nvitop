@@ -49,7 +49,7 @@ class HistoryGraph(object):
     MAX_WIDTH = 1024
 
     def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin
-                 baseline=0.0, dynamic_bound=True, upsidedown=False):
+                 baseline=0.0, dynamic_bound=False, upsidedown=False):
         assert baseline < upperbound
 
         self.format = format
@@ -227,7 +227,7 @@ class HistoryGraph(object):
 
 class BufferedHistoryGraph(HistoryGraph):
     def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin
-                 baseline=0.0, dynamic_bound=True, upsidedown=False, interval=1.0):
+                 baseline=0.0, dynamic_bound=False, upsidedown=False, interval=1.0):
         assert interval > 0.0
         super().__init__(upperbound, width, height,
                          format=format,

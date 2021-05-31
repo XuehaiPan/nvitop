@@ -74,7 +74,7 @@ class HostPanel(Displayable):
     def enable_history(self):
         host.cpu_percent = BufferedHistoryGraph(
             interval=1.0, width=77, height=5, upsidedown=False,
-            baseline=0.0, upperbound=100.0, dynamic_bound=True,
+            baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format='CPU: {:.1f}%'.format
         )(host.cpu_percent)
         host.virtual_memory = BufferedHistoryGraph(
