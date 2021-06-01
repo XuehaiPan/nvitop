@@ -275,6 +275,7 @@ class Device(object):
                 proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
                 proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
                                     else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
+                proc.set_gpu_utilization(0, 0, 0)
                 proc.type = proc.type + type
 
         if len(processes) > 0:

@@ -212,7 +212,9 @@ class GpuProcess(object):
             type = NA
         if type is not None:
             self.type = type
-        self.set_gpu_utilization()
+        for util in ('sm', 'encoder', 'decoder'):
+            if not hasattr(self, '_gpu_{}_utilization'.format(util)):
+                setattr(self, '_gpu_{}_utilization'.format(util), 0)
 
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
@@ -255,25 +257,25 @@ class GpuProcess(object):
     def gpu_memory_utilization(self) -> Union[float, NaType]:  # in percentage
         return self._gpu_memory_utilization
 
-    def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_sm_utilization(self) -> int:  # in percentage
         return self._gpu_sm_utilization
 
-    def gpu_encoder_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_encoder_utilization(self) -> int:  # in percentage
         return self._gpu_encoder_utilization
 
-    def gpu_decoder_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_decoder_utilization(self) -> int:  # in percentage
         return self._gpu_decoder_utilization
 
-    def gpu_memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
+    def gpu_memory_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_memory_utilization())
 
-    def gpu_sm_utilization_string(self) -> Union[str, NaType]:  # in percentage
+    def gpu_sm_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_sm_utilization())
 
-    def gpu_encoder_utilization_string(self) -> Union[str, NaType]:  # in percentage
+    def gpu_encoder_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_encoder_utilization())
 
-    def gpu_decoder_utilization_string(self) -> Union[str, NaType]:  # in percentage
+    def gpu_decoder_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_decoder_utilization())
 
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
@@ -285,17 +287,14 @@ class GpuProcess(object):
             gpu_memory_utilization = round(100.0 * memory_used / memory_total, 1)
         self._gpu_memory_utilization = gpu_memory_utilization  # pylint: disable=attribute-defined-outside-init
 
-    def set_gpu_utilization(self, gpu_sm_utilization=NA,
-                            gpu_encoder_utilization=NA,
-                            gpu_decoder_utilization=NA) -> None:
+    def set_gpu_utilization(self, gpu_sm_utilization: int = 0,
+                            gpu_encoder_utilization: int = 0,
+                            gpu_decoder_utilization: int = 0) -> None:
         self._gpu_sm_utilization = gpu_sm_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
     def update_gpu_status(self) -> Union[int, NaType]:
-        self._gpu_memory = NA  # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_human = NA  # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_utilization = NA  # pylint: disable=attribute-defined-outside-init
         self.device.processes()
         return self.gpu_memory()
 
