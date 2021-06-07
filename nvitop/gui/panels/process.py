@@ -211,7 +211,7 @@ class ProcessPanel(Displayable):
         self.selected = Selected(panel=self)
         self.host_offset = -1
 
-        self._order = 'natural'
+        self._order = ('natural' if len(devices) > 1 else 'gpu_memory')
         self.reverse = False
 
         self._snapshot_buffer = []
