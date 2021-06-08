@@ -10,9 +10,14 @@ RUN echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu/ bionic main univers
 RUN apt-get update
 RUN apt-get install -yq python3 python3-pip
 
+RUN apt-get clean autoclean
+RUN apt-get autoremove --yes
+RUN rm -rf /var/lib/{apt,dpkg,cache,log}
+
 COPY . /nvitop
 WORKDIR /nvitop
 RUN pip3 install .
+RUN rm -rf /root/.cache
 
 ENV LANG C.UTF-8
 ENTRYPOINT [ "python3", "nvitop.py" ]
