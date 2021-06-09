@@ -88,7 +88,7 @@ cd nvitop
 pip3 install .
 ```
 
-**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Otherwise, `nvitop` may not display the processes correctly due to the incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
+**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Since `nvidia-ml-py==11.450.129`, the definition of `nvmlProcessInfo_t` has introduced two new fields `gpuInstanceId` and `computeInstanceId` (`GI ID` and `CI ID` in newer `nvidia-smi`) which are incompatible with some old NVIDIA drivers. `nvitop` may not display the processes correctly due to this incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
 
 ## Usage
 
