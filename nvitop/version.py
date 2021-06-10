@@ -3,8 +3,7 @@
 
 """An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."""
 
-from . import core
-from .core import *
-
-
-__all__ = core.__all__.copy()
+__version__ = '0.3.2.1'
+__license__ = 'GPLv3'
+__author__ = __maintainer__ = 'Xuehai Pan'
+__email__ = 'XuehaiPan@pku.edu.cn'

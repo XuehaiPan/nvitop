@@ -29,10 +29,7 @@ class Device(object):
     def from_indices(cls, indices: Optional[Iterable[int]] = None) -> List['Device']:
         if indices is None:
             indices = range(cls.count())
-        devices = []
-        for index in indices:
-            devices.append(cls(index))
-        return devices
+        return list(map(cls, indices))
 
     @classmethod
     def all(cls) -> List['Device']:

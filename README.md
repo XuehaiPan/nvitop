@@ -6,7 +6,7 @@
 ![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
+`nvitop`, an interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
 
 ![Screenshot Monitor](https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png)
 
@@ -28,9 +28,9 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 - [Screenshots](#screenshots)
 - [License](#license)
 
-This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for integration.
+This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
-[nvidia-htop](https://github.com/peci1/nvidia-htop) a tool for enriching the output of `nvidia-smi`. [nvidia-htop](https://github.com/peci1/nvidia-htop) uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And What is really inconvenient is that you should compile it yourself during installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the GPLv3 License.
+[nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
 
 So far, `nvitop` is in the *beta phase*, and most features have been tested on Linux. If you are using Windows with NVIDIA-GPUs, please submit feedback on the issue page, thank you very much!
 
@@ -44,11 +44,12 @@ Compare to `nvidia-smi`:
 
 - **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
 - **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop), limited support with command `watch -c`)
-- **Interactive**: responsive for user inputs in monitor mode. (vs. [gpustat](https://github.com/wookayin/gpustat) & [py3nvml](https://github.com/fbcotter/py3nvml))
+- **Interactive**: responsive for user input in monitor mode. (vs. [gpustat](https://github.com/wookayin/gpustat) & [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Efficient**:
   - query device status using [*NVML Python bindings*](https://pypi.org/project/nvidia-ml-py) directly, instead of parsing the output of `nvidia-smi`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
   - cache results with `ttl_cache` from [cachetools](https://github.com/tkem/cachetools). (vs. [gpustat](https://github.com/wookayin/gpustat))
   - display information using the `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
+  - asynchronously gather information using multithreading and correspond to user input much faster. (vs. [nvtop](https://github.com/Syllo/nvtop))
 - **Portable**: work on both Linux and Windows.
   - get host process information using the cross-platform library [psutil](https://github.com/giampaolo/psutil) instead of calling `ps -p <pid>` in a subprocess. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop) & [py3nvml](https://github.com/fbcotter/py3nvml))
   - written in pure Python, easy to install with `pip`. (vs. [nvtop](https://github.com/Syllo/nvtop))
@@ -107,7 +108,7 @@ $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 $ nvitop -ov
 ```
 
-***NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. MI(X), in `nvidia-smi` it is `C+G`).*
+**NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. MI(X), in `nvidia-smi` it is `C+G`).
 
 ### Resource Monitor
 
@@ -222,7 +223,7 @@ optional arguments:
 #### Device
 
 ```python
-In [1]: from nvitop.core import host, Device, HostProcess, GpuProcess
+In [1]: from nvitop import host, Device, HostProcess, GpuProcess
 
 In [2]: Device.driver_version()
 Out[2]: '430.64'

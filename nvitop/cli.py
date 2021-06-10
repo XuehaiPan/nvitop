@@ -7,9 +7,9 @@ import argparse
 import os
 import sys
 
-from . import __version__
 from .core import nvml, Device
 from .gui import Top, libcurses, colored
+from .version import __version__
 
 
 def parse_arguments():

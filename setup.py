@@ -2,7 +2,7 @@ import platform
 
 from setuptools import find_packages, setup
 
-import nvitop
+from nvitop import version
 
 
 extra_description = {}
@@ -15,12 +15,12 @@ except (OSError, UnicodeError):
 
 setup(
     name='nvitop',
-    version=nvitop.__version__,
-    description=nvitop.__doc__,
+    version=version.__version__,
+    description=version.__doc__,
     **extra_description,
-    license=nvitop.__license__,
-    author=nvitop.__author__,
-    author_email=nvitop.__email__,
+    license=version.__license__,
+    author=version.__author__,
+    author_email=version.__email__,
     url="https://github.com/XuehaiPan/nvitop",
     packages=find_packages(include=['nvitop', 'nvitop.*']),
     entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
