@@ -188,31 +188,34 @@ optional arguments:
 
 #### Keybindings for Monitor Mode
 
-|                                                   Key | Binding                                                                              |
-| ----------------------------------------------------: | :----------------------------------------------------------------------------------- |
-|                                                   `q` | Quit and return to the terminal.                                                     |
-|                                       `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
-|                                                       |                                                                                      |
-|      `<Left>` / `<Right>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
-|                            `<Home>`<br>`<C-a>`<br>`^` | Scroll the host information of processes to the beginning of line.                   |
-|                             `<End>`<br>`<C-e>`<br>`$` | Scroll the host information of selected processes to the end of line.                |
-| `<Up>` / `<Down>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                      |
-|                                               `<Esc>` | Clear process selection.                                                             |
-|                                                       |                                                                                      |
-|                                        `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
-|                                                   `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
-|                                                   `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
-|                                                       |                                                                                      |
-|                                             `,` / `.` | Select the sort column.                                                              |
-|                                                   `/` | Reverse the sort order.                                                              |
-|                                           `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`. |
-|                                           `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                            |
-|                                           `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                             |
-|                                           `og` (`oG`) | Sort processes by `GPU-MEM` in descending (ascending) order.                         |
-|                                           `os` (`oS`) | Sort processes by `%SM` in descending (ascending) order.                             |
-|                                           `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                            |
-|                                           `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
-|                                           `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
+|                                                                        Key | Binding                                                                              |
+| -------------------------------------------------------------------------: | :----------------------------------------------------------------------------------- |
+|                                                                        `q` | Quit and return to the terminal.                                                     |
+|                                                                        `h` | Go to the help screen.                                                               |
+|                                                            `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
+|                                                                            |                                                                                      |
+|      `<Left>` / `<Right>`<br>`<A-h>` / `<A-l>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
+|                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).          |
+|                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                     |
+| `<Up>` / `<Down>`<br>`<A-k>` / `<A-j>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                      |
+|                                                                   `<Home>` | Select the first process.                                                            |
+|                                                                    `<End>` | Select the last process.                                                             |
+|                                                                    `<Esc>` | Clear process selection.                                                             |
+|                                                                            |                                                                                      |
+|                                                             `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
+|                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
+|                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
+|                                                                            |                                                                                      |
+|                                                                  `,` / `.` | Select the sort column.                                                              |
+|                                                                        `/` | Reverse the sort order.                                                              |
+|                                                                `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`. |
+|                                                                `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                            |
+|                                                                `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                             |
+|                                                                `og` (`oG`) | Sort processes by `GPU-MEM` in descending (ascending) order.                         |
+|                                                                `os` (`oS`) | Sort processes by `%SM` in descending (ascending) order.                             |
+|                                                                `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                            |
+|                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
+|                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
 **NOTE:** Press the `CTRL` key to multiply the mouse wheel events by `5`.
 

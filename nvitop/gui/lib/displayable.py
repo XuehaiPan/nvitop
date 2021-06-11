@@ -45,7 +45,7 @@ class Displayable(CursesShortcuts):
 
         self._need_redraw = True
         self.focused = False
-        self._visible = True
+        self._old_visible = self._visible = True
         self.x = 0
         self.y = 0
         self._width = 0
@@ -79,8 +79,12 @@ class Displayable(CursesShortcuts):
 
     def poke(self):
         """Called before drawing, even if invisible"""
-        if not self.visible and self.need_redraw:
-            self.win.erase()
+        if self._old_visible != self.visible:
+            self._old_visible = self.visible
+            self.need_redraw = True
+
+            if not self.visible:
+                self.win.erase()
 
     def draw(self):
         """Draw the object.

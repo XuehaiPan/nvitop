@@ -6,3 +6,4 @@
 from .device import DevicePanel
 from .host import HostPanel
 from .process import ProcessPanel
+from .help import HelpPanel

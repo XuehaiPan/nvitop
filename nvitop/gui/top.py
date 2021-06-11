@@ -11,7 +11,7 @@ import time
 from functools import partial
 
 from .lib import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
-from .panels import DevicePanel, HostPanel, ProcessPanel
+from .panels import DevicePanel, HostPanel, ProcessPanel, HelpPanel
 
 
 class BreakLoop(Exception):
@@ -49,12 +49,18 @@ class Top(DisplayableContainer):
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
+        self.help_panel = HelpPanel(win=win, root=self)
+        self.help_panel.focused = False
+        self.help_panel.visible = False
+        self.add_child(self.help_panel)
+
         self.selected = self.process_panel.selected
 
         self.ascii = ascii
         self.device_panel.ascii = self.ascii
         self.host_panel.ascii = self.ascii
         self.process_panel.ascii = self.ascii
+        self.help_panel.ascii = self.ascii
         if ascii:
             self.host_panel.full_height = self.host_panel.height = self.host_panel.compact_height
 
@@ -63,6 +69,7 @@ class Top(DisplayableContainer):
         self.device_panel.y = self.y
         self.host_panel.y = self.device_panel.y + self.device_panel.height
         self.process_panel.y = self.host_panel.y + self.host_panel.height
+        self.help_panel.x = self.help_panel.y = 0
         self.height = self.device_panel.height + self.host_panel.height + self.process_panel.height
 
         if win is not None:
@@ -95,8 +102,7 @@ class Top(DisplayableContainer):
         def host_begin(top): top.process_panel.host_offset = -1
         def host_end(top): top.process_panel.host_offset = 1024
 
-        def select_up(top): top.selected.move(direction=-1)
-        def select_down(top): top.selected.move(direction=+1)
+        def select_move(top, direction): top.selected.move(direction=direction)
         def select_clear(top): top.selected.clear()
 
         def terminate(top): top.selected.terminate()
@@ -117,6 +123,21 @@ class Top(DisplayableContainer):
         def order_reverse(top):
             sort_by(top, order=top.process_panel.order, reverse=(not top.process_panel.reverse))
 
+        def show_help(top):
+            top.device_panel.visible = False
+            top.host_panel.visible = False
+            top.process_panel.visible = False
+            top.help_panel.visible = True
+            top.help_panel.focused = True
+
+        def return2top(top):
+            top.device_panel.visible = True
+            top.host_panel.visible = True
+            top.process_panel.visible = True
+            top.help_panel.visible = False
+            top.help_panel.focused = False
+            top.need_redraw = True
+
         self.keymaps.bind('root', 'q', quit)
         self.keymaps.copy('root', 'q', 'Q')
         self.keymaps.bind('root', 'a', partial(change_mode, mode='auto'))
@@ -125,18 +146,22 @@ class Top(DisplayableContainer):
 
         self.keymaps.bind('root', '<Left>', host_left)
         self.keymaps.copy('root', '<Left>', '[')
+        self.keymaps.copy('root', '<Left>', '<A-h>')
         self.keymaps.bind('root', '<Right>', host_right)
         self.keymaps.copy('root', '<Right>', ']')
-        self.keymaps.bind('root', '<Home>', host_begin)
-        self.keymaps.copy('root', '<Home>', '<C-a>')
-        self.keymaps.copy('root', '<Home>', '^')
-        self.keymaps.bind('root', '<End>', host_end)
-        self.keymaps.copy('root', '<End>', '<C-e>')
-        self.keymaps.copy('root', '<End>', '$')
-        self.keymaps.bind('root', '<Up>', select_up)
+        self.keymaps.copy('root', '<Right>', '<A-l>')
+        self.keymaps.bind('root', '<C-a>', host_begin)
+        self.keymaps.copy('root', '<C-a>', '^')
+        self.keymaps.bind('root', '<C-e>', host_end)
+        self.keymaps.copy('root', '<C-e>', '$')
+        self.keymaps.bind('root', '<Up>', partial(select_move, direction=-1))
         self.keymaps.copy('root', '<Up>', '<S-Tab>')
-        self.keymaps.bind('root', '<Down>', select_down)
+        self.keymaps.copy('root', '<Up>', '<A-k>')
+        self.keymaps.bind('root', '<Down>', partial(select_move, direction=+1))
         self.keymaps.copy('root', '<Down>', '<Tab>')
+        self.keymaps.copy('root', '<Down>', '<A-j>')
+        self.keymaps.bind('root', '<Home>', partial(select_move, direction=-(1 < 20)))
+        self.keymaps.bind('root', '<End>', partial(select_move, direction=+(1 < 20)))
         self.keymaps.bind('root', '<Esc>', select_clear)
 
         self.keymaps.bind('root', 'T', terminate)
@@ -152,6 +177,9 @@ class Top(DisplayableContainer):
         for order in ProcessPanel.ORDERS:
             self.keymaps.bind('root', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))
             self.keymaps.bind('root', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True))
+
+        self.keymaps.bind('root', 'h', show_help)
+        self.keymaps.bind('help', '<any>', return2top)
 
         self.keymaps.use_keymap('root')
 
@@ -218,7 +246,7 @@ class Top(DisplayableContainer):
             ]
 
             y_start, x_start = (n_term_lines - height) // 2, (n_term_cols - width) // 2
-            for y, line in enumerate(lines, start=y_start):
+            for y, line in enumerate(lines, start=y_start):  # pylint: disable=invalid-name
                 self.addstr(y, x_start, line)
 
     def finalize(self):

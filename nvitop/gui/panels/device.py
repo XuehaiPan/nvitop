@@ -109,8 +109,8 @@ class DevicePanel(Displayable):
 
         header = [
             '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ NVIDIA-SMI {0:<6}       Driver Version: {0:<6}       CUDA Version: {1:<5}    │'.format(self.driver_version,
-                                                                                                      self.cuda_version),
+            '│ NVIDIA-SMI {0:<12} Driver Version: {0:<12} CUDA Version: {1:<8} │'.format(self.driver_version,
+                                                                                         self.cuda_version),
         ]
         if self.device_count > 0:
             header.append('├───────────────────────────────┬──────────────────────┬──────────────────────┤')
