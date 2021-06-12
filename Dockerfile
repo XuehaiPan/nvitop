@@ -19,5 +19,5 @@ WORKDIR /nvitop
 RUN pip3 install .
 RUN rm -rf /root/.cache
 
-ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 ENTRYPOINT [ "python3", "nvitop.py" ]

@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
 import argparse
+import locale
 import os
 import sys
 
@@ -50,11 +51,15 @@ def parse_arguments():
     return args
 
 
-def main():
+def main():  # pylint: disable=too-many-branches
+    try:
+        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+    except locale.Error:
+        locale.setlocale(locale.LC_ALL, '')
+
     args = parse_arguments()
 
     messages = []
-
     if hasattr(args, 'monitor') and not (sys.stdin.isatty() and sys.stdout.isatty()):
         messages.append('ERROR: You must run monitor mode from a terminal.')
         del args.monitor
@@ -75,7 +80,6 @@ def main():
     else:
         visible_devices = set(range(device_count))
     visible_devices = sorted(set(range(device_count)).intersection(visible_devices))
-
     devices = Device.from_indices(visible_devices)
 
     if hasattr(args, 'monitor') and len(visible_devices) > 0:

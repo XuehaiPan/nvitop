@@ -170,13 +170,13 @@ class DevicePanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            self.addstr(self.y, self.x + 62, '(Press q to quit)')
+            self.addstr(self.y, self.x, '(Press q to quit)'.rjust(79))
             self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
             for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
         time_string = time.strftime('%a %b %d %H:%M:%S %Y')
-        self.addstr(self.y, self.x, '{:<62}'.format(time_string))
+        self.addstr(self.y, self.x, '{:<32}'.format(time_string))
         self.color_at(self.y, self.x + len(time_string) - 11, width=1, attr='blink')
         self.color_at(self.y, self.x + len(time_string) - 8, width=1, attr='blink')
 

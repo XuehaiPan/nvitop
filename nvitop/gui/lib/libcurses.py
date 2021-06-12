@@ -65,7 +65,10 @@ def _get_color_attr(fg=-1, bg=-1, attr=0):
 @contextlib.contextmanager
 def libcurses():
     os.environ.setdefault('ESCDELAY', '25')
-    locale.setlocale(locale.LC_ALL, '')
+    try:
+        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+    except locale.Error:
+        locale.setlocale(locale.LC_ALL, '')
 
     win = curses.initscr()
     win.nodelay(True)
