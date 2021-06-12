@@ -38,6 +38,9 @@ class HelpPanel(Displayable):
         self.height = len(self.infos)
 
     def draw(self):
+        if not self.need_redraw:
+            return
+
         self.color_reset()
 
         for y, line in enumerate(self.infos, start=self.y):

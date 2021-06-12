@@ -226,7 +226,7 @@ optional arguments:
 #### Device
 
 ```python
-In [1]: from nvitop import host, Device, HostProcess, GpuProcess
+In [1]: from nvitop import host, Device, HostProcess, GpuProcess, NA
 
 In [2]: Device.driver_version()
 Out[2]: '430.64'
@@ -346,10 +346,17 @@ Out[15]: DeviceSnapshot(
 )
 ```
 
+**NOTE:** The entry values may be `'N/A'` (type: `NaType`) when the corresponding resources are not applicable. You can use `if entry != 'N/A'` checks to avoid exceptions. And it's safe to use `float(entry)` for numbers while `'N/A'` will be converted to `'math.nan'`. For example:
+
+```python
+memory_used: Union[int, NaType] = device.memory_used()            # memory usage in bytes or `N/A`
+memory_used_in_mib: float       = float(memory_used) / (1 << 20)  # memory usage in MiB   or `math.nan`
+```
+
 #### Process
 
 ```python
-In [16]: processes = nvidia1.processes()
+In [16]: processes = nvidia1.processes()  # type: Dict[int, GpuProcess]
     ...: processes
 Out[16]: {
     23266: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
@@ -362,10 +369,10 @@ Out[17]: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1
 In [18]: process.status()
 Out[18]: 'running'
 
-In [19]: process.cmdline()
+In [19]: process.cmdline()  # type: List[str]
 Out[19]: ['python3', 'rllib_train.py']
 
-In [20]: process.command()
+In [20]: process.command()  # type: str
 Out[20]: 'python3 rllib_train.py'
 
 In [21]: process.cwd()
@@ -379,28 +386,28 @@ Out[23]: GpuProcessSnapshot(
     real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
-    cpu_percent=98.5,
-    cpu_percent_string='98.5%',
+    cpu_percent=98.5,                      # in percentage
+    cpu_percent_string='98.5%',            # in percentage
     device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    gpu_encoder_utilization=0,
-    gpu_encoder_utilization_string='0%',
-    gpu_decoder_utilization=0,
-    gpu_decoder_utilization_string='0%',
-    gpu_memory=1081081856,  # in bytes
+    gpu_encoder_utilization=0,             # in percentage
+    gpu_encoder_utilization_string='0%',   # in percentage
+    gpu_decoder_utilization=0,             # in percentage
+    gpu_decoder_utilization_string='0%',   # in percentage
+    gpu_memory=1081081856,                 # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_utilization=9.4,
-    gpu_memory_utilization_string='9.4%',
-    gpu_sm_utilization=0,
-    gpu_sm_utilization_string='0%',
+    gpu_memory_utilization=9.4,            # in percentage
+    gpu_memory_utilization_string='9.4%',  # in percentage
+    gpu_sm_utilization=0,                  # in percentage
+    gpu_sm_utilization_string='0%',        # in percentage
     identity=(23266, 1620651760.15, 1),
     is_running=True,
-    memory_percent=1.6849018430285683,
-    memory_percent_string='1.7%',
+    memory_percent=1.6849018430285683,     # in percentage
+    memory_percent_string='1.7%',          # in percentage
     name='python3',
     pid=23266,
     running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
     running_time_human='46:13:33',
-    type='C',
+    type='C',                             # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
     username='panxuehai'
 )
 
@@ -432,10 +439,10 @@ In [26]: import os
     ...: this
 Out[26]: HostProcess(pid=35783, name='python', status='running', started='19:19:00')
 
-In [27]: this.cmdline()
+In [27]: this.cmdline()  # type: List[str]
 Out[27]: ['python', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
 
-In [27]: this.command()  # not simply ''.join(cmdline) and quotes are added
+In [27]: this.command()  # not simply ' '.join(cmdline) and quotes are added
 Out[27]: 'python -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
 
 In [28]: import cupy as cp
@@ -450,7 +457,7 @@ Out[29]: 267386880
 In [30]: this
 Out[30]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [31]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: instance will be reused while process is running
+In [31]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: instance will be reused while the process is running
 Out[31]: True
 ```
 
