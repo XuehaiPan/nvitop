@@ -200,7 +200,7 @@ class Device(object):
     def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
         return nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
 
-    def power_status(self) -> Union[str, NaType]:  # string of power draw over power limit in watts (W)
+    def power_status(self) -> Union[str, NaType]:  # string of power usage over power limit in watts (W)
         power_usage = self.power_usage()
         power_limit = self.power_limit()
         if nvml.nvmlCheckReturn(power_usage, int) and nvml.nvmlCheckReturn(power_limit, int):

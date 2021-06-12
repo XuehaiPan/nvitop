@@ -75,7 +75,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (*recommended*):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.3)):
 
 ```bash
 pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -108,7 +108,7 @@ $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 $ nvitop -ov
 ```
 
-**NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. MI(X), in `nvidia-smi` it is `C+G`).
+**NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. mi(x)ed, in `nvidia-smi` it is `C+G`).
 
 ### Resource Monitor
 
@@ -153,7 +153,7 @@ ssh user@host -t nvitop -m                 # installed by `sudo pip3 install ...
 ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user ...`
 ```
 
-**NOTE:** Users need to add `-t` option to allocate a pseudo-terminal over the SSH session for monitor mode.
+**NOTE:** Users need to add the `-t` option to allocate a pseudo-terminal over the SSH session for monitor mode.
 
 Type `nvitop --help` for more information:
 
@@ -346,11 +346,11 @@ Out[15]: DeviceSnapshot(
 )
 ```
 
-**NOTE:** The entry values may be `'N/A'` (type: `NaType`) when the corresponding resources are not applicable. You can use `if entry != 'N/A'` checks to avoid exceptions. And it's safe to use `float(entry)` for numbers while `'N/A'` will be converted to `'math.nan'`. For example:
+**NOTE:** The entry values may be `'N/A'` (type: `NaType`) when the corresponding resources are not applicable. You can use some `if entry != 'N/A'` checks to avoid exceptions. It's safe to use `float(entry)` for numbers while `'N/A'` will be converted to `'math.nan'`. For example:
 
 ```python
 memory_used: Union[int, NaType] = device.memory_used()            # memory usage in bytes or `N/A`
-memory_used_in_mib: float       = float(memory_used) / (1 << 20)  # memory usage in MiB   or `math.nan`
+memory_used_in_mib: float       = float(memory_used) / (1 << 20)  # memory usage in Mebibytes (MiB) or `math.nan`
 ```
 
 #### Process
@@ -442,45 +442,48 @@ Out[26]: HostProcess(pid=35783, name='python', status='running', started='19:19:
 In [27]: this.cmdline()  # type: List[str]
 Out[27]: ['python', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
 
-In [27]: this.command()  # not simply ' '.join(cmdline) and quotes are added
+In [27]: this.command()  # not simply `' '.join(cmdline)` but quotes are added
 Out[27]: 'python -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
 
-In [28]: import cupy as cp
+In [28]: this.memory_info()
+Out[28]: pmem(rss=83988480, vms=343543808, shared=12079104, text=8192, lib=0, data=297435136, dirty=0)
+
+In [29]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
-    ...: this = GpuProcess(os.getpid(), nvidia0)  # explicitly construct from GpuProcess rather than device.processes() call
+    ...: this = GpuProcess(os.getpid(), nvidia0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
     ...: this
-Out[28]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[29]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [29]: this.update_gpu_status()  # update used GPU memory from new driver query
-Out[29]: 267386880
+In [30]: this.update_gpu_status()  # update used GPU memory from new driver queries
+Out[30]: 267386880
 
-In [30]: this
-Out[30]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+In [31]: this
+Out[31]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [31]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: instance will be reused while the process is running
-Out[31]: True
+In [32]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: the instance will be reused while the process is running
+Out[32]: True
 ```
 
 #### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
 ```python
-In [32]: host.cpu_count()
-Out[32]: 88
+In [33]: host.cpu_count()
+Out[33]: 88
 
-In [33]: host.cpu_percent()
-Out[33]: 18.5
+In [34]: host.cpu_percent()
+Out[34]: 18.5
 
-In [34]: host.cpu_times()
-Out[34]: scputimes(user=2346377.62, nice=53321.44, system=579177.52, idle=10323719.85, iowait=28750.22, irq=0.0, softirq=11566.87, steal=0.0, guest=0.0, guest_nice=0.0)
+In [35]: host.cpu_times()
+Out[35]: scputimes(user=2346377.62, nice=53321.44, system=579177.52, idle=10323719.85, iowait=28750.22, irq=0.0, softirq=11566.87, steal=0.0, guest=0.0, guest_nice=0.0)
 
-In [35]: host.load_average()
-Out[35]: (14.88, 17.8, 19.91)
+In [36]: host.load_average()
+Out[36]: (14.88, 17.8, 19.91)
 
-In [36]: host.virtual_memory()
-Out[36]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
+In [37]: host.virtual_memory()
+Out[37]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
 
-In [37]: host.swap_memory()
-Out[37]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
+In [38]: host.swap_memory()
+Out[38]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
 ```
 
 ---
