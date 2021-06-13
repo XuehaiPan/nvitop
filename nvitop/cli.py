@@ -30,12 +30,12 @@ def parse_arguments():
     parser.add_argument('--only-visible', '-ov', dest='only_visible', action='store_true',
                         help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
     parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
-                        help='Thresholds of GPU utilization to distinguish load intensity.\n' +
+                        help='Thresholds of GPU utilization to determine the load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.GPU_UTILIZATION_THRESHOLDS))
     parser.add_argument('--mem-util-thresh', type=int, nargs=2,
                         choices=range(1, 100), metavar=('th1', 'th2'),
-                        help='Thresholds of GPU memory utilization to distinguish load intensity.\n' +
+                        help='Thresholds of GPU memory utilization to determine the load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
     parser.add_argument('--ascii', action='store_true',

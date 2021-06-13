@@ -27,6 +27,7 @@
     - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
+- [TODO List](#todo-list)
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
@@ -176,11 +177,11 @@ optional arguments:
                         Only show the specified devices, suppress option `--only-visible`.
   --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
   --gpu-util-thresh th1 th2
-                        Thresholds of GPU utilization to distinguish load intensity.
+                        Thresholds of GPU utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 75 )
   --mem-util-thresh th1 th2
-                        Thresholds of GPU memory utilization to distinguish load intensity.
+                        Thresholds of GPU memory utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
   --ascii               Use ASCII characters only, which is useful for terminals without Unicode support.
@@ -514,3 +515,19 @@ Example output of `nvitop -m`:
 `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
 
 **NOTE:** Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
+
+## TODO List
+
+- [X] colorize device information based on the load intensity
+- [X] basic process information both on the device and host
+- [X] GPU process management (interrupt / terminate / kill)
+- [X] fancy bars and history graphs
+- [X] process sorting
+- [X] help screen
+- [ ] process filtering
+- [ ] scrollable process list for large amounts of processes
+- [ ] process environment variable screen
+- [ ] process management for parent processes (tree view / interrupt / terminate / kill)
+- [ ] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai) (first priority)
+- [ ] web interface (under consideration)
+- [ ] AMD ROCm support (help wanted for testing)
