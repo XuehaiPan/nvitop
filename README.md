@@ -3,7 +3,7 @@
 ![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop)
 ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
-![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)
+[![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)](https://pypistats.org/packages/nvitop)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
 `nvitop`, an interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
@@ -347,10 +347,10 @@ Out[15]: DeviceSnapshot(
 )
 ```
 
-**NOTE:** The entry values may be `'N/A'` (type: `NaType`) when the corresponding resources are not applicable. You can use some `if entry != 'N/A'` checks to avoid exceptions. It's safe to use `float(entry)` for numbers while `'N/A'` will be converted to `'math.nan'`. For example:
+**NOTE:** Some entry values may be `'N/A'` (type: `NaType`, subclass of `str`) when the corresponding resources are not applicable. You can use `entry != 'N/A'` conditions to avoid exceptions. It's safe to use `float(entry)` for numbers while `NaType` will be converted to `math.nan`. For example:
 
 ```python
-memory_used: Union[int, NaType] = device.memory_used()            # memory usage in bytes or `N/A`
+memory_used: Union[int, NaType] = device.memory_used()            # memory usage in bytes or `'N/A'`
 memory_used_in_mib: float       = float(memory_used) / (1 << 20)  # memory usage in Mebibytes (MiB) or `math.nan`
 ```
 

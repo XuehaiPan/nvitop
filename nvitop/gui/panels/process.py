@@ -387,11 +387,7 @@ class ProcessPanel(Displayable):
         column_width = len(column)
         reverse = xor(reverse, self.reverse)
         indicator = '▼' if reverse else '▲'
-        if (self.order == 'natural' and reverse) or self.order in ('pid', 'username', 'gpu_memory'):
-            self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
-            self.color_at(self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline')
-            self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
-        elif self.order != 'natural':
+        if self.order in ('cpu_percent', 'memory_percent', 'time'):
             offset -= host_offset
             if self.order == 'time':
                 offset += len(self.host_headers[-2]) - 4
@@ -404,8 +400,12 @@ class ProcessPanel(Displayable):
                     self.color_at(self.y + 3, self.x + 37, width=offset + column_width - 38, attr='bold | underline')
             if offset + column_width >= 38:
                 self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
-        else:
+        elif self.order == 'natural' and not reverse:
             self.color_at(self.y + 3, self.x + 2, width=3, attr='bold')
+        else:
+            self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
+            self.color_at(self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline')
+            self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
 
         self.selected.within_window = False
         if len(self.snapshots) > 0:
