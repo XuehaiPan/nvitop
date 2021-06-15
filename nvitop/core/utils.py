@@ -19,6 +19,12 @@ class NotApplicableType(str):
             cls._instance = super().__new__(cls, 'N/A')
         return cls._instance
 
+    def __bool__(self):
+        return False
+
+    def __int__(self):
+        return 0
+
     def __float__(self):
         return math.nan
 

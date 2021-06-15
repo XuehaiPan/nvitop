@@ -21,6 +21,9 @@
     - [For Docker Users](#for-docker-users)
     - [For SSH Users](#for-ssh-users)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
+  - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
+    - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
+    - [Callback for PyTorch Lighting](#callback-for-pytorch-lighting)
   - [More than Monitoring](#more-than-monitoring)
     - [Device](#device)
     - [Process](#process)
@@ -143,7 +146,7 @@ docker build --tag nvitop:latest .
 docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m
 ```
 
-**NOTE:** Don't forget to add `--pid=host` option when running the container.
+**NOTE:** Don't forget to add the `--pid=host` option when running the container.
 
 #### For SSH Users
 
@@ -219,6 +222,38 @@ optional arguments:
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
 **NOTE:** Press the `CTRL` key to multiply the mouse wheel events by `5`.
+
+### Callback Functions for Machine Learning Frameworks
+
+`nvitop` provides two builtin callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai).
+
+#### Callback for [TensorFlow (Keras)](https://www.tensorflow.org)
+
+```python
+from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
+from tensorflow.python.keras.callbacks import TensorBoard
+from nvitop.callbacks.keras import GpuStatsLogger
+gpus = ['/gpu:0', '/gpu:1']  # or gpus = [0, 1] or gpus = 2
+model = Xception(weights=None, ..)
+model = multi_gpu_model(model, gpus)  # optional
+model.compile(..)
+tb_callback = TensorBoard(log_dir='./logs')  # or `keras.callback.CSVLogger`
+gpu_stats = GpuStatsLogger(gpus)
+model.fit(.., callbacks=[gpu_stats, tb_callback])
+```
+
+**NOTE:** Users should assign a `keras.callback.TensorBoard` callback or a `keras.callback.CSVLogger` callback to the model. And the `GpuStatsLogger` callback should be placed before the `keras.callback.TensorBoard` / `keras.callback.CSVLogger` callback.
+
+#### Callback for [PyTorch Lighting](https://pytorchlightning.ai)
+
+```python
+from pytorch_lightning import Trainer
+from nvitop.callbacks.lightning import GpuStatsLogger
+gpu_stats = GpuStatsLogger()
+trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
+```
+
+**NOTE:** Users should assign a logger to the trainer.
 
 ### More than Monitoring
 
@@ -524,10 +559,10 @@ Example output of `nvitop -m`:
 - [X] fancy bars and history graphs
 - [X] process sorting
 - [X] help screen
+- [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai)
 - [ ] process filtering
 - [ ] scrollable process list for large amounts of processes
 - [ ] process environment variable screen
 - [ ] process management for parent processes (tree view / interrupt / terminate / kill)
-- [ ] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai) (first priority)
 - [ ] web interface (under consideration)
 - [ ] AMD ROCm support (help wanted for testing)
