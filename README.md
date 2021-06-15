@@ -79,7 +79,7 @@ pip3 install --upgrade nvitop
 Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.3)):
 
 ```bash
-pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
+pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
 Or, clone this repo and install manually:

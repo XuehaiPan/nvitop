@@ -1,13 +1,15 @@
-"""An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."""
-
+import os
 import platform
+import sys
 
 from setuptools import find_packages, setup
 
-__version__ = '0.3.3'
-__license__ = 'GPLv3'
-__author__ = __maintainer__ = 'Xuehai Pan'
-__email__ = 'XuehaiPan@pku.edu.cn'
+try:
+    import nvitop.version as version
+except ImportError:
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'nvitop'))
+    import version
+
 
 extra_description = {}
 try:
@@ -19,12 +21,12 @@ except (OSError, UnicodeError):
 
 setup(
     name='nvitop',
-    version=__version__,
-    description=__doc__,
+    version=version.__version__,
+    description=version.__doc__,
     **extra_description,
-    license=__license__,
-    author=__author__,
-    author_email=__email__,
+    license=version.__license__,
+    author=version.__author__,
+    author_email=version.__email__,
     url="https://github.com/XuehaiPan/nvitop",
     packages=find_packages(include=['nvitop', 'nvitop.*']),
     entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
