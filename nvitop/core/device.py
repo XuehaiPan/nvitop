@@ -4,6 +4,8 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import os
+import re
 from typing import List, Dict, Iterable, Callable, Union, Optional, Any
 
 from cachetools.func import ttl_cache
@@ -17,6 +19,8 @@ __all__ = ['Device']
 
 
 class Device(object):
+    UUID_PATTEN = re.compile(r'^GPU-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+
     MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
     GPU_UTILIZATION_THRESHOLDS = (10, 75)
     INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
@@ -30,6 +34,47 @@ class Device(object):
         if indices is None:
             indices = range(cls.count())
         return list(map(cls, indices))
+
+    @classmethod
+    def from_cuda_visible_devices(cls, cuda_visible_devices: Optional[str] = None) -> List['Device']:
+        if cuda_visible_devices is None:
+            cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
+            if cuda_visible_devices is None:
+                cuda_visible_devices = ','.join(map(str, range(cls.count())))
+
+        def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
+            nonlocal use_indices
+
+            if isinstance(index_or_uuid, str):
+                if index_or_uuid.isdigit():
+                    index_or_uuid = int(index_or_uuid)
+                elif cls.UUID_PATTEN.match(index_or_uuid) is None:
+                    raise nvml.NVMLError_NotFound()  # pylint: disable=no-member
+
+            if use_indices is None:
+                use_indices = isinstance(index_or_uuid, int)
+
+            if isinstance(index_or_uuid, int) and use_indices:
+                return cls(index=index_or_uuid)
+            if isinstance(index_or_uuid, str) and not use_indices:
+                return cls(uuid=index_or_uuid)
+            raise ValueError('invalid identifier')
+
+        devices = []
+        presented = set()
+        use_indices = None
+        for identifier in map(str.strip, cuda_visible_devices.split(',')):
+            if identifier in presented:
+                raise RuntimeError('CUDAErrorInvalidDevice: invalid device ordinal')
+            try:
+                device = from_index_or_uuid(identifier)
+            except (ValueError, nvml.NVMLError):
+                break
+            else:
+                devices.append(device)
+                presented.add(identifier)
+
+        return devices
 
     @classmethod
     def all(cls) -> List['Device']:
@@ -82,7 +127,7 @@ class Device(object):
         self._memory_total_human = NA
         self._timestamp = 0
 
-        self._ident = (self.index, self.bus_id())
+        self._ident = (self.index, self.uuid())
         self._hash = None
         self._snapshot = None
 

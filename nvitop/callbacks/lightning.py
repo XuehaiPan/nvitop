@@ -11,7 +11,8 @@ from pytorch_lightning.callbacks import Callback
 from pytorch_lightning.utilities import DeviceType, rank_zero_only
 from pytorch_lightning.utilities.exceptions import MisconfigurationException
 
-from ..core import nvml, Device, MiB, NA
+from ..core import nvml, MiB, NA
+from .utils import get_devices_by_logical_ids
 
 
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor
@@ -93,13 +94,13 @@ class GpuStatsLogger(Callback):
                 'since gpus attribute in Trainer is set to {}.'.format(trainer.gpus)
             )
 
-        gpu_ids = sorted(set(trainer.data_parallel_device_ids))
+        device_ids = trainer.data_parallel_device_ids
         try:
-            self._devices = Device.from_indices(gpu_ids)
-        except nvml.NVMLError as ex:
+            self._devices = get_devices_by_logical_ids(device_ids, unique=True)
+        except (nvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
                 'Cannot use GpuStatsLogger callback because devices unavailable. '
-                'Received: `gpus={}`'.format(gpu_ids)
+                'Received: `gpus={}`'.format(device_ids)
             ) from ex
 
     def on_train_epoch_start(self, trainer, pl_module) -> None:
@@ -138,7 +139,9 @@ class GpuStatsLogger(Callback):
 
         stats = {}
         for device in self._devices:
-            prefix = 'gpu_id: {}'.format(device)
+            prefix = 'gpu_id: {}'.format(device.index)
+            if device.device_id != device.index:  # pylint: disable=no-member
+                prefix += ' (real index: {})'.format(device.index)
             if self._memory_utilization or self._gpu_utilization:
                 utilization = device.utilization_rates()
                 if self._memory_utilization:

@@ -21,6 +21,7 @@ class libnvml(object):
     LOGGER = logging.getLogger('NVML')
     FLAGS = set()
     UNKNOWN_FUNCTIONS = set()
+    NVMLError = pynvml.NVMLError
 
     def __new__(cls) -> 'libnvml':
         if not hasattr(cls, '_instance'):
@@ -31,7 +32,7 @@ class libnvml(object):
                 if name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
                     continue
                 if (
-                    name.startswith('NVML_') or name.startswith('NVMLError')
+                    name.startswith('NVML_') or name.startswith('NVMLError_')
                 ) or (
                     name.startswith('nvml') and isinstance(attr, FunctionType)
                 ):

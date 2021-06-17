@@ -9,7 +9,8 @@ from typing import Dict, List, Tuple, Union
 
 from tensorflow.python.keras.callbacks import Callback
 
-from ..core import nvml, Device, MiB, NA
+from ..core import nvml, MiB, NA
+from .utils import get_devices_by_logical_ids
 
 
 # Ported version of .lightning.GpuStatsLogger for Keras
@@ -101,8 +102,8 @@ class GpuStatsLogger(Callback):
             gpu_ids = list(range(gpus))
 
         try:
-            self._devices = Device.from_indices(gpu_ids)
-        except nvml.NVMLError as ex:
+            self._devices = get_devices_by_logical_ids(gpu_ids, unique=True)
+        except (nvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
                 'Cannot use GpuStatsLogger callback because devices unavailable. '
                 'Received: `gpus={}`'.format(gpu_ids)
@@ -147,7 +148,9 @@ class GpuStatsLogger(Callback):
 
         stats = {}
         for device in self._devices:
-            prefix = 'gpu_id: {}'.format(device)
+            prefix = 'gpu_id: {}'.format(device.index)
+            if device.device_id != device.index:  # pylint: disable=no-member
+                prefix += ' (real index: {})'.format(device.index)
             if self._memory_utilization or self._gpu_utilization:
                 utilization = device.utilization_rates()
                 if self._memory_utilization:

@@ -105,10 +105,10 @@ Query the device and process status. The output is similar to `nvidia-smi`, but 
 # Query status of all devices
 $ nvitop
 
-# Specify query devices
+# Specify query devices (by integer indices)
 $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 
-# Only show devices in `CUDA_VISIBLE_DEVICES`
+# Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
 $ nvitop -ov
 ```
 
@@ -128,10 +128,10 @@ $ nvitop -m full
 # Arbitrarily display as `compact` mode
 $ nvitop -m compact
 
-# Specify query devices
+# Specify query devices (by integer indices)
 $ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
 
-# Only show devices in `CUDA_VISIBLE_DEVICES`
+# Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
 $ nvitop -m -ov
 ```
 
@@ -233,16 +233,16 @@ optional arguments:
 from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
 from tensorflow.python.keras.callbacks import TensorBoard
 from nvitop.callbacks.keras import GpuStatsLogger
-gpus = ['/gpu:0', '/gpu:1']  # or gpus = [0, 1] or gpus = 2
+gpus = ['/gpu:0', '/gpu:1']  # or `gpus = [0, 1]` or `gpus = 2`
 model = Xception(weights=None, ..)
 model = multi_gpu_model(model, gpus)  # optional
 model.compile(..)
-tb_callback = TensorBoard(log_dir='./logs')  # or `keras.callback.CSVLogger`
+tb_callback = TensorBoard(log_dir='./logs')  # or `keras.callbacks.CSVLogger`
 gpu_stats = GpuStatsLogger(gpus)
 model.fit(.., callbacks=[gpu_stats, tb_callback])
 ```
 
-**NOTE:** Users should assign a `keras.callback.TensorBoard` callback or a `keras.callback.CSVLogger` callback to the model. And the `GpuStatsLogger` callback should be placed before the `keras.callback.TensorBoard` / `keras.callback.CSVLogger` callback.
+**NOTE:** Users should assign a `keras.callbacks.TensorBoard` callback or a `keras.callbacks.CSVLogger` callback to the model. And the `GpuStatsLogger` callback should be placed before the `keras.callbacks.TensorBoard` / `keras.callbacks.CSVLogger` callback.
 
 #### Callback for [PyTorch Lighting](https://pytorchlightning.ai)
 
@@ -273,7 +273,7 @@ Out[3]: '10.1'
 In [4]: Device.count()
 Out[4]: 10
 
-In [5]: all_devices = Device.all()
+In [5]: all_devices = Device.all()  # or use `visible_devices = Device.from_cuda_visible_devices()`
    ...: all_devices
 Out[5]: [
     Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),

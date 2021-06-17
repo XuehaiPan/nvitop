@@ -5,7 +5,6 @@
 
 import argparse
 import locale
-import os
 import sys
 
 from .core import nvml, Device
@@ -65,24 +64,19 @@ def main():  # pylint: disable=too-many-branches
         del args.monitor
 
     try:
-        device_count = Device.count()
+        Device.count()
     except nvml.NVMLError:
         return 1
 
     if args.only is not None:
-        visible_devices = set(args.only)
+        devices = Device.from_indices(set(args.only))
     elif args.only_visible:
-        try:
-            visible_devices = map(str.strip, os.getenv('CUDA_VISIBLE_DEVICES').split(','))
-            visible_devices = set(map(int, filter(str.isnumeric, visible_devices)))
-        except (ValueError, AttributeError):
-            visible_devices = set(range(device_count))
+        devices = Device.from_cuda_visible_devices()
     else:
-        visible_devices = set(range(device_count))
-    visible_devices = sorted(set(range(device_count)).intersection(visible_devices))
-    devices = Device.from_indices(visible_devices)
+        devices = Device.all()
+    devices.sort(key=lambda device: device.index)
 
-    if hasattr(args, 'monitor') and len(visible_devices) > 0:
+    if hasattr(args, 'monitor') and len(devices) > 0:
         with libcurses() as win:
             top = Top(devices, ascii=args.ascii, mode=args.monitor, win=win)
             top.loop()
