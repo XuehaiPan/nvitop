@@ -19,7 +19,7 @@ class BreakLoop(Exception):
 
 
 class Top(DisplayableContainer):
-    def __init__(self, devices, ascii=False, mode='auto', win=None):  # pylint: disable=redefined-builtin
+    def __init__(self, devices, filters=(), ascii=False, mode='auto', win=None):  # pylint: disable=redefined-builtin
         super().__init__(win, root=self)
 
         self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns)
@@ -45,7 +45,7 @@ class Top(DisplayableContainer):
         self.host_panel.focused = False
         self.add_child(self.host_panel)
 
-        self.process_panel = ProcessPanel(self.devices, compact, win=win, root=self)
+        self.process_panel = ProcessPanel(self.devices, compact, filters, win=win, root=self)
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 

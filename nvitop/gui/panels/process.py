@@ -196,7 +196,7 @@ class ProcessPanel(Displayable):
         ),
     }
 
-    def __init__(self, devices, compact, win, root):
+    def __init__(self, devices, compact, filters, win, root):
         super().__init__(win, root)
 
         self.devices = devices
@@ -205,6 +205,8 @@ class ProcessPanel(Displayable):
         self._compact = compact
         self.width = max(79, root.width)
         self.height = self._full_height = self.compact_height = 7
+
+        self.filters = [None, *filters]
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
@@ -304,7 +306,10 @@ class ProcessPanel(Displayable):
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
         GpuProcess.clear_host_snapshots()
-        snapshots = list(filter(None, map(GpuProcess.as_snapshot, self.processes.values())))
+        snapshots = map(GpuProcess.as_snapshot, self.processes.values())
+        for condition in self.filters:
+            snapshots = filter(condition, snapshots)
+        snapshots = list(snapshots)
 
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         for snapshot in snapshots:

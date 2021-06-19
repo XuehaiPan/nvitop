@@ -110,6 +110,9 @@ $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 
 # Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
 $ nvitop -ov
+
+# Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+$ nvitop -c
 ```
 
 **NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. mi(x)ed, in `nvidia-smi` it is `C+G`).
@@ -133,6 +136,9 @@ $ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
 
 # Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
 $ nvitop -m -ov
+
+# Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+$ nvitop -m -c
 ```
 
 Press `q` to return to the terminal.
@@ -163,7 +169,7 @@ Type `nvitop --help` for more information:
 
 ```text
 usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]]
-              [--only idx [idx ...]] [--only-visible]
+              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--ascii]
 
@@ -179,6 +185,8 @@ optional arguments:
   --only idx [idx ...], -o idx [idx ...]
                         Only show the specified devices, suppress option `--only-visible`.
   --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
+  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
@@ -563,7 +571,7 @@ Example output of `nvitop -m`:
 - [X] help screen
 - [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai)
 - [X] process environment variable screen
-- [ ] process filtering
+- [X] process filtering
 - [ ] scrollable process list for large amounts of processes
 - [ ] process management for parent processes (tree view / interrupt / terminate / kill)
 - [ ] web interface (under consideration)

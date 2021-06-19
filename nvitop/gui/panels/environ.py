@@ -7,7 +7,7 @@
 import shutil
 from collections import OrderedDict
 
-from ...core import host, HostProcess
+from ...core import host, HostProcess, GpuProcess
 from ..lib import Displayable
 
 
@@ -39,7 +39,7 @@ class EnvironPanel(Displayable):
 
         self._process = value
         try:
-            self.environ = self.process.environ()
+            self.environ = self.process.environ().copy()
         except host.PsutilError:
             self.environ = None
 
@@ -97,9 +97,16 @@ class EnvironPanel(Displayable):
         except host.PsutilError:
             name = 'N/A'
 
-        self.addstr(self.y, self.x, 'Environment of process {} - {}'.format(self.process.pid, name))
+        if isinstance(self.process, GpuProcess):
+            process_type = 'GPU: {}'.format(self.process.type.replace('C', 'Compute').replace('G', 'Graphics'))
+        else:
+            process_type = 'Host'
+        header = 'Environment of process {} ({}) - {}'.format(self.process.pid, process_type, name)
+
+        self.addstr(self.y, self.x, header.ljust(self.width))
+        self.addstr(self.y + 1, self.x, '#' * self.width)
         self.color_at(self.y, self.x, width=self.width, fg='cyan', attr='bold')
-        self.color_at(self.y + 1, self.x, width=self.width, fg='green', attr='reverse')
+        self.color_at(self.y + 1, self.x, width=self.width, fg='green', attr='bold')
 
         if self.environ is None:
             self.addstr(self.y + 2, self.x, 'Could not read process environment.')

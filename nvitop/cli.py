@@ -28,6 +28,10 @@ def parse_arguments():
                         help='Only show the specified devices, suppress option `--only-visible`.')
     parser.add_argument('--only-visible', '-ov', dest='only_visible', action='store_true',
                         help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
+    parser.add_argument('--compute', '-c', dest='compute', action='store_true',
+                        help="Only show GPU processes with the compute context. (type: 'C' or 'C+G')")
+    parser.add_argument('--graphics', '-g', dest='graphics', action='store_true',
+                        help="Only show GPU processes with the graphics context. (type: 'G' or 'C+G')")
     parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
                         help='Thresholds of GPU utilization to determine the load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
@@ -76,12 +80,18 @@ def main():  # pylint: disable=too-many-branches
         devices = Device.all()
     devices.sort(key=lambda device: device.index)
 
+    filters = []
+    if args.compute:
+        filters.append(lambda process: 'C' in process.type)
+    if args.graphics:
+        filters.append(lambda process: 'G' in process.type)
+
     if hasattr(args, 'monitor') and len(devices) > 0:
         with libcurses() as win:
-            top = Top(devices, ascii=args.ascii, mode=args.monitor, win=win)
+            top = Top(devices, filters, ascii=args.ascii, mode=args.monitor, win=win)
             top.loop()
     else:
-        top = Top(devices, ascii=args.ascii)
+        top = Top(devices, filters, ascii=args.ascii)
     top.print()
     top.destroy()
 
