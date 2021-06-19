@@ -11,7 +11,7 @@ import time
 from functools import partial
 
 from .lib import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
-from .panels import DevicePanel, HostPanel, ProcessPanel, HelpPanel
+from .panels import DevicePanel, HostPanel, ProcessPanel, EnvironPanel, HelpPanel
 
 
 class BreakLoop(Exception):
@@ -49,18 +49,12 @@ class Top(DisplayableContainer):
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
-        self.help_panel = HelpPanel(win=win, root=self)
-        self.help_panel.focused = False
-        self.help_panel.visible = False
-        self.add_child(self.help_panel)
-
         self.selected = self.process_panel.selected
 
         self.ascii = ascii
         self.device_panel.ascii = self.ascii
         self.host_panel.ascii = self.ascii
         self.process_panel.ascii = self.ascii
-        self.help_panel.ascii = self.ascii
         if ascii:
             self.host_panel.full_height = self.host_panel.height = self.host_panel.compact_height
 
@@ -69,10 +63,23 @@ class Top(DisplayableContainer):
         self.device_panel.y = self.y
         self.host_panel.y = self.device_panel.y + self.device_panel.height
         self.process_panel.y = self.host_panel.y + self.host_panel.height
-        self.help_panel.x = self.help_panel.y = 0
         self.height = self.device_panel.height + self.host_panel.height + self.process_panel.height
 
         if win is not None:
+            self.environ_panel = EnvironPanel(win=win, root=self)
+            self.environ_panel.focused = False
+            self.environ_panel.visible = False
+            self.environ_panel.ascii = False
+            self.environ_panel.x = self.environ_panel.x = 0
+            self.add_child(self.environ_panel)
+
+            self.help_panel = HelpPanel(win=win, root=self)
+            self.help_panel.focused = False
+            self.help_panel.visible = False
+            self.help_panel.ascii = self.ascii
+            self.help_panel.x = self.help_panel.y = 0
+            self.add_child(self.help_panel)
+
             self.keybuffer = KeyBuffer()
             self.keymaps = KeyMaps(self.keybuffer)
             self.last_input_time = time.monotonic()
@@ -97,9 +104,13 @@ class Top(DisplayableContainer):
             top.mode = mode
             top.update_size()
 
-        def host_left(top): top.process_panel.host_offset -= 1
-        def host_right(top): top.process_panel.host_offset += 1
-        def host_begin(top): top.process_panel.host_offset = -1
+        def force_refresh(top):
+            top.update_size()
+            top.need_redraw = True
+
+        def host_left(top): top.process_panel.host_offset -= 2
+        def host_right(top): top.process_panel.host_offset += 2
+        def host_begin(top): top.process_panel.host_offset = -2
         def host_end(top): top.process_panel.host_offset = 1024
 
         def select_move(top, direction): top.selected.move(direction=direction)
@@ -123,17 +134,38 @@ class Top(DisplayableContainer):
         def order_reverse(top):
             sort_by(top, order=top.process_panel.order, reverse=(not top.process_panel.reverse))
 
+        def show_environ(top):
+            top.environ_panel.process = self.selected.process
+
+            top.device_panel.visible = False
+            top.host_panel.visible = False
+            top.process_panel.visible = False
+            top.environ_panel.visible = True
+            top.environ_panel.focused = True
+            top.help_panel.visible = False
+            top.help_panel.focused = False
+            top.need_redraw = True
+
+        def environ_left(top): top.environ_panel.x_offset = max(0, top.environ_panel.x_offset - 5)
+        def environ_right(top): top.environ_panel.x_offset += 5
+        def environ_begin(top): top.environ_panel.x_offset = 0
+        def environ_move(top, direction): top.environ_panel.move(direction=direction)
+
         def show_help(top):
             top.device_panel.visible = False
             top.host_panel.visible = False
             top.process_panel.visible = False
+            top.environ_panel.visible = False
             top.help_panel.visible = True
             top.help_panel.focused = True
+            top.need_redraw = True
 
         def return2top(top):
             top.device_panel.visible = True
             top.host_panel.visible = True
             top.process_panel.visible = True
+            top.environ_panel.visible = False
+            top.environ_panel.focused = False
             top.help_panel.visible = False
             top.help_panel.focused = False
             top.need_redraw = True
@@ -143,6 +175,10 @@ class Top(DisplayableContainer):
         self.keymaps.bind('root', 'a', partial(change_mode, mode='auto'))
         self.keymaps.bind('root', 'f', partial(change_mode, mode='full'))
         self.keymaps.bind('root', 'c', partial(change_mode, mode='compact'))
+        self.keymaps.bind('root', 'r', force_refresh)
+        self.keymaps.copy('root', 'r', 'R')
+        self.keymaps.copy('root', 'r', '<C-r>')
+        self.keymaps.copy('root', 'r', '<F5>')
 
         self.keymaps.bind('root', '<Left>', host_left)
         self.keymaps.copy('root', '<Left>', '[')
@@ -160,8 +196,8 @@ class Top(DisplayableContainer):
         self.keymaps.bind('root', '<Down>', partial(select_move, direction=+1))
         self.keymaps.copy('root', '<Down>', '<Tab>')
         self.keymaps.copy('root', '<Down>', '<A-j>')
-        self.keymaps.bind('root', '<Home>', partial(select_move, direction=-(1 < 20)))
-        self.keymaps.bind('root', '<End>', partial(select_move, direction=+(1 < 20)))
+        self.keymaps.bind('root', '<Home>', partial(select_move, direction=-(1 << 20)))
+        self.keymaps.bind('root', '<End>', partial(select_move, direction=+(1 << 20)))
         self.keymaps.bind('root', '<Esc>', select_clear)
 
         self.keymaps.bind('root', 'T', terminate)
@@ -178,6 +214,31 @@ class Top(DisplayableContainer):
             self.keymaps.bind('root', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))
             self.keymaps.bind('root', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True))
 
+        self.keymaps.bind('root', 'e', show_environ)
+        self.keymaps.bind('environ', 'r', show_environ)
+        self.keymaps.copy('environ', 'r', 'R')
+        self.keymaps.copy('environ', 'r', '<C-r>')
+        self.keymaps.copy('environ', 'r', '<F5>')
+        self.keymaps.bind('environ', '<Esc>', return2top)
+        self.keymaps.copy('environ', '<Esc>', 'q')
+        self.keymaps.copy('environ', '<Esc>', 'Q')
+        self.keymaps.bind('environ', '<Left>', environ_left)
+        self.keymaps.copy('environ', '<Left>', '[')
+        self.keymaps.copy('environ', '<Left>', '<A-h>')
+        self.keymaps.bind('environ', '<Right>', environ_right)
+        self.keymaps.copy('environ', '<Right>', ']')
+        self.keymaps.copy('environ', '<Right>', '<A-l>')
+        self.keymaps.bind('environ', '<C-a>', environ_begin)
+        self.keymaps.copy('environ', '<C-a>', '^')
+        self.keymaps.bind('environ', '<Up>', partial(environ_move, direction=-1))
+        self.keymaps.copy('environ', '<Up>', '<S-Tab>')
+        self.keymaps.copy('environ', '<Up>', '<A-k>')
+        self.keymaps.bind('environ', '<Down>', partial(environ_move, direction=+1))
+        self.keymaps.copy('environ', '<Down>', '<Tab>')
+        self.keymaps.copy('environ', '<Down>', '<A-j>')
+        self.keymaps.bind('environ', '<Home>', partial(environ_move, direction=-(1 << 20)))
+        self.keymaps.bind('environ', '<End>', partial(environ_move, direction=+(1 << 20)))
+
         self.keymaps.bind('root', 'h', show_help)
         self.keymaps.bind('help', '<any>', return2top)
 
@@ -186,7 +247,9 @@ class Top(DisplayableContainer):
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
-        self.width = n_term_cols - self.x
+        n_term_lines -= self.y
+        n_term_cols -= self.x
+        self.width = n_term_cols
         heights = [
             self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
             self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,
@@ -207,6 +270,7 @@ class Top(DisplayableContainer):
         self.device_panel.width = self.width
         self.host_panel.width = self.width
         self.process_panel.width = self.width
+        self.environ_panel.height, self.environ_panel.width = n_term_lines, n_term_cols
         if self.termsize != termsize:
             self.termsize = termsize
             self.need_redraw = True

@@ -17,7 +17,7 @@ from ..utils import colored, cut_string, make_bar
 class DevicePanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
-    def __init__(self, devices, compact, win, root=None):
+    def __init__(self, devices, compact, win, root):
         super().__init__(win, root)
 
         self.devices = devices

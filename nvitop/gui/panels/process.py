@@ -196,7 +196,7 @@ class ProcessPanel(Displayable):
         ),
     }
 
-    def __init__(self, devices, compact, win=None, root=None):
+    def __init__(self, devices, compact, win, root):
         super().__init__(win, root)
 
         self.devices = devices

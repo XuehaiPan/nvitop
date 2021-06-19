@@ -93,7 +93,7 @@ cd nvitop
 pip3 install .
 ```
 
-**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Since `nvidia-ml-py==11.450.129`, the definition of `nvmlProcessInfo_t` has introduced two new fields `gpuInstanceId` and `computeInstanceId` (`GI ID` and `CI ID` in newer `nvidia-smi`) which are incompatible with some old NVIDIA drivers. `nvitop` may not display the processes correctly due to this incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
+**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Since `nvidia-ml-py>=11.450.129`, the definition of `nvmlProcessInfo_t` has introduced two new fields `gpuInstanceId` and `computeInstanceId` (`GI ID` and `CI ID` in newer `nvidia-smi`) which are incompatible with some old NVIDIA drivers. `nvitop` may not display the processes correctly due to this incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
 
 ## Usage
 
@@ -197,6 +197,7 @@ optional arguments:
 |                                                                        `q` | Quit and return to the terminal.                                                     |
 |                                                                        `h` | Go to the help screen.                                                               |
 |                                                            `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
+|                                                     `r` / `<C-r>` / `<F5>` | Force refresh the window.                                                            |
 |                                                                            |                                                                                      |
 |      `<Left>` / `<Right>`<br>`<A-h>` / `<A-l>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
 |                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).          |
@@ -205,6 +206,7 @@ optional arguments:
 |                                                                   `<Home>` | Select the first process.                                                            |
 |                                                                    `<End>` | Select the last process.                                                             |
 |                                                                    `<Esc>` | Clear process selection.                                                             |
+|                                                                        `e` | Show process environment.                                                            |
 |                                                                            |                                                                                      |
 |                                                             `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
@@ -303,7 +305,7 @@ Out[9]: 5
 
 In [10]: nvidia0.processes()
 Out[10]: {
-    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', pid=tatus, started='14:31:22')),
+    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
     53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
 }
 
@@ -560,9 +562,9 @@ Example output of `nvitop -m`:
 - [X] process sorting
 - [X] help screen
 - [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai)
+- [X] process environment variable screen
 - [ ] process filtering
 - [ ] scrollable process list for large amounts of processes
-- [ ] process environment variable screen
 - [ ] process management for parent processes (tree view / interrupt / terminate / kill)
 - [ ] web interface (under consideration)
 - [ ] AMD ROCm support (help wanted for testing)

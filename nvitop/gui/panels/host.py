@@ -15,7 +15,7 @@ from ..utils import colored, make_bar
 class HostPanel(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
-    def __init__(self, devices, compact, win, root=None):
+    def __init__(self, devices, compact, win, root):
         super().__init__(win, root)
 
         self.devices = devices
@@ -48,8 +48,9 @@ class HostPanel(Displayable):
     @width.setter
     def width(self, value):
         width = max(79, value)
-        if self._width != width and self.visible:
-            self.need_redraw = True
+        if self._width != width:
+            if self.visible:
+                self.need_redraw = True
             graph_width = max(width - 80, 20)
             if self.win is not None:
                 self.average_memory_utilization.width = graph_width
