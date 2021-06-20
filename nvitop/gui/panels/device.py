@@ -196,7 +196,8 @@ class DevicePanel(Displayable):
                 attr = 0
 
             device.name = cut_string(device.name, maxlen=18)
-            device.fan_speed_string = device.fan_speed_string.replace('100%', 'MAX')
+            if device.fan_speed >= 100:
+                device.fan_speed_string = 'MAX'
             for y, fmt in enumerate(formats, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, self.x + 1, width=31, fg=device.display_color, attr=attr)

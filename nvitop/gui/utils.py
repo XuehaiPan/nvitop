@@ -40,7 +40,7 @@ def make_bar(prefix, percent, width):
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent[:-1]
             percent = float(percent) if '.' in percent else int(percent)
-        percentage = float(percent) / 100.0
+        percentage = max(0.0, min(float(percent) / 100.0, 1.0))
         quotient, remainder = divmod(max(1, round(8 * (width - len(bar) - 4) * percentage)), 8)
         bar += '█' * quotient
         if remainder > 0:
