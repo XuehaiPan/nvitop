@@ -234,6 +234,8 @@ class DevicePanel(Displayable):
         if self.device_count > 0:
             for device in self.snapshots:
                 device.name = cut_string(device.name, maxlen=18)
+                if device.fan_speed >= 100:
+                    device.fan_speed_string = 'MAX'
 
                 def colorize(s):
                     if len(s) > 0:
