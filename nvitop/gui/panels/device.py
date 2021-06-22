@@ -92,6 +92,11 @@ class DevicePanel(Displayable):
     def take_snapshots(self):
         snapshots = list(map(lambda device: device.as_snapshot(), self.devices))
 
+        for device in snapshots:
+            device.name = cut_string(device.name, maxlen=18)
+            if device.fan_speed >= 100:
+                device.fan_speed_string = 'MAX'
+
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots
 
@@ -195,9 +200,6 @@ class DevicePanel(Displayable):
             else:
                 attr = 0
 
-            device.name = cut_string(device.name, maxlen=18)
-            if device.fan_speed >= 100:
-                device.fan_speed_string = 'MAX'
             for y, fmt in enumerate(formats, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, self.x + 1, width=31, fg=device.display_color, attr=attr)
@@ -233,10 +235,6 @@ class DevicePanel(Displayable):
 
         if self.device_count > 0:
             for device in self.snapshots:
-                device.name = cut_string(device.name, maxlen=18)
-                if device.fan_speed >= 100:
-                    device.fan_speed_string = 'MAX'
-
                 def colorize(s):
                     if len(s) > 0:
                         return colored(s, device.display_color)  # pylint: disable=cell-var-from-loop
