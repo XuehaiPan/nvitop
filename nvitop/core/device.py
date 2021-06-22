@@ -26,13 +26,32 @@ class Device(object):
     INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
 
     @staticmethod
+    def driver_version() -> Union[str, NaType]:
+        return nvml.nvmlQuery('nvmlSystemGetDriverVersion')
+
+    @staticmethod
+    def cuda_version() -> Union[str, NaType]:
+        cuda_version = nvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
+        if nvml.nvmlCheckReturn(cuda_version, int):
+            return str(cuda_version // 1000 + (cuda_version % 1000) / 100)
+        return NA
+
+    @staticmethod
     def count() -> int:
         return nvml.nvmlQuery('nvmlDeviceGetCount', default=0)
 
     @classmethod
-    def from_indices(cls, indices: Optional[Iterable[int]] = None) -> List['Device']:
+    def all(cls) -> List['Device']:
+        return cls.from_indices()
+
+    @classmethod
+    def from_indices(cls, indices: Optional[Union[int, Iterable[int]]] = None) -> List['Device']:
         if indices is None:
             indices = range(cls.count())
+
+        if isinstance(indices, int):
+            indices = [indices]
+
         return list(map(cls, indices))
 
     @classmethod
@@ -40,7 +59,7 @@ class Device(object):
         if cuda_visible_devices is None:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
             if cuda_visible_devices is None:
-                cuda_visible_devices = ','.join(map(str, range(cls.count())))
+                return cls.all()
 
         def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
             nonlocal use_indices
@@ -77,19 +96,26 @@ class Device(object):
         return devices
 
     @classmethod
-    def all(cls) -> List['Device']:
-        return cls.from_indices()
+    def from_cuda_indices(cls, cuda_indices: Optional[Union[int, Iterable[int]]] = None) -> List['Device']:
+        cuda_devices = cls.from_cuda_visible_devices()
+        if cuda_indices is None:
+            return cuda_devices
 
-    @staticmethod
-    def driver_version() -> Union[str, NaType]:
-        return nvml.nvmlQuery('nvmlSystemGetDriverVersion')
+        if isinstance(cuda_indices, int):
+            cuda_indices = [cuda_indices]
 
-    @staticmethod
-    def cuda_version() -> Union[str, NaType]:
-        cuda_version = nvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
-        if nvml.nvmlCheckReturn(cuda_version, int):
-            return str(cuda_version // 1000 + (cuda_version % 1000) / 100)
-        return NA
+        cuda_indices = list(cuda_indices)
+        cuda_device_count = len(cuda_devices)
+
+        devices = []
+        for cuda_index in cuda_indices:
+            if not 0 <= cuda_index < cuda_device_count:
+                raise RuntimeError('CUDAErrorInvalidDevice: invalid device ordinal')
+            device = cuda_devices[cuda_index]
+            device._cuda_index = cuda_index  # pylint: disable=protected-access
+            devices.append(device)
+
+        return devices
 
     def __init__(self, index: Optional[int] = None,
                  serial: Optional[str] = None,
@@ -119,6 +145,7 @@ class Device(object):
             else:
                 self.index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
 
+        self._cuda_index = None
         self._name = NA
         self._serial = NA
         self._uuid = NA
@@ -174,6 +201,12 @@ class Device(object):
 
             setattr(self, name, attribute)
             return attribute
+
+    @property
+    def cuda_index(self):
+        if self._cuda_index is None:
+            return self.index
+        return self._cuda_index
 
     def name(self) -> Union[str, NaType]:
         if self._name is NA:

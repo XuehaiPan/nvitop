@@ -148,8 +148,8 @@ class GpuStatsLogger(Callback):
 
         stats = {}
         for device in self._devices:
-            prefix = 'gpu_id: {}'.format(device.index)
-            if device.device_id != device.index:  # pylint: disable=no-member
+            prefix = 'gpu_id: {}'.format(device.cuda_index)
+            if device.cuda_index != device.index:
                 prefix += ' (real index: {})'.format(device.index)
             if self._memory_utilization or self._gpu_utilization:
                 utilization = device.utilization_rates()

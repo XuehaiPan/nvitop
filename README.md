@@ -283,7 +283,10 @@ Out[3]: '10.1'
 In [4]: Device.count()
 Out[4]: 10
 
-In [5]: all_devices = Device.all()  # or use `visible_devices = Device.from_cuda_visible_devices()`
+In [5]: all_devices          = Device.all()                        # all devices on board
+      : nvidia_0_1           = Device.from_indices([0, 1])         # from device indices
+      : cuda_visible_devices = Device.from_cuda_visible_devices()  # from environment variable `CUDA_VISIBLE_DEVICES`
+      : cuda_0_1             = Device.from_cuda_indices([0, 1])    # from CUDA device ID (might be different from device ID if `CUDA_VISIBLE_DEVICES` is set)
    ...: all_devices
 Out[5]: [
     Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
