@@ -41,7 +41,7 @@ def parse_arguments():
                         help='Thresholds of GPU memory utilization to determine the load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
-    parser.add_argument('--ascii', action='store_true',
+    parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
                         help='Use ASCII characters only, which is useful for terminals without Unicode support.')
     args = parser.parse_args()
     if hasattr(args, 'monitor') and args.monitor is None:

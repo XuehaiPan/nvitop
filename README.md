@@ -202,7 +202,8 @@ optional arguments:
                         Thresholds of GPU memory utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
-  --ascii               Use ASCII characters only, which is useful for terminals without Unicode support.
+  --ascii, --no-unicode, -U
+                        Use ASCII characters only, which is useful for terminals without Unicode support.
 ```
 
 #### Keybindings for Monitor Mode
