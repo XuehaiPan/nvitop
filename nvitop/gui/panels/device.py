@@ -192,11 +192,14 @@ class DevicePanel(Displayable):
 
         remaining_width = self.width - 79
         draw_bars = (self.width >= 100)
-        selected_device = (self.root.selected.process.device if self.root.selected.is_set() else None)
+        try:
+            selected_device = self.root.selected.process.device
+        except AttributeError:
+            selected_device = None
         for index, device in enumerate(self.snapshots):
             y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
             if selected_device is not None:
-                attr = 'bold' if device.real == selected_device else 'dim'
+                attr = ('bold' if device.real == selected_device else 'dim')
             else:
                 attr = 0
 

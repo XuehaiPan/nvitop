@@ -11,7 +11,8 @@ import time
 from functools import partial
 
 from .lib import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
-from .panels import DevicePanel, HostPanel, ProcessPanel, EnvironPanel, HelpPanel
+from .panels import (DevicePanel, HostPanel, ProcessPanel,
+                     EnvironPanel, TreeViewPanel, HelpPanel)
 
 
 class BreakLoop(Exception):
@@ -67,14 +68,18 @@ class Top(DisplayableContainer):
 
         if win is not None:
             self.environ_panel = EnvironPanel(win=win, root=self)
-            self.environ_panel.focused = False
             self.environ_panel.visible = False
             self.environ_panel.ascii = False
             self.environ_panel.x = self.environ_panel.x = 0
             self.add_child(self.environ_panel)
 
+            self.treeview_panel = TreeViewPanel(win=win, root=self)
+            self.treeview_panel.visible = False
+            self.treeview_panel.ascii = self.ascii
+            self.treeview_panel.x = self.treeview_panel.y = 0
+            self.add_child(self.treeview_panel)
+
             self.help_panel = HelpPanel(win=win, root=self)
-            self.help_panel.focused = False
             self.help_panel.visible = False
             self.help_panel.ascii = self.ascii
             self.help_panel.x = self.help_panel.y = 0
@@ -135,40 +140,49 @@ class Top(DisplayableContainer):
             sort_by(top, order=top.process_panel.order, reverse=(not top.process_panel.reverse))
 
         def show_environ(top):
-            top.environ_panel.process = self.selected.process
-
             top.device_panel.visible = False
             top.host_panel.visible = False
             top.process_panel.visible = False
+            top.treeview_panel.visible = False
+            top.help_panel.visible = False
+
             top.environ_panel.visible = True
             top.environ_panel.focused = True
-            top.help_panel.visible = False
-            top.help_panel.focused = False
-            top.need_redraw = True
+            top.environ_panel.process = self.selected.process
 
         def environ_left(top): top.environ_panel.x_offset = max(0, top.environ_panel.x_offset - 5)
         def environ_right(top): top.environ_panel.x_offset += 5
         def environ_begin(top): top.environ_panel.x_offset = 0
         def environ_move(top, direction): top.environ_panel.move(direction=direction)
 
+        def show_treeview(top):
+            top.device_panel.visible = False
+            top.host_panel.visible = False
+            top.process_panel.visible = False
+            top.environ_panel.visible = False
+            top.help_panel.visible = False
+
+            top.treeview_panel.visible = True
+            top.treeview_panel.focused = True
+            top.treeview_panel.selected.process = self.selected.process
+
         def show_help(top):
             top.device_panel.visible = False
             top.host_panel.visible = False
             top.process_panel.visible = False
             top.environ_panel.visible = False
+            top.treeview_panel.visible = False
+
             top.help_panel.visible = True
             top.help_panel.focused = True
-            top.need_redraw = True
 
         def return2top(top):
             top.device_panel.visible = True
             top.host_panel.visible = True
             top.process_panel.visible = True
             top.environ_panel.visible = False
-            top.environ_panel.focused = False
+            top.treeview_panel.visible = False
             top.help_panel.visible = False
-            top.help_panel.focused = False
-            top.need_redraw = True
 
         self.keymaps.bind('root', 'q', quit)
         self.keymaps.copy('root', 'q', 'Q')
@@ -239,6 +253,42 @@ class Top(DisplayableContainer):
         self.keymaps.bind('environ', '<Home>', partial(environ_move, direction=-(1 << 20)))
         self.keymaps.bind('environ', '<End>', partial(environ_move, direction=+(1 << 20)))
 
+        def tree_left(top): top.treeview_panel.x_offset = max(0, top.treeview_panel.x_offset - 5)
+        def tree_right(top): top.treeview_panel.x_offset += 5
+        def tree_begin(top): top.treeview_panel.x_offset = 0
+        def tree_select_move(top, direction): top.treeview_panel.selected.move(direction=direction)
+        def tree_select_clear(top): top.treeview_panel.selected.clear()
+        def tree_terminate(top): top.treeview_panel.selected.terminate()
+        def tree_kill(top): top.treeview_panel.selected.kill()
+        def tree_interrupt(top): top.treeview_panel.selected.interrupt()
+
+        self.keymaps.bind('root', 't', show_treeview)
+        self.keymaps.bind('treeview', 't', return2top)
+        self.keymaps.copy('treeview', 't', 'q')
+        self.keymaps.copy('treeview', 't', 'Q')
+        self.keymaps.bind('treeview', '<Left>', tree_left)
+        self.keymaps.copy('treeview', '<Left>', '[')
+        self.keymaps.copy('treeview', '<Left>', '<A-h>')
+        self.keymaps.bind('treeview', '<Right>', tree_right)
+        self.keymaps.copy('treeview', '<Right>', ']')
+        self.keymaps.copy('treeview', '<Right>', '<A-l>')
+        self.keymaps.bind('treeview', '<C-a>', tree_begin)
+        self.keymaps.copy('treeview', '<C-a>', '^')
+        self.keymaps.bind('treeview', '<Up>', partial(tree_select_move, direction=-1))
+        self.keymaps.copy('treeview', '<Up>', '<S-Tab>')
+        self.keymaps.copy('treeview', '<Up>', '<A-k>')
+        self.keymaps.bind('treeview', '<Down>', partial(tree_select_move, direction=+1))
+        self.keymaps.copy('treeview', '<Down>', '<Tab>')
+        self.keymaps.copy('treeview', '<Down>', '<A-j>')
+        self.keymaps.bind('treeview', '<Home>', partial(tree_select_move, direction=-(1 << 20)))
+        self.keymaps.bind('treeview', '<End>', partial(tree_select_move, direction=+(1 << 20)))
+        self.keymaps.bind('treeview', '<Esc>', tree_select_clear)
+
+        self.keymaps.bind('treeview', 'T', tree_terminate)
+        self.keymaps.bind('treeview', 'K', tree_kill)
+        self.keymaps.bind('treeview', '<C-c>', tree_interrupt)
+        self.keymaps.copy('treeview', '<C-c>', 'I')
+
         self.keymaps.bind('root', 'h', show_help)
         self.keymaps.bind('help', '<any>', return2top)
 
@@ -271,6 +321,7 @@ class Top(DisplayableContainer):
         self.host_panel.width = self.width
         self.process_panel.width = self.width
         self.environ_panel.height, self.environ_panel.width = n_term_lines, n_term_cols
+        self.treeview_panel.height, self.treeview_panel.width = n_term_lines, n_term_cols
         if self.termsize != termsize:
             self.termsize = termsize
             self.need_redraw = True

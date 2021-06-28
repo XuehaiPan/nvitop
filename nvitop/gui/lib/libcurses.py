@@ -167,3 +167,11 @@ class CursesShortcuts(object):
     def color_reset(self):
         """Change the colors to the default colors"""
         self.color()
+
+    @staticmethod
+    def beep():
+        curses.beep()
+
+    @staticmethod
+    def flash():
+        curses.flash()

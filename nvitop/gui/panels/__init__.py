@@ -7,4 +7,5 @@ from .device import DevicePanel
 from .host import HostPanel
 from .process import ProcessPanel
 from .environ import EnvironPanel
+from .treeview import TreeViewPanel
 from .help import HelpPanel

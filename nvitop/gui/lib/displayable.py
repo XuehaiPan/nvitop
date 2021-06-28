@@ -126,6 +126,8 @@ class Displayable(CursesShortcuts):
         if self._visible != value:
             self.need_redraw = True
             self._visible = value
+        if not self.visible:
+            self.focused = False
 
     @property
     def need_redraw(self):
@@ -135,7 +137,7 @@ class Displayable(CursesShortcuts):
     def need_redraw(self, value):
         if self._need_redraw != value:
             self._need_redraw = value
-            if value and self.parent is not None:
+            if value and self.parent is not None and not self.parent.need_redraw:
                 self.parent.need_redraw = True
 
     @property

@@ -215,6 +215,7 @@ optional arguments:
 |                                                                    `<End>` | Select the last process.                                                             |
 |                                                                    `<Esc>` | Clear process selection.                                                             |
 |                                                                        `e` | Show process environment.                                                            |
+|                                                                        `t` | Toggle tree-view screen for processes.                                               |
 |                                                                            |                                                                                      |
 |                                                             `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
@@ -575,7 +576,7 @@ Example output of `nvitop -m`:
 - [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai)
 - [X] process environment variable screen
 - [X] process filtering
+- [X] process management for parent processes (tree view / interrupt / terminate / kill)
 - [ ] scrollable process list for large amounts of processes
-- [ ] process management for parent processes (tree view / interrupt / terminate / kill)
 - [ ] web interface (under consideration)
 - [ ] AMD ROCm support (help wanted for testing)

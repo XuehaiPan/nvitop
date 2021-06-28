@@ -119,7 +119,7 @@ class EnvironPanel(Displayable):
 
             key_length = len(key)
             line = '{}={}'.format(key, value)
-            self.addstr(y, self.x, line[self.x_offset:].ljust(self.width))
+            self.addstr(y, self.x, line[self.x_offset:self.x_offset+self.width].ljust(self.width))
             if self.x_offset < key_length:
                 self.color_at(y, self.x, width=key_length - self.x_offset, fg='blue', attr='bold')
             if self.x_offset < key_length + 1:

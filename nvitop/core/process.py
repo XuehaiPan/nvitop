@@ -295,6 +295,7 @@ class GpuProcess(object):
         self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
     def update_gpu_status(self) -> Union[int, NaType]:
+        self.device.processes.cache_clear()
         self.device.processes()
         return self.gpu_memory()
 
@@ -392,7 +393,6 @@ class GpuProcess(object):
 
         return Snapshot(
             real=self,
-            identity=self._ident,
             pid=self.pid,
             device=self.device,
             gpu_memory=self.gpu_memory(),
