@@ -441,7 +441,7 @@ class ProcessPanel(Displayable):
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
-                    self.selected.within_window = (0 <= y < self.root.termsize[0])
+                    self.selected.within_window = (0 <= y < self.root.termsize[0] and self.width >= 79)
                 else:
                     if self.selected.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=')

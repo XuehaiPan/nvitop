@@ -245,6 +245,7 @@ class TreeViewPanel(Displayable):
             self.addstr(self.y, self.x, 'COMMAND'.ljust(self.width))
         self.color_at(self.y, self.x, width=self.width, fg='cyan', attr='bold | reverse')
 
+        self.selected.within_window = False
         for y, process in enumerate(self.snapshots, start=self.y + 1):
             prefix_length = len(process.prefix)
             line = '{}  {}  {}  {}{}'.format(str(process.pid).rjust(pid_width),
@@ -260,6 +261,7 @@ class TreeViewPanel(Displayable):
 
             if self.selected.is_same_on_host(process):
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
+                self.selected.within_window = (0 <= y < self.root.termsize[0] and self.width >= 79)
             else:
                 if process.username != CURRENT_USER and not IS_SUPERUSER:
                     self.color_at(y, self.x, width=self.width, attr='dim')

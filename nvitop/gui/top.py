@@ -356,6 +356,8 @@ class Top(DisplayableContainer):
         if self.need_redraw:
             self.win.erase()
 
+        self.color_reset()
+
         if self.width >= 79:
             super().draw()
         elif self.need_redraw:
