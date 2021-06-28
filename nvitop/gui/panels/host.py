@@ -37,7 +37,6 @@ class HostPanel(Displayable):
         self.swap_memory = None
         self.load_average = None
         self.snapshot_lock = root.lock
-        self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_started = threading.Event()
@@ -177,6 +176,7 @@ class HostPanel(Displayable):
         if not self._daemon_started.is_set():
             self._daemon_started.set()
             self._snapshot_daemon.start()
+            self.take_snapshots()
 
         super().poke()
 
