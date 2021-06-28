@@ -139,21 +139,35 @@ class Top(DisplayableContainer):
         def order_reverse(top):
             sort_by(top, order=top.process_panel.order, reverse=(not top.process_panel.reverse))
 
-        def show_environ(top):
+        def show_environ(top, refresh=False, panel='root'):
             top.device_panel.visible = False
             top.host_panel.visible = False
             top.process_panel.visible = False
             top.treeview_panel.visible = False
             top.help_panel.visible = False
 
+            if refresh:
+                panel = top.environ_panel.previous_panel
+
             top.environ_panel.visible = True
             top.environ_panel.focused = True
-            top.environ_panel.process = self.selected.process
+            top.environ_panel.previous_panel = panel
+
+            if panel == 'treeview':
+                top.environ_panel.process = top.treeview_panel.selected.process
+            else:
+                top.environ_panel.process = top.process_panel.selected.process
 
         def environ_left(top): top.environ_panel.x_offset = max(0, top.environ_panel.x_offset - 5)
         def environ_right(top): top.environ_panel.x_offset += 5
         def environ_begin(top): top.environ_panel.x_offset = 0
         def environ_move(top, direction): top.environ_panel.move(direction=direction)
+
+        def environ_return(top):
+            if top.environ_panel.previous_panel == 'treeview':
+                show_treeview(top)
+            else:
+                return2top(top)
 
         def show_treeview(top):
             top.device_panel.visible = False
@@ -164,7 +178,9 @@ class Top(DisplayableContainer):
 
             top.treeview_panel.visible = True
             top.treeview_panel.focused = True
-            top.treeview_panel.selected.process = self.selected.process
+
+            if not top.treeview_panel.selected.is_set():
+                top.treeview_panel.selected.process = top.process_panel.selected.process
 
         def show_help(top):
             top.device_panel.visible = False
@@ -183,6 +199,8 @@ class Top(DisplayableContainer):
             top.environ_panel.visible = False
             top.treeview_panel.visible = False
             top.help_panel.visible = False
+
+            top.treeview_panel.selected.clear()
 
         self.keymaps.bind('root', 'q', quit)
         self.keymaps.copy('root', 'q', 'Q')
@@ -228,12 +246,12 @@ class Top(DisplayableContainer):
             self.keymaps.bind('root', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))
             self.keymaps.bind('root', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True))
 
-        self.keymaps.bind('root', 'e', show_environ)
-        self.keymaps.bind('environ', 'r', show_environ)
+        self.keymaps.bind('root', 'e', partial(show_environ, panel='root'))
+        self.keymaps.bind('environ', 'r', partial(show_environ, refresh=True))
         self.keymaps.copy('environ', 'r', 'R')
         self.keymaps.copy('environ', 'r', '<C-r>')
         self.keymaps.copy('environ', 'r', '<F5>')
-        self.keymaps.bind('environ', '<Esc>', return2top)
+        self.keymaps.bind('environ', '<Esc>', environ_return)
         self.keymaps.copy('environ', '<Esc>', 'q')
         self.keymaps.copy('environ', '<Esc>', 'Q')
         self.keymaps.bind('environ', '<Left>', environ_left)
@@ -283,6 +301,7 @@ class Top(DisplayableContainer):
         self.keymaps.bind('treeview', '<Home>', partial(tree_select_move, direction=-(1 << 20)))
         self.keymaps.bind('treeview', '<End>', partial(tree_select_move, direction=+(1 << 20)))
         self.keymaps.bind('treeview', '<Esc>', tree_select_clear)
+        self.keymaps.bind('treeview', 'e', partial(show_environ, panel='treeview'))
 
         self.keymaps.bind('treeview', 'T', tree_terminate)
         self.keymaps.bind('treeview', 'K', tree_kill)

@@ -48,6 +48,13 @@ Compare to `nvidia-smi`:
 
 - **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
 - **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop), limited support with command `watch -c`)
+  - bar plots and History Graphs
+  - process sorting
+  - process filtering
+  - send signals to processes with a keystroke
+  - tree-view screen for GPU Processes and their parent processes
+  - environment variable screen
+  - help screen
 - **Interactive**: responsive for user input in monitor mode. (vs. [gpustat](https://github.com/wookayin/gpustat) & [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Efficient**:
   - query device status using [*NVML Python bindings*](https://pypi.org/project/nvidia-ml-py) directly, instead of parsing the output of `nvidia-smi`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
@@ -231,6 +238,8 @@ optional arguments:
 |                                                                `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                            |
 |                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
+
+**HINT:** It's recommended that terminate or kill a process in the tree-view screen (press the `t` key).
 
 **NOTE:** Press the `CTRL` key to multiply the mouse wheel events by `5`.
 
@@ -559,6 +568,16 @@ Example output of `nvitop -m`:
   </tr>
 </table>
 
+Tree-view screen for GPU processes and their parents:
+
+![Tree-view](https://user-images.githubusercontent.com/16078332/123621411-c08cf500-d83d-11eb-9724-be464ce63b91.png)
+
+**NOTE:** the tree is build in backward (recursively back to tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
+
+Environment variable screen:
+
+![Environment](https://user-images.githubusercontent.com/16078332/123621419-c1be2200-d83d-11eb-9fb7-e57895165123.png)
+
 ## License
 
 `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
@@ -570,7 +589,7 @@ Example output of `nvitop -m`:
 - [X] colorize device information based on the load intensity
 - [X] basic process information both on the device and host
 - [X] GPU process management (interrupt / terminate / kill)
-- [X] fancy bars and history graphs
+- [X] bar plots and history graphs
 - [X] process sorting
 - [X] help screen
 - [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai)
