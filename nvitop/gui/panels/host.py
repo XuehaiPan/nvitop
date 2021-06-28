@@ -37,7 +37,8 @@ class HostPanel(Displayable):
         self.swap_memory = None
         self.load_average = None
         self.snapshot_lock = root.lock
-        self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
+        self.take_snapshots()
+        self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_started = threading.Event()
 

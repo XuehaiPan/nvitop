@@ -4,18 +4,16 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-
-import threading
 import shutil
-from collections import deque
-
+import threading
 import time
+from collections import deque
 
 from cachetools.func import ttl_cache
 
 from ...core import host, Snapshot
 from ..lib import Displayable
-from .process import Selected, CURRENT_USER, IS_SUPERUSER
+from .process import CURRENT_USER, IS_SUPERUSER, Selected
 
 
 class TreeNode(object):
@@ -103,7 +101,7 @@ class TreeNode(object):
                 try:
                     parent_process = node.process.parent()
                 except host.PsutilError:
-                    continue
+                    break
                 if parent_process is None:
                     break
 
