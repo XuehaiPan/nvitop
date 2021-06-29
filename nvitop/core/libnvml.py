@@ -22,6 +22,7 @@ class libnvml(object):
     FLAGS = set()
     UNKNOWN_FUNCTIONS = set()
     NVMLError = pynvml.NVMLError
+    NVMLError_LibraryNotFound = pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
 
     def __new__(cls) -> 'libnvml':
         if not hasattr(cls, '_instance'):
