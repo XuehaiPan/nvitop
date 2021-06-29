@@ -85,7 +85,7 @@ class Top(DisplayableContainer):
             if top.environ_screen.previous_screen == 'treeview':
                 show_treeview(top)
             else:
-                return2top(top)
+                return2main(top)
 
         def show_treeview(top):
             top.main_screen.visible = False
@@ -106,7 +106,7 @@ class Top(DisplayableContainer):
             top.help_screen.visible = True
             top.help_screen.focused = True
 
-        def return2top(top):
+        def return2main(top):
             top.environ_screen.visible = False
             top.treeview_screen.visible = False
             top.help_screen.visible = False
@@ -122,14 +122,15 @@ class Top(DisplayableContainer):
         self.keymaps.copy('environ', '<Esc>', 'Q')
 
         self.keymaps.bind('main', 't', show_treeview)
-        self.keymaps.bind('treeview', 't', return2top)
+        self.keymaps.bind('treeview', 't', return2main)
         self.keymaps.copy('treeview', 't', 'q')
         self.keymaps.copy('treeview', 't', 'Q')
 
         self.keymaps.bind('treeview', 'e', partial(show_environ, screen='treeview'))
 
         self.keymaps.bind('main', 'h', show_help)
-        self.keymaps.bind('help', '<any>', return2top)
+        self.keymaps.bind('help', '<Esc>', return2main)
+        self.keymaps.bind('help', '<any>', return2main)
 
         self.keymaps.use_keymap('main')
 

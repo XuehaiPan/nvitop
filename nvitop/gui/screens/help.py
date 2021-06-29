@@ -13,19 +13,22 @@ Released under the GNU GPLv3 License.
 
 GPU Process Type: C: Compute, G: Graphics, X: Mixed.
 
- Arrows: scroll process list                a f c: change display mode
-    Esc: clear process selection             ^C I: interrupt selected process
-   Home: scroll process list to left most       K: kill selected process
-    End: scroll process list to right most      T: terminate selected process
-      e: show process environment               h: show this help screen
-      t: toggle tree-view screen             F5 r: force refresh window
+ Arrows: scroll process list                  a f c: change display mode
+    Esc: clear process selection               ^C I: interrupt selected process
+   Home: scroll process list to left most         K: kill selected process
+    End: scroll process list to right most        T: terminate selected process
+      e: show process environment                 h: show this help screen
+      t: toggle tree-view screen               F5 r: force refresh window
       q: quit
 
-  on oN: sort by GPU-ID                     os oS: sort by %SM
-  op oP: sort by PID                        oc oC: sort by %CPU
-  ou oU: sort by USER                       om oM: sort by %MEM
-  og oG: sort by GPU-MEM                    ot oT: sort by TIME
-    , .: select sort column                     /: invert sort order
+   Wheel: scroll process/environment list
+ S-Wheel: scroll horizontally               C-Wheel: fast scroll (5x)
+
+  on oN: sort by GPU-INDEX                    os oS: sort by %SM
+  op oP: sort by PID                          oc oC: sort by %CPU
+  ou oU: sort by USER                         om oM: sort by %MEM
+  og oG: sort by GPU-MEM                      ot oT: sort by TIME
+    , .: select sort column                       /: invert sort order
 
 Press any key to return.
 '''.format(__version__)
@@ -60,16 +63,16 @@ class HelpScreen(Displayable):
         for dx in (21, 33, 48):
             self.color_at(self.y + 3, self.x + dx, width=1, attr='underline')
 
-        for dy in range(5, 12):
-            self.color_at(self.y + dy, self.x + 1, width=7, fg='cyan', attr='bold')
-            self.color_at(self.y + dy, self.x + 44, width=6, fg='cyan', attr='bold')
-        for dy in range(13, 17):
-            self.color_at(self.y + dy, self.x + 1, width=7, fg='blue', attr='bold')
-            self.color_at(self.y + dy, self.x + 44, width=6, fg='blue', attr='bold')
-        self.color_at(self.y + 17, self.x + 1, width=7, fg='magenta', attr='bold')
-        self.color_at(self.y + 17, self.x + 44, width=6, fg='magenta', attr='bold')
+        for dy in range(5, 15):
+            self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
+            self.color_at(self.y + dy, self.x + 44, width=8, fg='cyan', attr='bold')
+        for dy in range(16, 20):
+            self.color_at(self.y + dy, self.x, width=8, fg='blue', attr='bold')
+            self.color_at(self.y + dy, self.x + 44, width=8, fg='blue', attr='bold')
+        self.color_at(self.y + 20, self.x, width=8, fg='magenta', attr='bold')
+        self.color_at(self.y + 20, self.x + 44, width=8, fg='magenta', attr='bold')
         for dy in (6, 7, 8):
-            self.color_at(self.y + dy, self.x + 44, width=6, fg='red', attr='bold')
+            self.color_at(self.y + dy, self.x + 44, width=8, fg='red', attr='bold')
 
     def finalize(self):
         self.need_redraw = False

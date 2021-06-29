@@ -78,7 +78,6 @@ class DevicePanel(Displayable):
             self._compact = value
             self.height = (self.compact_height if self.compact else self.full_height)
 
-
     @property
     def snapshots(self):
         return self._snapshots
@@ -175,7 +174,8 @@ class DevicePanel(Displayable):
         self.color_reset()
 
         if self.need_redraw:
-            self.addstr(self.y, self.x, '(Press q to quit)'.rjust(79))
+            self.addstr(self.y, self.x, '(Press h for help or q to quit)'.rjust(79))
+            self.color_at(self.y, self.x + 55, width=1, fg='magenta', attr='bold | italic')
             self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
             for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)

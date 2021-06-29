@@ -12,7 +12,7 @@ from operator import attrgetter, xor
 from cachetools.func import ttl_cache
 
 from ....core import NA, host, GpuProcess
-from ...library import Displayable, colored, cut_string
+from ...library import Displayable, MouseEvent, colored, cut_string
 from .utils import CURRENT_USER, IS_SUPERUSER, Order, Selected
 
 
@@ -390,7 +390,12 @@ class ProcessPanel(Displayable):
     def click(self, event):
         direction = event.wheel_direction()
         if event.shift():
-            self.host_offset += direction
+            self.host_offset += 2 * direction
         else:
             self.selected.move(direction=direction)
         return True
+
+    def __contains__(self, item):
+        if self.parent.visible and isinstance(item, MouseEvent):
+            return True
+        return super().__contains__(item)

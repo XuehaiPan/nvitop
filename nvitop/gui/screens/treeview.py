@@ -288,7 +288,7 @@ class TreeViewScreen(Displayable):
     def click(self, event):
         direction = event.wheel_direction()
         if event.shift():
-            self.x_offset = max(0, self.x_offset + direction)
+            self.x_offset = max(0, self.x_offset + 2 * direction)
         else:
             self.selected.move(direction=direction)
         return True
