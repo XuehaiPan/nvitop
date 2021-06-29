@@ -193,7 +193,7 @@ class DevicePanel(Displayable):
         remaining_width = self.width - 79
         draw_bars = (self.width >= 100)
         try:
-            selected_device = self.root.selected.process.device
+            selected_device = self.parent.selected.process.device
         except AttributeError:
             selected_device = None
         for index, device in enumerate(self.snapshots):

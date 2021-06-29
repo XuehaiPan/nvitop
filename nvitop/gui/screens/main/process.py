@@ -313,8 +313,10 @@ class ProcessPanel(Displayable):
                     self.color_at(y, self.x + 2, width=3, fg=color)
                     if process.username != CURRENT_USER and not IS_SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
-                    if is_zombie or is_gone:
-                        self.color_at(y, self.x + 38 + command_offset, width=15, fg=('red' if is_gone else 'yellow'))
+                    if is_zombie:
+                        self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
+                    elif is_gone:
+                        self.color_at(y, self.x + 38 + command_offset, width=15, fg='red')
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
         else:

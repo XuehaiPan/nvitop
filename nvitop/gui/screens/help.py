@@ -21,8 +21,8 @@ GPU Process Type: C: Compute, G: Graphics, X: Mixed.
       t: toggle tree-view screen               F5 r: force refresh window
       q: quit
 
-   Wheel: scroll process/environment list
- S-Wheel: scroll horizontally               C-Wheel: fast scroll (5x)
+  Wheel: scroll process list            Shift-Wheel: scroll horizontally
+    Tab: scroll process list             Ctrl-Wheel: fast scroll (5x)
 
   on oN: sort by GPU-INDEX                    os oS: sort by %SM
   op oP: sort by PID                          oc oC: sort by %CPU
@@ -63,9 +63,12 @@ class HelpScreen(Displayable):
         for dx in (21, 33, 48):
             self.color_at(self.y + 3, self.x + dx, width=1, attr='underline')
 
-        for dy in range(5, 15):
+        for dy in range(5, 12):
             self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
             self.color_at(self.y + dy, self.x + 44, width=8, fg='cyan', attr='bold')
+        for dy in range(13, 15):
+            self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
+            self.color_at(self.y + dy, self.x + 40, width=12, fg='cyan', attr='bold')
         for dy in range(16, 20):
             self.color_at(self.y + dy, self.x, width=8, fg='blue', attr='bold')
             self.color_at(self.y + dy, self.x + 44, width=8, fg='blue', attr='bold')
