@@ -2,15 +2,15 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=disallowed-name,invalid-name,line-too-long
+# pylint: disable=disallowed-name,invalid-name
 
 import threading
 import time
 
 from cachetools.func import ttl_cache
 
-from ...core import Device
-from ..library import Displayable, colored, cut_string, make_bar
+from ....core import Device
+from ...library import Displayable, colored, cut_string, make_bar
 
 
 class DevicePanel(Displayable):
@@ -54,7 +54,7 @@ class DevicePanel(Displayable):
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
-        self._daemon_started = threading.Event()
+        self._daemon_running = threading.Event()
 
     @property
     def width(self):
@@ -77,6 +77,7 @@ class DevicePanel(Displayable):
             self.need_redraw = True
             self._compact = value
             self.height = (self.compact_height if self.compact else self.full_height)
+
 
     @property
     def snapshots(self):
@@ -102,8 +103,8 @@ class DevicePanel(Displayable):
         return snapshots
 
     def _snapshot_target(self):
-        self._daemon_started.wait()
-        while self._daemon_started.is_set():
+        self._daemon_running.wait()
+        while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
@@ -161,8 +162,8 @@ class DevicePanel(Displayable):
         return frame
 
     def poke(self):
-        if not self._daemon_started.is_set():
-            self._daemon_started.set()
+        if not self._daemon_running.is_set():
+            self._daemon_running.set()
             self._snapshot_daemon.start()
 
         with self.snapshot_lock:
@@ -220,12 +221,9 @@ class DevicePanel(Displayable):
                     self.addstr(y, self.x + 80, bar + ' │')
                     self.color_at(y, self.x + 80, width=remaining_width - 3, fg=color, attr=attr)
 
-    def finalize(self):
-        self.need_redraw = False
-
     def destroy(self):
         super().destroy()
-        self._daemon_started.clear()
+        self._daemon_running.clear()
 
     def print_width(self):
         if self.device_count > 0 and self.width >= 100:

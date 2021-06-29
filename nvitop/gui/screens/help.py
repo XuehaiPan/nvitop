@@ -31,7 +31,7 @@ Press any key to return.
 '''.format(__version__)
 
 
-class HelpPanel(Displayable):
+class HelpScreen(Displayable):
     def __init__(self, win, root):
         super().__init__(win, root)
 
@@ -77,3 +77,6 @@ class HelpPanel(Displayable):
     def press(self, key):
         self.root.keymaps.use_keymap('help')
         self.root.press(key)
+
+    def init_keybindings(self):
+        pass

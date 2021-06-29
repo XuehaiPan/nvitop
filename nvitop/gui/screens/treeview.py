@@ -4,16 +4,16 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-import shutil
 import threading
 import time
 from collections import deque
+from functools import partial
 
 from cachetools.func import ttl_cache
 
 from ...core import host, Snapshot
 from ..library import Displayable
-from .process import CURRENT_USER, IS_SUPERUSER, Selected
+from .main.process import CURRENT_USER, IS_SUPERUSER, Selected
 
 
 class TreeNode(object):
@@ -133,7 +133,7 @@ class TreeNode(object):
         return flattened
 
 
-class TreeViewPanel(Displayable):
+class TreeViewScreen(Displayable):
     SNAPSHOT_INTERVAL = 0.7
 
     def __init__(self, win, root):
@@ -144,12 +144,12 @@ class TreeViewPanel(Displayable):
 
         self._snapshot_buffer = []
         self._snapshots = []
-        self.snapshot_lock = root.lock
+        self.snapshot_lock = threading.RLock()
         self._snapshot_daemon = threading.Thread(name='treeview-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_running = threading.Event()
 
-        self.width, self.height = shutil.get_terminal_size(fallback=(79, 24))
+        self.width, self.height = root.width, root.height
 
     @property
     def visible(self):
@@ -196,7 +196,7 @@ class TreeViewPanel(Displayable):
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
-        snapshots = self.root.process_panel._snapshot_buffer  # pylint: disable=protected-access
+        snapshots = self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
         nodes = TreeNode.flatten(TreeNode.merge(snapshots))
         snapshots = []
         for node in nodes:
@@ -277,8 +277,9 @@ class TreeViewPanel(Displayable):
         else:
             self.addstr(self.y, text_offset, ' ' * 47)
 
-    def finalize(self):
-        self.need_redraw = False
+    def destroy(self):
+        super().destroy()
+        self._daemon_running.clear()
 
     def press(self, key):
         self.root.keymaps.use_keymap('treeview')
@@ -291,3 +292,38 @@ class TreeViewPanel(Displayable):
         else:
             self.selected.move(direction=direction)
         return True
+
+    def init_keybindings(self):
+        # pylint: disable=multiple-statements
+
+        def tree_left(top): top.treeview_screen.x_offset = max(0, top.treeview_screen.x_offset - 5)
+        def tree_right(top): top.treeview_screen.x_offset += 5
+        def tree_begin(top): top.treeview_screen.x_offset = 0
+        def select_move(top, direction): top.treeview_screen.selected.move(direction=direction)
+        def select_clear(top): top.treeview_screen.selected.clear()
+        def terminate(top): top.treeview_screen.selected.terminate()
+        def kill(top): top.treeview_screen.selected.kill()
+        def interrupt(top): top.treeview_screen.selected.interrupt()
+
+        self.root.keymaps.bind('treeview', '<Left>', tree_left)
+        self.root.keymaps.copy('treeview', '<Left>', '[')
+        self.root.keymaps.copy('treeview', '<Left>', '<A-h>')
+        self.root.keymaps.bind('treeview', '<Right>', tree_right)
+        self.root.keymaps.copy('treeview', '<Right>', ']')
+        self.root.keymaps.copy('treeview', '<Right>', '<A-l>')
+        self.root.keymaps.bind('treeview', '<C-a>', tree_begin)
+        self.root.keymaps.copy('treeview', '<C-a>', '^')
+        self.root.keymaps.bind('treeview', '<Up>', partial(select_move, direction=-1))
+        self.root.keymaps.copy('treeview', '<Up>', '<S-Tab>')
+        self.root.keymaps.copy('treeview', '<Up>', '<A-k>')
+        self.root.keymaps.bind('treeview', '<Down>', partial(select_move, direction=+1))
+        self.root.keymaps.copy('treeview', '<Down>', '<Tab>')
+        self.root.keymaps.copy('treeview', '<Down>', '<A-j>')
+        self.root.keymaps.bind('treeview', '<Home>', partial(select_move, direction=-(1 << 20)))
+        self.root.keymaps.bind('treeview', '<End>', partial(select_move, direction=+(1 << 20)))
+        self.root.keymaps.bind('treeview', '<Esc>', select_clear)
+
+        self.root.keymaps.bind('treeview', 'T', terminate)
+        self.root.keymaps.bind('treeview', 'K', kill)
+        self.root.keymaps.bind('treeview', '<C-c>', interrupt)
+        self.root.keymaps.copy('treeview', '<C-c>', 'I')

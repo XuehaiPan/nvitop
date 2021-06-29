@@ -1,7 +1,7 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=disallowed-name,invalid-name
 
 import sys

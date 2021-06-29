@@ -1,13 +1,13 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
 import time
 from typing import Dict, List, Tuple, Union
 
-from tensorflow.python.keras.callbacks import Callback
+from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error
 
 from ..core import nvml, MiB, NA
 from .utils import get_devices_by_logical_ids

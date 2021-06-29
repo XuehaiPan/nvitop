@@ -2,7 +2,7 @@
 # This file is originally part of ranger, the console file manager. https://github.com/ranger/ranger
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
 from .libcurses import CursesShortcuts
@@ -79,6 +79,7 @@ class Displayable(CursesShortcuts):
 
     def poke(self):
         """Called before drawing, even if invisible"""
+
         if self._old_visible != self.visible:
             self._old_visible = self.visible
             self.need_redraw = True
@@ -92,6 +93,7 @@ class Displayable(CursesShortcuts):
         Called on every main iteration if visible. Containers should call draw()
         on their contained objects here. Override this!
         """
+
         self.need_redraw = False
 
     def finalize(self):
@@ -100,8 +102,11 @@ class Displayable(CursesShortcuts):
         Override this!
         """
 
+        self.need_redraw = False
+
     def destroy(self):
         """Called when the object is destroyed."""
+
         self.win = None
         self.root = None
 
@@ -181,12 +186,14 @@ class DisplayableContainer(Displayable):
 
     def poke(self):
         """Recursively called on objects in container"""
+
         super().poke()
         for displayable in self.container:
             displayable.poke()
 
     def draw(self):
         """Recursively called on visible objects in container"""
+
         for displayable in self.container:
             if self.need_redraw:
                 displayable.need_redraw = True
@@ -197,18 +204,21 @@ class DisplayableContainer(Displayable):
 
     def finalize(self):
         """Recursively called on visible objects in container"""
+
         for displayable in self.container:
             if displayable.visible:
                 displayable.finalize()
 
     def destroy(self):
         """Recursively called on objects in container"""
+
         for displayable in self.container:
             displayable.destroy()
         super().destroy()
 
     def press(self, key):
         """Recursively called on objects in container"""
+
         focused_obj = self.get_focused_obj()
 
         if focused_obj:
@@ -218,6 +228,7 @@ class DisplayableContainer(Displayable):
 
     def click(self, event):
         """Recursively called on objects in container"""
+
         focused_obj = self.get_focused_obj()
         if focused_obj and focused_obj.click(event):
             return True
@@ -233,6 +244,7 @@ class DisplayableContainer(Displayable):
 
     def add_child(self, obj):
         """Add the objects to the container."""
+
         if obj.parent is not None:
             obj.parent.remove_child(obj)
         self.container.append(obj)
@@ -241,12 +253,14 @@ class DisplayableContainer(Displayable):
 
     def replace_child(self, old_obj, new_obj):
         """Replace the old object with the new instance in the container."""
+
         self.container[self.container.index(old_obj)] = new_obj
         new_obj.parent = self
         new_obj.root = self.root
 
     def remove_child(self, obj):
         """Remove the object from the container."""
+
         try:
             self.container.remove(obj)
         except ValueError:

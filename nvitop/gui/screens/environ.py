@@ -4,21 +4,20 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-import shutil
 from collections import OrderedDict
+from functools import partial
 
 from ...core import host, HostProcess, GpuProcess
 from ..library import Displayable
 
 
-class EnvironPanel(Displayable):
+class EnvironScreen(Displayable):
     def __init__(self, win, root):
         super().__init__(win, root)
 
         self.this = HostProcess()
-        self.selected = root.selected
 
-        self.previous_panel = 'root'
+        self.previous_screen = 'main'
 
         self._process = None
         self._environ = None
@@ -28,7 +27,7 @@ class EnvironPanel(Displayable):
         self.scroll_offset = 0
 
         self._height = 0
-        self.width, self.height = shutil.get_terminal_size(fallback=(79, 24))
+        self.width, self.height = root.width, root.height
 
     @property
     def process(self):
@@ -144,3 +143,45 @@ class EnvironPanel(Displayable):
         else:
             self.move(direction=direction)
         return True
+
+    def init_keybindings(self):
+        # pylint: disable=multiple-statements
+
+        def refresh_environ(top):
+            top.main_screen.visible = False
+            top.treeview_screen.visible = False
+            top.help_screen.visible = False
+
+            top.environ_screen.visible = True
+            top.environ_screen.focused = True
+
+            if top.environ_screen.previous_screen == 'treeview':
+                top.environ_screen.process = top.treeview_screen.selected.process
+            else:
+                top.environ_screen.process = top.main_screen.selected.process
+
+        def environ_left(top): top.environ_screen.x_offset = max(0, top.environ_screen.x_offset - 5)
+        def environ_right(top): top.environ_screen.x_offset += 5
+        def environ_begin(top): top.environ_screen.x_offset = 0
+        def environ_move(top, direction): top.environ_screen.move(direction=direction)
+
+        self.root.keymaps.bind('environ', 'r', refresh_environ)
+        self.root.keymaps.copy('environ', 'r', 'R')
+        self.root.keymaps.copy('environ', 'r', '<C-r>')
+        self.root.keymaps.copy('environ', 'r', '<F5>')
+        self.root.keymaps.bind('environ', '<Left>', environ_left)
+        self.root.keymaps.copy('environ', '<Left>', '[')
+        self.root.keymaps.copy('environ', '<Left>', '<A-h>')
+        self.root.keymaps.bind('environ', '<Right>', environ_right)
+        self.root.keymaps.copy('environ', '<Right>', ']')
+        self.root.keymaps.copy('environ', '<Right>', '<A-l>')
+        self.root.keymaps.bind('environ', '<C-a>', environ_begin)
+        self.root.keymaps.copy('environ', '<C-a>', '^')
+        self.root.keymaps.bind('environ', '<Up>', partial(environ_move, direction=-1))
+        self.root.keymaps.copy('environ', '<Up>', '<S-Tab>')
+        self.root.keymaps.copy('environ', '<Up>', '<A-k>')
+        self.root.keymaps.bind('environ', '<Down>', partial(environ_move, direction=+1))
+        self.root.keymaps.copy('environ', '<Down>', '<Tab>')
+        self.root.keymaps.copy('environ', '<Down>', '<A-j>')
+        self.root.keymaps.bind('environ', '<Home>', partial(environ_move, direction=-(1 << 20)))
+        self.root.keymaps.bind('environ', '<End>', partial(environ_move, direction=+(1 << 20)))

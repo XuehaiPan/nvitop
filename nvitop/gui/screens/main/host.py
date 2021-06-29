@@ -2,13 +2,13 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name,line-too-long
+# pylint: disable=invalid-name
 
 import threading
 import time
 
-from ...core import NA, host, Device
-from ..library import Displayable, BufferedHistoryGraph, colored, make_bar
+from ....core import NA, host, Device
+from ...library import Displayable, BufferedHistoryGraph, colored, make_bar
 
 
 class HostPanel(Displayable):
@@ -38,7 +38,7 @@ class HostPanel(Displayable):
         self.snapshot_lock = root.lock
         self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
-        self._daemon_started = threading.Event()
+        self._daemon_running = threading.Event()
 
     @property
     def width(self):
@@ -140,8 +140,8 @@ class HostPanel(Displayable):
                 self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
 
     def _snapshot_target(self):
-        self._daemon_started.wait()
-        while self._daemon_started.is_set():
+        self._daemon_running.wait()
+        while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
@@ -172,8 +172,8 @@ class HostPanel(Displayable):
         return frame
 
     def poke(self):
-        if not self._daemon_started.is_set():
-            self._daemon_started.set()
+        if not self._daemon_running.is_set():
+            self._daemon_running.set()
             self._snapshot_daemon.start()
             self.take_snapshots()
 
@@ -234,8 +234,8 @@ class HostPanel(Displayable):
         self.addstr(self.y + 10, self.x + 1, ' {} '.format(host.swap_memory.history.last_value_string()))
 
         if self.width >= 100:
-            if self.device_count > 1 and self.root.selected.is_set():
-                device = self.root.selected.process.device
+            if self.device_count > 1 and self.parent.selected.is_set():
+                device = self.parent.selected.process.device
                 memory_utilization = device.memory_utilization.history
                 gpu_utilization = device.gpu_utilization.history
                 memory_display_color = device.snapshot.memory_display_color
@@ -256,8 +256,9 @@ class HostPanel(Displayable):
                 self.color_at(y, self.x + 79, width=remaining_width - 1, fg=gpu_display_color)
             self.addstr(self.y + 10, self.x + 79, ' {} '.format(gpu_utilization.last_value_string()))
 
-    def finalize(self):
-        self.need_redraw = False
+    def destroy(self):
+        super().destroy()
+        self._daemon_running.clear()
 
     def print_width(self):
         if self.device_count > 0 and self.width >= 100:

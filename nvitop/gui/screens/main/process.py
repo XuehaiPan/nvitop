@@ -4,151 +4,16 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-import getpass
-import signal
 import threading
 import time
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
 
-from ...core import NA, host, GpuProcess, Snapshot
-from ..library import Displayable, colored, cut_string
-
-
-CURRENT_USER = getpass.getuser()
-if host.WINDOWS:  # pylint: disable=no-member
-    import ctypes
-    IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
-else:
-    import os
-    IS_SUPERUSER = ((os.geteuid() == 0) if hasattr(os, 'geteuid') else False)
-
-
-class Selected(object):
-    def __init__(self, panel):
-        self.panel = panel
-        self.index = None
-        self.within_window = True
-        self._proc = None
-        self._ident = None
-
-    @property
-    def identity(self):
-        if self._ident is None:
-            self._ident = self.process._ident  # pylint: disable=protected-access
-        return self._ident
-
-    @property
-    def process(self):
-        return self._proc
-
-    @process.setter
-    def process(self, process):
-        if isinstance(process, Snapshot):
-            process = process.real
-        self._proc = process
-        self._ident = None
-
-    @property
-    def pid(self):
-        try:
-            return self.identity[0]
-        except TypeError:
-            return None
-
-    def move(self, direction=0):
-        if direction == 0:
-            return
-
-        processes = self.panel.snapshots
-        if len(processes) > 0:
-            if not self.is_set():
-                if direction > 0:
-                    self.index = 0
-                else:
-                    self.index = len(processes) - 1
-            else:
-                self.index = min(max(0, self.index + direction), len(processes) - 1)
-            self.process = processes[self.index]
-        else:
-            self.clear()
-
-    def owned(self):
-        if not self.is_set():
-            return False
-        if IS_SUPERUSER:
-            return True
-        try:
-            return self.process.username() == CURRENT_USER
-        except host.PsutilError:
-            return False
-
-    def send_signal(self, sig):
-        if self.owned() and self.within_window:
-            try:
-                self.process.send_signal(sig)
-            except host.PsutilError:
-                pass
-            else:
-                time.sleep(0.5)
-                if not self.process.is_running():
-                    self.clear()
-
-    def interrupt(self):
-        return self.send_signal(signal.SIGINT)
-
-    def terminate(self):
-        if self.owned() and self.within_window:
-            try:
-                self.process.terminate()
-            except host.PsutilError:
-                pass
-            else:
-                time.sleep(0.5)
-                self.clear()
-
-    def kill(self):
-        if self.owned() and self.within_window:
-            try:
-                self.process.kill()
-            except host.PsutilError:
-                pass
-            else:
-                time.sleep(0.5)
-                self.clear()
-
-    def clear(self):
-        self.__init__(self.panel)
-
-    reset = clear
-
-    def is_set(self):
-        return self.process is not None
-
-    __bool__ = is_set
-
-    def is_same(self, process):
-        try:
-            return self.identity == process._ident  # pylint: disable=protected-access
-        except (AttributeError, TypeError):
-            pass
-
-        return False
-
-    __eq__ = is_same
-
-    def is_same_on_host(self, process):
-        try:
-            return self.identity[:2] == process._ident[:2]  # pylint: disable=protected-access
-        except (AttributeError, TypeError):
-            pass
-
-        return False
-
-
-Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
+from ....core import NA, host, GpuProcess
+from ...library import Displayable, colored, cut_string
+from .utils import CURRENT_USER, IS_SUPERUSER, Order, Selected
 
 
 class ProcessPanel(Displayable):
@@ -214,7 +79,7 @@ class ProcessPanel(Displayable):
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
-        self._daemon_started = threading.Event()
+        self._daemon_running = threading.Event()
 
     @property
     def width(self):
@@ -233,7 +98,7 @@ class ProcessPanel(Displayable):
 
     @compact.setter
     def compact(self, value):
-        if self.compact != value or self._compact != value:
+        if self._compact != value:
             self.need_redraw = True
             self._compact = value
             processes = self.snapshots
@@ -321,8 +186,8 @@ class ProcessPanel(Displayable):
         return snapshots
 
     def _snapshot_target(self):
-        self._daemon_started.wait()
-        while self._daemon_started.is_set():
+        self._daemon_running.wait()
+        while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
@@ -350,8 +215,8 @@ class ProcessPanel(Displayable):
         return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
 
     def poke(self):
-        if not self._daemon_started.is_set():
-            self._daemon_started.set()
+        if not self._daemon_running.is_set():
+            self._daemon_running.set()
             self._snapshot_daemon.start()
 
         with self.snapshot_lock:
@@ -373,7 +238,7 @@ class ProcessPanel(Displayable):
 
         self.addstr(self.y + 3, self.x + 1, ' GPU     PID      USER  GPU-MEM %SM  ')
         host_offset = max(self.host_offset, 0)
-        command_offset = max(15 + len(self.host_headers[-2]) - host_offset, 0)
+        command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
             host_headers = '  '.join(self.host_headers)
             self.addstr(self.y + 3, self.x + 38, '{}'.format(host_headers[host_offset:].ljust(self.width - 40)))
@@ -467,12 +332,9 @@ class ProcessPanel(Displayable):
         else:
             self.addstr(self.y, text_offset, ' ' * 47)
 
-    def finalize(self):
-        self.need_redraw = False
-
     def destroy(self):
         super().destroy()
-        self._daemon_started.clear()
+        self._daemon_running.clear()
 
     def print_width(self):
         return min(self.width, max((39 + len(process.host_info) for process in self.snapshots), default=79))

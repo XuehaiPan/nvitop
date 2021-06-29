@@ -1,15 +1,15 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
 import time
 from typing import Any, Dict
 
-from pytorch_lightning.callbacks import Callback
-from pytorch_lightning.utilities import DeviceType, rank_zero_only
-from pytorch_lightning.utilities.exceptions import MisconfigurationException
+from pytorch_lightning.callbacks import Callback   # pylint: disable=import-error
+from pytorch_lightning.utilities import DeviceType, rank_zero_only  # pylint: disable=import-error
+from pytorch_lightning.utilities.exceptions import MisconfigurationException  # pylint: disable=import-error
 
 from ..core import nvml, MiB, NA
 from .utils import get_devices_by_logical_ids
