@@ -8,7 +8,7 @@ import shutil
 from collections import OrderedDict
 
 from ...core import host, HostProcess, GpuProcess
-from ..lib import Displayable
+from ..library import Displayable
 
 
 class EnvironPanel(Displayable):

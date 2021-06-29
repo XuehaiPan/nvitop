@@ -10,7 +10,7 @@ import threading
 import time
 from functools import partial
 
-from .lib import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
+from .library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
 from .panels import (DevicePanel, HostPanel, ProcessPanel,
                      EnvironPanel, TreeViewPanel, HelpPanel)
 

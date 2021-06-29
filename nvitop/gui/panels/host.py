@@ -8,8 +8,7 @@ import threading
 import time
 
 from ...core import NA, host, Device
-from ..lib import Displayable, BufferedHistoryGraph
-from ..utils import colored, make_bar
+from ..library import Displayable, BufferedHistoryGraph, colored, make_bar
 
 
 class HostPanel(Displayable):

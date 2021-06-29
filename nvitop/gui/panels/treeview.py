@@ -12,7 +12,7 @@ from collections import deque
 from cachetools.func import ttl_cache
 
 from ...core import host, Snapshot
-from ..lib import Displayable
+from ..library import Displayable
 from .process import CURRENT_USER, IS_SUPERUSER, Selected
 
 

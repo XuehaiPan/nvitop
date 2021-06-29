@@ -6,7 +6,7 @@
 
 import sys
 
-from ..core import NA
+from ...core import NA
 
 
 try:

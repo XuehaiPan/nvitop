@@ -3,7 +3,6 @@
 
 # pylint: disable=missing-module-docstring
 
-from .lib import libcurses
+from .library import libcurses, colored
 from .panels import DevicePanel, HostPanel, ProcessPanel
 from .top import Top
-from .utils import colored

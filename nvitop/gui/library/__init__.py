@@ -9,3 +9,4 @@ from .keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUANT_KEY,
                          SPECIAL_KEYS, KeyBuffer, KeyMaps)
 from .mouse import MouseEvent
 from .history import HistoryGraph, BufferedHistoryGraph
+from .utils import colored, cut_string, make_bar

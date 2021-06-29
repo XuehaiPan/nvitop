@@ -14,8 +14,7 @@ from operator import attrgetter, xor
 from cachetools.func import ttl_cache
 
 from ...core import NA, host, GpuProcess, Snapshot
-from ..lib import Displayable
-from ..utils import colored, cut_string
+from ..library import Displayable, colored, cut_string
 
 
 CURRENT_USER = getpass.getuser()

@@ -5,7 +5,7 @@
 # pylint: disable=invalid-name
 
 from ...version import __version__
-from ..lib import Displayable
+from ..library import Displayable
 
 
 HELP = '''nvitop {} - (C) Xuehai Pan, 2021.

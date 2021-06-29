@@ -10,8 +10,7 @@ import time
 from cachetools.func import ttl_cache
 
 from ...core import Device
-from ..lib import Displayable
-from ..utils import colored, cut_string, make_bar
+from ..library import Displayable, colored, cut_string, make_bar
 
 
 class DevicePanel(Displayable):
