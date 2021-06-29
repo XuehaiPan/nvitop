@@ -161,7 +161,7 @@ class ProcessPanel(Displayable):
         ),
         'pid': Order(
             key=attrgetter('_gone', 'pid', 'device.index'),
-            reverse=False, offset=9, column='PID', previous='natural', next='username'
+            reverse=False, offset=10, column='PID', previous='natural', next='username'
         ),
         'username': Order(
             key=attrgetter('_gone', 'username', 'pid', 'device.index'),
