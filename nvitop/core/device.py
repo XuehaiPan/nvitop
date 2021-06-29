@@ -278,12 +278,14 @@ class Device(object):
     def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
         return nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
 
-    def power_status(self) -> Union[str, NaType]:  # string of power usage over power limit in watts (W)
+    def power_status(self) -> str:  # string of power usage over power limit in watts (W)
         power_usage = self.power_usage()
         power_limit = self.power_limit()
-        if nvml.nvmlCheckReturn(power_usage, int) and nvml.nvmlCheckReturn(power_limit, int):
-            return '{}W / {}W'.format(power_usage // 1000, power_limit // 1000)
-        return NA
+        if nvml.nvmlCheckReturn(power_usage, int):
+            power_usage = '{}W'.format(round(power_usage / 1000.0))
+        if nvml.nvmlCheckReturn(power_limit, int):
+            power_limit = '{}W'.format(round(power_limit / 1000.0))
+        return '{} / {}'.format(power_usage, power_limit)
 
     @ttl_cache(ttl=5.0)
     def fan_speed(self) -> Union[str, NaType]:  # in percentage
@@ -316,12 +318,8 @@ class Device(object):
     def memory_free_human(self) -> Union[str, NaType]:
         return bytes2human(self.memory_free())
 
-    def memory_usage(self) -> Union[str, NaType]:  # string of used memory over total memory (in human readable)
-        memory_used_human = self.memory_used_human()
-        memory_total_human = self.memory_total_human()
-        if NA not in (memory_used_human, memory_total_human):
-            return '{} / {}'.format(memory_used_human, memory_total_human)
-        return NA
+    def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
+        return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
 
     def memory_utilization(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
         memory_used = self.memory_used()
