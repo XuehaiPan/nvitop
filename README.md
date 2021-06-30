@@ -23,7 +23,7 @@
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
-    - [Callback for PyTorch Lighting](#callback-for-pytorch-lighting)
+    - [Callback for PyTorch Lightning](#callback-for-pytorch-lighting)
   - [More than Monitoring](#more-than-monitoring)
     - [Device](#device)
     - [Process](#process)
@@ -253,7 +253,7 @@ optional arguments:
 
 ### Callback Functions for Machine Learning Frameworks
 
-`nvitop` provides two builtin callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai).
+`nvitop` provides two builtin callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai).
 
 #### Callback for [TensorFlow (Keras)](https://www.tensorflow.org)
 
@@ -272,7 +272,7 @@ model.fit(.., callbacks=[gpu_stats, tb_callback])
 
 **NOTE:** Users should assign a `keras.callbacks.TensorBoard` callback or a `keras.callbacks.CSVLogger` callback to the model. And the `GpuStatsLogger` callback should be placed before the `keras.callbacks.TensorBoard` / `keras.callbacks.CSVLogger` callback.
 
-#### Callback for [PyTorch Lighting](https://pytorchlightning.ai)
+#### Callback for [PyTorch Lightning](https://pytorchlightning.ai)
 
 ```python
 from pytorch_lightning import Trainer
@@ -607,7 +607,7 @@ Environment variable screen:
 - [X] bar plots and history graphs
 - [X] process sorting
 - [X] help screen
-- [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lighting](https://pytorchlightning.ai)
+- [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai)
 - [X] process environment variable screen
 - [X] process filtering
 - [X] process management for parent processes (tree view / interrupt / terminate / kill)
