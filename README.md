@@ -585,13 +585,13 @@ Example output of `nvitop -m`:
 
 Tree-view screen for GPU processes and their parents:
 
-![Tree-view](https://user-images.githubusercontent.com/16078332/123621411-c08cf500-d83d-11eb-9724-be464ce63b91.png)
+![Tree-view](https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png)
 
 **NOTE:** the tree is build in backward (recursively back to tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
 
 Environment variable screen:
 
-![Environment](https://user-images.githubusercontent.com/16078332/123621419-c1be2200-d83d-11eb-9fb7-e57895165123.png)
+![Environment](https://user-images.githubusercontent.com/16078332/123914881-7a0cd700-d9b2-11eb-8da1-26f7a3a7c2b6.png)
 
 ## License
 
