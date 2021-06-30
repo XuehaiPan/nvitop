@@ -23,7 +23,7 @@ Device coloring rules by loading intensity:
      ^A: scroll process list to left most         T: terminate selected process
      ^E: scroll process list to right most
    Home: select the first process             a f c: change display mode
-    End: select the last process                  h: show this help screen
+    End: select the last process                h ?: show this help screen
       e: show process environment              F5 r: force refresh window
       t: toggle tree-view screen                  q: quit
 
@@ -41,8 +41,12 @@ Press any key to return.
 
 
 class HelpScreen(Displayable):
+    NAME = 'help'
+
     def __init__(self, win, root):
         super().__init__(win, root)
+
+        self.previous_screen = 'main'
 
         HELP = HELP_TEMPLATE.format(__version__,
                                     *Device.GPU_UTILIZATION_THRESHOLDS,

@@ -18,6 +18,8 @@ class BreakLoop(Exception):
 
 
 class MainScreen(DisplayableContainer):
+    NAME = 'main'
+
     def __init__(self, devices, filters, ascii, mode, win, root):  # pylint: disable=redefined-builtin
         super().__init__(win, root)
 

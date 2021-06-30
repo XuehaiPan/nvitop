@@ -12,6 +12,8 @@ from ..library import Displayable
 
 
 class EnvironScreen(Displayable):
+    NAME = 'environ'
+
     def __init__(self, win, root):
         super().__init__(win, root)
 

@@ -134,6 +134,7 @@ class TreeNode(object):
 
 
 class TreeViewScreen(Displayable):
+    NAME = 'treeview'
     SNAPSHOT_INTERVAL = 0.7
 
     def __init__(self, win, root):

@@ -220,7 +220,7 @@ optional arguments:
 |                                                                        Key | Binding                                                                              |
 | -------------------------------------------------------------------------: | :----------------------------------------------------------------------------------- |
 |                                                                        `q` | Quit and return to the terminal.                                                     |
-|                                                                        `h` | Go to the help screen.                                                               |
+|                                                                  `h` / `?` | Go to the help screen.                                                               |
 |                                                            `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
 |                                                     `r` / `<C-r>` / `<F5>` | Force refresh the window.                                                            |
 |                                                                            |                                                                                      |
