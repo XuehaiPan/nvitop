@@ -422,11 +422,11 @@ memory_used: Union[int, NaType] = device.memory_used()            # memory usage
 memory_used_in_mib: float       = float(memory_used) / (1 << 20)  # memory usage in Mebibytes (MiB) or `math.nan`
 ```
 
-It's safe to compere `NaType` with numbers, but `NaType` is always larger than any number:
+It's safe to compare `NaType` with numbers, but `NaType` is always larger than any number:
 
 ```python
 devices_by_used_memory = sorted(Device.all(), key=Device.memory_used, reverse=True)  # it's safe to compare `'N/A'` with numbers
-devices_by_free_memory = sorted(Device.all(), key=Device.memory_free, reverse=True)  # please add `memory_free != 'N/A'` checks if sort in reverse order here
+devices_by_free_memory = sorted(Device.all(), key=Device.memory_free, reverse=True)  # please add `memory_free != 'N/A'` checks if sort in descending order here
 ```
 
 #### Process
@@ -589,7 +589,7 @@ Tree-view screen for GPU processes and their parents:
 
 ![Tree-view](https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png)
 
-**NOTE:** the tree is build in backward (recursively back to tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
+**NOTE:** the tree is built in backward (recursively back to the tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
 
 Environment variable screen:
 

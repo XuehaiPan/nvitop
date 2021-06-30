@@ -273,7 +273,6 @@ class Top(DisplayableContainer):
 
         self.keymaps.bind('main', 't', show_treeview)
         self.keymaps.bind('treeview', 't', return2main)
-        self.keymaps.copy('treeview', 't', '<Esc>')
         self.keymaps.copy('treeview', 't', 'q')
         self.keymaps.copy('treeview', 't', 'Q')
 

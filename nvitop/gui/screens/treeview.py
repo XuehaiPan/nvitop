@@ -299,8 +299,10 @@ class TreeViewScreen(Displayable):
         def tree_left(top): top.treeview_screen.x_offset = max(0, top.treeview_screen.x_offset - 5)
         def tree_right(top): top.treeview_screen.x_offset += 5
         def tree_begin(top): top.treeview_screen.x_offset = 0
+
         def select_move(top, direction): top.treeview_screen.selected.move(direction=direction)
         def select_clear(top): top.treeview_screen.selected.clear()
+
         def terminate(top): top.treeview_screen.selected.terminate()
         def kill(top): top.treeview_screen.selected.kill()
         def interrupt(top): top.treeview_screen.selected.interrupt()
