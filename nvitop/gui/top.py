@@ -60,80 +60,6 @@ class Top(DisplayableContainer):
             self.last_input_time = time.monotonic()
             self.init_keybindings()
 
-    def init_keybindings(self):
-        # pylint: disable=multiple-statements
-
-        for child in self.container:
-            if hasattr(child, 'init_keybindings'):
-                child.init_keybindings()
-
-        def show_environ(top, screen='main'):
-            top.main_screen.visible = False
-            top.treeview_screen.visible = False
-            top.help_screen.visible = False
-
-            top.environ_screen.visible = True
-            top.environ_screen.focused = True
-            top.environ_screen.previous_screen = screen
-
-            if screen == 'treeview':
-                top.environ_screen.process = top.treeview_screen.selected.process
-            else:
-                top.environ_screen.process = top.main_screen.selected.process
-
-        def environ_return(top):
-            if top.environ_screen.previous_screen == 'treeview':
-                show_treeview(top)
-            else:
-                return2main(top)
-
-        def show_treeview(top):
-            top.main_screen.visible = False
-            top.environ_screen.visible = False
-            top.help_screen.visible = False
-
-            top.treeview_screen.visible = True
-            top.treeview_screen.focused = True
-
-            if not top.treeview_screen.selected.is_set():
-                top.treeview_screen.selected.process = top.main_screen.selected.process
-
-        def show_help(top):
-            top.main_screen.visible = False
-            top.environ_screen.visible = False
-            top.treeview_screen.visible = False
-
-            top.help_screen.visible = True
-            top.help_screen.focused = True
-
-        def return2main(top):
-            top.environ_screen.visible = False
-            top.treeview_screen.visible = False
-            top.help_screen.visible = False
-
-            top.main_screen.visible = True
-            top.main_screen.focused = False
-
-            top.treeview_screen.selected.clear()
-
-        self.keymaps.bind('main', 'e', partial(show_environ, screen='main'))
-        self.keymaps.bind('environ', '<Esc>', environ_return)
-        self.keymaps.copy('environ', '<Esc>', 'q')
-        self.keymaps.copy('environ', '<Esc>', 'Q')
-
-        self.keymaps.bind('main', 't', show_treeview)
-        self.keymaps.bind('treeview', 't', return2main)
-        self.keymaps.copy('treeview', 't', 'q')
-        self.keymaps.copy('treeview', 't', 'Q')
-
-        self.keymaps.bind('treeview', 'e', partial(show_environ, screen='treeview'))
-
-        self.keymaps.bind('main', 'h', show_help)
-        self.keymaps.bind('help', '<Esc>', return2main)
-        self.keymaps.bind('help', '<any>', return2main)
-
-        self.keymaps.use_keymap('main')
-
     def update_size(self):
         curses.update_lines_cols()  # pylint: disable=no-member
         n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
@@ -282,3 +208,79 @@ class Top(DisplayableContainer):
                 self.update_size()
             else:
                 self.handle_key(key)
+
+    def init_keybindings(self):
+        # pylint: disable=multiple-statements
+
+        for screen in self.container:
+            if hasattr(screen, 'init_keybindings'):
+                screen.init_keybindings()
+
+        def show_environ(top, screen='main'):
+            top.main_screen.visible = False
+            top.treeview_screen.visible = False
+            top.help_screen.visible = False
+
+            top.environ_screen.visible = True
+            top.environ_screen.focused = True
+            top.environ_screen.previous_screen = screen
+
+            if screen == 'treeview':
+                top.environ_screen.process = top.treeview_screen.selected.process
+            else:
+                top.environ_screen.process = top.main_screen.selected.process
+
+        def environ_return(top):
+            if top.environ_screen.previous_screen == 'treeview':
+                show_treeview(top)
+            else:
+                return2main(top)
+
+        def show_treeview(top):
+            top.main_screen.visible = False
+            top.environ_screen.visible = False
+            top.help_screen.visible = False
+
+            top.treeview_screen.visible = True
+            top.treeview_screen.focused = True
+
+            if not top.treeview_screen.selected.is_set():
+                top.treeview_screen.selected.process = top.main_screen.selected.process
+
+        def show_help(top):
+            top.main_screen.visible = False
+            top.environ_screen.visible = False
+            top.treeview_screen.visible = False
+
+            top.help_screen.visible = True
+            top.help_screen.focused = True
+
+        def return2main(top):
+            top.environ_screen.visible = False
+            top.treeview_screen.visible = False
+            top.help_screen.visible = False
+
+            top.main_screen.visible = True
+            top.main_screen.focused = False
+
+            top.treeview_screen.selected.clear()
+
+        self.keymaps.bind('main', 'e', partial(show_environ, screen='main'))
+        self.keymaps.bind('environ', 'e', environ_return)
+        self.keymaps.copy('environ', 'e', '<Esc>')
+        self.keymaps.copy('environ', 'e', 'q')
+        self.keymaps.copy('environ', 'e', 'Q')
+
+        self.keymaps.bind('main', 't', show_treeview)
+        self.keymaps.bind('treeview', 't', return2main)
+        self.keymaps.copy('treeview', 't', '<Esc>')
+        self.keymaps.copy('treeview', 't', 'q')
+        self.keymaps.copy('treeview', 't', 'Q')
+
+        self.keymaps.bind('treeview', 'e', partial(show_environ, screen='treeview'))
+
+        self.keymaps.bind('main', 'h', show_help)
+        self.keymaps.bind('help', '<Esc>', return2main)
+        self.keymaps.bind('help', '<any>', return2main)
+
+        self.keymaps.use_keymap('main')

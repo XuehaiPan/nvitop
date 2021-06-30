@@ -129,9 +129,6 @@ class EnvironScreen(Displayable):
             if y == self.y + 2 - self.scroll_offset + self.y_offset:
                 self.color_at(y, self.x, width=self.width, fg='cyan', attr='bold | reverse')
 
-    def finalize(self):
-        self.need_redraw = False
-
     def press(self, key):
         self.root.keymaps.use_keymap('environ')
         self.root.press(key)

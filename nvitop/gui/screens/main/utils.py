@@ -65,10 +65,10 @@ class Selected(object):
         processes = self.panel.snapshots
         if len(processes) > 0:
             if not self.is_set():
-                if direction > 0:
-                    self.index = 0
+                if abs(direction) < 1024:
+                    self.index = (0 if direction > 0 else len(processes) - 1)
                 else:
-                    self.index = len(processes) - 1
+                    self.index = (len(processes) - 1 if direction > 0 else 0)
             else:
                 self.index = min(max(0, self.index + direction), len(processes) - 1)
             self.process = processes[self.index]

@@ -23,7 +23,7 @@
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
-    - [Callback for PyTorch Lightning](#callback-for-pytorch-lighting)
+    - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
   - [More than Monitoring](#more-than-monitoring)
     - [Device](#device)
     - [Process](#process)
@@ -86,7 +86,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.5.2)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.5.3)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -152,6 +152,8 @@ $ nvitop -m -U  # useful for terminals without Unicode support
 ```
 
 Press `h` for help or `q` to return to the terminal.
+
+![Help](https://user-images.githubusercontent.com/16078332/123928568-9ca5ec80-d9c0-11eb-88cb-226760706c06.png)
 
 In monitor mode, you can use the arrow keys to select a process, and use the `^C` / `T` / `K` keys to interrupt / terminate / kill that process. It's recommended to terminate or kill a process in the tree-view screen (press the `t` key). See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more details.
 
@@ -230,7 +232,7 @@ optional arguments:
 |                                                                    `<End>` | Select the last process.                                                             |
 |                                                                    `<Esc>` | Clear process selection.                                                             |
 |                                                                        `e` | Show process environment.                                                            |
-|                                                                        `t` | Toggle tree-view screen for processes.                                               |
+|                                                                        `t` | Toggle tree-view screen.                                                             |
 |                                                                            |                                                                                      |
 |                                                             `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
