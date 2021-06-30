@@ -118,7 +118,7 @@ $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 # Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
 $ nvitop -ov
 
-# Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+# Only show GPU processes with the compute context (type: 'C' or 'C+G')
 $ nvitop -c
 ```
 
@@ -144,11 +144,18 @@ $ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
 # Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
 $ nvitop -m -ov
 
-# Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+# Only show GPU processes with the compute context (type: 'C' or 'C+G')
 $ nvitop -m -c
+
+# Use ASCII characters only
+$ nvitop -m -U  # useful for terminals without Unicode support
 ```
 
-Press `q` to return to the terminal.
+Press `h` for help or `q` to return to the terminal.
+
+In monitor mode, you can use the arrow keys to select a process, and use the `^C` / `T` / `K` keys to interrupt / terminate / kill that process. It's recommended to terminate or kill a process in the tree-view screen (press the `t` key). See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more details.
+
+`nvitop` will shallow other users' processes (in decreased intensity color), which means that users can only send signals to processes if owned. For system administrators, you can use `sudo nvitop -m` to terminate other users' processes.
 
 #### For Docker Users
 
@@ -240,7 +247,7 @@ optional arguments:
 |                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
-**HINT:** It's recommended that terminate or kill a process in the tree-view screen (press the `t` key).
+**HINT:** It's recommended to terminate or kill a process in the tree-view screen (press the `t` key).
 
 **NOTE:** Press the `CTRL` key to multiply the mouse wheel events by `5`.
 
