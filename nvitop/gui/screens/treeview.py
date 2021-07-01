@@ -103,23 +103,22 @@ class TreeNode(object):
         queue = deque(nodes.values())
         while len(queue) > 0:
             node = queue.popleft()
-            while True:
-                try:
-                    parent_process = node.process.parent()
-                except host.PsutilError:
-                    break
-                if parent_process is None:
-                    break
+            try:
+                parent_process = node.process.parent()
+            except host.PsutilError:
+                continue
+            if parent_process is None:
+                continue
 
-                try:
-                    parent = nodes[parent_process.pid]
-                except KeyError:
-                    parent = nodes[parent_process.pid] = cls(parent_process)
-                    queue.append(parent)
-                else:
-                    break
-                finally:
-                    parent.add(node)
+            try:
+                parent = nodes[parent_process.pid]
+            except KeyError:
+                parent = nodes[parent_process.pid] = cls(parent_process)
+                queue.append(parent)
+            else:
+                continue
+            finally:
+                parent.add(node)
 
         roots = sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
         for root in roots:

@@ -96,25 +96,26 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         if pid is None:
             pid = os.getpid()
 
-        try:
-            instance = cls.INSTANCES[pid]
-            if not instance._gone:
-                return instance
-        except KeyError:
-            pass
-
-        instance = super().__new__(cls)
         with cls.INSTANCE_LOCK:
-            cls.INSTANCES[pid] = instance
+            try:
+                instance, identity = cls.INSTANCES[pid]
+                if not instance._gone and instance._ident == identity:
+                    return instance
+            except KeyError:
+                pass
 
-        instance._super_gone = False
-        host.Process._init(instance, pid, True)
-        try:
-            host.Process.cpu_percent(instance)
-        except host.PsutilError:
-            pass
+            instance = super().__new__(cls)
 
-        return instance
+            instance._super_gone = False
+            host.Process._init(instance, pid, True)
+            try:
+                host.Process.cpu_percent(instance)
+            except host.PsutilError:
+                pass
+
+            cls.INSTANCES[pid] = (instance, instance._ident)
+
+            return instance
 
     def __init__(self, pid: Optional[int] = None) -> None:  # pylint: disable=unused-argument,super-init-not-called
         pass
@@ -175,31 +176,32 @@ class GpuProcess(object):
         if pid is None:
             pid = os.getpid()
 
-        try:
-            instance = cls.INSTANCES[(pid, device)]
-            if not instance._gone:
-                return instance
-        except KeyError:
-            pass
-
-        instance = super().__new__(cls)
         with cls.INSTANCE_LOCK:
-            cls.INSTANCES[(pid, device)] = instance
+            try:
+                instance, identity = cls.INSTANCES[(pid, device)]
+                if not instance._gone and instance._ident == identity:
+                    return instance
+            except KeyError:
+                pass
+
+            instance = super().__new__(cls)
+
+            instance._pid = pid
+            instance.host = HostProcess(pid)
+            instance._ident = identity = (*instance.host._ident, device.index)
+            instance.device = device
+
+            instance._hash = None
+            instance._username = None
+
+            cls.INSTANCES[(pid, device)] = (instance, identity)
             with cls.SNAPSHOT_LOCK:
                 try:
                     del cls.HOST_SNAPSHOTS[pid]
                 except KeyError:
                     pass
 
-        instance._pid = pid
-        instance.host = HostProcess(pid)
-        instance._ident = (*instance.host._ident, device.index)
-        instance.device = device
-
-        instance._hash = None
-        instance._username = None
-
-        return instance
+            return instance
 
     def __init__(self, pid: int, device: 'Device',  # pylint: disable=unused-argument
                  gpu_memory: Optional[Union[int, NaType]] = None,
