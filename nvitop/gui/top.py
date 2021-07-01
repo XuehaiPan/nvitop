@@ -19,7 +19,7 @@ class Top(DisplayableContainer):
         super().__init__(win, root=self)
 
         self.x = self.y = 0
-        self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns)
+        self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns - self.x)
         if not sys.stdout.isatty():
             self.width = 1024
         self.termsize = None
@@ -40,19 +40,16 @@ class Top(DisplayableContainer):
             self.environ_screen = EnvironScreen(win=win, root=self)
             self.environ_screen.visible = False
             self.environ_screen.ascii = False
-            self.environ_screen.x = self.environ_screen.x = 0
             self.add_child(self.environ_screen)
 
             self.treeview_screen = TreeViewScreen(win=win, root=self)
             self.treeview_screen.visible = False
             self.treeview_screen.ascii = self.ascii
-            self.treeview_screen.x = self.treeview_screen.y = 0
             self.add_child(self.treeview_screen)
 
             self.help_screen = HelpScreen(win=win, root=self)
             self.help_screen.visible = False
             self.environ_screen.ascii = False
-            self.help_screen.x = self.help_screen.y = 0
             self.add_child(self.help_screen)
 
             self.keybuffer = KeyBuffer()
@@ -60,15 +57,18 @@ class Top(DisplayableContainer):
             self.last_input_time = time.monotonic()
             self.init_keybindings()
 
-    def update_size(self):
-        curses.update_lines_cols()  # pylint: disable=no-member
-        n_term_lines, n_term_cols = termsize = self.win.getmaxyx()
-        n_term_lines -= self.y
-        n_term_cols -= self.x
-        self.width = n_term_cols
-        self.main_screen.update_size(termsize)
-        self.environ_screen.height, self.environ_screen.width = n_term_lines, n_term_cols
-        self.treeview_screen.height, self.treeview_screen.width = n_term_lines, n_term_cols
+    def update_size(self, termsize=None):
+        if termsize is None:
+            self.update_lines_cols()
+            termsize = self.win.getmaxyx()
+        n_term_lines, n_term_cols = termsize  # pylint: disable=unused-variable
+
+        self.width = n_term_cols - self.x
+
+        for screen in self.container:
+            if hasattr(screen, 'update_size'):
+                screen.update_size(termsize)
+
         if self.termsize != termsize:
             self.termsize = termsize
             self.need_redraw = True

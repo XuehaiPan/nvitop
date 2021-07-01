@@ -24,7 +24,6 @@ class MainScreen(DisplayableContainer):
         super().__init__(win, root)
 
         self.width = root.width
-        self.termsize = None
 
         assert mode in ('auto', 'full', 'compact')
         compact = (mode == 'compact')
@@ -57,7 +56,7 @@ class MainScreen(DisplayableContainer):
         if ascii:
             self.host_panel.full_height = self.host_panel.height = self.host_panel.compact_height
 
-        self.x = self.y = 0
+        self.x, self.y = root.x, root.y
         self.device_panel.x = self.host_panel.x = self.process_panel.x = self.x
         self.device_panel.y = self.y
         self.host_panel.y = self.device_panel.y + self.device_panel.height
@@ -76,34 +75,36 @@ class MainScreen(DisplayableContainer):
 
     def update_size(self, termsize=None):
         if termsize is None:
-            curses.update_lines_cols()  # pylint: disable=no-member
+            self.update_lines_cols()  # pylint: disable=no-member
             termsize = self.win.getmaxyx()
         n_term_lines, n_term_cols = termsize
-        n_term_lines -= self.y
-        n_term_cols -= self.x
-        self.width = n_term_cols
+
+        self.width = n_term_cols - self.x
+        self.device_panel.width = self.width
+        self.host_panel.width = self.width
+        self.process_panel.width = self.width
+
+        height = n_term_lines - self.y
         heights = [
             self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
             self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,
             self.device_panel.compact_height + self.host_panel.compact_height + self.process_panel.full_height,
         ]
         if self.mode == 'auto':
-            self.compact = (n_term_lines < heights[0])
-            self.host_panel.compact = (n_term_lines < heights[1])
-            self.process_panel.compact = (n_term_lines < heights[-1])
+            self.compact = (height < heights[0])
+            self.host_panel.compact = (height < heights[1])
+            self.process_panel.compact = (height < heights[-1])
         else:
             self.compact = (self.mode == 'compact')
             self.host_panel.compact = self.compact
             self.process_panel.compact = self.compact
         self.device_panel.compact = self.compact
+
         self.host_panel.y = self.device_panel.y + self.device_panel.height
         self.process_panel.y = self.host_panel.y + self.host_panel.height
         height = self.device_panel.height + self.host_panel.height + self.process_panel.height
-        self.device_panel.width = self.width
-        self.host_panel.width = self.width
-        self.process_panel.width = self.width
-        if self.termsize != termsize or self.height != height:
-            self.termsize = termsize
+
+        if self.height != height:
             self.height = height
             self.need_redraw = True
 
@@ -111,7 +112,7 @@ class MainScreen(DisplayableContainer):
         super().poke()
 
         height = self.device_panel.height + self.host_panel.height + self.process_panel.height
-        if self.termsize is None or self.height != height:
+        if self.height != height:
             self.update_size()
             self.need_redraw = True
 

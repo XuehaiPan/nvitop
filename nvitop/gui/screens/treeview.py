@@ -87,12 +87,18 @@ class TreeNode(object):
     def merge(cls, leaves):
         nodes = {}
         for process in leaves:
+            if isinstance(process, Snapshot):
+                process = process.real
+
             try:
                 node = nodes[process.pid]
             except KeyError:
-                node = nodes[process.pid] = cls(process.real)
+                node = nodes[process.pid] = cls(process)
             finally:
-                node.devices.add(process.device)
+                try:
+                    node.devices.add(process.device)
+                except AttributeError:
+                    pass
 
         queue = deque(nodes.values())
         while len(queue) > 0:
@@ -150,6 +156,7 @@ class TreeViewScreen(Displayable):
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_running = threading.Event()
 
+        self.x, self.y = root.x, root.y
         self.width, self.height = root.width, root.height
 
     @property
@@ -178,13 +185,9 @@ class TreeViewScreen(Displayable):
 
     @snapshots.setter
     def snapshots(self, snapshots):
-        n_processes = len(snapshots)
-        height = 1 + n_processes
-
         with self.snapshot_lock:
+            self.need_redraw = (self.need_redraw or len(self._snapshots) > len(snapshots))
             self._snapshots = snapshots
-            self.need_redraw = (self.need_redraw or self.height > height)
-            self.height = height
 
             if self.selected.is_set():
                 identity = self.selected.identity
@@ -220,6 +223,15 @@ class TreeViewScreen(Displayable):
             self._daemon_running.wait()
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
+
+    def update_size(self, termsize=None):
+        if termsize is None:
+            self.update_lines_cols()
+            termsize = self.win.getmaxyx()
+        n_term_lines, n_term_cols = termsize
+
+        self.width = n_term_cols - self.x
+        self.height = n_term_lines - self.y
 
     def poke(self):
         if self._daemon_running.is_set():

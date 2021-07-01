@@ -169,6 +169,10 @@ class CursesShortcuts(object):
         self.color()
 
     @staticmethod
+    def update_lines_cols():
+        curses.update_lines_cols()
+
+    @staticmethod
     def beep():
         curses.beep()
 

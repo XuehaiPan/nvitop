@@ -29,6 +29,7 @@ class EnvironScreen(Displayable):
         self.scroll_offset = 0
 
         self._height = 0
+        self.x, self.y = root.x, root.y
         self.width, self.height = root.width, root.height
 
     @property
@@ -91,6 +92,15 @@ class EnvironScreen(Displayable):
 
     def move(self, direction):
         self.y_offset = self.y_offset + direction
+
+    def update_size(self, termsize=None):
+        if termsize is None:
+            self.update_lines_cols()
+            termsize = self.win.getmaxyx()
+        n_term_lines, n_term_cols = termsize 
+
+        self.width = n_term_cols - self.x
+        self.height = n_term_lines - self.y
 
     def draw(self):
         self.color_reset()

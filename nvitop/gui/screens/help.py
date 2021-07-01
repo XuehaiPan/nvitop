@@ -54,6 +54,7 @@ class HelpScreen(Displayable):
 
         self.infos = HELP.strip().splitlines()
 
+        self.x, self.y = root.x, root.y
         self.width = max(map(len, self.infos))
         self.height = len(self.infos)
 
@@ -100,6 +101,3 @@ class HelpScreen(Displayable):
     def press(self, key):
         self.root.keymaps.use_keymap('help')
         self.root.press(key)
-
-    def init_keybindings(self):
-        pass
