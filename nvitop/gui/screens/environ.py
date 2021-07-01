@@ -23,6 +23,8 @@ class EnvironScreen(Displayable):
 
         self._process = None
         self._environ = None
+        self.username = None
+        self.command = None
 
         self.x_offset = 0
         self._y_offset = 0
@@ -42,10 +44,21 @@ class EnvironScreen(Displayable):
             value = self.this
 
         self._process = value
+
         try:
             self.environ = self.process.environ().copy()
         except host.PsutilError:
             self.environ = None
+
+        try:
+            self.command = self.process.command()
+        except host.PsutilError:
+            self.command = 'N/A'
+
+        try:
+            self.username = self.process.username()
+        except host.PsutilError:
+            self.username = 'N/A'
 
     @property
     def environ(self):
@@ -97,7 +110,7 @@ class EnvironScreen(Displayable):
         if termsize is None:
             self.update_lines_cols()
             termsize = self.win.getmaxyx()
-        n_term_lines, n_term_cols = termsize 
+        n_term_lines, n_term_cols = termsize
 
         self.width = n_term_cols - self.x
         self.height = n_term_lines - self.y
@@ -105,16 +118,13 @@ class EnvironScreen(Displayable):
     def draw(self):
         self.color_reset()
 
-        try:
-            name = self.process.name()
-        except host.PsutilError:
-            name = 'N/A'
-
         if isinstance(self.process, GpuProcess):
             process_type = 'GPU: {}'.format(self.process.type.replace('C', 'Compute').replace('G', 'Graphics'))
         else:
             process_type = 'Host'
-        header = 'Environment of process {} ({}) - {}'.format(self.process.pid, process_type, name)
+        header = 'Environment of process {} ({}@{}) - {}'.format(self.process.pid,
+                                                                 self.username, process_type,
+                                                                 self.command)
 
         self.addstr(self.y, self.x, header.ljust(self.width))
         self.addstr(self.y + 1, self.x, '#' * self.width)
