@@ -84,7 +84,7 @@ class Device(object):
         use_indices = None
         for identifier in map(str.strip, cuda_visible_devices.split(',')):
             if identifier in presented:
-                raise RuntimeError('CUDAErrorInvalidDevice: invalid device ordinal')
+                raise RuntimeError('CUDA Error: invalid device ordinal')
             try:
                 device = from_index_or_uuid(identifier)
             except (ValueError, nvml.NVMLError):
@@ -110,7 +110,7 @@ class Device(object):
         devices = []
         for cuda_index in cuda_indices:
             if not 0 <= cuda_index < cuda_device_count:
-                raise RuntimeError('CUDAErrorInvalidDevice: invalid device ordinal')
+                raise RuntimeError('CUDA Error: invalid device ordinal')
             device = cuda_devices[cuda_index]
             device._cuda_index = cuda_index  # pylint: disable=protected-access
             devices.append(device)

@@ -16,8 +16,6 @@ __all__[__all__.index('Error')] = 'PsutilError'
 PsutilError = Error
 del Error  # pylint: disable=undefined-variable
 
-cpu_count = _psutil.cpu_count
-
 cpu_percent = _ttl_cache(ttl=0.25)(_psutil.cpu_percent)
 
 try:

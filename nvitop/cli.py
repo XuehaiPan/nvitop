@@ -58,7 +58,10 @@ def main():  # pylint: disable=too-many-branches
     try:
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
     except locale.Error:
-        locale.setlocale(locale.LC_ALL, '')
+        try:
+            locale.setlocale(locale.LC_ALL, '')
+        except locale.Error:
+            pass
 
     args = parse_arguments()
 

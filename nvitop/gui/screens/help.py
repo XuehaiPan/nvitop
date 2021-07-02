@@ -6,7 +6,7 @@
 
 from ...core import Device
 from ...version import __version__
-from ..library import Displayable
+from ..library import Displayable, MouseEvent
 
 
 HELP_TEMPLATE = '''nvitop {} - (C) Xuehai Pan, 2021.
@@ -28,7 +28,7 @@ Device coloring rules by loading intensity:
       t: toggle tree-view screen                  q: quit
 
   Wheel: scroll process list            Shift-Wheel: scroll horizontally
-    Tab: scroll process list             Ctrl-Wheel: fast scroll (5x)
+    Tab: scroll process list             Ctrl-Wheel: fast scroll ({}x)
 
   on oN: sort by GPU-INDEX                    os oS: sort by %SM
   op oP: sort by PID                          oc oC: sort by %CPU
@@ -50,7 +50,8 @@ class HelpScreen(Displayable):
 
         HELP = HELP_TEMPLATE.format(__version__,
                                     *Device.GPU_UTILIZATION_THRESHOLDS,
-                                    *Device.MEMORY_UTILIZATION_THRESHOLDS)
+                                    *Device.MEMORY_UTILIZATION_THRESHOLDS,
+                                    MouseEvent.CTRL_SCROLLWHEEL_MULTIPLIER)
 
         self.infos = HELP.strip().splitlines()
 
@@ -87,7 +88,7 @@ class HelpScreen(Displayable):
         for dy in range(9, 17):
             self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
             self.color_at(self.y + dy, self.x + 44, width=8, fg='green', attr='bold')
-        for dy in range(18, 20):
+        for dy in (18, 19):
             self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
             self.color_at(self.y + dy, self.x + 40, width=12, fg='cyan', attr='bold')
         for dy in range(21, 25):
