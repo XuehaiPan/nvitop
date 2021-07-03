@@ -122,13 +122,14 @@ class EnvironScreen(Displayable):
             process_type = 'GPU: {}'.format(self.process.type.replace('C', 'Compute').replace('G', 'Graphics'))
         else:
             process_type = 'Host'
-        header = 'Environment of process {} ({}@{}) - {}'.format(self.process.pid,
-                                                                 self.username, process_type,
-                                                                 self.command)
+        header_prefix = 'Environment of process {} ({}@{}): '.format(self.process.pid,
+                                                                     self.username, process_type)
+        offset = max(0, min(self.x_offset, len(self.command) + len(header_prefix) - self.width))
+        header = header_prefix + self.command[offset:]
 
         self.addstr(self.y, self.x, header.ljust(self.width))
         self.addstr(self.y + 1, self.x, '#' * self.width)
-        self.color_at(self.y, self.x, width=self.width, fg='cyan', attr='bold')
+        self.color_at(self.y, self.x, width=len(header_prefix) - 1, fg='cyan', attr='bold')
         self.color_at(self.y + 1, self.x, width=self.width, fg='green', attr='bold')
 
         if self.environ is None:
