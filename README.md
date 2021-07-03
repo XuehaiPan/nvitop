@@ -155,6 +155,13 @@ Press `h` for help or `q` to return to the terminal.
 
 ![Help](https://user-images.githubusercontent.com/16078332/123928568-9ca5ec80-d9c0-11eb-88cb-226760706c06.png)
 
+**HINT:** You can set the following alias in your shell profile to make `nvitop` always invoke the resource monitor:
+
+```bash
+alias nvitop='nvitop -m'                   # Bash / Zsh / Fish ...
+Set-Alias -Name nvitop -Value 'nvitop -m'  # PowerShell
+```
+
 In monitor mode, you can use the arrow keys to select a process, and use the `^C` / `T` / `K` keys to interrupt / terminate / kill that process. It's recommended to terminate or kill a process in the tree-view screen (press the `t` key). See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more details.
 
 `nvitop` will shallow other users' processes (in decreased intensity color), which means that users can only send signals to processes if owned. For system administrators, you can use `sudo nvitop -m` to terminate other users' processes.
