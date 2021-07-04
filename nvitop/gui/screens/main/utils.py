@@ -8,7 +8,7 @@ import signal
 import time
 from collections import namedtuple
 
-from ....core import host, Snapshot
+from nvitop.core import host, Snapshot
 
 
 CURRENT_USER = getpass.getuser()

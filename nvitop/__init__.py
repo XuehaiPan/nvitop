@@ -3,9 +3,9 @@
 
 """An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."""
 
-from . import core
-from .core import *
-from .version import __version__
+from nvitop import core
+from nvitop.core import *
+from nvitop.version import __version__
 
 
 __all__ = core.__all__.copy()

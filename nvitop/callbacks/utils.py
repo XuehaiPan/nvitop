@@ -5,7 +5,7 @@
 
 from typing import List
 
-from ..core import Device
+from nvitop.core import Device
 
 
 def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> List[Device]:

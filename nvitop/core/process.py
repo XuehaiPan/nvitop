@@ -13,13 +13,14 @@ from typing import List, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
 
 from cachetools.func import ttl_cache
 
-from . import host
-from .libnvml import nvml
-from .utils import NA, NaType, Snapshot, bytes2human, timedelta2human, utilization2string
+from nvitop.core import host
+from nvitop.core.libnvml import nvml
+from nvitop.core.utils import (NA, NaType, Snapshot,
+                               bytes2human, timedelta2human, utilization2string)
 
 
 if TYPE_CHECKING:
-    from .device import Device
+    from nvitop.core.device import Device
 
 
 __all__ = ['HostProcess', 'GpuProcess']

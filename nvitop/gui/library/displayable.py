@@ -5,7 +5,7 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-from .libcurses import CursesShortcuts
+from nvitop.gui.library.libcurses import CursesShortcuts
 
 
 class Displayable(CursesShortcuts):

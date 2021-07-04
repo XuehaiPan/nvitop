@@ -11,8 +11,8 @@ from pytorch_lightning.callbacks import Callback   # pylint: disable=import-erro
 from pytorch_lightning.utilities import DeviceType, rank_zero_only  # pylint: disable=import-error
 from pytorch_lightning.utilities.exceptions import MisconfigurationException  # pylint: disable=import-error
 
-from ..core import nvml, MiB, NA
-from .utils import get_devices_by_logical_ids
+from nvitop.core import nvml, MiB, NA
+from nvitop.callbacks.utils import get_devices_by_logical_ids
 
 
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor

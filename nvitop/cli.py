@@ -7,9 +7,9 @@ import argparse
 import locale
 import sys
 
-from .core import nvml, Device
-from .gui import Top, libcurses, colored
-from .version import __version__
+from nvitop.core import nvml, Device
+from nvitop.gui import Top, libcurses, colored
+from nvitop.version import __version__
 
 
 def parse_arguments():

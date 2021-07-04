@@ -3,10 +3,10 @@
 
 # pylint: disable=missing-module-docstring
 
-from .libcurses import libcurses
-from .displayable import Displayable, DisplayableContainer
-from .keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUANT_KEY,
-                         SPECIAL_KEYS, KeyBuffer, KeyMaps)
-from .mouse import MouseEvent
-from .history import HistoryGraph, BufferedHistoryGraph
-from .utils import colored, cut_string, make_bar
+from nvitop.gui.library.libcurses import libcurses
+from nvitop.gui.library.displayable import Displayable, DisplayableContainer
+from nvitop.gui.library.keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUANT_KEY,
+                                           SPECIAL_KEYS, KeyBuffer, KeyMaps)
+from nvitop.gui.library.mouse import MouseEvent
+from nvitop.gui.library.history import HistoryGraph, BufferedHistoryGraph
+from nvitop.gui.library.utils import colored, cut_string, make_bar

@@ -6,7 +6,7 @@
 
 import sys
 
-from ...core import NA
+from nvitop.core import NA
 
 
 try:

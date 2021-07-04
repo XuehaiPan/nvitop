@@ -7,10 +7,10 @@ import curses
 import threading
 from functools import partial
 
-from ...library import DisplayableContainer
-from .device import DevicePanel
-from .host import HostPanel
-from .process import ProcessPanel
+from nvitop.gui.library import DisplayableContainer
+from nvitop.gui.screens.main.device import DevicePanel
+from nvitop.gui.screens.main.host import HostPanel
+from nvitop.gui.screens.main.process import ProcessPanel
 
 
 class BreakLoop(Exception):

@@ -10,8 +10,8 @@ import threading
 import time
 from functools import partial
 
-from .library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
-from .screens import MainScreen, EnvironScreen, TreeViewScreen, HelpScreen, BreakLoop
+from nvitop.gui.library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
+from nvitop.gui.screens import MainScreen, EnvironScreen, TreeViewScreen, HelpScreen, BreakLoop
 
 
 class Top(DisplayableContainer):

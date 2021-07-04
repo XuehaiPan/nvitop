@@ -9,8 +9,8 @@ import time
 
 from cachetools.func import ttl_cache
 
-from ....core import Device
-from ...library import Displayable, colored, cut_string, make_bar
+from nvitop.core import Device
+from nvitop.gui.library import Displayable, colored, cut_string, make_bar
 
 
 class DevicePanel(Displayable):

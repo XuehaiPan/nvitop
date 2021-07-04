@@ -10,7 +10,7 @@ import threading
 import time
 from collections import deque
 
-from ...core import NA
+from nvitop.core import NA
 
 
 BOUND_UPDATE_INTERVAL = 1.0

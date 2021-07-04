@@ -11,9 +11,9 @@ from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
 
-from ....core import NA, host, GpuProcess
-from ...library import Displayable, MouseEvent, colored, cut_string
-from .utils import CURRENT_USER, IS_SUPERUSER, Order, Selected
+from nvitop.core import NA, host, GpuProcess
+from nvitop.gui.library import Displayable, MouseEvent, colored, cut_string
+from nvitop.gui.screens.main.utils import CURRENT_USER, IS_SUPERUSER, Order, Selected
 
 
 class ProcessPanel(Displayable):

@@ -7,8 +7,8 @@
 from collections import OrderedDict
 from functools import partial
 
-from ...core import host, HostProcess, GpuProcess
-from ..library import Displayable
+from nvitop.core import host, HostProcess, GpuProcess
+from nvitop.gui.library import Displayable
 
 
 class EnvironScreen(Displayable):

@@ -10,9 +10,9 @@ from typing import List, Dict, Iterable, Callable, Union, Optional, Any
 
 from cachetools.func import ttl_cache
 
-from .libnvml import nvml
-from .process import GpuProcess
-from .utils import NA, NaType, Snapshot, bytes2human, utilization2string
+from nvitop.core.libnvml import nvml
+from nvitop.core.process import GpuProcess
+from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2string
 
 
 __all__ = ['Device']

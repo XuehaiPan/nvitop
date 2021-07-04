@@ -3,11 +3,11 @@
 
 # pylint: disable=missing-module-docstring
 
-from . import host, utils
-from .libnvml import nvml
-from .device import Device
-from .process import HostProcess, GpuProcess
-from .utils import *
+from nvitop.core import host, utils
+from nvitop.core.libnvml import nvml
+from nvitop.core.device import Device
+from nvitop.core.process import HostProcess, GpuProcess
+from nvitop.core.utils import *
 
 
 __all__ = ['nvml', 'NVMLError', 'Device',

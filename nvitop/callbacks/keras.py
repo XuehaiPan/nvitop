@@ -9,8 +9,8 @@ from typing import Dict, List, Tuple, Union
 
 from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error
 
-from ..core import nvml, MiB, NA
-from .utils import get_devices_by_logical_ids
+from nvitop.core import nvml, MiB, NA
+from nvitop.callbacks.utils import get_devices_by_logical_ids
 
 
 # Ported version of .lightning.GpuStatsLogger for Keras

@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/pypi/dm/nvitop?label=Downloads)](https://pypistats.org/packages/nvitop)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-`nvitop`, an interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
+An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png" alt="Monitor">

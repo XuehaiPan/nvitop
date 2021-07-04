@@ -11,7 +11,7 @@ from typing import Tuple, Callable, Union, Optional, Any
 
 import pynvml
 
-from .utils import NA
+from nvitop.core.utils import NA
 
 
 __all__ = ['libnvml', 'nvml']
