@@ -8,7 +8,10 @@
 
 `nvitop`, an interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
 
-![Screenshot Monitor](https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png)
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png" alt="Monitor">
+  Monitor mode of <code>nvitop</code>.
+</p>
 
 ### Table of Contents  <!-- omit in toc -->
 
@@ -40,19 +43,20 @@ So far, `nvitop` is in the *beta phase*, and most features have been tested on L
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗.
 
-Compare to `nvidia-smi`:
-
-![Screenshot Comparison](https://user-images.githubusercontent.com/16078332/117765245-3f16de80-b260-11eb-99c7-077cd5519074.png)
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/117765245-3f16de80-b260-11eb-99c7-077cd5519074.png" alt="Comparison">
+  Compare to <code>nvidia-smi</code>.
+</p>
 
 ## Features
 
 - **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
 - **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop), limited support with command `watch -c`)
-  - bar plots and History Graphs
+  - bar plots and history graphs
   - process sorting
   - process filtering
   - send signals to processes with a keystroke
-  - tree-view screen for GPU Processes and their parent processes
+  - tree-view screen for GPU processes and their parent processes
   - environment variable screen
   - help screen
 - **Interactive**: responsive for user input in monitor mode. (vs. [gpustat](https://github.com/wookayin/gpustat) & [py3nvml](https://github.com/fbcotter/py3nvml))
@@ -122,7 +126,7 @@ $ nvitop -ov
 $ nvitop -c
 ```
 
-**NOTE:** `nvitop` uses only one character to indicate the type of processes. `C` stands for compute processes, `G` for graphics processes, and `X` for processes with both contexts (i.e. mi(x)ed, in `nvidia-smi` it is `C+G`).
+The result will be displayed **ONLY ONCE**, which is consistent with the behavior of `nvidia-smi`. Type `nvitop --help` for more command options.
 
 ### Resource Monitor
 
@@ -151,9 +155,12 @@ $ nvitop -m -c
 $ nvitop -m -U  # useful for terminals without Unicode support
 ```
 
-Press `h` for help or `q` to return to the terminal.
+Press `h` for help or `q` to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
-![Help](https://user-images.githubusercontent.com/16078332/123928568-9ca5ec80-d9c0-11eb-88cb-226760706c06.png)
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/123928568-9ca5ec80-d9c0-11eb-88cb-226760706c06.png" alt="Help Screen">
+  <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
+</p>
 
 **HINT:** You can set the following alias in your shell profile to make `nvitop` always invoke the resource monitor:
 
@@ -162,17 +169,16 @@ alias nvitop='nvitop -m'                   # Bash / Zsh / Fish ...
 Set-Alias -Name nvitop -Value 'nvitop -m'  # PowerShell
 ```
 
-In monitor mode, you can use the arrow keys to select a process, and use the `^C` / `T` / `K` keys to interrupt / terminate / kill that process. It's recommended to terminate or kill a process in the tree-view screen (press the `t` key). See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more details.
-
-`nvitop` will shallow other users' processes (in decreased intensity color), which means that users can only send signals to processes if owned. For system administrators, you can use `sudo nvitop -m` to terminate other users' processes.
+In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop -m` to terminate other users' processes.
 
 #### For Docker Users
 
 Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/nvidia-docker):
 
 ```bash
-docker build --tag nvitop:latest .
-docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m
+git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop  # clone this repo first
+docker build --tag nvitop:latest .  # build the Docker image
+docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m  # run the Docker container
 ```
 
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
@@ -187,40 +193,6 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 ```
 
 **NOTE:** Users need to add the `-t` option to allocate a pseudo-terminal over the SSH session for monitor mode.
-
-Type `nvitop --help` for more information:
-
-```text
-usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]]
-              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
-              [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--ascii]
-
-An interactive NVIDIA-GPU process viewer.
-
-optional arguments:
-  --help, -h            show this help message and exit
-  --version             show program's version number and exit
-  --monitor [{auto,full,compact}], -m [{auto,full,compact}]
-                        Run as a resource monitor. Continuously report query data,
-                        rather than the default of just once.
-                        If no argument is given, the default mode `auto` is used.
-  --only idx [idx ...], -o idx [idx ...]
-                        Only show the specified devices, suppress option `--only-visible`.
-  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
-  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
-  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
-  --gpu-util-thresh th1 th2
-                        Thresholds of GPU utilization to determine the load intensity.
-                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
-                        ( 1 <= th1 < th2 <= 99, defaults: 10 75 )
-  --mem-util-thresh th1 th2
-                        Thresholds of GPU memory utilization to determine the load intensity.
-                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
-                        ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
-  --ascii, --no-unicode, -U
-                        Use ASCII characters only, which is useful for terminals without Unicode support.
-```
 
 #### Keybindings for Monitor Mode
 
@@ -256,9 +228,41 @@ optional arguments:
 |                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
-**HINT:** It's recommended to terminate or kill a process in the tree-view screen (press the `t` key).
+**HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).
 
-**NOTE:** Press the `CTRL` key to multiply the mouse wheel events by `5`.
+Type `nvitop --help` for more command options:
+
+```text
+usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]]
+              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
+              [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
+              [--ascii]
+
+An interactive NVIDIA-GPU process viewer.
+
+optional arguments:
+  --help, -h            show this help message and exit
+  --version             show program's version number and exit
+  --monitor [{auto,full,compact}], -m [{auto,full,compact}]
+                        Run as a resource monitor. Continuously report query data,
+                        rather than the default of just once.
+                        If no argument is given, the default mode `auto` is used.
+  --only idx [idx ...], -o idx [idx ...]
+                        Only show the specified devices, suppress option `--only-visible`.
+  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
+  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
+  --gpu-util-thresh th1 th2
+                        Thresholds of GPU utilization to determine the load intensity.
+                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
+                        ( 1 <= th1 < th2 <= 99, defaults: 10 75 )
+  --mem-util-thresh th1 th2
+                        Thresholds of GPU memory utilization to determine the load intensity.
+                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
+                        ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
+  --ascii, --no-unicode, -U
+                        Use ASCII characters only, which is useful for terminals without Unicode support.
+```
 
 ### Callback Functions for Machine Learning Frameworks
 
@@ -577,7 +581,9 @@ Out[38]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, si
 
 Example output of `nvitop`:
 
-![Screenshot](https://user-images.githubusercontent.com/16078332/117765250-41793880-b260-11eb-8a1b-9c32868a46d4.png)
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/117765250-41793880-b260-11eb-8a1b-9c32868a46d4.png" alt="Screenshot">
+</p>
 
 Example output of `nvitop -m`:
 
@@ -592,15 +598,19 @@ Example output of `nvitop -m`:
   </tr>
 </table>
 
-Tree-view screen for GPU processes and their parents:
+Tree-view screen (shortcut: <kbd>t</kbd>)for GPU processes and their parents:
 
-![Tree-view](https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png)
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png" alt="Tree-view">
+</p>
 
-**NOTE:** the tree is built in backward (recursively back to the tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
+**NOTE:** The process tree is built in backward (recursively back to the tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
 
-Environment variable screen:
+Environment variable screen (shortcut: <kbd>e</kbd>):
 
-![Environment](https://user-images.githubusercontent.com/16078332/123914881-7a0cd700-d9b2-11eb-8da1-26f7a3a7c2b6.png)
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914881-7a0cd700-d9b2-11eb-8da1-26f7a3a7c2b6.png" alt="Environment Screen">
+</p>
 
 ## License
 
