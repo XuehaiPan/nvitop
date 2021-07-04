@@ -224,6 +224,8 @@ class Top(DisplayableContainer):
             top.main_screen.visible = True
             top.main_screen.focused = False
 
+            if top.treeview_screen.selected.is_set():
+                top.main_screen.selected.process = top.treeview_screen.selected.process
             top.treeview_screen.selected.clear()
 
         def show_treeview(top):
