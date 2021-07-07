@@ -108,10 +108,10 @@ def main():  # pylint: disable=too-many-branches
         messages.extend([
             *list(map('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format, nvml.UNKNOWN_FUNCTIONS)),
             ('Please verify whether the {0} package is compatible with your NVIDIA driver version.\n'
-             'You can check the release history of {0} at {1},\n'
-             'and install the compatible version manually.').format(
+             'You can check the release history of {0} and install the compatible version manually.\n'
+             'See {1} for more information.').format(
                 colored('nvidia-ml-py', attrs=('bold',)),
-                colored('https://pypi.org/project/nvidia-ml-py/#history', attrs=('underline',))
+                colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',))
             )
         ])
     if len(messages) > 0:

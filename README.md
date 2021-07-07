@@ -90,7 +90,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.5.4)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.5.5)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -104,7 +104,13 @@ cd nvitop
 pip3 install .
 ```
 
-**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. Since `nvidia-ml-py>=11.450.129`, the definition of `nvmlProcessInfo_t` has introduced two new fields `gpuInstanceId` and `computeInstanceId` (`GI ID` and `CI ID` in newer `nvidia-smi`) which are incompatible with some old NVIDIA drivers. `nvitop` may not display the processes correctly due to this incompatibility. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually.
+**IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually by:
+
+```bash
+pip3 install --no-dependencies nvidia-ml-py==xx.yyy.zzz
+```
+
+Since `nvidia-ml-py>=11.450.129`, the definition of `nvmlProcessInfo_t` has introduced two new fields `gpuInstanceId` and `computeInstanceId` (`GI ID` and `CI ID` in newer `nvidia-smi`) which are incompatible with some old NVIDIA drivers. `nvitop` may not display the processes correctly due to this incompatibility.
 
 ## Usage
 
@@ -155,7 +161,7 @@ $ nvitop -m -c
 $ nvitop -m -U  # useful for terminals without Unicode support
 ```
 
-Press `h` for help or `q` to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
+Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/123928568-9ca5ec80-d9c0-11eb-88cb-226760706c06.png" alt="Help Screen">
