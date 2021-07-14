@@ -1,5 +1,4 @@
 import os
-import platform
 import sys
 
 from setuptools import find_packages, setup
@@ -30,11 +29,12 @@ setup(
     url="https://github.com/XuehaiPan/nvitop",
     packages=find_packages(include=['nvitop', 'nvitop.*']),
     entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
-    install_requires=(['windows-curses'] if platform.system() == 'Windows' else []) + [
+    install_requires=[
         'nvidia-ml-py == 11.450.51',
         'psutil',
         'cachetools',
         'termcolor',
+        'windows-curses; platform_system == "Windows"',
     ],
     python_requires='>=3.5',
     classifiers=[

@@ -90,7 +90,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.5.5)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.5.6)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -120,7 +120,7 @@ Query the device and process status. The output is similar to `nvidia-smi`, but 
 
 ```bash
 # Query status of all devices
-$ nvitop
+$ nvitop  # or use `python3 -m nvitop`
 
 # Specify query devices (by integer indices)
 $ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
@@ -140,7 +140,7 @@ Run as a resource monitor:
 
 ```bash
 # Automatically configure the display mode according to the terminal size
-$ nvitop -m
+$ nvitop -m  # or use `python3 -m nvitop -m`
 
 # Arbitrarily display as `full` mode
 $ nvitop -m full
@@ -604,7 +604,7 @@ Example output of `nvitop -m`:
   </tr>
 </table>
 
-Tree-view screen (shortcut: <kbd>t</kbd>)for GPU processes and their parents:
+Tree-view screen (shortcut: <kbd>t</kbd>) for GPU processes and their parents:
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png" alt="Tree-view">
