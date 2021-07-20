@@ -81,7 +81,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
         del args.monitor
 
     try:
-        Device.count()
+        device_count = Device.count()
     except nvml.NVMLError_LibraryNotFound:
         return 1
     except nvml.NVMLError as e:  # pylint: disable=invalid-name
@@ -94,7 +94,14 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
         Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
 
     if args.only is not None:
-        devices = Device.from_indices(set(args.only))
+        indices = set(args.only)
+        invalid_indices = indices.difference(range(device_count))
+        indices.intersection_update(range(device_count))
+        if len(invalid_indices) > 1:
+            messages.append('ERROR: Invalid device indices: {}.'.format(sorted(invalid_indices)))
+        elif len(invalid_indices) == 1:
+            messages.append('ERROR: Invalid device index: {}.'.format(list(invalid_indices)[0]))
+        devices = Device.from_indices(indices)
     elif args.only_visible:
         devices = Device.from_cuda_visible_devices()
     else:
