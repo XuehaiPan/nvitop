@@ -11,13 +11,13 @@
 
 #### Runtime Environment
 
-- Operating system and version:
-- Terminal emulator and version:
-- Python version:
-- NVML/CUDA version:
-- `nvitop` version/commit:
-- `python-ml-py` version:
-- Locale:
+- Operating system and version: [e.g. Ubuntu 20.04 LTS / Windows 10 Build 19043.1110]
+- Terminal emulator and version: [e.g. GNOME Terminal 3.36.2 / Windows Terminal 1.8.1521.0]
+- Python version: [e.g. `3.5.6` / `3.9.6`]
+- NVML version (driver version): [e.g. `460.84`]
+- `nvitop` version or commit: [e.g. `0.3.5.6` / `main@b669fa3`]
+- `python-ml-py` version: [e.g. `11.450.51`]
+- Locale: [e.g. `C` / `C.UTF-8` / `en_US.UTF-8`]
 
 #### Current Behavior
 
@@ -34,6 +34,7 @@
 
 #### Possible Solutions
 
+<!-- Please feel free to delete this section if you not sure. -->
 
 
 #### Steps to reproduce
