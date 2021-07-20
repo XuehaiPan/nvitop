@@ -244,7 +244,7 @@ Type `nvitop --help` for more command options:
 usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
-              [--user [USERNAME [USERNAME ...]]]
+              [--user [USERNAME [USERNAME ...]]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
 
@@ -276,6 +276,8 @@ process filtering:
   --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
   --user [USERNAME [USERNAME ...]], -u [USERNAME [USERNAME ...]]
                         Only show processes of the given users (or `$USER` for no argument).
+  --pid PID [PID ...], -p PID [PID ...]
+                        Only show processes of the given PIDs.
 ```
 
 ### Callback Functions for Machine Learning Frameworks

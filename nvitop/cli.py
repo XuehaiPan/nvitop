@@ -52,6 +52,8 @@ def parse_arguments():
                                    help="Only show GPU processes with the graphics context. (type: 'G' or 'C+G')")
     process_filtering.add_argument('--user', '-u', dest='user', type=str, nargs='*', metavar='USERNAME',
                                    help='Only show processes of the given users (or `$USER` for no argument).')
+    process_filtering.add_argument('--pid', '-p', dest='pid', type=int, nargs='+', metavar='PID',
+                                   help='Only show processes of the given PIDs.')
 
     args = parser.parse_args()
     if hasattr(args, 'monitor') and args.monitor is None:
@@ -62,7 +64,7 @@ def parse_arguments():
     return args
 
 
-def main():  # pylint: disable=too-many-branches
+def main():  # pylint: disable=too-many-branches,too-many-statements
     try:
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
     except locale.Error:
@@ -107,6 +109,9 @@ def main():  # pylint: disable=too-many-branches
     if args.user is not None:
         users = set(args.user)
         filters.append(lambda process: process.username in users)
+    if args.pid is not None:
+        pids = set(args.pid)
+        filters.append(lambda process: process.pid in pids)
 
     if hasattr(args, 'monitor') and len(devices) > 0:
         with libcurses() as win:
