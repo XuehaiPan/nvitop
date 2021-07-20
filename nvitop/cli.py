@@ -8,7 +8,7 @@ import locale
 import sys
 
 from nvitop.core import nvml, Device
-from nvitop.gui import Top, libcurses, colored
+from nvitop.gui import Top, libcurses, colored, CURRENT_USER
 from nvitop.version import __version__
 
 
@@ -17,21 +17,18 @@ def parse_arguments():
                                                                colored('moderate', 'yellow'),
                                                                colored('heavy', 'red'))
     parser = argparse.ArgumentParser(prog='nvitop', description='An interactive NVIDIA-GPU process viewer.',
-                                     formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--version', action='version', version='%(prog)s {}'.format(__version__))
+                                     formatter_class=argparse.RawTextHelpFormatter, add_help=False)
+    parser.add_argument('--help', '-h', dest='help', action='help', default=argparse.SUPPRESS,
+                        help='show this help message and exit.')
+    parser.add_argument('--version', '-V', dest='version', action='version', version='%(prog)s {}'.format(__version__),
+                        help="show %(prog)s's version number and exit.")
     parser.add_argument('--monitor', '-m', dest='monitor', type=str, default=argparse.SUPPRESS,
                         nargs='?', choices=['auto', 'full', 'compact'],
                         help='Run as a resource monitor. Continuously report query data,\n'
                              'rather than the default of just once.\n'
                              'If no argument is given, the default mode `auto` is used.')
-    parser.add_argument('--only', '-o', dest='only', type=int, nargs='+', metavar='idx',
-                        help='Only show the specified devices, suppress option `--only-visible`.')
-    parser.add_argument('--only-visible', '-ov', dest='only_visible', action='store_true',
-                        help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
-    parser.add_argument('--compute', '-c', dest='compute', action='store_true',
-                        help="Only show GPU processes with the compute context. (type: 'C' or 'C+G')")
-    parser.add_argument('--graphics', '-g', dest='graphics', action='store_true',
-                        help="Only show GPU processes with the graphics context. (type: 'G' or 'C+G')")
+    parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
+                        help='Use ASCII characters only, which is useful for terminals without Unicode support.')
     parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
                         help='Thresholds of GPU utilization to determine the load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
@@ -41,15 +38,26 @@ def parse_arguments():
                         help='Thresholds of GPU memory utilization to determine the load intensity.\n' +
                              'Coloring rules: {}.\n'.format(coloring_rules) +
                              '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
-    parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
-                        help='Use ASCII characters only, which is useful for terminals without Unicode support.')
+
+    device_filtering = parser.add_argument_group('device filtering')
+    device_filtering.add_argument('--only', '-o', dest='only', type=int, nargs='+', metavar='idx',
+                                  help='Only show the specified devices, suppress option `--only-visible`.')
+    device_filtering.add_argument('--only-visible', '-ov', dest='only_visible', action='store_true',
+                                  help='Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.')
+
+    process_filtering = parser.add_argument_group('process filtering')
+    process_filtering.add_argument('--compute', '-c', dest='compute', action='store_true',
+                                   help="Only show GPU processes with the compute context. (type: 'C' or 'C+G')")
+    process_filtering.add_argument('--graphics', '-g', dest='graphics', action='store_true',
+                                   help="Only show GPU processes with the graphics context. (type: 'G' or 'C+G')")
+    process_filtering.add_argument('--user', '-u', dest='user', type=str, nargs='*', metavar='USERNAME',
+                                   help='Only show processes of the given users (or `$USER` for no argument).')
+
     args = parser.parse_args()
     if hasattr(args, 'monitor') and args.monitor is None:
         args.monitor = 'auto'
-    if args.gpu_util_thresh is not None:
-        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
-    if args.mem_util_thresh is not None:
-        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
+    if args.user is not None and len(args.user) == 0:
+        args.user.append(CURRENT_USER)
 
     return args
 
@@ -78,6 +86,11 @@ def main():  # pylint: disable=too-many-branches
         print('{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), e), file=sys.stderr)
         return 1
 
+    if args.gpu_util_thresh is not None:
+        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
+    if args.mem_util_thresh is not None:
+        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
+
     if args.only is not None:
         devices = Device.from_indices(set(args.only))
     elif args.only_visible:
@@ -91,6 +104,9 @@ def main():  # pylint: disable=too-many-branches
         filters.append(lambda process: 'C' in process.type)
     if args.graphics:
         filters.append(lambda process: 'G' in process.type)
+    if args.user is not None:
+        users = set(args.user)
+        filters.append(lambda process: process.username in users)
 
     if hasattr(args, 'monitor') and len(devices) > 0:
         with libcurses() as win:

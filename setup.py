@@ -61,7 +61,7 @@ setup(
         'Topic :: System :: Systems Administration',
         'Topic :: Utilities',
     ],
-    keywords='nvidia, nvidia-smi, NVIDIA, NVML, CUDA, GPU, top, monitoring',
+    keywords=['nvidia', 'nvidia-smi', 'NVIDIA', 'NVML', 'CUDA', 'GPU', 'top', 'monitoring'],
     project_urls={
         'Bug Reports': 'https://github.com/XuehaiPan/nvitop/issues',
         'Source': 'https://github.com/XuehaiPan/nvitop',

@@ -12,8 +12,8 @@ from functools import partial
 from cachetools.func import ttl_cache
 
 from nvitop.core import host, Snapshot
-from nvitop.gui.library import Displayable
-from nvitop.gui.screens.main.process import CURRENT_USER, IS_SUPERUSER, Selected
+from nvitop.gui.library import Displayable, CURRENT_USER, IS_SUPERUSER
+from nvitop.gui.screens.main.utils import Selected
 
 
 class TreeNode(object):

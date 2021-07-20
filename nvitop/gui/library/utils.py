@@ -4,9 +4,10 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=disallowed-name,invalid-name
 
+import getpass
 import sys
 
-from nvitop.core import NA
+from nvitop.core import host, NA
 
 
 try:
@@ -31,9 +32,6 @@ def cut_string(s, maxlen, padstr='...', align='left'):
     return padstr + s[-(maxlen - len(padstr)):]
 
 
-BLOCK_CHARS = ' ▏▎▍▌▋▊▉'
-
-
 def make_bar(prefix, percent, width):
     bar = '{}: '.format(prefix)
     if percent != NA:
@@ -44,7 +42,7 @@ def make_bar(prefix, percent, width):
         quotient, remainder = divmod(max(1, round(8 * (width - len(bar) - 4) * percentage)), 8)
         bar += '█' * quotient
         if remainder > 0:
-            bar += BLOCK_CHARS[remainder]
+            bar += ' ▏▎▍▌▋▊▉'[remainder]
         if isinstance(percent, float) and len('{} {:.1f}%'.format(bar, percent)) <= width:
             bar += ' {:.1f}%'.format(percent)
         else:
@@ -52,3 +50,18 @@ def make_bar(prefix, percent, width):
     else:
         bar += '░' * (width - len(bar) - 4) + ' N/A'
     return bar.ljust(width)
+
+
+CURRENT_USER = getpass.getuser()
+if host.WINDOWS:  # pylint: disable=no-member
+    import ctypes
+    IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
+else:
+    import os
+    try:
+        IS_SUPERUSER = (os.geteuid() == 0)
+    except AttributeError:
+        try:
+            IS_SUPERUSER = (os.getuid() == 0)
+        except AttributeError:
+            IS_SUPERUSER = False

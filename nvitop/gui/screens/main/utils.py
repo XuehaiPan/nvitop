@@ -3,27 +3,12 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-import getpass
 import signal
 import time
 from collections import namedtuple
 
 from nvitop.core import host, Snapshot
-
-
-CURRENT_USER = getpass.getuser()
-if host.WINDOWS:  # pylint: disable=no-member
-    import ctypes
-    IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
-else:
-    import os
-    try:
-        IS_SUPERUSER = (os.geteuid() == 0)
-    except AttributeError:
-        try:
-            IS_SUPERUSER = (os.getuid() == 0)
-        except AttributeError:
-            IS_SUPERUSER = False
+from nvitop.gui.library import CURRENT_USER, IS_SUPERUSER
 
 
 class Selected(object):

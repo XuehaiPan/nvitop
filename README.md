@@ -241,25 +241,22 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 Type `nvitop --help` for more command options:
 
 ```text
-usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]]
-              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
+usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--ascii]
+              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
+              [--user [USERNAME [USERNAME ...]]]
 
 An interactive NVIDIA-GPU process viewer.
 
 optional arguments:
-  --help, -h            show this help message and exit
-  --version             show program's version number and exit
+  --help, -h            show this help message and exit.
+  --version, -V         show nvitop's version number and exit.
   --monitor [{auto,full,compact}], -m [{auto,full,compact}]
                         Run as a resource monitor. Continuously report query data,
                         rather than the default of just once.
                         If no argument is given, the default mode `auto` is used.
-  --only idx [idx ...], -o idx [idx ...]
-                        Only show the specified devices, suppress option `--only-visible`.
-  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
-  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
-  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
+  --ascii, --no-unicode, -U
+                        Use ASCII characters only, which is useful for terminals without Unicode support.
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
@@ -268,8 +265,17 @@ optional arguments:
                         Thresholds of GPU memory utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
-  --ascii, --no-unicode, -U
-                        Use ASCII characters only, which is useful for terminals without Unicode support.
+
+device filtering:
+  --only idx [idx ...], -o idx [idx ...]
+                        Only show the specified devices, suppress option `--only-visible`.
+  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
+
+process filtering:
+  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
+  --user [USERNAME [USERNAME ...]], -u [USERNAME [USERNAME ...]]
+                        Only show processes of the given users (or `$USER` for no argument).
 ```
 
 ### Callback Functions for Machine Learning Frameworks
