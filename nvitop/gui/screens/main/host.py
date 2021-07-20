@@ -183,7 +183,7 @@ class HostPanel(Displayable):
         self.color_reset()
 
         if self.load_average is not None:
-            load_average = tuple('{:5.2f}'.format(value) if value < 100.0 else '100.0'
+            load_average = tuple('{:5.2f}'.format(value)[:5] if value < 10000.0 else '9999+'
                                  for value in self.load_average)
         else:
             load_average = (NA,) * 3
@@ -221,8 +221,8 @@ class HostPanel(Displayable):
         for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
             self.addstr(y, self.x + 1, line)
             self.color_at(y, self.x + 1, width=77, fg='cyan')
-        self.addstr(self.y, self.x + 1, ' {} '.format(host.cpu_percent.history.last_value_string()))
-        self.addstr(self.y + 1, self.x + 1, ' {} '.format(load_average))
+        self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
+        self.addstr(self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history.last_value_string()))
 
         for y, line in enumerate(host.virtual_memory.history.graph, start=self.y + 6):
             self.addstr(y, self.x + 1, line)
@@ -272,7 +272,7 @@ class HostPanel(Displayable):
         self.load_average = host.load_average()
 
         if self.load_average is not None:
-            load_average = tuple('{:5.2f}'.format(value) if value < 100.0 else '100.0'
+            load_average = tuple('{:5.2f}'.format(value)[:5] if value < 10000.0 else '9999+'
                                  for value in self.load_average)
         else:
             load_average = (NA,) * 3
