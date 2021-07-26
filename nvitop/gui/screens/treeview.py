@@ -255,6 +255,10 @@ class TreeViewScreen(Displayable):
             self.addstr(self.y, self.x, 'COMMAND'.ljust(self.width))
         self.color_at(self.y, self.x, width=self.width, fg='cyan', attr='bold | reverse')
 
+        if len(self.snapshots) == 0:
+            self.addstr(self.y + 1, self.x, 'No running GPU processes found.')
+            return
+
         self.selected.within_window = False
         for y, process in enumerate(self.snapshots, start=self.y + 1):
             prefix_length = len(process.prefix)

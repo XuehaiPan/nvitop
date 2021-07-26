@@ -13,6 +13,10 @@ RUN apt-get update && \
   python3-dev python3-pip python3-setuptools python3-wheel locales && \
   rm -rf /var/lib/{apt,dpkg,cache,log}
 
+# Setup locale
+ENV LC_ALL C.UTF-8
+RUN update-locale LC_ALL="C.UTF-8"
+
 # Install nvitop
 COPY . /nvitop
 WORKDIR /nvitop
@@ -20,5 +24,4 @@ RUN pip3 install --compile .
 RUN rm -rf /root/.cache
 
 # Entrypoint
-ENV LC_ALL C.UTF-8
 ENTRYPOINT [ "python3", "nvitop.py" ]
