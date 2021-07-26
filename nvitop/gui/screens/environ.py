@@ -6,6 +6,7 @@
 
 from collections import OrderedDict
 from functools import partial
+from itertools import islice
 
 from nvitop.core import host, HostProcess, GpuProcess
 from nvitop.gui.library import Displayable
@@ -23,6 +24,7 @@ class EnvironScreen(Displayable):
 
         self._process = None
         self._environ = None
+        self.items = None
         self.username = None
         self.command = None
 
@@ -68,6 +70,9 @@ class EnvironScreen(Displayable):
     def environ(self, value):
         if value is not None:
             value = OrderedDict([(key, value[key]) for key in sorted(value.keys())])
+            self.items = list(value.items())
+        else:
+            self.items = None
         self._environ = value
         self.y_offset = 0
         self.scroll_offset = 0
@@ -85,6 +90,10 @@ class EnvironScreen(Displayable):
             pass
 
     @property
+    def display_height(self):
+        return self.height - self.y - 2
+
+    @property
     def y_offset(self):
         return self._y_offset
 
@@ -97,13 +106,19 @@ class EnvironScreen(Displayable):
 
         n_items = len(self.environ)
         self._y_offset = max(0, min(value, n_items - 1))
-        if self.y + 2 + n_items <= self.scroll_offset + self.height:
-            self.scroll_offset = max(0, self.y + 2 + n_items - self.height)
-        elif self.y + 2 + self.y_offset > self.scroll_offset + self.height - 1:
-            self.scroll_offset = self.y + 2 + self.y_offset - self.height + 1
+        if n_items <= self.scroll_offset + self.display_height:
+            self.scroll_offset = max(0, n_items - self.display_height)
+        elif self.y_offset > self.scroll_offset + self.display_height - 1:
+            self.scroll_offset = self.y_offset - self.display_height + 1
         self.scroll_offset = min(self.scroll_offset, self.y_offset)
 
-    def move(self, direction):
+    def move(self, direction, wheel=False):
+        if self.environ is not None and wheel:
+            n_items = len(self.environ)
+            old_scroll_offset = self.scroll_offset
+            self.scroll_offset = max(0, min(self.scroll_offset + direction, n_items - self.display_height))
+            direction -= self.scroll_offset - old_scroll_offset
+            self._y_offset += self.scroll_offset - old_scroll_offset
         self.y_offset = self.y_offset + direction
 
     def update_size(self, termsize=None):
@@ -137,10 +152,8 @@ class EnvironScreen(Displayable):
             self.color_at(self.y + 2, self.x, width=self.width, fg='cyan', attr='reverse')
             return
 
-        for y, (key, value) in enumerate(self.environ.items(), start=self.y + 2 - self.scroll_offset):
-            if not 2 <= y - self.y < self.height:
-                continue
-
+        items = islice(self.items, self.scroll_offset, self.scroll_offset + self.display_height)
+        for y, (key, value) in enumerate(items, start=self.y + 2):
             key_length = len(key)
             line = '{}={}'.format(key, value)
             self.addstr(y, self.x, line[self.x_offset:self.x_offset + self.width].ljust(self.width))
@@ -161,7 +174,7 @@ class EnvironScreen(Displayable):
         if event.shift():
             self.x_offset = max(0, self.x_offset + 2 * direction)
         else:
-            self.move(direction=direction)
+            self.move(direction=direction, wheel=True)
         return True
 
     def init_keybindings(self):
