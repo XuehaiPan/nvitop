@@ -68,9 +68,13 @@ class EnvironScreen(Displayable):
 
     @environ.setter
     def environ(self, value):
+        newline = ('␤' if not self.root.ascii else '?')
+        def normalize(s): return s.replace('\n', newline)  # pylint: disable=multiple-statements
+
         if value is not None:
-            value = OrderedDict([(key, value[key]) for key in sorted(value.keys())])
-            self.items = list(value.items())
+            self.items = [(key, normalize(value[key]))
+                          for key in sorted(value.keys())]
+            value = OrderedDict(self.items)
         else:
             self.items = None
         self._environ = value

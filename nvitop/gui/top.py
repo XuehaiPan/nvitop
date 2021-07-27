@@ -49,7 +49,7 @@ class Top(DisplayableContainer):
 
             self.help_screen = HelpScreen(win=win, root=self)
             self.help_screen.visible = False
-            self.environ_screen.ascii = False
+            self.help_screen.ascii = False
             self.add_child(self.help_screen)
 
             self.keybuffer = KeyBuffer()

@@ -30,27 +30,29 @@ if host.POSIX:
     def add_quotes(s: str) -> str:
         if s == '':
             return '""'
-        if '$' not in s and '\\' not in s:
+        if '$' not in s and '\\' not in s and '\n' not in s:
             if ' ' not in s:
                 return s
             if '"' not in s:
                 return '"{}"'.format(s)
-        if "'" not in s:
+        if "'" not in s and '\n' not in s:
             return "'{}'".format(s)
-        return '"{}"'.format(s.replace('\\', '\\\\').replace('"', '\\"').replace('$', '\\$'))
+        return '"{}"'.format(s.replace('\\', r'\\').replace('"', r'\"')
+                              .replace('$', r'\$').replace('\n', r'\n'))
 elif host.WINDOWS:
     def add_quotes(s: str) -> str:
         if s == '':
             return '""'
-        if '%' not in s and '^' not in s:
+        if '%' not in s and '^' not in s and '\n' not in s:
             if ' ' not in s and '\\' not in s:
                 return s
             if '"' not in s:
                 return '"{}"'.format(s)
-        return '"{}"'.format(s.replace('^', '^^').replace('"', '^"').replace('%', '^%'))
+        return '"{}"'.format(s.replace('^', '^^').replace('"', '^"')
+                              .replace('%', '^%').replace('\n', r'\n'))
 else:
     def add_quotes(s: str) -> str:
-        return '"{}"'.format(s)
+        return '"{}"'.format(s.replace('\n', r'\n'))
 
 
 def command_join(cmdline: List[str]) -> str:
