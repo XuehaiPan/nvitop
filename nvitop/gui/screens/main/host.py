@@ -12,7 +12,7 @@ from nvitop.gui.library import Displayable, BufferedHistoryGraph, colored, make_
 
 
 class HostPanel(Displayable):
-    SNAPSHOT_INTERVAL = 0.7
+    SNAPSHOT_INTERVAL = 0.5
 
     def __init__(self, devices, compact, win, root):
         super().__init__(win, root)
@@ -213,10 +213,11 @@ class HostPanel(Displayable):
             self.color_at(self.y + 5, self.x + 60, width=3, attr='dim')
 
             if self.width >= 100:
-                for offset, string in [(20, '╴30s├'), (35, '╴60s├'), (66, '╴120s├'), (126, '╴240s├')]:
-                    if offset <= remaining_width:
-                        self.addstr(self.y + 5, self.x + self.width - offset, string)
-                        self.color_at(self.y + 5, self.x + self.width - offset + 1, width=len(string) - 2, attr='dim')
+                for offset, string in ((20, '╴30s├'), (35, '╴60s├'), (66, '╴120s├'), (126, '╴240s├')):
+                    if offset > remaining_width:
+                        break
+                    self.addstr(self.y + 5, self.x + self.width - offset, string)
+                    self.color_at(self.y + 5, self.x + self.width - offset + 1, width=len(string) - 2, attr='dim')
 
         for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
             self.addstr(y, self.x + 1, line)

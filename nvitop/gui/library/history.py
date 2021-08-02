@@ -263,5 +263,5 @@ class BufferedHistoryGraph(HistoryGraph):
                     super().add(last_value + (i / n_interval) * (new_value - last_value))
             super().add(new_value)
 
-            self.last_update_time = timestamp
+            self.last_update_time += (timedelta // self.interval) * self.interval
         self.buffer.append(value)
