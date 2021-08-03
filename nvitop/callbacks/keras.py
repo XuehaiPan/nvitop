@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
+import re
 import time
 from typing import Dict, List, Tuple, Union
 
@@ -67,6 +68,8 @@ class GpuStatsLogger(Callback):
     - **temperature** – Core GPU temperature, in degrees C.
     """
 
+    GPU_NAME_PATTEN = re.compile(r'^/(\w*device:)?GPU:(?P<ID>\d+)$', flags=re.IGNORECASE)
+
     def __init__(  # pylint: disable=too-many-arguments
         self,
         gpus: Union[int, Union[List[Union[int, str]], Tuple[Union[int, str], ...]]],
@@ -87,18 +90,12 @@ class GpuStatsLogger(Callback):
             ) from ex
 
         if isinstance(gpus, (list, tuple)):
-            if len(gpus) <= 1:
-                raise ValueError('For multi-gpu usage to be effective, '
-                                 'call `multi_gpu_model` with `len(gpus) >= 2`. '
-                                 'Received: `gpus={}`'.format(gpus))
-            gpus = [gpu_id.lower().replace('/gpu:', '')
-                    for gpu_id in gpus if isinstance(gpu_id, str) and gpu_id.lower().startswith('/gpu:')]
+            gpus = list(gpus)
+            for i, gpu_id in enumerate(gpus):
+                if isinstance(gpu_id, str) and self.GPU_NAME_PATTEN.match(gpu_id):
+                    gpus[i] = self.GPU_NAME_PATTEN.match(gpu_id).group('ID')
             gpu_ids = sorted(set(map(int, gpus)))
         else:
-            if gpus <= 1:
-                raise ValueError('For multi-gpu usage to be effective, '
-                                 'call `multi_gpu_model` with `gpus >= 2`. '
-                                 'Received: `gpus=%s`' % gpus)
             gpu_ids = list(range(gpus))
 
         try:
