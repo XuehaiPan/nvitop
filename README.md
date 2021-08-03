@@ -166,7 +166,7 @@ $ nvitop -m -U  # useful for terminals without Unicode support
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/123928568-9ca5ec80-d9c0-11eb-88cb-226760706c06.png" alt="Help Screen">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/128024364-7cb83ec3-1386-47f4-a61e-2f7ab44ceadc.png" alt="Help Screen">
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
 
@@ -221,7 +221,7 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 |                                                                        `e` | Show process environment.                                                            |
 |                                                                        `t` | Toggle tree-view screen.                                                             |
 |                                                                            |                                                                                      |
-|                                                             `I`<br>`<C-c>` | Send `signal.SIGINT` to the selected process (interrupt).                            |
+|                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
 |                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
 |                                                                            |                                                                                      |

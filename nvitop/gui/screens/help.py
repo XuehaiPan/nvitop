@@ -18,10 +18,10 @@ Device coloring rules by loading intensity:
   - GPU utilization: light < {:2d}% <= moderate < {:2d}% <= heavy.
   - MEM utilization: light < {:2d}% <= moderate < {:2d}% <= heavy.
 
- Arrows: scroll process list                   ^C I: interrupt selected process
+ Arrows: scroll process list               Ctrl-C I: interrupt selected process
     Esc: clear process selection                  K: kill selected process
-     ^A: scroll process list to left most         T: terminate selected process
-     ^E: scroll process list to right most
+ Ctrl-A: scroll process list to left most         T: terminate selected process
+ Ctrl-E: scroll process list to right most
    Home: select the first process             a f c: change display mode
     End: select the last process                h ?: show this help screen
       e: show process environment              F5 r: force refresh window
@@ -97,7 +97,7 @@ class HelpScreen(Displayable):
         self.color_at(self.y + 25, self.x, width=8, fg='magenta', attr='bold')
         self.color_at(self.y + 25, self.x + 44, width=8, fg='magenta', attr='bold')
         for dy in (9, 10, 11):
-            self.color_at(self.y + dy, self.x + 44, width=8, fg='red', attr='bold')
+            self.color_at(self.y + dy, self.x + 43, width=9, fg='red', attr='bold')
 
     def press(self, key):
         self.root.keymaps.use_keymap('help')
