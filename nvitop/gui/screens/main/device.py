@@ -92,6 +92,8 @@ class DevicePanel(Displayable):
         snapshots = list(map(lambda device: device.as_snapshot(), self.devices))
 
         for device in snapshots:
+            if device.name.startswith('NVIDIA '):
+                device.name = device.name.replace('NVIDIA ', '', 1)
             device.name = cut_string(device.name, maxlen=18)
             if device.fan_speed >= 100:
                 device.fan_speed_string = 'MAX'
@@ -182,8 +184,6 @@ class DevicePanel(Displayable):
 
         time_string = time.strftime('%a %b %d %H:%M:%S %Y')
         self.addstr(self.y, self.x, '{:<32}'.format(time_string))
-        self.color_at(self.y, self.x + len(time_string) - 11, width=1, attr='blink')
-        self.color_at(self.y, self.x + len(time_string) - 8, width=1, attr='blink')
 
         if self.compact:
             formats = self.formats_compact

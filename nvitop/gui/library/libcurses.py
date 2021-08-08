@@ -69,9 +69,12 @@ def libcurses():
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
     except locale.Error:
         try:
-            locale.setlocale(locale.LC_ALL, '')
+            locale.setlocale(locale.LC_ALL, 'C')
         except locale.Error:
-            pass
+            try:
+                locale.setlocale(locale.LC_ALL, '')
+            except locale.Error:
+                pass
 
     win = curses.initscr()
     win.nodelay(True)
