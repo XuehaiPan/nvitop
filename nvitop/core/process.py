@@ -69,7 +69,7 @@ def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[...,
         def wrapped(self: 'GpuProcess', *args, **kwargs) -> Any:
             try:
                 return func(self, *args, **kwargs)
-            except host.PsutilError:
+            except host.PsutilError as e:
                 try:
                     with GpuProcess.INSTANCE_LOCK:
                         del GpuProcess.INSTANCES[(self.pid, self.device)]
@@ -83,6 +83,8 @@ def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[...,
                 if not GpuProcess.CLIENT_MODE:
                     raise
                 if isinstance(default, tuple):
+                    if isinstance(e, host.AccessDenied) and default == ('No Such Process',):
+                        return ['No Permissions']
                     return list(default)
                 return default
 

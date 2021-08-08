@@ -56,6 +56,8 @@ class TreeNode(object):
                 command = self.process.command()
                 if len(command) == 0:
                     command = 'Zombie Process'
+            except host.AccessDenied:
+                command = 'No Permissions'
             except host.PsutilError:
                 command = 'No Such Process'
 

@@ -300,8 +300,9 @@ class ProcessPanel(Displayable):
                     self.addstr(y, self.x + 37, ' ')
 
                 is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
+                no_permissions = (process.is_running and process.cmdline == ['No Permissions'])
                 is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
-                if (is_zombie or is_gone) and command_offset == 0:
+                if (is_zombie or no_permissions or is_gone) and command_offset == 0:
                     self.addstr(y, self.x + 38, process.command)
 
                 if self.selected.is_same(process):
@@ -314,12 +315,12 @@ class ProcessPanel(Displayable):
                     self.color_at(y, self.x + 2, width=3, fg=color)
                     if process.username != CURRENT_USER and not IS_SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
-                    if is_zombie:
+                    if is_zombie or no_permissions:
                         self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
                     elif is_gone:
                         self.color_at(y, self.x + 38 + command_offset, width=15, fg='red')
                 y += 1
-            self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛',)
+            self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛')
         else:
             self.addstr(self.y + 5, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
 
@@ -365,8 +366,9 @@ class ProcessPanel(Displayable):
                     cut_string(process.host_info, padstr='..', maxlen=self.width - 39).ljust(self.width - 39)
                 )
                 is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
+                no_permissions = (process.is_running and process.cmdline == ['No Permissions'])
                 is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
-                if is_zombie or is_gone:
+                if is_zombie or no_permissions or is_gone:
                     info = info.split(process.command)
                     if process.username != CURRENT_USER and not IS_SUPERUSER:
                         info = map(lambda item: colored(item, attrs=('dark',)), info)
