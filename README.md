@@ -10,7 +10,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png" alt="Monitor">
-  Monitor mode of <code>nvitop</code>.
+  Monitor mode of <code>nvitop</code>.</br>(TERM: GNOME Terminal / OS: Ubuntu 16.04 LTS (over SSH) / Locale: <code>en_US.UTF-8</code>)
 </p>
 
 ### Table of Contents  <!-- omit in toc -->
@@ -70,6 +70,12 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
   - written in pure Python, easy to install with `pip`. (vs. [nvtop](https://github.com/Syllo/nvtop))
 - **Integrable**: easy to integrate into other applications, more than monitoring. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop) & [nvtop](https://github.com/Syllo/nvtop))
 
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/128634168-cad4bf87-770a-44ec-9da5-3496c3898706.png" alt="Windows">
+  <code>nvitop</code> supports Windows!</br>
+  (SHELL: PowerShell / TERM: Windows Terminal / OS: Windows 10 / Locale: <code>en-US</code>)
+</p>
+
 ## Requirements
 
 - Python 3.5+ (with `pip>=10.0`)
@@ -92,7 +98,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.6.1)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.3.6.2)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -173,8 +179,8 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
 **HINT:** You can set the following alias in your shell profile to make `nvitop` always invoke the resource monitor:
 
 ```bash
-alias nvitop='nvitop -m'                   # Bash / Zsh / Fish ...
-Set-Alias -Name nvitop -Value 'nvitop -m'  # PowerShell
+alias nvitop='nvitop -m'                 # Bash / Zsh / Fish ...
+function nvitop { nvitop.exe -m $args }  # PowerShell
 ```
 
 In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop -m` to terminate other users' processes.
