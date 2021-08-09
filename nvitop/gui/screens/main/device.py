@@ -9,7 +9,7 @@ import time
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import Device
+from nvitop.core import host, Device
 from nvitop.gui.library import Displayable, colored, cut_string, make_bar
 
 
@@ -47,6 +47,10 @@ class DevicePanel(Displayable):
         Device.SNAPSHOT_KEYS.extend(['memory_loading_intensity', 'memory_display_color',
                                      'gpu_loading_intensity', 'gpu_display_color',
                                      'loading_intensity', 'display_color'])
+
+        if host.WINDOWS:
+            self.formats_full[0] = ('│ {index:>3}  {name:<18}  {current_driver_model:<4} '
+                                    '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │')
 
         self._snapshot_buffer = []
         self._snapshots = []
@@ -95,6 +99,7 @@ class DevicePanel(Displayable):
             if device.name.startswith('NVIDIA '):
                 device.name = device.name.replace('NVIDIA ', '', 1)
             device.name = cut_string(device.name, maxlen=18)
+            device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
             if device.fan_speed >= 100:
                 device.fan_speed_string = 'MAX'
 
@@ -127,6 +132,8 @@ class DevicePanel(Displayable):
                     '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
                     '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
                 ])
+                if host.WINDOWS:
+                    header[-2] = '│ GPU  Name            TCC/WDDM │ Bus-Id        Disp.A │ Volatile Uncorr. ECC │'
             header.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
         else:
             header.extend([

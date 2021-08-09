@@ -246,6 +246,13 @@ class Device(object):
     def persistence_mode(self) -> Union[str, NaType]:
         return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self.handle), NA)
 
+    @ttl_cache(ttl=60.0)
+    def current_driver_model(self) -> Union[str, NaType]:
+        return {
+            nvml.NVML_DRIVER_WDDM: 'WDDM',
+            nvml.NVML_DRIVER_WDM: 'WDM',
+        }.get(nvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self.handle), NA)
+
     @ttl_cache(ttl=5.0)
     def ecc_errors(self) -> Union[int, NaType]:
         return nvml.nvmlQuery('nvmlDeviceGetTotalEccErrors', self.handle,
@@ -375,7 +382,7 @@ class Device(object):
 
     SNAPSHOT_KEYS = [
         'name', 'bus_id',
-        'persistence_mode', 'display_active', 'ecc_errors',
+        'persistence_mode', 'current_driver_model', 'display_active', 'ecc_errors',
         'performance_state', 'compute_mode',
         'fan_speed', 'fan_speed_string', 'temperature', 'temperature_string',
         'power_usage', 'power_limit', 'power_status',
