@@ -34,10 +34,10 @@
 
 #### Possible Solutions
 
-<!-- Please feel free to delete this section if you not sure. -->
+<!-- Please feel free to delete this section if you are not sure. -->
 
 
-#### Steps to reproduce
+#### Steps to Reproduce
 
 1.
 2.
@@ -50,3 +50,7 @@
 ```
 
 ```
+
+#### Images / Videos  <!-- Only if relevant -->
+
+<!-- Link or embed images and videos of screenshots, sketches etc. -->

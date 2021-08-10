@@ -1,6 +1,6 @@
 <!-- Provide a descriptive summary of the changes in the title above -->
 
-#### ISSUE TYPE
+#### Issue Type
 
 <!-- Pick relevant types and delete the rest -->
 
@@ -8,7 +8,7 @@
 - Improvement/feature implementation
 - Breaking changes
 
-#### RUNTIME ENVIRONMENT
+#### Runtime Environment
 
 <!-- Details of your runtime environment -->
 
@@ -20,24 +20,24 @@
 - `python-ml-py` version: [e.g. `11.450.51`]
 - Locale: [e.g. `C` / `C.UTF-8` / `en_US.UTF-8`]
 
-#### DESCRIPTION
+#### Description
 
 <!-- Describe the changes in detail -->
 
 
-#### MOTIVATION AND CONTEXT
+#### Motivation and Context
 
 <!-- Why are these changes required? -->
 <!-- What problems do these changes solve? -->
 <!-- Link to relevant issues -->
 
 
-#### TESTING
+#### Testing
 
 <!-- What tests have been run? -->
 <!-- How does the changes affect other areas of the codebase? -->
 
 
-#### IMAGES / VIDEOS <!-- Only if relevant -->
+#### Images / Videos  <!-- Only if relevant -->
 
 <!-- Link or embed images and videos of screenshots, sketches etc. -->
