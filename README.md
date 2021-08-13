@@ -71,7 +71,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 - **Integrable**: easy to integrate into other applications, more than monitoring. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop) & [nvtop](https://github.com/Syllo/nvtop))
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/128634168-cad4bf87-770a-44ec-9da5-3496c3898706.png" alt="Windows">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/129374533-fe06c01a-630d-4994-b54b-821cccd0d33c.png" alt="Windows">
   <code>nvitop</code> supports Windows!</br>
   (SHELL: PowerShell / TERM: Windows Terminal / OS: Windows 10 / Locale: <code>en-US</code>)
 </p>
@@ -172,7 +172,7 @@ $ nvitop -m -U  # useful for terminals without Unicode support
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/128024364-7cb83ec3-1386-47f4-a61e-2f7ab44ceadc.png" alt="Help Screen">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/129375359-d68b2fe6-faaf-4aa9-9ace-9011d1ef2106.png" alt="Help Screen">
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
 
@@ -217,19 +217,21 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 |                                                            `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
 |                                                     `r` / `<C-r>` / `<F5>` | Force refresh the window.                                                            |
 |                                                                            |                                                                                      |
-|      `<Left>` / `<Right>`<br>`<A-h>` / `<A-l>`<br>`[` / `]`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
-|                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).          |
-|                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                     |
 | `<Up>` / `<Down>`<br>`<A-k>` / `<A-j>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                      |
+|                   `<Left>` / `<Right>`<br>`<A-h>` / `<A-l>`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
 |                                                                   `<Home>` | Select the first process.                                                            |
 |                                                                    `<End>` | Select the last process.                                                             |
-|                                                                    `<Esc>` | Clear process selection.                                                             |
-|                                                                        `e` | Show process environment.                                                            |
-|                                                                        `t` | Toggle tree-view screen.                                                             |
+|                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).          |
+|                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                     |
+|              `<PageUp>` / `<PageDown>`</br> `<A-K>` / `<A-J>`<br>`[` / `]` | scroll entire screen (for large amounts of processes).                               |
 |                                                                            |                                                                                      |
+|                                                                    `<Esc>` | Clear process selection.                                                             |
 |                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
 |                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
+|                                                                            |                                                                                      |
+|                                                                        `e` | Show process environment.                                                            |
+|                                                                        `t` | Toggle tree-view screen.                                                             |
 |                                                                            |                                                                                      |
 |                                                                  `,` / `.` | Select the sort column.                                                              |
 |                                                                        `/` | Reverse the sort order.                                                              |
@@ -652,6 +654,7 @@ Environment variable screen (shortcut: <kbd>e</kbd>):
 - [X] process environment variable screen
 - [X] process filtering
 - [X] process management for parent processes (tree view / interrupt / terminate / kill)
-- [ ] scrollable process list for large amounts of processes
+- [X] scrollable process list for large amounts of processes
+- [ ] NVIDIA MIG GPU support (help wanted for testing)
 - [ ] web interface (under consideration)
 - [ ] AMD ROCm support (help wanted for testing)

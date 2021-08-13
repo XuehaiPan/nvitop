@@ -84,6 +84,7 @@ class MainScreen(DisplayableContainer):
         self.host_panel.width = self.width
         self.process_panel.width = self.width
 
+        self.y = min(self.y, self.root.y)
         height = n_term_lines - self.y
         heights = [
             self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
@@ -100,9 +101,15 @@ class MainScreen(DisplayableContainer):
             self.process_panel.compact = self.compact
         self.device_panel.compact = self.compact
 
+        self.device_panel.y = self.y
         self.host_panel.y = self.device_panel.y + self.device_panel.height
         self.process_panel.y = self.host_panel.y + self.host_panel.height
         height = self.device_panel.height + self.host_panel.height + self.process_panel.height
+
+        if self.y < self.root.y and self.y + height < n_term_lines:
+            self.y = min(self.root.y + self.root.height - height, self.root.y)
+            self.update_size(termsize)
+            self.need_redraw = True
 
         if self.height != height:
             self.height = height
@@ -141,6 +148,7 @@ class MainScreen(DisplayableContainer):
             top.update_size()
 
         def force_refresh(top):
+            top.main_screen.y = top.y
             top.update_size()
             top.need_redraw = True
 
@@ -151,6 +159,11 @@ class MainScreen(DisplayableContainer):
 
         def select_move(top, direction): top.main_screen.selected.move(direction=direction)
         def select_clear(top): top.main_screen.selected.clear()
+
+        def screen_move(top, direction):
+            top.main_screen.y -= direction
+            top.update_size()
+            top.need_redraw = True
 
         def terminate(top): top.main_screen.selected.terminate()
         def kill(top): top.main_screen.selected.kill()
@@ -187,10 +200,8 @@ class MainScreen(DisplayableContainer):
         self.root.keymaps.copy('main', 'r', '<F5>')
 
         self.root.keymaps.bind('main', '<Left>', host_left)
-        self.root.keymaps.copy('main', '<Left>', '[')
         self.root.keymaps.copy('main', '<Left>', '<A-h>')
         self.root.keymaps.bind('main', '<Right>', host_right)
-        self.root.keymaps.copy('main', '<Right>', ']')
         self.root.keymaps.copy('main', '<Right>', '<A-l>')
         self.root.keymaps.bind('main', '<C-a>', host_begin)
         self.root.keymaps.copy('main', '<C-a>', '^')
@@ -205,6 +216,13 @@ class MainScreen(DisplayableContainer):
         self.root.keymaps.bind('main', '<Home>', partial(select_move, direction=-(1 << 20)))
         self.root.keymaps.bind('main', '<End>', partial(select_move, direction=+(1 << 20)))
         self.root.keymaps.bind('main', '<Esc>', select_clear)
+
+        self.root.keymaps.bind('main', '<PageUp>', partial(screen_move, direction=-1))
+        self.root.keymaps.copy('main', '<PageUp>', '[')
+        self.root.keymaps.copy('main', '<PageUp>', '<A-K>')
+        self.root.keymaps.bind('main', '<PageDown>', partial(screen_move, direction=+1))
+        self.root.keymaps.copy('main', '<PageDown>', ']')
+        self.root.keymaps.copy('main', '<PageDown>', '<A-J>')
 
         self.root.keymaps.bind('main', 'T', terminate)
         self.root.keymaps.bind('main', 'K', kill)

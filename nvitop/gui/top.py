@@ -64,6 +64,7 @@ class Top(DisplayableContainer):
         n_term_lines, n_term_cols = termsize  # pylint: disable=unused-variable
 
         self.width = n_term_cols - self.x
+        self.height = n_term_lines - self.y
 
         for screen in self.container:
             if hasattr(screen, 'update_size'):

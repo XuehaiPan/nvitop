@@ -97,7 +97,7 @@ def _special_keys_init():
 
     SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)
 
-    # Reorder reorder the keys of SPECIAL_KEYS.
+    # Reorder the keys of SPECIAL_KEYS.
     for key in NAMED_SPECIAL_KEYS:
         SPECIAL_KEYS.move_to_end(key, last=True)
 

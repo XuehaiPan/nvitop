@@ -18,23 +18,25 @@ Device coloring rules by loading intensity:
   - GPU utilization: light < {:2d}% <= moderate < {:2d}% <= heavy.
   - MEM utilization: light < {:2d}% <= moderate < {:2d}% <= heavy.
 
- Arrows: scroll process list               Ctrl-C I: interrupt selected process
-    Esc: clear process selection                  K: kill selected process
- Ctrl-A: scroll process list to left most         T: terminate selected process
- Ctrl-E: scroll process list to right most
-   Home: select the first process             a f c: change display mode
-    End: select the last process                h ?: show this help screen
-      e: show process environment              F5 r: force refresh window
-      t: toggle tree-view screen                  q: quit
+      a f c: change display mode                h ?: show this help screen
+       F5 r: force refresh window                 q: quit
 
-  Wheel: scroll process list            Shift-Wheel: scroll horizontally
-    Tab: scroll process list             Ctrl-Wheel: fast scroll ({}x)
+     Arrows: scroll process list                Esc: clear process selection
+       Home: select the first process      Ctrl-C I: interrupt selected process
+        End: select the last process              K: kill selected process
+   Ctrl-A ^: scroll to left most                  T: terminate selected process
+   Ctrl-E $: scroll to right most
+   PageUp [: scroll entire screen up              e: show process environment
+ PageDown ]: scroll entire screen down            t: toggle tree-view screen
 
-  on oN: sort by GPU-INDEX                    os oS: sort by %SM
-  op oP: sort by PID                          oc oC: sort by %CPU
-  ou oU: sort by USER                         om oM: sort by %MEM
-  og oG: sort by GPU-MEM                      ot oT: sort by TIME
-    , .: select sort column                       /: invert sort order
+      Wheel: scroll process list        Shift-Wheel: scroll horizontally
+        Tab: scroll process list         Ctrl-Wheel: fast scroll ({}x)
+
+      on oN: sort by GPU-INDEX                os oS: sort by %SM
+      op oP: sort by PID                      oc oC: sort by %CPU
+      ou oU: sort by USER                     om oM: sort by %MEM
+      og oG: sort by GPU-MEM                  ot oT: sort by TIME
+        , .: select sort column                   /: invert sort order
 
 Press any key to return.
 '''
@@ -54,6 +56,18 @@ class HelpScreen(Displayable):
                                     MouseEvent.CTRL_SCROLLWHEEL_MULTIPLIER)
 
         self.infos = HELP.strip().splitlines()
+        self.color_matrix = {
+            **{dy: ('cyan', 'cyan') for dy in range(12, 22)},
+            9: ('green', 'green'),
+            10: ('green', 'green'),
+            12: ('cyan', 'yellow'),
+            **{dy: ('cyan', 'red') for dy in (13, 14, 15)},
+            16: ('cyan', None),
+            19: (None, None),
+            22: (None, None),
+            **{dy: ('blue', 'blue') for dy in range(23, 27)},
+            27: ('magenta', 'magenta')
+        }
 
         self.x, self.y = root.x, root.y
         self.width = max(map(len, self.infos))
@@ -85,19 +99,11 @@ class HelpScreen(Displayable):
             self.color_at(self.y + dy, self.x + 36, width=8, fg='yellow', attr='bold | italic')
             self.color_at(self.y + dy, self.x + 54, width=5, fg='red', attr='bold | italic')
 
-        for dy in range(9, 17):
-            self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
-            self.color_at(self.y + dy, self.x + 44, width=8, fg='green', attr='bold')
-        for dy in (18, 19):
-            self.color_at(self.y + dy, self.x, width=8, fg='cyan', attr='bold')
-            self.color_at(self.y + dy, self.x + 40, width=12, fg='cyan', attr='bold')
-        for dy in range(21, 25):
-            self.color_at(self.y + dy, self.x, width=8, fg='blue', attr='bold')
-            self.color_at(self.y + dy, self.x + 44, width=8, fg='blue', attr='bold')
-        self.color_at(self.y + 25, self.x, width=8, fg='magenta', attr='bold')
-        self.color_at(self.y + 25, self.x + 44, width=8, fg='magenta', attr='bold')
-        for dy in (9, 10, 11):
-            self.color_at(self.y + dy, self.x + 43, width=9, fg='red', attr='bold')
+        for dy, (left, right) in self.color_matrix.items():
+            if left is not None:
+                self.color_at(self.y + dy, self.x, width=12, fg=left, attr='bold')
+            if right is not None:
+                self.color_at(self.y + dy, self.x + 39, width=13, fg=right, attr='bold')
 
     def press(self, key):
         self.root.keymaps.use_keymap('help')

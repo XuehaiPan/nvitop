@@ -95,7 +95,7 @@ class EnvironScreen(Displayable):
 
     @property
     def display_height(self):
-        return self.height - self.y - 2
+        return self.height - 2
 
     @property
     def y_offset(self):
@@ -207,18 +207,20 @@ class EnvironScreen(Displayable):
         self.root.keymaps.copy('environ', 'r', '<C-r>')
         self.root.keymaps.copy('environ', 'r', '<F5>')
         self.root.keymaps.bind('environ', '<Left>', environ_left)
-        self.root.keymaps.copy('environ', '<Left>', '[')
         self.root.keymaps.copy('environ', '<Left>', '<A-h>')
         self.root.keymaps.bind('environ', '<Right>', environ_right)
-        self.root.keymaps.copy('environ', '<Right>', ']')
         self.root.keymaps.copy('environ', '<Right>', '<A-l>')
         self.root.keymaps.bind('environ', '<C-a>', environ_begin)
         self.root.keymaps.copy('environ', '<C-a>', '^')
         self.root.keymaps.bind('environ', '<Up>', partial(environ_move, direction=-1))
         self.root.keymaps.copy('environ', '<Up>', '<S-Tab>')
         self.root.keymaps.copy('environ', '<Up>', '<A-k>')
+        self.root.keymaps.copy('environ', '<Up>', '<PageUp>')
+        self.root.keymaps.copy('environ', '<Up>', '[')
         self.root.keymaps.bind('environ', '<Down>', partial(environ_move, direction=+1))
         self.root.keymaps.copy('environ', '<Down>', '<Tab>')
         self.root.keymaps.copy('environ', '<Down>', '<A-j>')
+        self.root.keymaps.copy('environ', '<Down>', '<PageDown>')
+        self.root.keymaps.copy('environ', '<Down>', ']')
         self.root.keymaps.bind('environ', '<Home>', partial(environ_move, direction=-(1 << 20)))
         self.root.keymaps.bind('environ', '<End>', partial(environ_move, direction=+(1 << 20)))

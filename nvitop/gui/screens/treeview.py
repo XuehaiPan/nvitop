@@ -8,6 +8,7 @@ import threading
 import time
 from collections import deque
 from functools import partial
+from itertools import islice
 
 from cachetools.func import ttl_cache
 
@@ -158,7 +159,12 @@ class TreeViewScreen(Displayable):
         self._daemon_running = threading.Event()
 
         self.x, self.y = root.x, root.y
+        self.scroll_offset = 0
         self.width, self.height = root.width, root.height
+
+    @property
+    def display_height(self):
+        return self.height - 1
 
     @property
     def visible(self):
@@ -239,6 +245,22 @@ class TreeViewScreen(Displayable):
             with self.snapshot_lock:
                 self.snapshots = self._snapshot_buffer
 
+        self.selected.within_window = False
+        if len(self.snapshots) > 0 and self.selected.is_set():
+            for i, process in enumerate(self.snapshots):
+                y = self.y + 1 - self.scroll_offset + i
+                if self.selected.is_same_on_host(process):
+                    self.selected.within_window = (1 <= y - self.y < self.height and self.width >= 79)
+                    if not self.selected.within_window:
+                        if y < self.y + 1:
+                            self.scroll_offset -= self.y + 1 - y
+                        elif y >= self.y + self.height:
+                            self.scroll_offset += y - self.y - self.height + 1
+                    self.scroll_offset = max(min(len(self.snapshots) - self.display_height, self.scroll_offset), 0)
+                    break
+        else:
+            self.scroll_offset = 0
+
         super().poke()
 
     def draw(self):
@@ -262,7 +284,8 @@ class TreeViewScreen(Displayable):
             return
 
         self.selected.within_window = False
-        for y, process in enumerate(self.snapshots, start=self.y + 1):
+        processes = islice(self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height)
+        for y, process in enumerate(processes, start=self.y + 1):
             prefix_length = len(process.prefix)
             line = '{}  {}  {}  {}{}'.format(str(process.pid).rjust(pid_width),
                                              process.username.ljust(username_width),
@@ -277,7 +300,7 @@ class TreeViewScreen(Displayable):
 
             if self.selected.is_same_on_host(process):
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
-                self.selected.within_window = (0 <= y < self.root.termsize[0] and self.width >= 79)
+                self.selected.within_window = (1 <= y - self.y < self.height and self.width >= 79)
             else:
                 if process.username != CURRENT_USER and not IS_SUPERUSER:
                     self.color_at(y, self.x, width=self.width, attr='dim')
@@ -285,15 +308,13 @@ class TreeViewScreen(Displayable):
         self.color(fg='cyan', attr='bold | reverse')
         text_offset = self.x + self.width - 47
         if self.selected.owned() and self.selected.within_window:
-            self.addstr(self.y, text_offset, '(Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
+            self.addstr(self.y, text_offset - 1, ' (Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
             self.color_at(self.y, text_offset + 7, width=2, fg='cyan', bg='yellow', attr='bold | italic | reverse')
             self.color_at(self.y, text_offset + 10, width=3, fg='cyan', bg='red', attr='bold | reverse')
             self.color_at(self.y, text_offset + 15, width=1, fg='cyan', bg='yellow', attr='bold | italic | reverse')
             self.color_at(self.y, text_offset + 17, width=4, fg='cyan', bg='red', attr='bold | reverse')
             self.color_at(self.y, text_offset + 23, width=1, fg='cyan', bg='yellow', attr='bold | italic | reverse')
             self.color_at(self.y, text_offset + 25, width=4, fg='cyan', bg='red', attr='bold | reverse')
-        else:
-            self.addstr(self.y, text_offset, ' ' * 47)
 
     def destroy(self):
         super().destroy()
@@ -326,19 +347,21 @@ class TreeViewScreen(Displayable):
         def interrupt(top): top.treeview_screen.selected.interrupt()
 
         self.root.keymaps.bind('treeview', '<Left>', tree_left)
-        self.root.keymaps.copy('treeview', '<Left>', '[')
         self.root.keymaps.copy('treeview', '<Left>', '<A-h>')
         self.root.keymaps.bind('treeview', '<Right>', tree_right)
-        self.root.keymaps.copy('treeview', '<Right>', ']')
         self.root.keymaps.copy('treeview', '<Right>', '<A-l>')
         self.root.keymaps.bind('treeview', '<C-a>', tree_begin)
         self.root.keymaps.copy('treeview', '<C-a>', '^')
         self.root.keymaps.bind('treeview', '<Up>', partial(select_move, direction=-1))
         self.root.keymaps.copy('treeview', '<Up>', '<S-Tab>')
         self.root.keymaps.copy('treeview', '<Up>', '<A-k>')
+        self.root.keymaps.copy('treeview', '<Up>', '<PageUp>')
+        self.root.keymaps.copy('treeview', '<Up>', '[')
         self.root.keymaps.bind('treeview', '<Down>', partial(select_move, direction=+1))
         self.root.keymaps.copy('treeview', '<Down>', '<Tab>')
         self.root.keymaps.copy('treeview', '<Down>', '<A-j>')
+        self.root.keymaps.copy('treeview', '<Down>', '<PageDown>')
+        self.root.keymaps.copy('treeview', '<Down>', ']')
         self.root.keymaps.bind('treeview', '<Home>', partial(select_move, direction=-(1 << 20)))
         self.root.keymaps.bind('treeview', '<End>', partial(select_move, direction=+(1 << 20)))
         self.root.keymaps.bind('treeview', '<Esc>', select_clear)

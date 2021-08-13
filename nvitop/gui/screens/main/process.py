@@ -223,6 +223,29 @@ class ProcessPanel(Displayable):
         with self.snapshot_lock:
             self.snapshots = self._snapshot_buffer
 
+        self.selected.within_window = False
+        if len(self.snapshots) > 0 and self.selected.is_set():
+            y = self.y + 5
+            prev_device_index = None
+            for process in self.snapshots:
+                device_index = process.device.index
+                if prev_device_index != device_index:
+                    if not self.compact and prev_device_index is not None:
+                        y += 1
+                    prev_device_index = device_index
+
+                if self.selected.is_same(process):
+                    self.selected.within_window = (self.root.y <= y < self.root.termsize[0] and self.width >= 79)
+                    if not self.selected.within_window:
+                        if y < self.root.y:
+                            self.parent.y += self.root.y - y
+                        elif y >= self.root.termsize[0]:
+                            self.parent.y -= y - self.root.termsize[0] + 1
+                        self.parent.update_size(self.root.termsize)
+                        self.need_redraw = True
+                    break
+                y += 1
+
         super().poke()
 
     def draw(self):
@@ -307,7 +330,7 @@ class ProcessPanel(Displayable):
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
-                    self.selected.within_window = (0 <= y < self.root.termsize[0] and self.width >= 79)
+                    self.selected.within_window = (self.root.y <= y < self.root.termsize[0] and self.width >= 79)
                 else:
                     if self.selected.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=')
