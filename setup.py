@@ -31,10 +31,10 @@ setup(
     entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
     install_requires=[
         'nvidia-ml-py == 11.450.51',
-        'psutil',
-        'cachetools',
-        'termcolor',
-        'windows-curses; platform_system == "Windows"',
+        'psutil >= 5.4.2',
+        'cachetools >= 1.0.1',
+        'termcolor >= 1.0.0',
+        'windows-curses >= 2.2.0; platform_system == "Windows"',
     ],
     python_requires='>=3.5',
     classifiers=[
