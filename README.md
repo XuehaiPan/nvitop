@@ -628,7 +628,7 @@ Tree-view screen (shortcut: <kbd>t</kbd>) for GPU processes and their parents:
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png" alt="Tree-view">
 </p>
 
-**NOTE:** The process tree is built in backward (recursively back to the tree root). Only GPU processes and their parents (and grandparents ...) will be shown. Not all child processes will be displayed.
+**NOTE:** The process tree is built in backward (recursively back to the tree root). Only GPU processes along with their children and parents (and grandparents ...) will be shown. Not all running processes will be displayed.
 
 Environment variable screen (shortcut: <kbd>e</kbd>):
 

@@ -12,7 +12,7 @@ from itertools import islice
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import host, Snapshot
+from nvitop.core import host, HostProcess, Snapshot
 from nvitop.gui.library import Displayable, CURRENT_USER, IS_SUPERUSER
 from nvitop.gui.screens.main.utils import Selected
 
@@ -88,6 +88,8 @@ class TreeNode(object):
 
     @classmethod
     def merge(cls, leaves):
+        reverse_ppid_map = host.reverse_ppid_map()
+
         nodes = {}
         for process in leaves:
             if isinstance(process, Snapshot):
@@ -123,6 +125,15 @@ class TreeNode(object):
             finally:
                 parent.add(node)
 
+        for process in leaves:
+            if isinstance(process, Snapshot):
+                process = process.real
+
+            node = nodes[process.pid]
+            for cpid in reverse_ppid_map.get(process.pid, []):
+                if cpid not in nodes:
+                    node.add(cls(HostProcess(cpid)))
+
         roots = sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
         for root in roots:
             root.freeze()
@@ -147,6 +158,8 @@ class TreeViewScreen(Displayable):
 
     def __init__(self, win, root):
         super().__init__(win, root)
+
+        host.reverse_ppid_map = ttl_cache(ttl=2.0)(host.reverse_ppid_map)
 
         self.selected = Selected(panel=self)
         self.x_offset = 0
