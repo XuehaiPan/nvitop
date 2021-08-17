@@ -7,8 +7,8 @@ import argparse
 import locale
 import sys
 
-from nvitop.core import nvml, Device
-from nvitop.gui import Top, libcurses, colored, CURRENT_USER
+from nvitop.core import nvml
+from nvitop.gui import Top, Device, libcurses, colored, CURRENT_USER
 from nvitop.version import __version__
 
 

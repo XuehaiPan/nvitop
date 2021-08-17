@@ -3,5 +3,5 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.gui.library import libcurses, colored, CURRENT_USER, IS_SUPERUSER
+from nvitop.gui.library import Device, libcurses, colored, CURRENT_USER, IS_SUPERUSER
 from nvitop.gui.top import Top

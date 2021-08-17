@@ -90,23 +90,26 @@ class libnvml(object):
             self._initialized = False  # pylint: disable=attribute-defined-outside-init
 
     def nvmlQuery(self, func: Union[str, Callable[..., Any]], *args,
-                  default: Any = NA, ignore_errors: bool = True, **kwargs) -> Any:
+                  default: Any = NA,
+                  ignore_errors: bool = True,
+                  ignore_function_not_found: bool = False,
+                  **kwargs) -> Any:
         if isinstance(func, str):
-            func = getattr(pynvml, func)
+            func = getattr(self, func)
 
         self.nvmlInit()
 
         try:
             retval = func(*args, **kwargs)
         except pynvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
-            if func not in self.UNKNOWN_FUNCTIONS:
+            if not ignore_function_not_found and func not in self.UNKNOWN_FUNCTIONS:
                 self.UNKNOWN_FUNCTIONS.add(func)
                 self.LOGGER.error(
                     'ERROR: A FunctionNotFound error occurred while calling %s.\n'
                     'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
                     'nvmlQuery({!r}, *args, **kwargs)'.format(func)
                 )
-            if ignore_errors:
+            if ignore_errors or ignore_function_not_found:
                 return default
             raise
         except pynvml.NVMLError:

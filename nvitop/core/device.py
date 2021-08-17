@@ -20,10 +20,7 @@ __all__ = ['Device']
 
 class Device(object):
     UUID_PATTEN = re.compile(r'^GPU-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
-
-    MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
-    GPU_UTILIZATION_THRESHOLDS = (10, 75)
-    INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
+    GPU_PROCESS_CLASS = GpuProcess
 
     @staticmethod
     def driver_version() -> Union[str, NaType]:
@@ -338,12 +335,16 @@ class Device(object):
     def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
         return utilization2string(self.memory_utilization())
 
+    memory_percent = memory_utilization  # in percentage
+
     @ttl_cache(ttl=1.0)
     def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
         return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
 
     def gpu_utilization_string(self) -> Union[str, NaType]:  # in percentage
         return utilization2string(self.gpu_utilization())
+
+    gpu_percent = gpu_utilization  # in percentage
 
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
@@ -352,7 +353,7 @@ class Device(object):
         for type, func in [('C', 'nvmlDeviceGetComputeRunningProcesses'),  # pylint: disable=redefined-builtin
                            ('G', 'nvmlDeviceGetGraphicsRunningProcesses')]:
             for p in nvml.nvmlQuery(func, self.handle, default=()):
-                proc = processes[p.pid] = GpuProcess(pid=p.pid, device=self)
+                proc = processes[p.pid] = self.GPU_PROCESS_CLASS(pid=p.pid, device=self)
                 proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
                                     else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
                 proc.set_gpu_utilization(0, 0, 0)
@@ -391,47 +392,3 @@ class Device(object):
         'memory_utilization', 'gpu_utilization',
         'memory_utilization_string', 'gpu_utilization_string'
     ]
-
-    def memory_loading_intensity(self) -> str:
-        return self.loading_intensity_of(self.memory_utilization(), type='memory')
-
-    def gpu_loading_intensity(self) -> str:
-        return self.loading_intensity_of(self.gpu_utilization(), type='gpu')
-
-    def loading_intensity(self) -> str:
-        loading_intensity = (self.memory_loading_intensity(), self.gpu_loading_intensity())
-        if 'heavy' in loading_intensity:
-            return 'heavy'
-        if 'moderate' in loading_intensity:
-            return 'moderate'
-        return 'light'
-
-    def display_color(self) -> str:
-        return self.INTENSITY2COLOR.get(self.loading_intensity())
-
-    def memory_display_color(self) -> str:
-        return self.INTENSITY2COLOR.get(self.memory_loading_intensity())
-
-    def gpu_display_color(self) -> str:
-        return self.INTENSITY2COLOR.get(self.gpu_loading_intensity())
-
-    @staticmethod
-    def loading_intensity_of(utilization: Union[int, float, str, NaType],
-                             type: str = 'memory') -> str:  # pylint: disable=redefined-builtin
-        thresholds = {'memory': Device.MEMORY_UTILIZATION_THRESHOLDS,
-                      'gpu': Device.GPU_UTILIZATION_THRESHOLDS}.get(type)
-        if utilization is NA:
-            return 'heavy'
-        if isinstance(utilization, str):
-            utilization = utilization[:-1]
-        utilization = float(utilization)
-        if utilization >= thresholds[-1]:
-            return 'heavy'
-        if utilization >= thresholds[0]:
-            return 'moderate'
-        return 'light'
-
-    @staticmethod
-    def color_of(utilization: Union[int, float, str, NaType],
-                 type: str = 'memory') -> str:  # pylint: disable=redefined-builtin
-        return Device.INTENSITY2COLOR.get(Device.loading_intensity_of(utilization, type=type))

@@ -3,6 +3,8 @@
 
 # pylint: disable=missing-module-docstring
 
+from nvitop.gui.library.device import Device, NA
+from nvitop.gui.library.process import HostProcess, GpuProcess
 from nvitop.gui.library.libcurses import libcurses
 from nvitop.gui.library.displayable import Displayable, DisplayableContainer
 from nvitop.gui.library.keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUANT_KEY,

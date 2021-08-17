@@ -4,9 +4,8 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-from nvitop.core import Device
 from nvitop.version import __version__
-from nvitop.gui.library import Displayable, MouseEvent
+from nvitop.gui.library import Device, Displayable, MouseEvent
 
 
 HELP_TEMPLATE = '''nvitop {} - (C) Xuehai Pan, 2021.

@@ -11,8 +11,8 @@ from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import NA, host, GpuProcess
-from nvitop.gui.library import (Displayable, MouseEvent, colored, cut_string,
+from nvitop.core import NA, host
+from nvitop.gui.library import (GpuProcess, Displayable, MouseEvent, colored, cut_string,
                                 CURRENT_USER, IS_SUPERUSER)
 from nvitop.gui.screens.main.utils import Order, Selected
 
@@ -58,7 +58,6 @@ class ProcessPanel(Displayable):
         super().__init__(win, root)
 
         self.devices = devices
-        GpuProcess.CLIENT_MODE = True
 
         self._compact = compact
         self.width = max(79, root.width)

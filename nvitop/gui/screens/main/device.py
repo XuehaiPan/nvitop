@@ -9,8 +9,8 @@ import time
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import host, Device
-from nvitop.gui.library import Displayable, colored, cut_string, make_bar
+from nvitop.core import host
+from nvitop.gui.library import Device, Displayable, colored, cut_string, make_bar
 
 
 class DevicePanel(Displayable):
@@ -43,10 +43,6 @@ class DevicePanel(Displayable):
             '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
-
-        Device.SNAPSHOT_KEYS.extend(['memory_loading_intensity', 'memory_display_color',
-                                     'gpu_loading_intensity', 'gpu_display_color',
-                                     'loading_intensity', 'display_color'])
 
         if host.WINDOWS:
             self.formats_full[0] = ('│ {index:>3}  {name:<18}  {current_driver_model:<4} '

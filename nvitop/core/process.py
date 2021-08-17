@@ -63,34 +63,26 @@ def command_join(cmdline: List[str]) -> str:
     return ' '.join(map(add_quotes, cmdline))
 
 
-def auto_garbage_clean(default: Optional[Any] = None) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
-        @functools.wraps(func)
-        def wrapped(self: 'GpuProcess', *args, **kwargs) -> Any:
+def auto_garbage_clean(func: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(func)
+    def wrapped(self: 'GpuProcess', *args, **kwargs) -> Any:
+        try:
+            return func(self, *args, **kwargs)
+        except host.PsutilError:
             try:
-                return func(self, *args, **kwargs)
-            except host.PsutilError as e:
-                try:
-                    with GpuProcess.INSTANCE_LOCK:
-                        del GpuProcess.INSTANCES[(self.pid, self.device)]
-                except KeyError:
-                    pass
-                try:
-                    with HostProcess.INSTANCE_LOCK:
-                        del HostProcess.INSTANCES[self.pid]
-                except KeyError:
-                    pass
-                if not GpuProcess.CLIENT_MODE:
-                    raise
-                if isinstance(default, tuple):
-                    if isinstance(e, host.AccessDenied) and default == ('No Such Process',):
-                        return ['No Permissions']
-                    return list(default)
-                return default
+                with GpuProcess.INSTANCE_LOCK:
+                    del GpuProcess.INSTANCES[(self.pid, self.device)]
+            except KeyError:
+                pass
+            try:
+                with HostProcess.INSTANCE_LOCK:
+                    del HostProcess.INSTANCES[self.pid]
+            except KeyError:
+                pass
 
-        return wrapped
+            raise
 
-    return wrapper
+    return wrapped
 
 
 class HostProcess(host.Process, metaclass=ABCMeta):
@@ -169,11 +161,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
 
 class GpuProcess(object):
-    CLIENT_MODE = False
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
-    SNAPSHOT_LOCK = threading.RLock()
-    HOST_SNAPSHOTS = {}
 
     def __new__(cls, pid: int, device: 'Device',
                 gpu_memory: Optional[Union[int, NaType]] = None,  # pylint: disable=unused-argument
@@ -200,11 +189,6 @@ class GpuProcess(object):
             instance._username = None
 
             cls.INSTANCES[(pid, device)] = (instance, identity)
-            with cls.SNAPSHOT_LOCK:
-                try:
-                    del cls.HOST_SNAPSHOTS[pid]
-                except KeyError:
-                    pass
 
             return instance
 
@@ -322,81 +306,67 @@ class GpuProcess(object):
             self._type = NA
 
     @ttl_cache(ttl=1.0)
-    @auto_garbage_clean(default=NA)
-    def running_time(self) -> Union[datetime.timedelta, NaType]:
+    @auto_garbage_clean
+    def running_time(self) -> datetime.timedelta:
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
-    def running_time_human(self) -> Union[str, NaType]:
+    def running_time_human(self) -> str:
         return timedelta2human(self.running_time())
 
-    @auto_garbage_clean(default=NA)
-    def create_time(self) -> Union[float, NaType]:
+    @auto_garbage_clean
+    def create_time(self) -> float:
         return self.host.create_time()
 
-    @auto_garbage_clean(default=NA)
-    def username(self) -> Union[str, NaType]:
+    @auto_garbage_clean
+    def username(self) -> str:
         if self._username is None:  # pylint: disable=access-member-before-definition
             self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
         return self._username
 
-    @auto_garbage_clean(default=NA)
-    def name(self) -> Union[str, NaType]:
+    @auto_garbage_clean
+    def name(self) -> str:
         return self.host.name()
 
-    @auto_garbage_clean(default=0.0)
+    @auto_garbage_clean
     def cpu_percent(self) -> float:
         return self.host.cpu_percent()
 
-    @auto_garbage_clean(default=0.0)
+    @auto_garbage_clean
     def memory_percent(self) -> float:
         return self.host.memory_percent()
 
-    @auto_garbage_clean(default=('No Such Process',))
+    @auto_garbage_clean
     def cmdline(self) -> List[str]:
-        cmdline = self.host.cmdline()
-        if self.CLIENT_MODE and len(cmdline) == 0:
-            cmdline = ['Zombie Process']
-        return cmdline
+        return self.host.cmdline()
 
+    @auto_garbage_clean
     def command(self) -> str:
-        return HostProcess.command(self)
+        return command_join(self.cmdline())
 
-    @classmethod
-    def clear_host_snapshots(cls) -> None:
-        with cls.SNAPSHOT_LOCK:
-            cls.HOST_SNAPSHOTS.clear()
-
-    @auto_garbage_clean(default=None)
+    @auto_garbage_clean
     def as_snapshot(self) -> Snapshot:
-        with self.SNAPSHOT_LOCK:
-            try:
-                host_snapshot = self.HOST_SNAPSHOTS[self.pid]
-            except KeyError:
-                with self.host.oneshot():
-                    host_snapshot = Snapshot(
-                        real=self.host,
-                        is_running=self.host.is_running(),
-                        status=self.host.status(),
-                        username=self.username(),
-                        name=self.name(),
-                        cmdline=self.cmdline(),
-                        cpu_percent=self.cpu_percent(),
-                        memory_percent=self.memory_percent(),
-                        running_time=self.running_time()
-                    )
+        with self.host.oneshot():
+            host_snapshot = Snapshot(
+                real=self.host,
+                is_running=self.host.is_running(),
+                status=self.host.status(),
+                username=self.username(),
+                name=self.name(),
+                cmdline=self.cmdline(),
+                cpu_percent=self.cpu_percent(),
+                memory_percent=self.memory_percent(),
+                running_time=self.running_time()
+            )
 
-                host_snapshot.command = command_join(host_snapshot.cmdline)
-                if host_snapshot.cpu_percent < 1000.0:
-                    host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
-                elif host_snapshot.cpu_percent < 10000:
-                    host_snapshot.cpu_percent_string = '{}%'.format(int(host_snapshot.cpu_percent))
-                else:
-                    host_snapshot.cpu_percent_string = '9999+%'
-                host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
-                host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
-
-                if self.CLIENT_MODE:
-                    self.HOST_SNAPSHOTS[self.pid] = host_snapshot
+        host_snapshot.command = command_join(host_snapshot.cmdline)
+        if host_snapshot.cpu_percent < 1000.0:
+            host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
+        elif host_snapshot.cpu_percent < 10000:
+            host_snapshot.cpu_percent_string = '{}%'.format(int(host_snapshot.cpu_percent))
+        else:
+            host_snapshot.cpu_percent_string = '9999+%'
+        host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
+        host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
 
         return Snapshot(
             real=self,
