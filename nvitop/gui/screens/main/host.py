@@ -11,7 +11,7 @@ from nvitop.core import NA, host
 from nvitop.gui.library import Device, Displayable, BufferedHistoryGraph, colored, make_bar
 
 
-class HostPanel(Displayable):
+class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     SNAPSHOT_INTERVAL = 0.5
 
     def __init__(self, devices, compact, win, root):
@@ -179,7 +179,7 @@ class HostPanel(Displayable):
 
         super().poke()
 
-    def draw(self):
+    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
         if self.load_average is not None:

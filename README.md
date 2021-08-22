@@ -10,7 +10,10 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png" alt="Monitor">
-  Monitor mode of <code>nvitop</code>.</br>(TERM: GNOME Terminal / OS: Ubuntu 16.04 LTS (over SSH) / Locale: <code>en_US.UTF-8</code>)
+  </br>
+  Monitor mode of <code>nvitop</code>.
+  </br>
+  (TERM: GNOME Terminal / OS: Ubuntu 16.04 LTS (over SSH) / Locale: <code>en_US.UTF-8</code>)
 </p>
 
 ### Table of Contents  <!-- omit in toc -->
@@ -45,6 +48,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/117765245-3f16de80-b260-11eb-99c7-077cd5519074.png" alt="Comparison">
+  </br>
   Compare to <code>nvidia-smi</code>.
 </p>
 
@@ -72,7 +76,9 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/129374533-fe06c01a-630d-4994-b54b-821cccd0d33c.png" alt="Windows">
-  <code>nvitop</code> supports Windows!</br>
+  </br>
+  <code>nvitop</code> supports Windows!
+  </br>
   (SHELL: PowerShell / TERM: Windows Terminal / OS: Windows 10 / Locale: <code>en-US</code>)
 </p>
 
@@ -173,6 +179,7 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/129375359-d68b2fe6-faaf-4aa9-9ace-9011d1ef2106.png" alt="Help Screen">
+  </br>
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
 

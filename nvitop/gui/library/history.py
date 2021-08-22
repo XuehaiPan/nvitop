@@ -45,10 +45,10 @@ def grouped(iterable, size, fillvalue=None):
     yield from itertools.zip_longest(*([iter(iterable)] * size), fillvalue=fillvalue)
 
 
-class HistoryGraph(object):
+class HistoryGraph(object):  # pylint: disable=too-many-instance-attributes
     MAX_WIDTH = 1024
 
-    def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin
+    def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin,too-many-arguments
                  baseline=0.0, dynamic_bound=False, upsidedown=False):
         assert baseline < upperbound
 
@@ -226,7 +226,7 @@ class HistoryGraph(object):
 
 
 class BufferedHistoryGraph(HistoryGraph):
-    def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin
+    def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin,too-many-arguments
                  baseline=0.0, dynamic_bound=False, upsidedown=False, interval=1.0):
         assert interval > 0.0
         super().__init__(upperbound, width, height,

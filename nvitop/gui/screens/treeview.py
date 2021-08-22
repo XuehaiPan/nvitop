@@ -17,7 +17,7 @@ from nvitop.gui.library import Displayable, CURRENT_USER, IS_SUPERUSER
 from nvitop.gui.screens.main.utils import Selected
 
 
-class TreeNode(object):
+class TreeNode(object):  # pylint: disable=too-many-instance-attributes
     def __init__(self, process, children=()):
         self.process = process
         self.parent = None
@@ -87,7 +87,7 @@ class TreeNode(object):
             child.set_prefix(prefix)
 
     @classmethod
-    def merge(cls, leaves):
+    def merge(cls, leaves):  # pylint: disable=too-many-branches
         reverse_ppid_map = host.reverse_ppid_map()
 
         nodes = {}
@@ -152,7 +152,7 @@ class TreeNode(object):
         return flattened
 
 
-class TreeViewScreen(Displayable):
+class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'treeview'
     SNAPSHOT_INTERVAL = 0.7
 

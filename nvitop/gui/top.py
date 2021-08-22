@@ -14,8 +14,8 @@ from nvitop.gui.library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps
 from nvitop.gui.screens import MainScreen, EnvironScreen, TreeViewScreen, HelpScreen, BreakLoop
 
 
-class Top(DisplayableContainer):
-    def __init__(self, devices, filters=(), ascii=False, mode='auto', win=None):  # pylint: disable=redefined-builtin
+class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
+    def __init__(self, devices, filters=(), ascii=False, mode='auto', win=None):  # pylint: disable=redefined-builtin,too-many-arguments
         super().__init__(win, root=self)
 
         self.x = self.y = 0
@@ -89,7 +89,7 @@ class Top(DisplayableContainer):
         if self.width >= 79:
             super().draw()
             return
-        elif not self.need_redraw:
+        if not self.need_redraw:
             return
 
         n_term_lines, n_term_cols = self.termsize

@@ -18,7 +18,7 @@ from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2str
 __all__ = ['Device']
 
 
-class Device(object):
+class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     UUID_PATTEN = re.compile(r'^GPU-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
     GPU_PROCESS_CLASS = GpuProcess
 

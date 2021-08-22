@@ -12,7 +12,7 @@ from nvitop.core import host, HostProcess, GpuProcess
 from nvitop.gui.library import Displayable
 
 
-class EnvironScreen(Displayable):
+class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'environ'
 
     def __init__(self, win, root):

@@ -16,7 +16,7 @@ from nvitop.callbacks.utils import get_devices_by_logical_ids
 
 
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor
-class GpuStatsLogger(Callback):
+class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     r"""
     Automatically log GPU stats during training stage. ``GpuStatsLogger`` is a
     callback and in order to use it you need to assign a logger in the ``Trainer``.
@@ -108,7 +108,7 @@ class GpuStatsLogger(Callback):
         self._snap_inter_step_time = None
 
     @rank_zero_only
-    def on_train_batch_start(self, trainer, pl_module,
+    def on_train_batch_start(self, trainer, pl_module,  # pylint: disable=too-many-arguments
                              batch: Any, batch_idx: int, dataloader_idx: int) -> None:
         if self._intra_step_time:
             self._snap_intra_step_time = time.monotonic()
@@ -122,7 +122,7 @@ class GpuStatsLogger(Callback):
         trainer.logger.log_metrics(logs, step=trainer.global_step)
 
     @rank_zero_only
-    def on_train_batch_end(self, trainer, pl_module,
+    def on_train_batch_end(self, trainer, pl_module,  # pylint: disable=too-many-arguments
                            outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
         if self._inter_step_time:
             self._snap_inter_step_time = time.monotonic()

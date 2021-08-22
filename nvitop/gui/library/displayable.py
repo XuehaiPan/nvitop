@@ -8,7 +8,7 @@
 from nvitop.gui.library.libcurses import CursesShortcuts
 
 
-class Displayable(CursesShortcuts):
+class Displayable(CursesShortcuts):  # pylint: disable=too-many-instance-attributes
     """Displayables are objects which are displayed on the screen.
 
     This is just the abstract class, defining basic operations

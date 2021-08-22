@@ -130,7 +130,7 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
     if isinstance(obj, tuple):
         for char in obj:
             yield char
-    elif isinstance(obj, int):
+    elif isinstance(obj, int):  # pylint: disable=too-many-nested-blocks
         yield obj
     else:  # pylint: disable=too-many-nested-blocks
         in_brackets = False
@@ -218,7 +218,7 @@ class KeyMaps(dict):
         self.used_keymap = None
 
     def use_keymap(self, keymap_name):
-        self.keybuffer.keymap = self.get(keymap_name, dict())
+        self.keybuffer.keymap = self.get(keymap_name, {})
         if self.used_keymap != keymap_name:
             self.used_keymap = keymap_name
             self.keybuffer.clear()
@@ -227,7 +227,7 @@ class KeyMaps(dict):
         try:
             pointer = self[context]
         except KeyError:
-            self[context] = pointer = dict()
+            self[context] = pointer = {}
         keys = keys.encode('utf-8').decode('latin-1')
         return list(parse_keybinding(keys)), pointer
 
@@ -241,9 +241,9 @@ class KeyMaps(dict):
                 if isinstance(pointer[key], dict):
                     pointer = pointer[key]
                 else:
-                    pointer[key] = pointer = dict()
+                    pointer[key] = pointer = {}
             except KeyError:
-                pointer[key] = pointer = dict()
+                pointer[key] = pointer = {}
         pointer[last_key] = leaf
 
     def copy(self, context, source, target):

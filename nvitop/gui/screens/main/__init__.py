@@ -16,10 +16,10 @@ class BreakLoop(Exception):
     pass
 
 
-class MainScreen(DisplayableContainer):
+class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
     NAME = 'main'
 
-    def __init__(self, devices, filters, ascii, mode, win, root):  # pylint: disable=redefined-builtin
+    def __init__(self, devices, filters, ascii, mode, win, root):  # pylint: disable=redefined-builtin,too-many-arguments,too-many-locals,too-many-statements
         super().__init__(win, root)
 
         self.width = root.width
@@ -138,7 +138,7 @@ class MainScreen(DisplayableContainer):
             panel.print()
 
     def init_keybindings(self):
-        # pylint: disable=multiple-statements
+        # pylint: disable=too-many-locals,too-many-statements,multiple-statements
 
         def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
 

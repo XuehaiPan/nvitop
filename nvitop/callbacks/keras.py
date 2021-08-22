@@ -15,7 +15,7 @@ from nvitop.callbacks.utils import get_devices_by_logical_ids
 
 
 # Ported version of .lightning.GpuStatsLogger for Keras
-class GpuStatsLogger(Callback):
+class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     r"""
     Automatically log GPU stats during training stage. ``GpuStatsLogger`` is a
     callback and in order to use it you need to assign a TensorBoard callback or

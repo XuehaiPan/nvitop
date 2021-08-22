@@ -17,7 +17,7 @@ from nvitop.gui.library import (GpuProcess, Displayable, MouseEvent, colored, cu
 from nvitop.gui.screens.main.utils import Order, Selected
 
 
-class ProcessPanel(Displayable):
+class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
         'natural': Order(
@@ -54,7 +54,7 @@ class ProcessPanel(Displayable):
         ),
     }
 
-    def __init__(self, devices, compact, filters, win, root):
+    def __init__(self, devices, compact, filters, win, root):  # pylint: disable=too-many-arguments
         super().__init__(win, root)
 
         self.devices = devices
@@ -247,7 +247,7 @@ class ProcessPanel(Displayable):
 
         super().poke()
 
-    def draw(self):
+    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
         if self.need_redraw:

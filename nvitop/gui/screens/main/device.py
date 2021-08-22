@@ -13,7 +13,7 @@ from nvitop.core import host
 from nvitop.gui.library import Device, Displayable, colored, cut_string, make_bar
 
 
-class DevicePanel(Displayable):
+class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
     SNAPSHOT_INTERVAL = 0.7
 
     def __init__(self, devices, compact, win, root):
@@ -175,7 +175,7 @@ class DevicePanel(Displayable):
 
         super().poke()
 
-    def draw(self):
+    def draw(self):  # pylint: disable=too-many-locals
         self.color_reset()
 
         if self.need_redraw:

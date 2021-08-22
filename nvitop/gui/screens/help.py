@@ -41,7 +41,7 @@ Press any key to return.
 '''
 
 
-class HelpScreen(Displayable):
+class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'help'
 
     def __init__(self, win, root):
