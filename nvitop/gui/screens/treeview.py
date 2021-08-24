@@ -163,6 +163,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         self.selected = Selected(panel=self)
         self.x_offset = 0
+        self.y_mouse = None
 
         self._snapshot_buffer = []
         self._snapshots = []
@@ -296,6 +297,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.addstr(self.y + 1, self.x, 'No running GPU processes found.')
             return
 
+        if self.y_mouse is not None:
+            self.selected.clear()
+
         self.selected.within_window = False
         processes = islice(self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height)
         for y, process in enumerate(processes, start=self.y + 1):
@@ -310,6 +314,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             if prefix_length > 0:
                 self.color_at(y, self.x + max(0, command_offset - self.x_offset),
                               width=prefix_length, fg='green', attr='bold')
+
+            if y == self.y_mouse:
+                self.selected.process = process
 
             if self.selected.is_same_on_host(process):
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
@@ -329,6 +336,10 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.color_at(self.y, text_offset + 23, width=1, fg='cyan', bg='yellow', attr='bold | italic | reverse')
             self.color_at(self.y, text_offset + 25, width=4, fg='cyan', bg='red', attr='bold | reverse')
 
+    def finalize(self):
+        self.y_mouse = None
+        super().finalize()
+
     def destroy(self):
         super().destroy()
         self._daemon_running.clear()
@@ -338,6 +349,10 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self.root.press(key)
 
     def click(self, event):
+        if event.pressed(1) or event.pressed(3) or event.clicked(1) or event.clicked(3):
+            self.y_mouse = event.y
+            return True
+
         direction = event.wheel_direction()
         if event.shift():
             self.x_offset = max(0, self.x_offset + 2 * direction)

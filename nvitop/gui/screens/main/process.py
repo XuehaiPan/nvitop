@@ -69,6 +69,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.selected = Selected(panel=self)
         self.host_offset = -1
+        self.y_mouse = None
 
         self._order = 'natural'
         self.reverse = False
@@ -292,6 +293,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.color_at(self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline')
             self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
 
+        if self.y_mouse is not None:
+            self.selected.clear()
+
         self.selected.within_window = False
         if len(self.snapshots) > 0:
             y = self.y + 5
@@ -303,6 +307,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     color = process.device.snapshot.display_color
                     if not self.compact and prev_device_index is not None:
                         self.addstr(y, self.x, '├' + '─' * (self.width - 2) + '┤')
+                        if y == self.y_mouse:
+                            self.y_mouse += 1
                         y += 1
                     prev_device_index = device_index
 
@@ -326,6 +332,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
                 if (is_zombie or no_permissions or is_gone) and command_offset == 0:
                     self.addstr(y, self.x + 38, process.command)
+
+                if y == self.y_mouse:
+                    self.selected.process = process
 
                 if self.selected.is_same(process):
                     self.color_at(y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse')
@@ -357,6 +366,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.color_at(self.y, text_offset + 25, width=4, fg='red', attr='bold')
         else:
             self.addstr(self.y, text_offset, ' ' * 47)
+
+    def finalize(self):
+        self.y_mouse = None
+        super().finalize()
 
     def destroy(self):
         super().destroy()
@@ -415,6 +428,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.root.press(key)
 
     def click(self, event):
+        if event.pressed(1) or event.pressed(3) or event.clicked(1) or event.clicked(3):
+            self.y_mouse = event.y
+            return True
+
         direction = event.wheel_direction()
         if event.shift():
             self.host_offset += 2 * direction

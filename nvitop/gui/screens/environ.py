@@ -31,6 +31,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         self.x_offset = 0
         self._y_offset = 0
         self.scroll_offset = 0
+        self.y_mouse = None
 
         self._height = 0
         self.x, self.y = root.x, root.y
@@ -166,14 +167,25 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
             if self.x_offset < key_length + 1:
                 self.color_at(y, self.x + key_length - self.x_offset, width=1, fg='magenta')
 
+            if y == self.y_mouse:
+                self.y_offset = y - (self.y + 2 - self.scroll_offset)
+
             if y == self.y + 2 - self.scroll_offset + self.y_offset:
                 self.color_at(y, self.x, width=self.width, fg='cyan', attr='bold | reverse')
+
+    def finalize(self):
+        self.y_mouse = None
+        super().finalize()
 
     def press(self, key):
         self.root.keymaps.use_keymap('environ')
         self.root.press(key)
 
     def click(self, event):
+        if event.pressed(1) or event.pressed(3) or event.clicked(1) or event.clicked(3):
+            self.y_mouse = event.y
+            return True
+
         direction = event.wheel_direction()
         if event.shift():
             self.x_offset = max(0, self.x_offset + 2 * direction)
