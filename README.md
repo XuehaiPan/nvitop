@@ -26,6 +26,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
   - [Resource Monitor](#resource-monitor)
     - [For Docker Users](#for-docker-users)
     - [For SSH Users](#for-ssh-users)
+    - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
@@ -103,7 +104,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.4.1)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.4.2)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -145,7 +146,7 @@ $ nvitop -ov
 $ nvitop -c
 ```
 
-The result will be displayed **ONLY ONCE**, which is consistent with the behavior of `nvidia-smi`. Type `nvitop --help` for more command options.
+The result will be displayed **ONLY ONCE**, which is consistent with the default behavior of `nvidia-smi`. See [Command Line Options](#command-line-options-and-environment-variables) for more command options.
 
 ### Resource Monitor
 
@@ -153,7 +154,7 @@ Run as a resource monitor:
 
 ```bash
 # Automatically configure the display mode according to the terminal size
-$ nvitop -m  # or use `python3 -m nvitop -m`
+$ nvitop -m auto  # or use `python3 -m nvitop -m`
 
 # Arbitrarily display as `full` mode
 $ nvitop -m full
@@ -172,7 +173,12 @@ $ nvitop -m -c
 
 # Use ASCII characters only
 $ nvitop -m -U  # useful for terminals without Unicode support
+
+# For light terminals
+$ nvitop -m --light
 ```
+
+You can omit the `-m` option by setting the environment variable `NVITOP_MONITOR_ALWAYS=true`. See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
 
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
@@ -181,13 +187,6 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
   </br>
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
-
-**HINT:** You can set the following alias in your shell profile to make `nvitop` always invoke the resource monitor:
-
-```bash
-alias nvitop='nvitop -m'                 # Bash / Zsh / Fish ...
-function nvitop { nvitop.exe -m $args }  # PowerShell
-```
 
 In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop -m` to terminate other users' processes.
 
@@ -213,6 +212,71 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 ```
 
 **NOTE:** Users need to add the `-t` option to allocate a pseudo-terminal over the SSH session for monitor mode.
+
+#### Command Line Options and Environment Variables
+
+Type `nvitop --help` for more command options:
+
+```text
+usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
+              [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
+              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
+              [--user [USERNAME [USERNAME ...]]] [--pid PID [PID ...]]
+
+An interactive NVIDIA-GPU process viewer.
+
+optional arguments:
+  --help, -h            show this help message and exit.
+  --version, -V         show nvitop's version number and exit.
+  --monitor [{auto,full,compact}], -m [{auto,full,compact}]
+                        Run as a resource monitor. Continuously report query data,
+                        rather than the default of just once.
+                        If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.
+                        (default fallback mode: auto)
+  --ascii, --no-unicode, -U
+                        Use ASCII characters only, which is useful for terminals without Unicode support.
+
+coloring:
+  --light               Tweak visual results for light theme terminals in monitor mode.
+                        Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.
+  --gpu-util-thresh th1 th2
+                        Thresholds of GPU utilization to determine the load intensity.
+                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
+                        ( 1 <= th1 < th2 <= 99, defaults: 10 75 )
+  --mem-util-thresh th1 th2
+                        Thresholds of GPU memory utilization to determine the load intensity.
+                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
+                        ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
+
+device filtering:
+  --only idx [idx ...], -o idx [idx ...]
+                        Only show the specified devices, suppress option `--only-visible`.
+  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
+
+process filtering:
+  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
+  --user [USERNAME [USERNAME ...]], -u [USERNAME [USERNAME ...]]
+                        Only show processes of the given users (or `$USER` for no argument).
+  --pid PID [PID ...], -p PID [PID ...]
+                        Only show processes of the given PIDs.
+```
+
+`nvitop` can accept the following environment variables for monitor mode:
+
+| Name                    | Description                    | Valid Values                                 | Fallback Value |
+| ----------------------- | ------------------------------ | -------------------------------------------- | -------------- |
+| `NVITOP_MONITOR_ALWAYS` | Always invoke the monitor mode | `true` / `yes` / `1`<br>`false` / `no` / `0` | `false`        |
+| `NVITOP_MONITOR_MODE`   | The default display mode       | `auto` / `full` / `compact`                  | `auto`         |
+| `NVITOP_MONITOR_THEME`  | The default color theme        | `dark` / `light`                             | `dark`         |
+
+For example:
+
+```bash
+export NVITOP_MONITOR_MODE="full"  # replace these export statements if you are not using Bash / Zsh
+export NVITOP_MONITOR_THEME="light"
+nvitop -m  # full monitor mode on light terminal
+```
 
 #### Keybindings for Monitor Mode
 
@@ -251,51 +315,6 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
 **HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).
-
-Type `nvitop --help` for more command options:
-
-```text
-usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
-              [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
-              [--user [USERNAME [USERNAME ...]]] [--pid PID [PID ...]]
-
-An interactive NVIDIA-GPU process viewer.
-
-optional arguments:
-  --help, -h            show this help message and exit.
-  --version, -V         show nvitop's version number and exit.
-  --monitor [{auto,full,compact}], -m [{auto,full,compact}]
-                        Run as a resource monitor. Continuously report query data,
-                        rather than the default of just once.
-                        If no argument is given, the default mode `auto` is used.
-  --ascii, --no-unicode, -U
-                        Use ASCII characters only, which is useful for terminals without Unicode support.
-
-coloring:
-  --light               Tweak visual results for light theme terminals in monitor mode.
-  --gpu-util-thresh th1 th2
-                        Thresholds of GPU utilization to determine the load intensity.
-                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
-                        ( 1 <= th1 < th2 <= 99, defaults: 10 75 )
-  --mem-util-thresh th1 th2
-                        Thresholds of GPU memory utilization to determine the load intensity.
-                        Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
-                        ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
-
-device filtering:
-  --only idx [idx ...], -o idx [idx ...]
-                        Only show the specified devices, suppress option `--only-visible`.
-  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
-
-process filtering:
-  --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
-  --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
-  --user [USERNAME [USERNAME ...]], -u [USERNAME [USERNAME ...]]
-                        Only show processes of the given users (or `$USER` for no argument).
-  --pid PID [PID ...], -p PID [PID ...]
-                        Only show processes of the given PIDs.
-```
 
 ### Callback Functions for Machine Learning Frameworks
 

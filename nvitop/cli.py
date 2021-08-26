@@ -5,6 +5,7 @@
 
 import argparse
 import locale
+import os
 import sys
 
 from nvitop.core import nvml
@@ -26,13 +27,15 @@ def parse_arguments():
                         nargs='?', choices=['auto', 'full', 'compact'],
                         help='Run as a resource monitor. Continuously report query data,\n'
                              'rather than the default of just once.\n'
-                             'If no argument is given, the default mode `auto` is used.')
+                             'If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.\n'
+                             '(default fallback mode: auto)')
     parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
                         help='Use ASCII characters only, which is useful for terminals without Unicode support.')
 
     coloring = parser.add_argument_group('coloring')
     coloring.add_argument('--light', action='store_true',
-                          help='Tweak visual results for light theme terminals in monitor mode.')
+                          help='Tweak visual results for light theme terminals in monitor mode.\n'
+                               'Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.')
     gpu_thresholds = Device.GPU_UTILIZATION_THRESHOLDS
     coloring.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
                           help='Thresholds of GPU utilization to determine the load intensity.\n' +
@@ -61,8 +64,16 @@ def parse_arguments():
                                    help='Only show processes of the given PIDs.')
 
     args = parser.parse_args()
+
+    if os.getenv('NVITOP_MONITOR_ALWAYS', '').lower() in ('true', 'yes', '1'):
+        args.monitor = None
     if hasattr(args, 'monitor') and args.monitor is None:
-        args.monitor = 'auto'
+        mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
+        if mode not in ('auto', 'full', 'compact'):
+            mode = 'auto'
+        args.monitor = mode
+    if not args.light:
+        args.light = (os.getenv('NVITOP_MONITOR_THEME', 'light').lower() == 'light')
     if args.user is not None and len(args.user) == 0:
         args.user.append(CURRENT_USER)
 
