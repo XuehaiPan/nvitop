@@ -73,7 +73,7 @@ def parse_arguments():
             mode = 'auto'
         args.monitor = mode
     if not args.light:
-        args.light = (os.getenv('NVITOP_MONITOR_THEME', 'light').lower() == 'light')
+        args.light = (os.getenv('NVITOP_MONITOR_THEME', 'dark').lower() == 'light')
     if args.user is not None and len(args.user) == 0:
         args.user.append(CURRENT_USER)
 
