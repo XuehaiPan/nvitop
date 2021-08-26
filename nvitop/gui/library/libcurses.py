@@ -11,9 +11,24 @@ import os
 import signal
 
 
+LIGHT_THEME = False
 DEFAULT_FOREGROUND = curses.COLOR_WHITE
 DEFAULT_BACKGROUND = curses.COLOR_BLACK
 COLOR_PAIRS = {None: 0}
+
+
+def _init_color_theme(light_theme=False):
+    """Sets the default fg/bg colors."""
+
+    global LIGHT_THEME, DEFAULT_FOREGROUND, DEFAULT_BACKGROUND  # pylint: disable=global-statement
+
+    LIGHT_THEME = light_theme
+    if LIGHT_THEME:
+        DEFAULT_FOREGROUND = curses.COLOR_BLACK
+        DEFAULT_BACKGROUND = curses.COLOR_WHITE
+    else:
+        DEFAULT_FOREGROUND = curses.COLOR_WHITE
+        DEFAULT_BACKGROUND = curses.COLOR_BLACK
 
 
 def _get_color(fg, bg):
@@ -57,13 +72,18 @@ def _get_color_attr(fg=-1, bg=-1, attr=0):
         attr = 0
         for s in attr_strings:
             attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
+
+    if LIGHT_THEME:  # tweak for light themes
+        if attr & curses.A_REVERSE != 0 and bg == -1 and fg not in (DEFAULT_FOREGROUND, -1):
+            bg = DEFAULT_FOREGROUND
+
     if fg == -1 and bg == -1:
         return attr
     return curses.color_pair(_get_color(fg, bg)) | attr
 
 
 @contextlib.contextmanager
-def libcurses():
+def libcurses(light_theme=False):
     os.environ.setdefault('ESCDELAY', '25')
     try:
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
@@ -87,6 +107,8 @@ def libcurses():
     curses.mousemask(curses.ALL_MOUSE_EVENTS | curses.REPORT_MOUSE_POSITION)
     curses.mouseinterval(0)
     curses.ungetmouse(0, 0, 0, 0, 0)
+
+    _init_color_theme(light_theme)
 
     curses.start_color()
     try:

@@ -256,7 +256,7 @@ Type `nvitop --help` for more command options:
 
 ```text
 usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
-              [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
+              [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
               [--user [USERNAME [USERNAME ...]]] [--pid PID [PID ...]]
 
@@ -271,6 +271,9 @@ optional arguments:
                         If no argument is given, the default mode `auto` is used.
   --ascii, --no-unicode, -U
                         Use ASCII characters only, which is useful for terminals without Unicode support.
+
+coloring:
+  --light               Tweak visual results for light theme terminals in monitor mode.
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.

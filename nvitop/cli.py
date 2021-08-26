@@ -29,15 +29,20 @@ def parse_arguments():
                              'If no argument is given, the default mode `auto` is used.')
     parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
                         help='Use ASCII characters only, which is useful for terminals without Unicode support.')
-    parser.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
-                        help='Thresholds of GPU utilization to determine the load intensity.\n' +
-                             'Coloring rules: {}.\n'.format(coloring_rules) +
-                             '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.GPU_UTILIZATION_THRESHOLDS))
-    parser.add_argument('--mem-util-thresh', type=int, nargs=2,
-                        choices=range(1, 100), metavar=('th1', 'th2'),
-                        help='Thresholds of GPU memory utilization to determine the load intensity.\n' +
-                             'Coloring rules: {}.\n'.format(coloring_rules) +
-                             '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*Device.MEMORY_UTILIZATION_THRESHOLDS))
+
+    coloring = parser.add_argument_group('coloring')
+    coloring.add_argument('--light', action='store_true',
+                          help='Tweak visual results for light theme terminals in monitor mode.')
+    gpu_thresholds = Device.GPU_UTILIZATION_THRESHOLDS
+    coloring.add_argument('--gpu-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
+                          help='Thresholds of GPU utilization to determine the load intensity.\n' +
+                               'Coloring rules: {}.\n'.format(coloring_rules) +
+                               '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*gpu_thresholds))
+    memory_thresholds = Device.MEMORY_UTILIZATION_THRESHOLDS
+    coloring.add_argument('--mem-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
+                          help='Thresholds of GPU memory utilization to determine the load intensity.\n' +
+                               'Coloring rules: {}.\n'.format(coloring_rules) +
+                               '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*memory_thresholds))
 
     device_filtering = parser.add_argument_group('device filtering')
     device_filtering.add_argument('--only', '-o', dest='only', type=int, nargs='+', metavar='idx',
@@ -124,7 +129,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
         filters.append(lambda process: process.pid in pids)
 
     if hasattr(args, 'monitor') and len(devices) > 0:
-        with libcurses() as win:
+        with libcurses(light_theme=args.light) as win:
             top = Top(devices, filters, ascii=args.ascii, mode=args.monitor, win=win)
             top.loop()
     else:

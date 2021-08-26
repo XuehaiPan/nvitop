@@ -86,13 +86,13 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.color_at(self.y + self.height - 1, self.x, width=self.width, fg='cyan', attr='bold')
 
-        self.color_at(self.y + 3, self.x, width=17, fg='white', attr='bold')
+        self.color_at(self.y + 3, self.x, width=17, attr='bold')
         for dx in (18, 30, 43):
             self.color_at(self.y + 3, self.x + dx, width=1, fg='magenta', attr='bold')
         for dx in (21, 33, 48):
             self.color_at(self.y + 3, self.x + dx, width=1, attr='underline')
 
-        self.color_at(self.y + 5, self.x, width=21, fg='white', attr='bold')
+        self.color_at(self.y + 5, self.x, width=21, attr='bold')
         for dy in (6, 7):
             self.color_at(self.y + dy, self.x + 21, width=5, fg='green', attr='bold | italic')
             self.color_at(self.y + dy, self.x + 36, width=8, fg='yellow', attr='bold | italic')
