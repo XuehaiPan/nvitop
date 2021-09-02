@@ -44,6 +44,9 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
         except AttributeError:
             return getattr(self.process, name)
 
+    def __eq__(self, other):
+        return self.process._ident == other.process._ident  # pylint: disable=protected-access
+
     def __hash__(self):
         return hash(self.process)
 
