@@ -132,7 +132,8 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
             node = nodes[process.pid]
             for cpid in reverse_ppid_map.get(process.pid, []):
                 if cpid not in nodes:
-                    node.add(cls(HostProcess(cpid)))
+                    nodes[cpid] = child = cls(HostProcess(cpid))
+                    node.add(child)
 
         roots = sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
         for root in roots:
