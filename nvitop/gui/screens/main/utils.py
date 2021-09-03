@@ -82,7 +82,10 @@ class Selected(object):
                     self.clear()
 
     def interrupt(self):
-        return self.send_signal(signal.SIGINT)
+        try:
+            self.send_signal(signal.SIGINT if not host.WINDOWS else signal.CTRL_C_EVENT)  # pylint: disable=no-member
+        except SystemError:
+            pass
 
     def terminate(self):
         if self.owned() and self.within_window:
