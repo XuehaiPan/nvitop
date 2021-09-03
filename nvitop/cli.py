@@ -76,6 +76,26 @@ def parse_arguments():
         args.light = (os.getenv('NVITOP_MONITOR_THEME', 'dark').lower() == 'light')
     if args.user is not None and len(args.user) == 0:
         args.user.append(CURRENT_USER)
+    if args.gpu_util_thresh is None:
+        try:
+            gpu_util_thresh = os.getenv('NVITOP_GPU_UTILIZATION_THRESHOLDS', None)
+            gpu_util_thresh = list(map(int, gpu_util_thresh.split(',')))[:2]
+            if len(gpu_util_thresh) != 2 or min(gpu_util_thresh) <= 0 or max(gpu_util_thresh) >= 100:
+                raise ValueError
+        except (ValueError, AttributeError):
+            pass
+        else:
+            args.gpu_util_thresh = gpu_util_thresh
+    if args.mem_util_thresh is None:
+        try:
+            mem_util_thresh = os.getenv('NVITOP_MEMORY_UTILIZATION_THRESHOLDS', None)
+            mem_util_thresh = list(map(int, mem_util_thresh.split(',')))[:2]
+            if len(mem_util_thresh) != 2 or min(mem_util_thresh) <= 0 or max(mem_util_thresh) >= 100:
+                raise ValueError
+        except (ValueError, AttributeError):
+            pass
+        else:
+            args.mem_util_thresh = mem_util_thresh
 
     return args
 

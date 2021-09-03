@@ -104,7 +104,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.4.2.1)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.4.2.2)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -264,11 +264,13 @@ process filtering:
 
 `nvitop` can accept the following environment variables for monitor mode:
 
-| Name                    | Description                    | Valid Values                                 | Fallback Value |
-| ----------------------- | ------------------------------ | -------------------------------------------- | -------------- |
-| `NVITOP_MONITOR_ALWAYS` | Always invoke the monitor mode | `true` / `yes` / `1`<br>`false` / `no` / `0` | `false`        |
-| `NVITOP_MONITOR_MODE`   | The default display mode       | `auto` / `full` / `compact`                  | `auto`         |
-| `NVITOP_MONITOR_THEME`  | The default color theme        | `dark` / `light`                             | `dark`         |
+| Name                                   | Description                          | Valid Values                                 | Fallback Value |
+| -------------------------------------- | ------------------------------------ | -------------------------------------------- | -------------- |
+| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode       | `true` / `yes` / `1`<br>`false` / `no` / `0` | `false`        |
+| `NVITOP_MONITOR_MODE`                  | The default display mode             | `auto` / `full` / `compact`                  | `auto`         |
+| `NVITOP_MONITOR_THEME`                 | The default color theme              | `dark` / `light`                             | `dark`         |
+| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization        | `10,75` , `1,99`, ...                        | `10,75`        |
+| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory utilization | `10,80` , `1,99`, ...                        | `10,80`        |
 
 For example:
 
