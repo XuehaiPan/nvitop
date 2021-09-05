@@ -90,11 +90,11 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 - psutil
 - cachetools
 - termcolor
-- curses<sup>[*](#curses)</sup>
+- curses<sup>[*](#curses)</sup> (with `libncursesw`)
 
 **NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
 
-<a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
+<a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows using PDCurses. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
 
 ## Installation
 
@@ -196,7 +196,7 @@ Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/n
 
 ```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop  # clone this repo first
-docker build --tag nvitop:latest .  # build the Docker image
+docker build --rm --tag nvitop:latest .  # build the Docker image
 docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m  # run the Docker container
 ```
 
