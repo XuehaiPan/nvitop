@@ -196,8 +196,8 @@ Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/n
 
 ```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop  # clone this repo first
-docker build --rm --tag nvitop:latest .  # build the Docker image
-docker run --interactive --tty --rm --runtime=nvidia --gpus all --pid=host nvitop:latest -m  # run the Docker container
+docker build --tag nvitop:latest .  # build the Docker image
+docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest -m  # run the Docker container
 ```
 
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
