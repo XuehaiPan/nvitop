@@ -8,8 +8,7 @@ from collections import OrderedDict
 from functools import partial
 from itertools import islice
 
-from nvitop.core import host, HostProcess, GpuProcess
-from nvitop.gui.library import Displayable
+from nvitop.gui.library import host, HostProcess, GpuProcess, Displayable
 
 
 class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attributes

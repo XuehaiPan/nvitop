@@ -11,7 +11,7 @@ from nvitop.core import (host, HostProcess, GpuProcess as GpuProcessBase,
                          NA, Snapshot, command_join, timedelta2human)
 
 
-__all__ = ['HostProcess', 'GpuProcess']
+__all__ = ['host', 'HostProcess', 'GpuProcess', 'NA', 'Snapshot']
 
 
 def auto_garbage_clean(default=None):
@@ -24,7 +24,7 @@ def auto_garbage_clean(default=None):
                 try:
                     with GpuProcess.INSTANCE_LOCK:
                         del GpuProcess.INSTANCES[(self.pid, self.device)]
-                except KeyError:
+                except (KeyError, AttributeError):
                     pass
                 try:
                     with GpuProcess.SNAPSHOT_LOCK:

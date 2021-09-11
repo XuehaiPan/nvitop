@@ -9,8 +9,8 @@ import time
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import host
-from nvitop.gui.library import Device, Displayable, colored, cut_string, make_bar
+from nvitop.gui.library import (host, Device,
+                                Displayable, colored, cut_string, make_bar)
 
 
 class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes

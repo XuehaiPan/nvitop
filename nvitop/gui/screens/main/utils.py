@@ -7,8 +7,7 @@ import signal
 import time
 from collections import namedtuple
 
-from nvitop.core import host, Snapshot
-from nvitop.gui.library import CURRENT_USER, IS_SUPERUSER
+from nvitop.gui.library import host, Snapshot, CURRENT_USER, IS_SUPERUSER
 
 
 class Selected(object):

@@ -7,8 +7,8 @@
 import threading
 import time
 
-from nvitop.core import NA, host
-from nvitop.gui.library import Device, Displayable, BufferedHistoryGraph, colored, make_bar
+from nvitop.gui.library import (host, Device, NA,
+                                Displayable, BufferedHistoryGraph, colored, make_bar)
 
 
 class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes

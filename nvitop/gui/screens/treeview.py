@@ -12,8 +12,8 @@ from itertools import islice
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import host, HostProcess, Snapshot
-from nvitop.gui.library import Displayable, CURRENT_USER, IS_SUPERUSER
+from nvitop.gui.library import (host, HostProcess, NA, Snapshot,
+                                Displayable, CURRENT_USER, IS_SUPERUSER)
 from nvitop.gui.screens.main.utils import Selected
 
 
@@ -55,7 +55,7 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
             try:
                 username = self.process.username()
             except host.PsutilError:
-                username = 'N/A'
+                username = NA
             try:
                 command = self.process.command()
                 if len(command) == 0:
@@ -65,11 +65,46 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
             except host.PsutilError:
                 command = 'No Such Process'
 
+            try:
+                cpu_percent = self.process.cpu_percent()
+            except host.PsutilError:
+                cpu_percent = cpu_percent_string = NA
+            else:
+                if cpu_percent < 1000.0:
+                    cpu_percent_string = '{:.1f}%'.format(cpu_percent)
+                elif cpu_percent < 10000:
+                    cpu_percent_string = '{}%'.format(int(cpu_percent))
+                else:
+                    cpu_percent_string = '9999+%'
+
+            try:
+                cpu_percent = self.process.cpu_percent()
+            except host.PsutilError:
+                cpu_percent = cpu_percent_string = NA
+            else:
+                if cpu_percent < 1000.0:
+                    cpu_percent_string = '{:.1f}%'.format(cpu_percent)
+                elif cpu_percent < 10000:
+                    cpu_percent_string = '{}%'.format(int(cpu_percent))
+                else:
+                    cpu_percent_string = '9999+%'
+
+            try:
+                memory_percent = self.process.memory_percent()
+            except host.PsutilError:
+                memory_percent = memory_percent_string = NA
+            else:
+                memory_percent_string = '{:.1f}%'.format(memory_percent)
+
             self.process = Snapshot(
                 real=self.process,
                 pid=self.process.pid,
                 username=username,
-                command=command
+                command=command,
+                cpu_percent=cpu_percent,
+                cpu_percent_string=cpu_percent_string,
+                memory_percent=memory_percent,
+                memory_percent_string=memory_percent_string
             )
 
         if len(self.children) > 0:
@@ -287,10 +322,10 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         pid_width = max(3, max([len(str(process.pid)) for process in self.snapshots], default=3))
         username_width = max(4, max([len(str(process.username)) for process in self.snapshots], default=4))
         device_width = max(6, max([len(str(process.devices)) for process in self.snapshots], default=6))
-        command_offset = pid_width + username_width + device_width + 6
+        command_offset = pid_width + username_width + device_width + 19
 
         header = '  '.join(['PID'.rjust(pid_width), 'USER'.ljust(username_width),
-                            'DEVICE'.rjust(device_width), 'COMMAND'])
+                            'DEVICE'.rjust(device_width), ' %CPU', '%MEM', 'COMMAND'])
         if self.x_offset < command_offset:
             self.addstr(self.y, self.x, header[self.x_offset:self.x_offset + self.width].ljust(self.width))
         else:
@@ -308,10 +343,12 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         processes = islice(self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height)
         for y, process in enumerate(processes, start=self.y + 1):
             prefix_length = len(process.prefix)
-            line = '{}  {}  {}  {}{}'.format(str(process.pid).rjust(pid_width),
-                                             process.username.ljust(username_width),
-                                             process.devices.rjust(device_width),
-                                             process.prefix, process.command)
+            line = '{}  {}  {}  {:>5} {:>5}  {}{}'.format(str(process.pid).rjust(pid_width),
+                                                          process.username.ljust(username_width),
+                                                          process.devices.rjust(device_width),
+                                                          process.cpu_percent_string.replace('%', ''),
+                                                          process.memory_percent_string.replace('%', ''),
+                                                          process.prefix, process.command)
             self.addstr(y, self.x, line[self.x_offset:self.x_offset + self.width].ljust(self.width))
 
             prefix_length -= max(0, self.x_offset - command_offset)

@@ -11,8 +11,8 @@ from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import NA, host
-from nvitop.gui.library import (GpuProcess, Displayable, MouseEvent, colored, cut_string,
+from nvitop.gui.library import (host, GpuProcess, NA,
+                                Displayable, MouseEvent, colored, cut_string,
                                 CURRENT_USER, IS_SUPERUSER)
 from nvitop.gui.screens.main.utils import Order, Selected
 
@@ -173,8 +173,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         for snapshot in snapshots:
             snapshot.type = snapshot.type.replace('C+G', 'X')
             snapshot.host_info = '{:>5} {:>5}  {}  {}'.format(
-                snapshot.cpu_percent_string[:-1],
-                snapshot.memory_percent_string[:-1],
+                snapshot.cpu_percent_string.replace('%', ''),
+                snapshot.memory_percent_string.replace('%', ''),
                 ' ' * (time_length - len(snapshot.running_time_human)) + snapshot.running_time_human,
                 snapshot.command
             )
