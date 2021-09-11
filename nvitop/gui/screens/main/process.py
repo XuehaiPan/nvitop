@@ -12,8 +12,8 @@ from operator import attrgetter, xor
 from cachetools.func import ttl_cache
 
 from nvitop.gui.library import (host, GpuProcess, NA,
-                                Displayable, MouseEvent, colored, cut_string,
-                                CURRENT_USER, IS_SUPERUSER)
+                                Displayable, MouseEvent, CURRENT_USER, IS_SUPERUSER,
+                                WideString, colored, cut_string)
 from nvitop.gui.screens.main.utils import Order, Selected
 
 
@@ -172,12 +172,12 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         for snapshot in snapshots:
             snapshot.type = snapshot.type.replace('C+G', 'X')
-            snapshot.host_info = '{:>5} {:>5}  {}  {}'.format(
+            snapshot.host_info = WideString('{:>5} {:>5}  {}  {}'.format(
                 snapshot.cpu_percent_string.replace('%', ''),
                 snapshot.memory_percent_string.replace('%', ''),
                 ' ' * (time_length - len(snapshot.running_time_human)) + snapshot.running_time_human,
                 snapshot.command
-            )
+            ))
             if snapshot.gpu_memory_human is NA and host.WINDOWS:
                 snapshot.gpu_memory_human = 'WDDM:N/A'
 
@@ -316,13 +316,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 if self.host_offset < 0:
                     host_info = cut_string(host_info, padstr='..', maxlen=self.width - 39)
                 else:
-                    host_info = host_info[self.host_offset:self.host_offset + self.width - 39]
+                    host_info = WideString(host_info)[self.host_offset:]
                 self.addstr(y, self.x,
                             '│ {:>3} {:>7} {} {:>7} {:>8} {:>3} {} │'.format(
                                 device_index, cut_string(process.pid, maxlen=7, padstr='.'),
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, process.gpu_sm_utilization_string.replace('%', ''),
-                                host_info.ljust(self.width - 39)
+                                WideString(host_info).ljust(self.width - 39)[:self.width - 39]
                             ))
                 if self.host_offset > 0:
                     self.addstr(y, self.x + 37, ' ')
@@ -394,11 +394,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         lines.append('├' + '─' * (self.width - 2) + '┤')
                     prev_device_index = device_index
 
+                host_info = cut_string(process.host_info, padstr='..', maxlen=self.width - 39)
+
                 info = '{:>7} {} {:>7} {:>8} {:>3} {}'.format(
                     cut_string(process.pid, maxlen=7, padstr='.'), process.type,
                     cut_string(process.username, maxlen=7, padstr='+'),
                     process.gpu_memory_human, process.gpu_sm_utilization_string.replace('%', ''),
-                    cut_string(process.host_info, padstr='..', maxlen=self.width - 39).ljust(self.width - 39)
+                    WideString(host_info).ljust(self.width - 39)[:self.width - 39]
                 )
                 is_zombie = (process.is_running and process.cmdline == ['Zombie Process'])
                 no_permissions = (process.is_running and process.cmdline == ['No Permissions'])

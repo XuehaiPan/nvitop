@@ -8,7 +8,7 @@ from collections import OrderedDict
 from functools import partial
 from itertools import islice
 
-from nvitop.gui.library import host, HostProcess, GpuProcess, Displayable
+from nvitop.gui.library import host, HostProcess, GpuProcess, Displayable, WideString
 
 
 class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -160,7 +160,8 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         for y, (key, value) in enumerate(items, start=self.y + 2):
             key_length = len(key)
             line = '{}={}'.format(key, value)
-            self.addstr(y, self.x, line[self.x_offset:self.x_offset + self.width].ljust(self.width))
+            line = str(WideString(line)[self.x_offset:].ljust(self.width)[:self.width])
+            self.addstr(y, self.x, line)
             if self.x_offset < key_length:
                 self.color_at(y, self.x, width=key_length - self.x_offset, fg='blue', attr='bold')
             if self.x_offset < key_length + 1:

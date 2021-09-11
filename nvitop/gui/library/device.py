@@ -55,7 +55,7 @@ class Device(DeviceBase):
         if utilization is NA:
             return 'heavy'
         if isinstance(utilization, str):
-            utilization = utilization[:-1]
+            utilization = utilization.replace('%', '')
         utilization = float(utilization)
         if utilization >= thresholds[-1]:
             return 'heavy'

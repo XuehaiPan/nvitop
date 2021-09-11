@@ -8,6 +8,7 @@ import getpass
 import sys
 
 from nvitop.core import host, NA
+from nvitop.gui.library.widestring import WideString
 
 
 if host.WINDOWS:
@@ -32,19 +33,20 @@ def cut_string(s, maxlen, padstr='...', align='left'):
 
     if not isinstance(s, str):
         s = str(s)
+    s = WideString(s)
 
     if len(s) <= maxlen:
-        return s
+        return str(s)
     if align == 'left':
-        return s[:maxlen - len(padstr)] + padstr
-    return padstr + s[-(maxlen - len(padstr)):]
+        return str(s[:maxlen - len(padstr)] + padstr)
+    return str(padstr + s[-(maxlen - len(padstr)):])
 
 
 def make_bar(prefix, percent, width):
     bar = '{}: '.format(prefix)
     if percent != NA:
         if isinstance(percent, str) and percent.endswith('%'):
-            percent = percent[:-1]
+            percent = percent.replace('%', '')
             percent = float(percent) if '.' in percent else int(percent)
         percentage = max(0.0, min(float(percent) / 100.0, 1.0))
         quotient, remainder = divmod(max(1, round(8 * (width - len(bar) - 4) * percentage)), 8)

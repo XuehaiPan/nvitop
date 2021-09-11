@@ -1,0 +1,176 @@
+# This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
+# This file is originally part of ranger, the console file manager. https://github.com/ranger/ranger
+# License: GNU GPL version 3.
+
+from unicodedata import east_asian_width
+
+ASCIIONLY = set(map(chr, range(1, 128)))
+NARROW = 1
+WIDE = 2
+WIDE_SYMBOLS = set('WF')
+
+
+def utf_char_width(string):
+    """Return the width of a single character"""
+
+    if east_asian_width(string) in WIDE_SYMBOLS:
+        return WIDE
+    return NARROW
+
+
+def string_to_charlist(string):
+    """Return a list of characters with extra empty strings after wide chars"""
+
+    if ASCIIONLY.issuperset(string):
+        return list(string)
+    result = []
+    for char in string:
+        result.append(char)
+        if east_asian_width(char) in WIDE_SYMBOLS:
+            result.append('')
+    return result
+
+
+class WideString(object):  # pylint: disable=too-few-public-methods
+    def __init__(self, string, chars=None):
+        if isinstance(string, WideString):
+            string = string.string
+
+        try:
+            self.string = str(string)
+        except UnicodeEncodeError:
+            self.string = string.encode('latin-1', 'ignore')
+        if chars is None:
+            self.chars = string_to_charlist(string)
+        else:
+            self.chars = chars
+
+    def __add__(self, string):
+        """
+        >>> (WideString('a') + WideString('b')).string
+        'ab'
+        >>> (WideString('a') + WideString('b')).chars
+        ['a', 'b']
+        >>> (WideString('afd') + 'bc').chars
+        ['a', 'f', 'd', 'b', 'c']
+        """
+
+        if isinstance(string, str):
+            return WideString(self.string + string)
+        if isinstance(string, WideString):
+            return WideString(self.string + string.string, self.chars + string.chars)
+        return None
+
+    def __radd__(self, string):
+        """
+        >>> ('bc' + WideString('afd')).chars
+        ['b', 'c', 'a', 'f', 'd']
+        """
+
+        if isinstance(string, str):
+            return WideString(string + self.string)
+        if isinstance(string, WideString):
+            return WideString(string.string + self.string, string.chars + self.chars)
+        return None
+
+    def __str__(self):
+        return self.string
+
+    def __repr__(self):
+        return "<{} '{}'>".format(self.__class__.__name__, self.string)
+
+    def __getslice__(self, start, stop):
+        """
+        >>> WideString('asdf')[1:3]
+        <WideString 'sd'>
+        >>> WideString('asdf')[1:-100]
+        <WideString ''>
+        >>> WideString('モヒカン')[2:4]
+        <WideString 'ヒ'>
+        >>> WideString('モヒカン')[2:5]
+        <WideString 'ヒ '>
+        >>> WideString('モabカン')[2:5]
+        <WideString 'ab '>
+        >>> WideString('モヒカン')[1:5]
+        <WideString ' ヒ '>
+        >>> WideString('モヒカン')[:]
+        <WideString 'モヒカン'>
+        >>> WideString('aモ')[0:3]
+        <WideString 'aモ'>
+        >>> WideString('aモ')[0:2]
+        <WideString 'a '>
+        >>> WideString('aモ')[0:1]
+        <WideString 'a'>
+        """
+
+        length = len(self)
+
+        if stop is None or stop > length:
+            stop = length
+        if stop < 0:
+            stop = length + stop
+        if start is None or start < 0:
+            start = 0
+        if start >= length or stop < 0:
+            return WideString('')
+        if start is None or start < 0:
+            start = 0
+        if stop < len(self.chars) and self.chars[stop] == '':
+            if self.chars[start] == '':
+                return WideString(' ' + ''.join(self.chars[start:stop - 1]) + ' ')
+            return WideString(''.join(self.chars[start:stop - 1]) + ' ')
+        if self.chars[start] == '':
+            return WideString(' ' + ''.join(self.chars[start:stop - 1]))
+        return WideString(''.join(self.chars[start:stop]))
+
+    def __getitem__(self, item):
+        """
+        >>> WideString('asdf')[2]
+        <WideString 'd'>
+        >>> WideString('……')[0]
+        <WideString '…'>
+        >>> WideString('……')[1]
+        <WideString '…'>
+        """
+
+        if isinstance(item, slice):
+            assert item.step is None or item.step == 1
+            return self.__getslice__(item.start, item.stop)
+        return self.__getslice__(item, item + 1)
+
+    def __len__(self):
+        """
+        >>> len(WideString('poo'))
+        3
+        >>> len(WideString('モヒカン'))
+        8
+        """
+        return len(self.chars)
+
+    def ljust(self, width, fillchar=' '):
+        """
+        >>> WideString('poo').ljust(2)
+        <WideString 'poo'>
+        >>> WideString('poo').ljust(5)
+        <WideString 'poo  '>
+        >>> WideString('モヒカン').ljust(10)
+        <WideString 'モヒカン  '>
+        """
+
+        if width > len(self):
+            return WideString(self.string + fillchar * width)[:width]
+        return self
+
+    def rjust(self, width, fillchar=' '):
+        """
+        >>> WideString('poo').rjust(2)
+        <WideString 'poo'>
+        >>> WideString('poo').rjust(5)
+        <WideString '  poo'>
+        >>> WideString('モヒカン').rljust(10)
+        <WideString '  モヒカン'>
+        """
+
+        if width > len(self):
+            return WideString(fillchar * width + self.string)[-width:]
+        return self

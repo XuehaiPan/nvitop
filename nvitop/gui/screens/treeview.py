@@ -13,7 +13,7 @@ from itertools import islice
 from cachetools.func import ttl_cache
 
 from nvitop.gui.library import (host, HostProcess, NA, Snapshot,
-                                Displayable, CURRENT_USER, IS_SUPERUSER)
+                                Displayable, WideString, CURRENT_USER, IS_SUPERUSER)
 from nvitop.gui.screens.main.utils import Selected
 
 
@@ -349,7 +349,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                                                           process.cpu_percent_string.replace('%', ''),
                                                           process.memory_percent_string.replace('%', ''),
                                                           process.prefix, process.command)
-            self.addstr(y, self.x, line[self.x_offset:self.x_offset + self.width].ljust(self.width))
+
+            line = str(WideString(line)[self.x_offset:].ljust(self.width)[:self.width])
+            self.addstr(y, self.x, line)
 
             prefix_length -= max(0, self.x_offset - command_offset)
             if prefix_length > 0:

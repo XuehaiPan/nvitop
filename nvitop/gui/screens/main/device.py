@@ -185,8 +185,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-        time_string = time.strftime('%a %b %d %H:%M:%S %Y')
-        self.addstr(self.y, self.x, '{:<32}'.format(time_string))
+        self.addstr(self.y, self.x, cut_string(time.strftime('%a %b %d %H:%M:%S %Y'), maxlen=32))
 
         if self.compact:
             formats = self.formats_compact
