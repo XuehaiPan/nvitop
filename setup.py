@@ -34,6 +34,7 @@ setup(
         'psutil >= 5.4.2',
         'cachetools >= 1.0.1',
         'termcolor >= 1.0.0',
+        'colorama >= 0.4.0; platform_system == "Windows"',
         'windows-curses >= 2.2.0; platform_system == "Windows"',
     ],
     python_requires='>=3.5',

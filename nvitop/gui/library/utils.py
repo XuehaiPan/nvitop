@@ -10,6 +10,14 @@ import sys
 from nvitop.core import host, NA
 
 
+if host.WINDOWS:
+    try:
+        from colorama import init
+    except ImportError:
+        pass
+    else:
+        init()
+
 try:
     if not sys.stdout.isatty():
         raise ImportError
