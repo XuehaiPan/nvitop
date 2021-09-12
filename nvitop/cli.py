@@ -65,7 +65,7 @@ def parse_arguments():
 
     args = parser.parse_args()
 
-    if os.getenv('NVITOP_MONITOR_ALWAYS', '').lower() in ('true', 'yes', '1'):
+    if not hasattr(args, 'monitor') and os.getenv('NVITOP_MONITOR_ALWAYS', '').lower() in ('true', 'yes', '1'):
         args.monitor = None
     if hasattr(args, 'monitor') and args.monitor is None:
         mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
