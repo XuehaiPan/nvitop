@@ -239,13 +239,12 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 device = self.parent.selected.process.device
                 memory_utilization = device.memory_utilization.history
                 gpu_utilization = device.gpu_utilization.history
-                memory_display_color = device.snapshot.memory_display_color
-                gpu_display_color = device.snapshot.gpu_display_color
             else:
                 memory_utilization = self.average_memory_utilization
                 gpu_utilization = self.average_gpu_utilization
-                memory_display_color = Device.color_of(memory_utilization.last_value, type='memory')
-                gpu_display_color = Device.color_of(gpu_utilization.last_value, type='gpu')
+
+            memory_display_color = Device.color_of(memory_utilization.last_value, type='memory')
+            gpu_display_color = Device.color_of(gpu_utilization.last_value, type='gpu')
 
             for y, line in enumerate(memory_utilization.graph, start=self.y):
                 self.addstr(y, self.x + 79, line)
