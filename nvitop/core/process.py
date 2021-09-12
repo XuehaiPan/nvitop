@@ -157,7 +157,15 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
     def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
-        return Snapshot(real=self, **self.as_dict(attrs=attrs, ad_value=ad_value))
+        attributes = self.as_dict(attrs=attrs, ad_value=ad_value)
+
+        if attrs is None:
+            try:
+                attributes['command'] = self.command()
+            except (host.AccessDenied, host.ZombieProcess):
+                attributes['command'] = ad_value
+
+        return Snapshot(real=self, **attributes)
 
 
 class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
