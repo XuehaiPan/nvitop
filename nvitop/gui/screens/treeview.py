@@ -50,7 +50,7 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
     def __hash__(self):
         return hash(self.process)
 
-    def freeze(self):
+    def as_snapshot(self):
         if not isinstance(self.process, Snapshot):
             try:
                 username = self.process.username()
@@ -113,7 +113,7 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
                 child.is_last = False
             self.children[-1].is_last = True
             for child in self.children:
-                child.freeze()
+                child.as_snapshot()
 
     def set_prefix(self, prefix=''):
         if self.is_root:
@@ -174,8 +174,13 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
                     node.add(child)
 
         roots = sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
+
+        return roots
+
+    @staticmethod
+    def freeze(roots):
         for root in roots:
-            root.freeze()
+            root.as_snapshot()
             root.set_prefix()
 
         return roots
@@ -261,7 +266,12 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
         snapshots = self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
-        nodes = TreeNode.flatten(TreeNode.merge(snapshots))
+
+        roots = TreeNode.merge(snapshots)
+        with self.snapshot_lock:
+            roots = TreeNode.freeze(roots)
+        nodes = TreeNode.flatten(roots)
+
         snapshots = []
         for node in nodes:
             snapshot = node.process

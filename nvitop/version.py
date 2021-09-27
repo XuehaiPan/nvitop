@@ -3,7 +3,7 @@
 
 """An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."""
 
-__version__ = '0.4.4'
+__version__ = '0.4.4.1'
 __license__ = 'GPLv3'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
