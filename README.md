@@ -104,7 +104,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.4.3)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.4.4)):
 
 ```bash
 pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -507,7 +507,7 @@ In [17]: process = processes[23266]
     ...: process
 Out[17]: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
 
-In [18]: process.status()
+In [18]: process.status()  # GpuProcess will automatically inherit attributes from GpuProcess.host
 Out[18]: 'running'
 
 In [19]: process.cmdline()  # type: List[str]
@@ -516,7 +516,7 @@ Out[19]: ['python3', 'rllib_train.py']
 In [20]: process.command()  # type: str
 Out[20]: 'python3 rllib_train.py'
 
-In [21]: process.cwd()
+In [21]: process.cwd()  # GpuProcess will automatically inherit attributes from GpuProcess.host
 Out[21]: '/home/xxxxxx/Projects/xxxxxx'
 
 In [22]: process.gpu_memory_human()
@@ -548,14 +548,17 @@ Out[23]: GpuProcessSnapshot(
     pid=23266,
     running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
     running_time_human='46:13:33',
-    type='C',                             # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
+    type='C',                              # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
     username='panxuehai'
 )
 
-In [24]: process.kill()
+In [24]: process.uids()  # GpuProcess will automatically inherit attributes from GpuProcess.host
+Out[24]: puids(real=1001, effective=1001, saved=1001)
 
-In [25]: list(map(Device.processes, all_devices))  # all processes
-Out[25]: [
+In [25]: process.kill()  # GpuProcess will automatically inherit attributes from GpuProcess.host
+
+In [26]: list(map(Device.processes, all_devices))  # all processes
+Out[26]: [
     {
         52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
         53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
@@ -575,56 +578,56 @@ Out[25]: [
     }
 ]
 
-In [26]: import os
+In [27]: import os
     ...: this = HostProcess(os.getpid())
     ...: this
-Out[26]: HostProcess(pid=35783, name='python', status='running', started='19:19:00')
+Out[27]: HostProcess(pid=35783, name='python', status='running', started='19:19:00')
 
-In [27]: this.cmdline()  # type: List[str]
-Out[27]: ['python', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
+In [28]: this.cmdline()  # type: List[str]
+Out[28]: ['python', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
 
-In [27]: this.command()  # not simply `' '.join(cmdline)` but quotes are added
-Out[27]: 'python -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
+In [29]: this.command()  # not simply `' '.join(cmdline)` but quotes are added
+Out[29]: 'python -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
 
-In [28]: this.memory_info()
-Out[28]: pmem(rss=83988480, vms=343543808, shared=12079104, text=8192, lib=0, data=297435136, dirty=0)
+In [30]: this.memory_info()
+Out[30]: pmem(rss=83988480, vms=343543808, shared=12079104, text=8192, lib=0, data=297435136, dirty=0)
 
-In [29]: import cupy as cp
+In [31]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
     ...: this = GpuProcess(os.getpid(), nvidia0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
     ...: this
-Out[29]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[31]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [30]: this.update_gpu_status()  # update used GPU memory from new driver queries
-Out[30]: 267386880
+In [32]: this.update_gpu_status()  # update used GPU memory from new driver queries
+Out[32]: 267386880
 
-In [31]: this
-Out[31]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+In [33]: this
+Out[33]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [32]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: the instance will be reused while the process is running
-Out[32]: True
+In [34]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: the instance will be reused while the process is running
+Out[34]: True
 ```
 
 #### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
 ```python
-In [33]: host.cpu_count()
-Out[33]: 88
+In [35]: host.cpu_count()
+Out[35]: 88
 
-In [34]: host.cpu_percent()
-Out[34]: 18.5
+In [36]: host.cpu_percent()
+Out[36]: 18.5
 
-In [35]: host.cpu_times()
-Out[35]: scputimes(user=2346377.62, nice=53321.44, system=579177.52, idle=10323719.85, iowait=28750.22, irq=0.0, softirq=11566.87, steal=0.0, guest=0.0, guest_nice=0.0)
+In [37]: host.cpu_times()
+Out[37]: scputimes(user=2346377.62, nice=53321.44, system=579177.52, idle=10323719.85, iowait=28750.22, irq=0.0, softirq=11566.87, steal=0.0, guest=0.0, guest_nice=0.0)
 
-In [36]: host.load_average()
-Out[36]: (14.88, 17.8, 19.91)
+In [38]: host.load_average()
+Out[38]: (14.88, 17.8, 19.91)
 
-In [37]: host.virtual_memory()
-Out[37]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
+In [39]: host.virtual_memory()
+Out[39]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
 
-In [38]: host.swap_memory()
-Out[38]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
+In [40]: host.swap_memory()
+Out[40]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
 ```
 
 ---
