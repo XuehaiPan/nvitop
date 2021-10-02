@@ -20,9 +20,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser(prog='nvitop', description='An interactive NVIDIA-GPU process viewer.',
                                      formatter_class=argparse.RawTextHelpFormatter, add_help=False)
     parser.add_argument('--help', '-h', dest='help', action='help', default=argparse.SUPPRESS,
-                        help='show this help message and exit.')
+                        help='Show this help message and exit.')
     parser.add_argument('--version', '-V', dest='version', action='version', version='%(prog)s {}'.format(__version__),
-                        help="show %(prog)s's version number and exit.")
+                        help="Show %(prog)s's version number and exit.")
     parser.add_argument('--monitor', '-m', dest='monitor', type=str, default=argparse.SUPPRESS,
                         nargs='?', choices=['auto', 'full', 'compact'],
                         help='Run as a resource monitor. Continuously report query data,\n'

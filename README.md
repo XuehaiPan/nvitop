@@ -41,7 +41,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
-[nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are copied and modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
+[nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗.
 
@@ -66,7 +66,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 - **Interactive**: responsive for user input (from keyboard and/or mouse) in monitor mode. (vs. [gpustat](https://github.com/wookayin/gpustat) & [py3nvml](https://github.com/fbcotter/py3nvml))
 - **Efficient**:
   - query device status using [*NVML Python bindings*](https://pypi.org/project/nvidia-ml-py) directly, instead of parsing the output of `nvidia-smi`. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop))
-  - cache results with `ttl_cache` from [cachetools](https://github.com/tkem/cachetools). (vs. [gpustat](https://github.com/wookayin/gpustat))
+  - cache results with `TTLCache` from [cachetools](https://github.com/tkem/cachetools). (vs. [gpustat](https://github.com/wookayin/gpustat))
   - display information using the `curses` library rather than `print` with ANSI escape codes. (vs. [py3nvml](https://github.com/fbcotter/py3nvml))
   - asynchronously gather information using multi-threading and correspond to user input much faster. (vs. [nvtop](https://github.com/Syllo/nvtop))
 - **Portable**: work on both Linux and Windows.
@@ -226,8 +226,8 @@ usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
 An interactive NVIDIA-GPU process viewer.
 
 optional arguments:
-  --help, -h            show this help message and exit.
-  --version, -V         show nvitop's version number and exit.
+  --help, -h            Show this help message and exit.
+  --version, -V         Show nvitop's version number and exit.
   --monitor [{auto,full,compact}], -m [{auto,full,compact}]
                         Run as a resource monitor. Continuously report query data,
                         rather than the default of just once.
