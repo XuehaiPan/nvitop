@@ -53,10 +53,42 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
     @classmethod
     def from_cuda_visible_devices(cls, cuda_visible_devices: Optional[str] = None) -> List['Device']:
+        visible_device_indices = cls.parse_cuda_visible_devices(cuda_visible_devices)
+        cuda_devices = cls.from_indices(visible_device_indices)
+
+        for cuda_index, cuda_device in enumerate(cuda_devices):
+            cuda_device._cuda_index = cuda_index  # pylint: disable=protected-access
+
+        return cuda_devices
+
+    @classmethod
+    def from_cuda_indices(cls, cuda_indices: Optional[Union[int, Iterable[int]]] = None) -> List['Device']:
+        cuda_devices = cls.from_cuda_visible_devices()
+        if cuda_indices is None:
+            return cuda_devices
+
+        if isinstance(cuda_indices, int):
+            cuda_indices = [cuda_indices]
+
+        cuda_indices = list(cuda_indices)
+        cuda_device_count = len(cuda_devices)
+
+        devices = []
+        for cuda_index in cuda_indices:
+            if not 0 <= cuda_index < cuda_device_count:
+                raise RuntimeError('CUDA Error: invalid device ordinal')
+            device = cuda_devices[cuda_index]
+            devices.append(device)
+
+        return devices
+
+    @classmethod
+    @ttl_cache(ttl=300.0)
+    def parse_cuda_visible_devices(cls, cuda_visible_devices: Optional[str] = None) -> List[int]:
         if cuda_visible_devices is None:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
             if cuda_visible_devices is None:
-                return cls.all()
+                return list(range(cls.count()))
 
         def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
             nonlocal use_indices
@@ -90,29 +122,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                 devices.append(device)
                 presented.add(identifier)
 
-        return devices
-
-    @classmethod
-    def from_cuda_indices(cls, cuda_indices: Optional[Union[int, Iterable[int]]] = None) -> List['Device']:
-        cuda_devices = cls.from_cuda_visible_devices()
-        if cuda_indices is None:
-            return cuda_devices
-
-        if isinstance(cuda_indices, int):
-            cuda_indices = [cuda_indices]
-
-        cuda_indices = list(cuda_indices)
-        cuda_device_count = len(cuda_devices)
-
-        devices = []
-        for cuda_index in cuda_indices:
-            if not 0 <= cuda_index < cuda_device_count:
-                raise RuntimeError('CUDA Error: invalid device ordinal')
-            device = cuda_devices[cuda_index]
-            device._cuda_index = cuda_index  # pylint: disable=protected-access
-            devices.append(device)
-
-        return devices
+        return [device.index for device in devices]
 
     def __init__(self, index: Optional[int] = None,
                  serial: Optional[str] = None,
@@ -201,9 +211,9 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     @property
     def cuda_index(self):
         if self._cuda_index is None:
-            cuda_devices = self.from_cuda_visible_devices()
+            visible_device_indices = self.parse_cuda_visible_devices()
             try:
-                cuda_index = cuda_devices.index(self)
+                cuda_index = visible_device_indices.index(self.index)
             except ValueError as e:
                 raise RuntimeError('CUDA Error: {} is not visible to CUDA applications'.format(self)) from e
             else:
