@@ -47,20 +47,21 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
 
         self._process = value
 
-        try:
-            self.environ = self.process.environ().copy()
-        except host.PsutilError:
-            self.environ = None
+        with self.process.oneshot():
+            try:
+                self.environ = self.process.environ().copy()
+            except host.PsutilError:
+                self.environ = None
 
-        try:
-            self.command = self.process.command()
-        except host.PsutilError:
-            self.command = 'N/A'
+            try:
+                self.command = self.process.command()
+            except host.PsutilError:
+                self.command = 'N/A'
 
-        try:
-            self.username = self.process.username()
-        except host.PsutilError:
-            self.username = 'N/A'
+            try:
+                self.username = self.process.username()
+            except host.PsutilError:
+                self.username = 'N/A'
 
     @property
     def environ(self):

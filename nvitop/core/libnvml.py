@@ -28,7 +28,7 @@ class libnvml(object):
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
             instance._initialized = False
-            instance._lib_lock = threading.RLock()
+            instance._lib_lock = threading.Lock()
             for name, attr in vars(pynvml).items():
                 if name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
                     continue

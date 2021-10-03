@@ -48,7 +48,7 @@ def auto_garbage_clean(default=None):
 
 
 class GpuProcess(GpuProcessBase):
-    SNAPSHOT_LOCK = threading.RLock()
+    SNAPSHOT_LOCK = threading.Lock()
     HOST_SNAPSHOTS = {}
 
     running_time = auto_garbage_clean(default=NA)(GpuProcessBase.running_time)

@@ -81,8 +81,8 @@ class HistoryGraph(object):  # pylint: disable=too-many-instance-attributes
             self.value2symbol = VALUE2SYMBOL_UP
             self.pair2symbol = PAIR2SYMBOL_UP
 
-        self.write_lock = threading.RLock()
-        self.remake_lock = threading.RLock()
+        self.write_lock = threading.Lock()
+        self.remake_lock = threading.Lock()
         self.remake_graph()
 
     @property

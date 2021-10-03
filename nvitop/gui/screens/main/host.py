@@ -35,7 +35,6 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.virtual_memory = None
         self.swap_memory = None
         self.load_average = None
-        self.snapshot_lock = root.lock
         self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_running = threading.Event()
@@ -116,28 +115,27 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )
 
     def take_snapshots(self):
-        with self.snapshot_lock:
-            host.cpu_percent()
-            host.virtual_memory()
-            host.swap_memory()
-            self.cpu_percent = host.cpu_percent.history.last_value
-            self.virtual_memory = host.virtual_memory.history.last_value
-            self.swap_memory = host.swap_memory.history.last_value
-            self.load_average = host.load_average()
+        host.cpu_percent()
+        host.virtual_memory()
+        host.swap_memory()
+        self.cpu_percent = host.cpu_percent.history.last_value
+        self.virtual_memory = host.virtual_memory.history.last_value
+        self.swap_memory = host.swap_memory.history.last_value
+        self.load_average = host.load_average()
 
-            memory_utilizations = []
-            gpu_utilizations = []
-            for device in self.devices:
-                memory_utilization = device.snapshot.memory_utilization
-                gpu_utilization = device.snapshot.gpu_utilization
-                if memory_utilization is not NA:
-                    memory_utilizations.append(float(memory_utilization))
-                if gpu_utilization is not NA:
-                    gpu_utilizations.append(float(gpu_utilization))
-            if len(memory_utilizations) > 0:
-                self.average_memory_utilization.add(sum(memory_utilizations) / len(memory_utilizations))
-            if len(gpu_utilizations) > 0:
-                self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
+        memory_utilizations = []
+        gpu_utilizations = []
+        for device in self.devices:
+            memory_utilization = device.snapshot.memory_utilization
+            gpu_utilization = device.snapshot.gpu_utilization
+            if memory_utilization is not NA:
+                memory_utilizations.append(float(memory_utilization))
+            if gpu_utilization is not NA:
+                gpu_utilizations.append(float(gpu_utilization))
+        if len(memory_utilizations) > 0:
+            self.average_memory_utilization.add(sum(memory_utilizations) / len(memory_utilizations))
+        if len(gpu_utilizations) > 0:
+            self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
 
     def _snapshot_target(self):
         self._daemon_running.wait()

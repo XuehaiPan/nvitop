@@ -29,8 +29,6 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.devices = devices
         self.device_count = len(self.devices)
 
-        self.lock = threading.RLock()
-
         self.main_screen = MainScreen(self.devices, filters, ascii=ascii, mode=mode, win=win, root=self)
         self.main_screen.visible = True
         self.main_screen.focused = False

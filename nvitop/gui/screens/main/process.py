@@ -76,7 +76,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self._snapshot_buffer = []
         self._snapshots = []
-        self.snapshot_lock = root.lock
+        self.snapshot_lock = threading.Lock()
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
@@ -142,24 +142,26 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         key, reverse, *_ = self.ORDERS[self.order]
         snapshots.sort(key=key, reverse=xor(reverse, self.reverse))
 
+        old_host_offset = self.host_offset
         with self.snapshot_lock:
-            self._snapshots = snapshots
             self.need_redraw = (self.need_redraw or self.height > height or self.host_headers[-2] != time_header)
+            self._snapshots = snapshots
+
             self.host_headers[-2] = time_header
             self.height = height
-            old_host_offset = self.host_offset
             self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 39))
-            if old_host_offset not in (self.host_offset, 1024):
-                self.beep()
 
-            if self.selected.is_set():
-                identity = self.selected.identity
-                self.selected.clear()
-                for i, process in enumerate(snapshots):
-                    if process._ident == identity:  # pylint: disable=protected-access
-                        self.selected.index = i
-                        self.selected.process = process
-                        break
+        if old_host_offset not in (self.host_offset, 1024):
+            self.beep()
+
+        if self.selected.is_set():
+            identity = self.selected.identity
+            self.selected.clear()
+            for i, process in enumerate(snapshots):
+                if process._ident == identity:  # pylint: disable=protected-access
+                    self.selected.index = i
+                    self.selected.process = process
+                    break
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
@@ -220,8 +222,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self._daemon_running.set()
             self._snapshot_daemon.start()
 
-        with self.snapshot_lock:
-            self.snapshots = self._snapshot_buffer
+        self.snapshots = self._snapshot_buffer
 
         self.selected.within_window = False
         if len(self.snapshots) > 0 and self.selected.is_set():

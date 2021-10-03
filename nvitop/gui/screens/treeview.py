@@ -52,49 +52,43 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
 
     def as_snapshot(self):
         if not isinstance(self.process, Snapshot):
-            try:
-                username = self.process.username()
-            except host.PsutilError:
-                username = NA
-            try:
-                command = self.process.command()
-                if len(command) == 0:
-                    command = 'Zombie Process'
-            except host.AccessDenied:
-                command = 'No Permissions'
-            except host.PsutilError:
-                command = 'No Such Process'
+            with self.process.oneshot():
+                try:
+                    username = self.process.username()
+                except host.PsutilError:
+                    username = NA
+                try:
+                    command = self.process.command()
+                    if len(command) == 0:
+                        command = 'Zombie Process'
+                except host.AccessDenied:
+                    command = 'No Permissions'
+                except host.PsutilError:
+                    command = 'No Such Process'
 
-            try:
-                cpu_percent = self.process.cpu_percent()
-            except host.PsutilError:
-                cpu_percent = cpu_percent_string = NA
-            else:
-                if cpu_percent < 1000.0:
-                    cpu_percent_string = '{:.1f}%'.format(cpu_percent)
-                elif cpu_percent < 10000:
-                    cpu_percent_string = '{}%'.format(int(cpu_percent))
+                try:
+                    cpu_percent = self.process.cpu_percent()
+                except host.PsutilError:
+                    cpu_percent = cpu_percent_string = NA
                 else:
-                    cpu_percent_string = '9999+%'
+                    if cpu_percent is NA:
+                        cpu_percent_string = NA
+                    elif cpu_percent < 1000.0:
+                        cpu_percent_string = '{:.1f}%'.format(cpu_percent)
+                    elif cpu_percent < 10000:
+                        cpu_percent_string = '{}%'.format(int(cpu_percent))
+                    else:
+                        cpu_percent_string = '9999+%'
 
-            try:
-                cpu_percent = self.process.cpu_percent()
-            except host.PsutilError:
-                cpu_percent = cpu_percent_string = NA
-            else:
-                if cpu_percent < 1000.0:
-                    cpu_percent_string = '{:.1f}%'.format(cpu_percent)
-                elif cpu_percent < 10000:
-                    cpu_percent_string = '{}%'.format(int(cpu_percent))
+                try:
+                    memory_percent = self.process.memory_percent()
+                except host.PsutilError:
+                    memory_percent = memory_percent_string = NA
                 else:
-                    cpu_percent_string = '9999+%'
-
-            try:
-                memory_percent = self.process.memory_percent()
-            except host.PsutilError:
-                memory_percent = memory_percent_string = NA
-            else:
-                memory_percent_string = '{:.1f}%'.format(memory_percent)
+                    if memory_percent is not NA:
+                        memory_percent_string = '{:.1f}%'.format(memory_percent)
+                    else:
+                        memory_percent_string = NA
 
             self.process = Snapshot(
                 real=self.process,
@@ -211,7 +205,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         self._snapshot_buffer = []
         self._snapshots = []
-        self.snapshot_lock = threading.RLock()
+        self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(name='treeview-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_running = threading.Event()
@@ -254,22 +248,21 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.need_redraw = (self.need_redraw or len(self._snapshots) > len(snapshots))
             self._snapshots = snapshots
 
-            if self.selected.is_set():
-                identity = self.selected.identity
-                self.selected.clear()
-                for i, process in enumerate(snapshots):
-                    if process._ident[:2] == identity[:2]:  # pylint: disable=protected-access
-                        self.selected.index = i
-                        self.selected.process = process
-                        break
+        if self.selected.is_set():
+            identity = self.selected.identity
+            self.selected.clear()
+            for i, process in enumerate(snapshots):
+                if process._ident[:2] == identity[:2]:  # pylint: disable=protected-access
+                    self.selected.index = i
+                    self.selected.process = process
+                    break
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
         snapshots = self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
 
         roots = TreeNode.merge(snapshots)
-        with self.snapshot_lock:
-            roots = TreeNode.freeze(roots)
+        roots = TreeNode.freeze(roots)
         nodes = TreeNode.flatten(roots)
 
         snapshots = []
@@ -305,8 +298,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
     def poke(self):
         if self._daemon_running.is_set():
-            with self.snapshot_lock:
-                self.snapshots = self._snapshot_buffer
+            self.snapshots = self._snapshot_buffer
 
         self.selected.within_window = False
         if len(self.snapshots) > 0 and self.selected.is_set():

@@ -50,7 +50,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self._snapshot_buffer = []
         self._snapshots = []
-        self.snapshot_lock = root.lock
+        self.snapshot_lock = threading.Lock()
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
@@ -170,8 +170,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self._daemon_running.set()
             self._snapshot_daemon.start()
 
-        with self.snapshot_lock:
-            self.snapshots = self._snapshot_buffer
+        self.snapshots = self._snapshot_buffer
 
         super().poke()
 
