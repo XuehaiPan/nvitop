@@ -102,12 +102,14 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
             )
 
         if len(self.children) > 0:
-            self.children.sort(key=lambda node: node.pid)
+            for child in self.children:
+                child.as_snapshot()
+            self.children.sort(key=lambda node: (node._gone,  # pylint: disable=protected-access
+                                                 node.username,
+                                                 node.pid))
             for child in self.children:
                 child.is_last = False
             self.children[-1].is_last = True
-            for child in self.children:
-                child.as_snapshot()
 
     def set_prefix(self, prefix=''):
         if self.is_root:
