@@ -201,7 +201,14 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     @property
     def cuda_index(self):
         if self._cuda_index is None:
-            return self.index
+            cuda_devices = self.from_cuda_visible_devices()
+            try:
+                cuda_index = cuda_devices.index(self)
+            except ValueError as e:
+                raise RuntimeError('CUDA Error: {} is not visible to CUDA applications'.format(self)) from e
+            else:
+                self._cuda_index = cuda_index
+
         return self._cuda_index
 
     def name(self) -> Union[str, NaType]:
