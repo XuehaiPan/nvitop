@@ -291,14 +291,14 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return '{} / {}'.format(power_usage, power_limit)
 
     @ttl_cache(ttl=5.0)
-    def fan_speed(self) -> Union[str, NaType]:  # in percentage
+    def fan_speed(self) -> Union[int, NaType]:  # in percentage
         return nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
 
     def fan_speed_string(self) -> Union[str, NaType]:  # in percentage
         return utilization2string(self.fan_speed())
 
     @ttl_cache(ttl=5.0)
-    def temperature(self) -> Union[str, NaType]:  # in Celsius
+    def temperature(self) -> Union[int, NaType]:  # in Celsius
         return nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
 
     def temperature_string(self) -> Union[str, NaType]:  # in Celsius
