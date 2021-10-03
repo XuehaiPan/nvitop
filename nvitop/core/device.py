@@ -153,7 +153,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         self._ident = (self.index, self.uuid())
         self._hash = None
-        self._snapshot = None
 
     def __str__(self) -> str:
         return '{}(index={}, name="{}", total_memory={})'.format(
@@ -371,15 +370,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return processes
 
     def as_snapshot(self) -> Snapshot:
-        self._snapshot = Snapshot(real=self, index=self.index,
-                                  **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
-        return self._snapshot
-
-    @property
-    def snapshot(self) -> Snapshot:
-        if self._snapshot is None:
-            self.as_snapshot()
-        return self._snapshot
+        return Snapshot(real=self, index=self.index,
+                        **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
 
     SNAPSHOT_KEYS = [
         'name', 'bus_id',

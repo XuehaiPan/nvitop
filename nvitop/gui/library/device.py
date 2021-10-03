@@ -4,7 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
-from nvitop.core import NA, Device as DeviceBase
+from nvitop.core import Device as DeviceBase, NA, Snapshot
 from nvitop.gui.library.process import GpuProcess
 
 
@@ -24,6 +24,21 @@ class Device(DeviceBase):
         'gpu_loading_intensity', 'gpu_display_color',
         'loading_intensity', 'display_color'
     ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._snapshot = None
+
+    def as_snapshot(self):
+        self._snapshot = super().as_snapshot()
+        return self._snapshot
+
+    @property
+    def snapshot(self) -> Snapshot:
+        if self._snapshot is None:
+            self.as_snapshot()
+        return self._snapshot
 
     def memory_loading_intensity(self):
         return self.loading_intensity_of(self.memory_utilization(), type='memory')
