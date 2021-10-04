@@ -183,7 +183,7 @@ You can omit the `-m` option by setting the environment variable `NVITOP_MONITOR
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/129375359-d68b2fe6-faaf-4aa9-9ace-9011d1ef2106.png" alt="Help Screen">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/135861886-2c27c00e-ee9d-4c21-9918-5037afc2e177.png" alt="Help Screen">
   </br>
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
@@ -244,7 +244,7 @@ coloring:
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 75 )
   --mem-util-thresh th1 th2
-                        Thresholds of GPU memory utilization to determine the load intensity.
+                        Thresholds of GPU memory percent to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
 
@@ -264,13 +264,13 @@ process filtering:
 
 `nvitop` can accept the following environment variables for monitor mode:
 
-| Name                                   | Description                          | Valid Values                                 | Fallback Value |
-| -------------------------------------- | ------------------------------------ | -------------------------------------------- | -------------- |
-| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode       | `true` / `yes` / `1`<br>`false` / `no` / `0` | `false`        |
-| `NVITOP_MONITOR_MODE`                  | The default display mode             | `auto` / `full` / `compact`                  | `auto`         |
-| `NVITOP_MONITOR_THEME`                 | The default color theme              | `dark` / `light`                             | `dark`         |
-| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization        | `10,75` , `1,99`, ...                        | `10,75`        |
-| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory utilization | `10,80` , `1,99`, ...                        | `10,80`        |
+| Name                                   | Description                      | Valid Values                                 | Fallback Value |
+| -------------------------------------- | -------------------------------- | -------------------------------------------- | -------------- |
+| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode   | `true` / `yes` / `1`<br>`false` / `no` / `0` | `false`        |
+| `NVITOP_MONITOR_MODE`                  | The default display mode         | `auto` / `full` / `compact`                  | `auto`         |
+| `NVITOP_MONITOR_THEME`                 | The default color theme          | `dark` / `light`                             | `dark`         |
+| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization    | `10,75` , `1,99`, ...                        | `10,75`        |
+| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent | `10,80` , `1,99`, ...                        | `10,80`        |
 
 For example:
 
@@ -555,25 +555,25 @@ Out[26]: GpuProcessSnapshot(
     real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
-    cpu_percent=98.5,                      # in percentage
-    cpu_percent_string='98.5%',            # in percentage
+    cpu_percent=98.5,                     # in percentage
+    cpu_percent_string='98.5%',           # in percentage
     device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    gpu_encoder_utilization=0,             # in percentage
-    gpu_encoder_utilization_string='0%',   # in percentage
-    gpu_decoder_utilization=0,             # in percentage
-    gpu_decoder_utilization_string='0%',   # in percentage
-    gpu_memory=1081081856,                 # in bytes
+    gpu_encoder_utilization=0,            # in percentage
+    gpu_encoder_utilization_string='0%',  # in percentage
+    gpu_decoder_utilization=0,            # in percentage
+    gpu_decoder_utilization_string='0%',  # in percentage
+    gpu_memory=1081081856,                # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_percent=9.4,                # in percentage
-    gpu_memory_percent_string='9.4%',      # in percentage
-    gpu_memory_utilization=5,              # in percentage
-    gpu_memory_utilization_string='5%',    # in percentage
-    gpu_sm_utilization=0,                  # in percentage
-    gpu_sm_utilization_string='0%',        # in percentage
+    gpu_memory_percent=9.4,               # in percentage
+    gpu_memory_percent_string='9.4%',     # in percentage
+    gpu_memory_utilization=5,             # in percentage
+    gpu_memory_utilization_string='5%',   # in percentage
+    gpu_sm_utilization=0,                 # in percentage
+    gpu_sm_utilization_string='0%',       # in percentage
     identity=(23266, 1620651760.15, 1),
     is_running=True,
-    memory_percent=1.6849018430285683,     # in percentage
-    memory_percent_string='1.7%',          # in percentage
+    memory_percent=1.6849018430285683,    # in percentage
+    memory_percent_string='1.7%',         # in percentage
     name='python3',
     pid=23266,
     running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
@@ -623,17 +623,17 @@ Out[33]: pmem(rss=83988480, vms=343543808, shared=12079104, text=8192, lib=0, da
 
 In [34]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
-    ...: this = GpuProcess(os.getpid(), nvidia0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
+    ...: this = GpuProcess(os.getpid(), cuda0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
     ...: this
-Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
 In [35]: this.update_gpu_status()  # update used GPU memory from new driver queries
 Out[35]: 267386880
 
 In [36]: this
-Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [37]: id(this) == id(GpuProcess(os.getpid(), nvidia0))  # IMPORTANT: the instance will be reused while the process is running
+In [37]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instance will be reused while the process is running
 Out[37]: True
 ```
 

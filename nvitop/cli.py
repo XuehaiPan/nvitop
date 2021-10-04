@@ -43,7 +43,7 @@ def parse_arguments():
                                '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*gpu_thresholds))
     memory_thresholds = Device.MEMORY_UTILIZATION_THRESHOLDS
     coloring.add_argument('--mem-util-thresh', type=int, nargs=2, choices=range(1, 100), metavar=('th1', 'th2'),
-                          help='Thresholds of GPU memory utilization to determine the load intensity.\n' +
+                          help='Thresholds of GPU memory percent to determine the load intensity.\n' +
                                'Coloring rules: {}.\n'.format(coloring_rules) +
                                '( 1 <= th1 < th2 <= 99, defaults: {} {} )'.format(*memory_thresholds))
 

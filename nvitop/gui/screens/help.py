@@ -15,7 +15,7 @@ GPU Process Type: C: Compute, G: Graphics, X: Mixed.
 
 Device coloring rules by loading intensity:
   - GPU utilization: light < {:2d}% <= moderate < {:2d}% <= heavy.
-  - MEM utilization: light < {:2d}% <= moderate < {:2d}% <= heavy.
+  - GPU-MEM percent: light < {:2d}% <= moderate < {:2d}% <= heavy.
 
       a f c: change display mode                h ?: show this help screen
        F5 r: force refresh window                 q: quit
