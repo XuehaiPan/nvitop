@@ -7,7 +7,7 @@ import signal
 import time
 from collections import namedtuple
 
-from nvitop.gui.library import host, Snapshot, CURRENT_USER, IS_SUPERUSER
+from nvitop.gui.library import host, NA, Snapshot, CURRENT_USER, IS_SUPERUSER
 
 
 class Selected(object):
@@ -15,7 +15,8 @@ class Selected(object):
         self.panel = panel
         self.index = None
         self.within_window = True
-        self._proc = None
+        self._process = None
+        self._username = None
         self._ident = None
 
     @property
@@ -26,13 +27,13 @@ class Selected(object):
 
     @property
     def process(self):
-        return self._proc
+        return self._process
 
     @process.setter
     def process(self, process):
         if isinstance(process, Snapshot):
             process = process.real
-        self._proc = process
+        self._process = process
         self._ident = None
 
     @property
@@ -41,6 +42,16 @@ class Selected(object):
             return self.identity[0]
         except TypeError:
             return None
+
+    @property
+    def username(self):
+        if self._username is None:
+            with self.process.oneshot():
+                try:
+                    self._username = self.process.username()
+                except host.PsutilError:
+                    self._username = NA
+        return self._username
 
     def move(self, direction=0):
         if direction == 0:
@@ -64,10 +75,7 @@ class Selected(object):
             return False
         if IS_SUPERUSER:
             return True
-        try:
-            return self.process.username() == CURRENT_USER
-        except host.PsutilError:
-            return False
+        return self.username == CURRENT_USER
 
     def send_signal(self, sig):
         if self.owned() and self.within_window:
