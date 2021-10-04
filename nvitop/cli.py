@@ -140,12 +140,11 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
             messages.append('ERROR: Invalid device indices: {}.'.format(sorted(invalid_indices)))
         elif len(invalid_indices) == 1:
             messages.append('ERROR: Invalid device index: {}.'.format(list(invalid_indices)[0]))
-        devices = Device.from_indices(indices)
     elif args.only_visible:
-        devices = Device.from_cuda_visible_devices()
+        indices = Device.parse_cuda_visible_devices()
     else:
-        devices = Device.all()
-    devices.sort(key=lambda device: device.index)
+        indices = range(device_count)
+    devices = Device.from_indices(sorted(set(indices)))
 
     filters = []
     if args.compute:

@@ -15,7 +15,7 @@ from nvitop.core.process import GpuProcess
 from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2string
 
 
-__all__ = ['Device']
+__all__ = ['Device', 'PhysicalDevice', 'CudaDevice']
 
 
 class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -33,8 +33,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             return str(cuda_version // 1000 + (cuda_version % 1000) / 100)
         return NA
 
-    @staticmethod
-    def count() -> int:
+    @classmethod
+    def count(cls) -> int:
         return nvml.nvmlQuery('nvmlDeviceGetCount', default=0)
 
     @classmethod
@@ -51,19 +51,20 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         return list(map(cls, indices))
 
-    @classmethod
-    def from_cuda_visible_devices(cls, cuda_visible_devices: Optional[str] = None) -> List['Device']:
-        visible_device_indices = cls.parse_cuda_visible_devices(cuda_visible_devices)
-        cuda_devices = cls.from_indices(visible_device_indices)
+    @staticmethod
+    def from_cuda_visible_devices(cuda_visible_devices: Optional[str] = None) -> List['CudaDevice']:
+        visible_device_indices = Device.parse_cuda_visible_devices(cuda_visible_devices)
+        cuda_devices = Device.from_indices(visible_device_indices)
 
-        for cuda_index, cuda_device in enumerate(cuda_devices):
-            cuda_device._cuda_index = cuda_index  # pylint: disable=protected-access
+        cuda_devices = []
+        for cuda_index, device_index in enumerate(visible_device_indices):
+            cuda_devices.append(CudaDevice(cuda_index, physical_index=device_index))
 
         return cuda_devices
 
-    @classmethod
-    def from_cuda_indices(cls, cuda_indices: Optional[Union[int, Iterable[int]]] = None) -> List['Device']:
-        cuda_devices = cls.from_cuda_visible_devices()
+    @staticmethod
+    def from_cuda_indices(cuda_indices: Optional[Union[int, Iterable[int]]] = None) -> List['CudaDevice']:
+        cuda_devices = Device.from_cuda_visible_devices()
         if cuda_indices is None:
             return cuda_devices
 
@@ -82,35 +83,39 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         return devices
 
-    @classmethod
-    @ttl_cache(ttl=300.0)
-    def parse_cuda_visible_devices(cls, cuda_visible_devices: Optional[str] = None) -> List[int]:
+    @staticmethod
+    def parse_cuda_visible_devices(cuda_visible_devices: Optional[str] = None) -> List[int]:
         if cuda_visible_devices is None:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
             if cuda_visible_devices is None:
-                return list(range(cls.count()))
+                return list(range(Device.count()))
 
+        return Device._parse_cuda_visible_devices(cuda_visible_devices)
+
+    @staticmethod
+    @ttl_cache(ttl=300.0)
+    def _parse_cuda_visible_devices(cuda_visible_devices: str) -> List[int]:
         def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
-            nonlocal use_indices
+            nonlocal use_integer_identifiers
 
             if isinstance(index_or_uuid, str):
                 if index_or_uuid.isdigit():
                     index_or_uuid = int(index_or_uuid)
-                elif cls.UUID_PATTEN.match(index_or_uuid) is None:
+                elif Device.UUID_PATTEN.match(index_or_uuid) is None:
                     raise nvml.NVMLError_NotFound()  # pylint: disable=no-member
 
-            if use_indices is None:
-                use_indices = isinstance(index_or_uuid, int)
+            if use_integer_identifiers is None:
+                use_integer_identifiers = isinstance(index_or_uuid, int)
 
-            if isinstance(index_or_uuid, int) and use_indices:
-                return cls(index=index_or_uuid)
-            if isinstance(index_or_uuid, str) and not use_indices:
-                return cls(uuid=index_or_uuid)
+            if isinstance(index_or_uuid, int) and use_integer_identifiers:
+                return Device(index=index_or_uuid)
+            if isinstance(index_or_uuid, str) and not use_integer_identifiers:
+                return Device(uuid=index_or_uuid)
             raise ValueError('invalid identifier')
 
         devices = []
         presented = set()
-        use_indices = None
+        use_integer_identifiers = None
         for identifier in map(str.strip, cuda_visible_devices.split(',')):
             if identifier in presented:
                 raise RuntimeError('CUDA Error: invalid device ordinal')
@@ -124,16 +129,26 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         return [device.index for device in devices]
 
-    def __init__(self, index: Optional[int] = None,
-                 serial: Optional[str] = None,
+    def __init__(self, index: Optional[Union[int, str]] = None, *,
                  uuid: Optional[str] = None,
-                 bus_id: Optional[str] = None) -> None:
-        args = (index, serial, uuid, bus_id)
-        assert args.count(None) == 3
-        index, serial, uuid, bus_id = [arg.encode() if isinstance(arg, str) else arg
-                                       for arg in args]
+                 bus_id: Optional[str] = None,
+                 serial: Optional[str] = None) -> None:
+
+        if (index, uuid, bus_id, serial).count(None) != 3:
+            raise TypeError(
+                'Device(index=None, uuid=None, serial=None, bus_id=None) takes 1 non-None arguments '
+                'but (index, uuid, bus_id, serial) = {} were given'.format((index, uuid, bus_id, serial))
+            )
+
         if index is not None:
-            self.index = index
+            if isinstance(index, str) and self.UUID_PATTEN.match(index) is not None:  # passed by UUID
+                index, uuid = None, index
+
+        index, uuid, bus_id, serial = [arg.encode() if isinstance(arg, str) else arg
+                                       for arg in (index, uuid, bus_id, serial)]
+
+        if index is not None:
+            self._index = index
             try:
                 self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByIndex', index, ignore_errors=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
@@ -148,9 +163,9 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                     self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
                 self.handle = None
-                self.index = NA
+                self._index = NA
             else:
-                self.index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
+                self._index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
 
         self._cuda_index = None
         self._name = NA
@@ -209,13 +224,21 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             return attribute
 
     @property
-    def cuda_index(self):
+    def index(self) -> int:
+        return self._index
+
+    @property
+    def physical_index(self) -> int:
+        return self._index
+
+    @property
+    def cuda_index(self) -> int:
         if self._cuda_index is None:
             visible_device_indices = self.parse_cuda_visible_devices()
             try:
                 cuda_index = visible_device_indices.index(self.index)
             except ValueError as e:
-                raise RuntimeError('CUDA Error: {} is not visible to CUDA applications'.format(self)) from e
+                raise RuntimeError('CUDA Error: Device(index={}) is not visible to CUDA applications'.format(self.index)) from e
             else:
                 self._cuda_index = cuda_index
 
@@ -401,3 +424,47 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         'memory_utilization', 'gpu_utilization',
         'memory_utilization_string', 'gpu_utilization_string'
     ]
+
+
+PhysicalDevice = Device
+
+
+class CudaDevice(Device):
+
+    @classmethod
+    def count(cls) -> int:
+        return len(super().parse_cuda_visible_devices())
+
+    @classmethod
+    def all(cls) -> List['CudaDevice']:
+        return super().from_cuda_visible_devices()
+
+    def __init__(self, cuda_index: Optional[int] = None, *,
+                 physical_index: Optional[Union[int, str]] = None,
+                 uuid: Optional[str] = None) -> None:
+
+        if cuda_index is not None and physical_index is None and uuid is None:
+            cuda_visible_devices = self.parse_cuda_visible_devices()
+            if not 0 <= cuda_index < len(cuda_visible_devices):
+                raise RuntimeError('CUDA Error: invalid device ordinal')
+            physical_index = cuda_visible_devices[cuda_index]
+
+        super().__init__(index=physical_index, uuid=uuid)
+
+        self._cuda_index = cuda_index
+
+    def __str__(self) -> str:
+        return '{}(cuda_index={}, physical_index={}, name="{}", total_memory={})'.format(
+            self.__class__.__name__,
+            self.cuda_index, self.physical_index,
+            self.name(), self.memory_total_human()
+        )
+
+    __repr__ = __str__
+
+    def as_snapshot(self) -> Snapshot:
+        snapshot = super().as_snapshot()
+        snapshot.physical_index = self.physical_index
+        snapshot.cuda_index = self.cuda_index
+
+        return snapshot
