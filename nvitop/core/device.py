@@ -238,7 +238,9 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             try:
                 cuda_index = visible_device_indices.index(self.index)
             except ValueError as e:
-                raise RuntimeError('CUDA Error: Device(index={}) is not visible to CUDA applications'.format(self.index)) from e
+                raise RuntimeError(
+                    'CUDA Error: Device(index={}) is not visible to CUDA applications'.format(self.index)
+                ) from e
             else:
                 self._cuda_index = cuda_index
 
@@ -364,17 +366,21 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
         return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
 
-    def memory_utilization(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
+    def memory_percent(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
         memory_used = self.memory_used()
         memory_total = self.memory_total()
         if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
             return round(100.0 * memory_used / memory_total, 1)
         return NA
 
+    def memory_percent_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.memory_percent())
+
+    def memory_utilization(self) -> Union[float, NaType]:  # in percentage
+        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).memory, self.handle)
+
     def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
         return utilization2string(self.memory_utilization())
-
-    memory_percent = memory_utilization  # in percentage
 
     @ttl_cache(ttl=1.0)
     def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
@@ -384,6 +390,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return utilization2string(self.gpu_utilization())
 
     gpu_percent = gpu_utilization  # in percentage
+
+    gpu_percent_string = gpu_utilization_string  # in percentage
 
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
@@ -403,7 +411,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 500000, 0)
             for s in samples:
                 try:
-                    processes[s.pid].set_gpu_utilization(s.smUtil, s.encUtil, s.decUtil)
+                    processes[s.pid].set_gpu_utilization(s.smUtil, s.memUtil, s.encUtil, s.decUtil)
                 except KeyError:
                     pass
 
@@ -421,8 +429,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         'power_usage', 'power_limit', 'power_status',
         'memory_used', 'memory_free', 'memory_total',
         'memory_used_human', 'memory_free_human', 'memory_total_human', 'memory_usage',
-        'memory_utilization', 'gpu_utilization',
-        'memory_utilization_string', 'gpu_utilization_string'
+        'memory_percent', 'memory_utilization', 'gpu_utilization',
+        'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string'
     ]
 
 

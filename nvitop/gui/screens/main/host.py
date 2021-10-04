@@ -21,7 +21,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.device_count = len(self.devices)
 
         if win is not None:
-            self.average_memory_utilization = None
+            self.average_memory_percent = None
             self.average_gpu_utilization = None
             self.enable_history()
 
@@ -51,10 +51,10 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 self.need_redraw = True
             graph_width = max(width - 80, 20)
             if self.win is not None:
-                self.average_memory_utilization.width = graph_width
+                self.average_memory_percent.width = graph_width
                 self.average_gpu_utilization.width = graph_width
                 for device in self.devices:
-                    device.memory_utilization.history.width = graph_width
+                    device.memory_percent.history.width = graph_width
                     device.gpu_utilization.history.width = graph_width
         self._width = width
 
@@ -88,11 +88,11 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )(host.swap_memory, get_value=lambda ret: ret.percent)
 
         def enable_history(device):
-            device.memory_utilization = BufferedHistoryGraph(
+            device.memory_percent = BufferedHistoryGraph(
                 interval=1.0, width=20, height=5, upsidedown=False,
                 baseline=0.0, upperbound=100.0, dynamic_bound=False,
                 format=('GPU ' + str(device.index) + ' MEM: {:.1f}%').format
-            )(device.memory_utilization)
+            )(device.memory_percent)
             device.gpu_utilization = BufferedHistoryGraph(
                 interval=1.0, width=20, height=5, upsidedown=True,
                 baseline=0.0, upperbound=100.0, dynamic_bound=False,
@@ -103,7 +103,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             enable_history(device)
 
         prefix = ('AVG ' if self.device_count > 1 else '')
-        self.average_memory_utilization = BufferedHistoryGraph(
+        self.average_memory_percent = BufferedHistoryGraph(
             interval=1.0, width=20, height=5, upsidedown=False,
             baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format=(prefix + 'GPU MEM: {:.1f}%').format
@@ -123,17 +123,17 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.swap_memory = host.swap_memory.history.last_value
         self.load_average = host.load_average()
 
-        memory_utilizations = []
+        memory_percents = []
         gpu_utilizations = []
         for device in self.devices:
-            memory_utilization = device.snapshot.memory_utilization
+            memory_percent = device.snapshot.memory_percent
             gpu_utilization = device.snapshot.gpu_utilization
-            if memory_utilization is not NA:
-                memory_utilizations.append(float(memory_utilization))
+            if memory_percent is not NA:
+                memory_percents.append(float(memory_percent))
             if gpu_utilization is not NA:
                 gpu_utilizations.append(float(gpu_utilization))
-        if len(memory_utilizations) > 0:
-            self.average_memory_utilization.add(sum(memory_utilizations) / len(memory_utilizations))
+        if len(memory_percents) > 0:
+            self.average_memory_percent.add(sum(memory_percents) / len(memory_percents))
         if len(gpu_utilizations) > 0:
             self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
 
@@ -235,19 +235,19 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if self.width >= 100:
             if self.device_count > 1 and self.parent.selected.is_set():
                 device = self.parent.selected.process.device
-                memory_utilization = device.memory_utilization.history
+                memory_percent = device.memory_percent.history
                 gpu_utilization = device.gpu_utilization.history
             else:
-                memory_utilization = self.average_memory_utilization
+                memory_percent = self.average_memory_percent
                 gpu_utilization = self.average_gpu_utilization
 
-            memory_display_color = Device.color_of(memory_utilization.last_value, type='memory')
+            memory_display_color = Device.color_of(memory_percent.last_value, type='memory')
             gpu_display_color = Device.color_of(gpu_utilization.last_value, type='gpu')
 
-            for y, line in enumerate(memory_utilization.graph, start=self.y):
+            for y, line in enumerate(memory_percent.graph, start=self.y):
                 self.addstr(y, self.x + 79, line)
                 self.color_at(y, self.x + 79, width=remaining_width - 1, fg=memory_display_color)
-            self.addstr(self.y, self.x + 79, ' {} '.format(memory_utilization.last_value_string()))
+            self.addstr(self.y, self.x + 79, ' {} '.format(memory_percent.last_value_string()))
 
             for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
                 self.addstr(y, self.x + 79, line)

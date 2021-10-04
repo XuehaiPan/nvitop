@@ -448,13 +448,15 @@ Out[15]: DeviceSnapshot(
     index=1,
     memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
+    memory_percent=9.5,                 # in percentage
+    memory_percent_string='9.5%',       # in percentage
     memory_total=11554717696,           # in bytes
     memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
-    memory_utilization=9.5,             # in percentage
-    memory_utilization_string='9.5%',   # in percentage
+    memory_utilization=7,               # in percentage
+    memory_utilization_string='7%',     # in percentage
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
@@ -465,8 +467,8 @@ Out[15]: DeviceSnapshot(
     temperature_string='39C'            # in Celsius
 )
 
-In [16]: nvidia1_snapshot.memory_utilization_string  # snapshot uses properties instead of function calls
-Out[16]: '9%'
+In [16]: nvidia1_snapshot.memory_percent_string  # snapshot uses properties instead of function calls
+Out[16]: '9.5%'
 
 In [17]: nvidia1_snapshot.encoder_utilization  # snapshot will automatically retrieve not presented attributes from `real`
 Out[17]: [0, 1000000]
@@ -486,13 +488,15 @@ Out[18]: DeviceSnapshot(
     index=1,
     memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
+    memory_percent=9.5,                 # in percentage
+    memory_percent_string='9.5%',       # in percentage
     memory_total=11554717696,           # in bytes
     memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
-    memory_utilization=9.5,             # in percentage
-    memory_utilization_string='9.5%',   # in percentage
+    memory_utilization=7,               # in percentage
+    memory_utilization_string='7%',     # in percentage
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
@@ -560,8 +564,10 @@ Out[26]: GpuProcessSnapshot(
     gpu_decoder_utilization_string='0%',   # in percentage
     gpu_memory=1081081856,                 # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_utilization=9.4,            # in percentage
-    gpu_memory_utilization_string='9.4%',  # in percentage
+    gpu_memory_percent=9.4,                # in percentage
+    gpu_memory_percent_string='9.4%',      # in percentage
+    gpu_memory_utilization=5,              # in percentage
+    gpu_memory_utilization_string='5%',    # in percentage
     gpu_sm_utilization=0,                  # in percentage
     gpu_sm_utilization_string='0%',        # in percentage
     identity=(23266, 1620651760.15, 1),

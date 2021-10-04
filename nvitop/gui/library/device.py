@@ -41,7 +41,7 @@ class Device(DeviceBase):
         return self._snapshot
 
     def memory_loading_intensity(self):
-        return self.loading_intensity_of(self.memory_utilization(), type='memory')
+        return self.loading_intensity_of(self.memory_percent(), type='memory')
 
     def gpu_loading_intensity(self):
         return self.loading_intensity_of(self.gpu_utilization(), type='gpu')

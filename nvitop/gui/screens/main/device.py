@@ -212,7 +212,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
             if draw_bars:
                 matrix = [
-                    ('MEM', device.memory_utilization, device.memory_display_color),
+                    ('MEM', device.memory_percent, device.memory_display_color),
                     ('UTL', device.gpu_utilization, device.gpu_display_color),
                 ]
                 if self.compact:
@@ -261,7 +261,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         lines[y_start - 1] += '┼' + '─' * (remaining_width - 1) + '┤'
 
                     matrix = [
-                        ('MEM', device.memory_utilization,
+                        ('MEM', device.memory_percent,
                          Device.INTENSITY2COLOR[device.memory_loading_intensity]),
                         ('UTL', device.gpu_utilization,
                          Device.INTENSITY2COLOR[device.gpu_loading_intensity]),

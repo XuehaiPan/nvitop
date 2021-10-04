@@ -211,7 +211,7 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
             type = NA
         if type is not None:
             self.type = type
-        for util in ('sm', 'encoder', 'decoder'):
+        for util in ('sm', 'memory', 'encoder', 'decoder'):
             if not hasattr(self, '_gpu_{}_utilization'.format(util)):
                 setattr(self, '_gpu_{}_utilization'.format(util), 0)
 
@@ -253,11 +253,14 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
     def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
         return self._gpu_memory_human
 
-    def gpu_memory_utilization(self) -> Union[float, NaType]:  # in percentage
-        return self._gpu_memory_utilization
+    def gpu_memory_percent(self) -> Union[float, NaType]:  # in percentage
+        return self._gpu_memory_percent
 
     def gpu_sm_utilization(self) -> int:  # in percentage
         return self._gpu_sm_utilization
+
+    def gpu_memory_utilization(self) -> int:  # in percentage
+        return self._gpu_memory_utilization
 
     def gpu_encoder_utilization(self) -> int:  # in percentage
         return self._gpu_encoder_utilization
@@ -265,11 +268,14 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
     def gpu_decoder_utilization(self) -> int:  # in percentage
         return self._gpu_decoder_utilization
 
-    def gpu_memory_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_memory_utilization())
+    def gpu_memory_percent_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_memory_percent())
 
     def gpu_sm_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_sm_utilization())
+
+    def gpu_memory_utilization_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_memory_utilization())
 
     def gpu_encoder_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_encoder_utilization())
@@ -281,15 +287,17 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
         self._gpu_memory = memory_used = value  # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
         memory_total = self.device.memory_total()
-        gpu_memory_utilization = NA
+        gpu_memory_percent = NA
         if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
-            gpu_memory_utilization = round(100.0 * memory_used / memory_total, 1)
-        self._gpu_memory_utilization = gpu_memory_utilization  # pylint: disable=attribute-defined-outside-init
+            gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
+        self._gpu_memory_percent = gpu_memory_percent  # pylint: disable=attribute-defined-outside-init
 
     def set_gpu_utilization(self, gpu_sm_utilization: int = 0,
+                            gpu_memory_utilization: int = 0,
                             gpu_encoder_utilization: int = 0,
                             gpu_decoder_utilization: int = 0) -> None:
         self._gpu_sm_utilization = gpu_sm_utilization  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_utilization = gpu_memory_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
@@ -382,10 +390,12 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
             device=self.device,
             gpu_memory=self.gpu_memory(),
             gpu_memory_human=self.gpu_memory_human(),
-            gpu_memory_utilization=self.gpu_memory_utilization(),
-            gpu_memory_utilization_string=self.gpu_memory_utilization_string(),
+            gpu_memory_percent=self.gpu_memory_percent(),
+            gpu_memory_percent_string=self.gpu_memory_percent_string(),
             gpu_sm_utilization=self.gpu_sm_utilization(),
             gpu_sm_utilization_string=self.gpu_sm_utilization_string(),
+            gpu_memory_utilization=self.gpu_memory_utilization(),
+            gpu_memory_utilization_string=self.gpu_memory_utilization_string(),
             gpu_encoder_utilization=self.gpu_encoder_utilization(),
             gpu_encoder_utilization_string=self.gpu_encoder_utilization_string(),
             gpu_decoder_utilization=self.gpu_decoder_utilization(),
