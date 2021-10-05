@@ -432,7 +432,6 @@ Out[14]: {
     53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
 }
 
-
 In [15]: nvidia1_snapshot = nvidia1.as_snapshot()
     ...: nvidia1_snapshot
 Out[15]: DeviceSnapshot(
@@ -442,21 +441,18 @@ Out[15]: DeviceSnapshot(
     display_active='Off',
     ecc_errors='N/A',
     fan_speed=22,                       # in percentage
-    fan_speed_string='22%',             # in percentage
     gpu_utilization=17,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
-    gpu_utilization_string='17%',       # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
     index=1,
     memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
+    memory_info=MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
     memory_percent=9.5,                 # in percentage (NOTE: this is the percentage of used GPU memory)
-    memory_percent_string='9.5%',       # in percentage (NOTE: this is the percentage of used GPU memory)
     memory_total=11554717696,           # in bytes
     memory_total_human='11019MiB',
     memory_usage='1041MiB / 11019MiB',
     memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
     memory_utilization=7,               # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
-    memory_utilization_string='7%',     # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Off',
@@ -464,48 +460,17 @@ Out[15]: DeviceSnapshot(
     power_status='66W / 250W',          # in watts (W)
     power_usage=66051,                  # in milliwatts (mW)
     temperature=39,                     # in Celsius
-    temperature_string='39C'            # in Celsius
+    utilization_rates=UtilizationRates(gpu=17, memory=7)
 )
 
-In [16]: nvidia1_snapshot.memory_percent_string  # snapshot uses properties instead of function calls
-Out[16]: '9.5%'
+In [16]: nvidia1_snapshot.memory_percent  # snapshot uses properties instead of function calls
+Out[16]: 9.5
 
-In [17]: nvidia1_snapshot.encoder_utilization  # snapshot will automatically retrieve not presented attributes from `real`
-Out[17]: [0, 1000000]
+In [17]: nvidia1_snapshot['memory_info']  # snapshot also supports `__getitem__` by string
+Out[17]: MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
 
-In [18]: nvidia1_snapshot
-Out[18]: DeviceSnapshot(
-    real=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    bus_id='00000000:05:00.0',
-    compute_mode='Default',
-    display_active='Off',
-    ecc_errors='N/A',
-    encoder_utilization=[0, 1000000],   ##### <-- new entry #####
-    fan_speed=22,                       # in percentage
-    fan_speed_string='22%',             # in percentage
-    gpu_utilization=17,                 # in percentage
-    gpu_utilization_string='17%',       # in percentage
-    index=1,
-    memory_free=10462232576,            # in bytes
-    memory_free_human='9977MiB',
-    memory_percent=9.5,                 # in percentage
-    memory_percent_string='9.5%',       # in percentage
-    memory_total=11554717696,           # in bytes
-    memory_total_human='11019MiB',
-    memory_usage='1041MiB / 11019MiB',
-    memory_used=1092485120,             # in bytes
-    memory_used_human='1041MiB',
-    memory_utilization=7,               # in percentage
-    memory_utilization_string='7%',     # in percentage
-    name='GeForce RTX 2080 Ti',
-    performance_state='P2',
-    persistence_mode='Off',
-    power_limit=250000,                 # in milliwatts (mW)
-    power_status='66W / 250W',          # in watts (W)
-    power_usage=66051,                  # in milliwatts (mW)
-    temperature=39,                     # in Celsius
-    temperature_string='39C'            # in Celsius
-)
+In [18]: nvidia1_snapshot.encoder_utilization  # snapshot will automatically retrieve not presented attributes from `real`
+Out[18]: [0, 1000000]
 ```
 
 **NOTE:** Some entry values may be `'N/A'` (type: `NaType`, subclass of `str`) when the corresponding resources are not applicable. You can use `entry != 'N/A'` conditions to avoid exceptions. It's safe to use `float(entry)` for numbers while `NaType` will be converted to `math.nan`. For example:
@@ -555,30 +520,23 @@ Out[26]: GpuProcessSnapshot(
     real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
-    cpu_percent=98.5,                     # in percentage
-    cpu_percent_string='98.5%',           # in percentage
+    cpu_percent=98.5,                    # in percentage
     device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    gpu_encoder_utilization=0,            # in percentage
-    gpu_encoder_utilization_string='0%',  # in percentage
-    gpu_decoder_utilization=0,            # in percentage
-    gpu_decoder_utilization_string='0%',  # in percentage
-    gpu_memory=1081081856,                # in bytes
+    gpu_encoder_utilization=0,           # in percentage
+    gpu_decoder_utilization=0,           # in percentage
+    gpu_memory=1081081856,               # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_percent=9.4,               # in percentage (NOTE: this is the percentage of used GPU memory)
-    gpu_memory_percent_string='9.4%',     # in percentage (NOTE: this is the percentage of used GPU memory)
-    gpu_memory_utilization=5,             # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
-    gpu_memory_utilization_string='5%',   # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
-    gpu_sm_utilization=0,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
-    gpu_sm_utilization_string='0%',       # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
+    gpu_memory_percent=9.4,              # in percentage (NOTE: this is the percentage of used GPU memory)
+    gpu_memory_utilization=5,            # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
+    gpu_sm_utilization=0,                # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
     identity=(23266, 1620651760.15, 1),
     is_running=True,
-    memory_percent=1.6849018430285683,    # in percentage (NOTE: this is the percentage of used host memory)
-    memory_percent_string='1.7%',         # in percentage (NOTE: this is the percentage of used host memory)
+    memory_percent=1.6849018430285683,   # in percentage (NOTE: this is the percentage of used host memory)
     name='python3',
     pid=23266,
     running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
     running_time_human='46:13:33',
-    type='C',                              # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
+    type='C',                            # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
     username='panxuehai'
 )
 

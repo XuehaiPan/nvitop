@@ -20,6 +20,10 @@ class Device(DeviceBase):
 
     SNAPSHOT_KEYS = [
         *DeviceBase.SNAPSHOT_KEYS,
+
+        'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
+        'fan_speed_string', 'temperature_string',
+
         'memory_loading_intensity', 'memory_display_color',
         'gpu_loading_intensity', 'gpu_display_color',
         'loading_intensity', 'display_color'

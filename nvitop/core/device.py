@@ -4,18 +4,25 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import contextlib
 import os
 import re
+import threading
+from collections import namedtuple
 from typing import List, Dict, Iterable, Callable, Union, Optional, Any
 
 from cachetools.func import ttl_cache
 
 from nvitop.core.libnvml import nvml
 from nvitop.core.process import GpuProcess
-from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2string
+from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2string, memoize_when_activated
 
 
 __all__ = ['Device', 'PhysicalDevice', 'CudaDevice']
+
+
+MemoryInfo = namedtuple('MemoryInfo', ['total', 'free', 'used'])
+UtilizationRates = namedtuple('UtilizationRates', ['gpu', 'memory'])
 
 
 class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -155,12 +162,12 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                 self.handle = None
         else:
             try:
-                if serial is not None:
-                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleBySerial', serial, ignore_errors=False)
-                elif uuid is not None:
+                if uuid is not None:
                     self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
                 elif bus_id is not None:
                     self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False)
+                elif serial is not None:
+                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleBySerial', serial, ignore_errors=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
                 self.handle = None
                 self._index = NA
@@ -175,6 +182,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         self._memory_total = NA
         self._memory_total_human = NA
         self._timestamp = 0
+        self._lock = threading.RLock()
 
         self._ident = (self.index, self.uuid())
         self._hash = None
@@ -251,11 +259,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             self._name = nvml.nvmlQuery('nvmlDeviceGetName', self.handle)
         return self._name
 
-    def serial(self) -> Union[str, NaType]:
-        if self._serial is NA:
-            self._serial = nvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
-        return self._serial
-
     def uuid(self) -> Union[str, NaType]:
         if self._uuid is NA:
             self._uuid = nvml.nvmlQuery('nvmlDeviceGetUUID', self.handle)
@@ -266,15 +269,95 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             self._bus_id = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetPciInfo(handle).busId, self.handle)
         return self._bus_id
 
+    def serial(self) -> Union[str, NaType]:
+        if self._serial is NA:
+            self._serial = nvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
+        return self._serial
+
+    @memoize_when_activated
+    @ttl_cache(ttl=1.0)
+    def memory_info(self) -> MemoryInfo:  # in bytes
+        memory_info = nvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self.handle)
+        if nvml.nvmlCheckReturn(memory_info):
+            return MemoryInfo(total=memory_info.total, free=memory_info.free, used=memory_info.used)
+        return MemoryInfo(total=NA, free=NA, used=NA)
+
     def memory_total(self) -> Union[int, NaType]:  # in bytes
         if self._memory_total is NA:
-            self._memory_total = nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).total, self.handle)
+            self._memory_total = self.memory_info().total
         return self._memory_total
+
+    def memory_used(self) -> Union[int, NaType]:  # in bytes
+        return self.memory_info().used
+
+    def memory_free(self) -> Union[int, NaType]:  # in bytes
+        return self.memory_info().free
 
     def memory_total_human(self) -> Union[str, NaType]:  # in human readable
         if self._memory_total_human is NA:
             self._memory_total_human = bytes2human(self.memory_total())
         return self._memory_total_human
+
+    def memory_used_human(self) -> Union[str, NaType]:
+        return bytes2human(self.memory_used())
+
+    def memory_free_human(self) -> Union[str, NaType]:
+        return bytes2human(self.memory_free())
+
+    def memory_percent(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
+        memory_total, memory_free, memory_used = self.memory_info()  # pylint: disable=unused-variable
+
+        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
+            return round(100.0 * memory_used / memory_total, 1)
+        return NA
+
+    def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
+        return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
+
+    @memoize_when_activated
+    @ttl_cache(ttl=1.0)
+    def utilization_rates(self) -> UtilizationRates:  # in percentage
+        utilization_rates = nvml.nvmlQuery('nvmlDeviceGetUtilizationRates', self.handle)
+        if nvml.nvmlCheckReturn(utilization_rates):
+            return UtilizationRates(gpu=utilization_rates.gpu, memory=utilization_rates.memory)
+        return UtilizationRates(gpu=NA, memory=NA)
+
+    def memory_utilization(self) -> Union[float, NaType]:  # in percentage
+        return self.utilization_rates().memory
+
+    def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
+        return self.utilization_rates().gpu
+
+    gpu_percent = gpu_utilization  # in percentage
+
+    @ttl_cache(ttl=5.0)
+    def fan_speed(self) -> Union[int, NaType]:  # in percentage
+        return nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
+
+    @ttl_cache(ttl=5.0)
+    def temperature(self) -> Union[int, NaType]:  # in Celsius
+        return nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
+
+    @memoize_when_activated
+    @ttl_cache(ttl=5.0)
+    def power_usage(self) -> Union[int, NaType]:  # in milliwatts (mW)
+        return nvml.nvmlQuery('nvmlDeviceGetPowerUsage', self.handle)
+
+    power_draw = power_usage  # in milliwatts (mW)
+
+    @memoize_when_activated
+    @ttl_cache(ttl=60.0)
+    def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
+        return nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
+
+    def power_status(self) -> str:  # string of power usage over power limit in watts (W)
+        power_usage = self.power_usage()
+        power_limit = self.power_limit()
+        if nvml.nvmlCheckReturn(power_usage, int):
+            power_usage = '{}W'.format(round(power_usage / 1000.0))
+        if nvml.nvmlCheckReturn(power_limit, int):
+            power_limit = '{}W'.format(round(power_limit / 1000.0))
+        return '{} / {}'.format(power_usage, power_limit)
 
     @ttl_cache(ttl=60.0)
     def display_active(self) -> Union[str, NaType]:
@@ -283,6 +366,13 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     @ttl_cache(ttl=60.0)
     def persistence_mode(self) -> Union[str, NaType]:
         return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self.handle), NA)
+
+    @ttl_cache(ttl=5.0)
+    def performance_state(self) -> Union[str, NaType]:
+        performance_state = nvml.nvmlQuery('nvmlDeviceGetPerformanceState', self.handle)
+        if nvml.nvmlCheckReturn(performance_state, int):
+            performance_state = 'P' + str(performance_state)
+        return performance_state
 
     @ttl_cache(ttl=60.0)
     def current_driver_model(self) -> Union[str, NaType]:
@@ -305,93 +395,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             nvml.NVML_COMPUTEMODE_PROHIBITED: 'Prohibited',
             nvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'E. Process',
         }.get(nvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
-
-    @ttl_cache(ttl=5.0)
-    def performance_state(self) -> Union[str, NaType]:
-        performance_state = nvml.nvmlQuery('nvmlDeviceGetPerformanceState', self.handle)
-        if nvml.nvmlCheckReturn(performance_state, int):
-            performance_state = 'P' + str(performance_state)
-        return performance_state
-
-    @ttl_cache(ttl=5.0)
-    def power_usage(self) -> Union[int, NaType]:  # in milliwatts (mW)
-        return nvml.nvmlQuery('nvmlDeviceGetPowerUsage', self.handle)
-
-    power_draw = power_usage  # in milliwatts (mW)
-
-    @ttl_cache(ttl=60.0)
-    def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
-        return nvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
-
-    def power_status(self) -> str:  # string of power usage over power limit in watts (W)
-        power_usage = self.power_usage()
-        power_limit = self.power_limit()
-        if nvml.nvmlCheckReturn(power_usage, int):
-            power_usage = '{}W'.format(round(power_usage / 1000.0))
-        if nvml.nvmlCheckReturn(power_limit, int):
-            power_limit = '{}W'.format(round(power_limit / 1000.0))
-        return '{} / {}'.format(power_usage, power_limit)
-
-    @ttl_cache(ttl=5.0)
-    def fan_speed(self) -> Union[int, NaType]:  # in percentage
-        return nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
-
-    def fan_speed_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.fan_speed())
-
-    @ttl_cache(ttl=5.0)
-    def temperature(self) -> Union[int, NaType]:  # in Celsius
-        return nvml.nvmlQuery('nvmlDeviceGetTemperature', self.handle, nvml.NVML_TEMPERATURE_GPU)
-
-    def temperature_string(self) -> Union[str, NaType]:  # in Celsius
-        temperature = self.temperature()
-        if nvml.nvmlCheckReturn(temperature, int):
-            temperature = str(temperature) + 'C'
-        return temperature
-
-    @ttl_cache(ttl=1.0)
-    def memory_used(self) -> Union[int, NaType]:  # in bytes
-        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).used, self.handle)
-
-    def memory_used_human(self) -> Union[str, NaType]:
-        return bytes2human(self.memory_used())
-
-    @ttl_cache(ttl=1.0)
-    def memory_free(self) -> Union[int, NaType]:  # in bytes
-        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetMemoryInfo(handle).free, self.handle)
-
-    def memory_free_human(self) -> Union[str, NaType]:
-        return bytes2human(self.memory_free())
-
-    def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
-        return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
-
-    def memory_percent(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
-        memory_used = self.memory_used()
-        memory_total = self.memory_total()
-        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
-            return round(100.0 * memory_used / memory_total, 1)
-        return NA
-
-    def memory_percent_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.memory_percent())
-
-    def memory_utilization(self) -> Union[float, NaType]:  # in percentage
-        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).memory, self.handle)
-
-    def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.memory_utilization())
-
-    @ttl_cache(ttl=1.0)
-    def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
-        return nvml.nvmlQuery(lambda handle: nvml.nvmlDeviceGetUtilizationRates(handle).gpu, self.handle)
-
-    def gpu_utilization_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.gpu_utilization())
-
-    gpu_percent = gpu_utilization  # in percentage
-
-    gpu_percent_string = gpu_utilization_string  # in percentage
 
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
@@ -418,20 +421,106 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return processes
 
     def as_snapshot(self) -> Snapshot:
-        return Snapshot(real=self, index=self.index,
-                        **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
+        with self.oneshot():
+            return Snapshot(real=self, index=self.index,
+                            **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
 
     SNAPSHOT_KEYS = [
         'name', 'bus_id',
-        'persistence_mode', 'current_driver_model', 'display_active', 'ecc_errors',
-        'performance_state', 'compute_mode',
-        'fan_speed', 'fan_speed_string', 'temperature', 'temperature_string',
-        'power_usage', 'power_limit', 'power_status',
+
+        'memory_info',
         'memory_used', 'memory_free', 'memory_total',
-        'memory_used_human', 'memory_free_human', 'memory_total_human', 'memory_usage',
-        'memory_percent', 'memory_utilization', 'gpu_utilization',
-        'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string'
+        'memory_used_human', 'memory_free_human', 'memory_total_human',
+        'memory_usage', 'memory_percent',
+
+        'utilization_rates', 'gpu_utilization', 'memory_utilization',
+
+        'fan_speed', 'temperature',
+
+        'power_usage', 'power_limit', 'power_status',
+
+        'display_active', 'persistence_mode', 'performance_state',
+        'current_driver_model', 'ecc_errors', 'compute_mode',
     ]
+
+    def memory_percent_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.memory_percent())
+
+    def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.memory_utilization())
+
+    def gpu_utilization_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.gpu_utilization())
+
+    gpu_percent_string = gpu_utilization_string  # in percentage
+
+    def fan_speed_string(self) -> Union[str, NaType]:  # in percentage
+        return utilization2string(self.fan_speed())
+
+    def temperature_string(self) -> Union[str, NaType]:  # in Celsius
+        temperature = self.temperature()
+        if nvml.nvmlCheckReturn(temperature, int):
+            temperature = str(temperature) + 'C'
+        return temperature
+
+    # Modified from psutil (https://github.com/giampaolo/psutil)
+    @contextlib.contextmanager
+    def oneshot(self):
+        """Utility context manager which considerably speeds up the
+        retrieval of multiple process information at the same time.
+
+        Internally different device info (e.g. memory_info,
+        utilization_rates, ...) may be fetched by using the same
+        routine, but only one information is returned and the others
+        are discarded.
+        When using this context manager the internal routine is
+        executed once (in the example below on memory_info()) and the
+        other info are cached.
+
+        The cache is cleared when exiting the context manager block.
+        The advice is to use this every time you retrieve more than
+        one information about the device. If you're lucky, you'll
+        get a hell of a speedup.
+
+        >>> from nvitop import Device
+        >>> device = Device(0)
+        >>> with device.oneshot():
+        ...     device.memory_info()        # collect multiple info
+        ...     device.memory_used()        # return cached value
+        ...     device.memory_free_human()  # return cached value
+        ...     device.memory_percent()     # return cached value
+        >>>
+        """
+        with self._lock:
+            if hasattr(self, "_cache"):
+                # NOOP: this covers the use case where the user enters the
+                # context twice:
+                #
+                # >>> with device.oneshot():
+                # ...    with device.oneshot():
+                # ...
+                #
+                # Also, since as_snapshot() internally uses oneshot()
+                # I expect that the code below will be a pretty common
+                # "mistake" that the user will make, so let's guard
+                # against that:
+                #
+                # >>> with device.oneshot():
+                # ...    device.as_snapshot()
+                # ...
+                yield
+            else:
+                try:
+                    self.memory_info.cache_activate(self)  # pylint: disable=no-member
+                    self.utilization_rates.cache_activate(self)  # pylint: disable=no-member
+                    self.power_usage.cache_activate(self)  # pylint: disable=no-member
+                    self.power_limit.cache_activate(self)  # pylint: disable=no-member
+                    yield
+                finally:
+                    self.memory_info.cache_deactivate(self)  # pylint: disable=no-member
+                    self.utilization_rates.cache_deactivate(self)  # pylint: disable=no-member
+                    self.power_usage.cache_deactivate(self)  # pylint: disable=no-member
+                    self.power_limit.cache_deactivate(self)  # pylint: disable=no-member
 
 
 PhysicalDevice = Device

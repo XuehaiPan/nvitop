@@ -5,6 +5,7 @@
 # pylint: disable=invalid-name
 
 import datetime
+import functools
 import math
 import time
 
@@ -142,3 +143,59 @@ class Snapshot(object):
 
             setattr(self, name, attribute)
             return attribute
+
+    def __getitem__(self, name):
+        try:
+            return self.__getattr__(name)
+        except AttributeError as e:
+            raise KeyError from e
+
+    def __setitem__(self, name, value):
+        self.__setattr__(name, value)
+
+
+# Modified from psutil (https://github.com/giampaolo/psutil)
+def memoize_when_activated(func):
+    """A memoize decorator which is disabled by default. It can be
+    activated and deactivated on request.
+    For efficiency reasons it can be used only against class methods
+    accepting no arguments.
+    """
+
+    @functools.wraps(func)
+    def wrapped(self):
+        try:
+            # case 1: we previously entered oneshot() ctx
+            ret = self._cache[func]  # pylint: disable=protected-access
+        except AttributeError:
+            # case 2: we never entered oneshot() ctx
+            return func(self)
+        except KeyError:
+            # case 3: we entered oneshot() ctx but there's no cache
+            # for this entry yet
+            ret = func(self)
+            try:
+                self._cache[func] = ret  # pylint: disable=protected-access
+            except AttributeError:
+                # multi-threading race condition, see:
+                # https://github.com/giampaolo/psutil/issues/1948
+                pass
+        return ret
+
+    def cache_activate(self):
+        """Activate cache. Expects a Process instance. Cache will be
+        stored as a "_cache" instance attribute."""
+
+        if not hasattr(self, '_cache'):
+            setattr(self, '_cache', {})
+
+    def cache_deactivate(self):
+        """Deactivate and clear cache."""
+        try:
+            del self._cache  # pylint: disable=protected-access
+        except AttributeError:
+            pass
+
+    wrapped.cache_activate = cache_activate
+    wrapped.cache_deactivate = cache_deactivate
+    return wrapped

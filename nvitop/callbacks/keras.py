@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Union
 
 from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error
 
-from nvitop.core import nvml, MiB, NA
+from nvitop.core import nvml, MiB
 from nvitop.callbacks.utils import get_devices_by_logical_ids
 
 
@@ -146,22 +146,21 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         stats = {}
         for device in self._devices:
             prefix = 'gpu_id: {}'.format(device.cuda_index)
-            if device.cuda_index != device.index:
-                prefix += ' (real index: {})'.format(device.index)
-            if self._memory_utilization or self._gpu_utilization:
-                utilization = device.utilization_rates()
+            if device.cuda_index != device.physical_index:
+                prefix += ' (physical index: {})'.format(device.physical_index)
+            with device.oneshot():
+                if self._memory_utilization or self._gpu_utilization:
+                    utilization = device.utilization_rates()
+                    if self._memory_utilization:
+                        stats['{}/utilization.memory (%)'.format(prefix)] = float(utilization.memory)
+                    if self._gpu_utilization:
+                        stats['{}/utilization.gpu (%)'.format(prefix)] = float(utilization.gpu)
                 if self._memory_utilization:
-                    memory_utilization = float(utilization.memory if utilization is not NA else NA)
-                    stats['{}/utilization.memory (%)'.format(prefix)] = memory_utilization
-                if self._gpu_utilization:
-                    gpu_utilization = float(utilization.gpu if utilization is not NA else NA)
-                    stats['{}/utilization.gpu (%)'.format(prefix)] = float(gpu_utilization)
-            if self._memory_utilization:
-                stats['{}/memory.used (MiB)'.format(prefix)] = float(device.memory_used()) / MiB
-                stats['{}/memory.free (MiB)'.format(prefix)] = float(device.memory_free()) / MiB
-            if self._fan_speed:
-                stats['{}/fan.speed (%)'.format(prefix)] = float(device.fan_speed())
-            if self._temperature:
-                stats['{}/temperature.gpu (℃)'.format(prefix)] = float(device.fan_speed())
+                    stats['{}/memory.used (MiB)'.format(prefix)] = float(device.memory_used()) / MiB
+                    stats['{}/memory.free (MiB)'.format(prefix)] = float(device.memory_free()) / MiB
+                if self._fan_speed:
+                    stats['{}/fan.speed (%)'.format(prefix)] = float(device.fan_speed())
+                if self._temperature:
+                    stats['{}/temperature.gpu (℃)'.format(prefix)] = float(device.fan_speed())
 
         return stats

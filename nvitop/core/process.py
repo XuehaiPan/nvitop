@@ -9,6 +9,7 @@ import functools
 import os
 import threading
 from abc import ABCMeta
+from types import FunctionType
 from typing import List, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
 
 from cachetools.func import ttl_cache
@@ -23,7 +24,7 @@ if TYPE_CHECKING:
     from nvitop.core.device import Device
 
 
-__all__ = ['HostProcess', 'GpuProcess']
+__all__ = ['HostProcess', 'GpuProcess', 'command_join']
 
 
 if host.POSIX:
@@ -157,13 +158,18 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
     def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
-        attributes = self.as_dict(attrs=attrs, ad_value=ad_value)
+        with self.oneshot():
+            attributes = self.as_dict(attrs=attrs, ad_value=ad_value)
 
-        if attrs is None:
-            try:
-                attributes['command'] = self.command()
-            except (host.AccessDenied, host.ZombieProcess):
-                attributes['command'] = ad_value
+            if attrs is None:
+                try:
+                    try:
+                        cmdline = attributes['cmdline']
+                    except KeyError:
+                        cmdline = self.cmdline()
+                    attributes['command'] = command_join(cmdline)
+                except (host.AccessDenied, host.ZombieProcess):
+                    attributes['command'] = ad_value
 
         return Snapshot(real=self, **attributes)
 
@@ -241,7 +247,12 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
         try:
             return super().__getattr__(name)
         except AttributeError:
-            return getattr(self.host, name)
+            attribute = getattr(self.host, name)
+            if isinstance(attribute, FunctionType):
+                attribute = auto_garbage_clean(attribute)
+
+            setattr(self, name, attribute)
+            return attribute
 
     @property
     def pid(self) -> int:
@@ -267,21 +278,6 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
 
     def gpu_decoder_utilization(self) -> int:  # in percentage
         return self._gpu_decoder_utilization
-
-    def gpu_memory_percent_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_memory_percent())
-
-    def gpu_sm_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_sm_utilization())
-
-    def gpu_memory_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_memory_utilization())
-
-    def gpu_encoder_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_encoder_utilization())
-
-    def gpu_decoder_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_decoder_utilization())
 
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
         self._gpu_memory = memory_used = value  # pylint: disable=attribute-defined-outside-init
@@ -375,13 +371,6 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
             )
 
         host_snapshot.command = command_join(host_snapshot.cmdline)
-        if host_snapshot.cpu_percent < 1000.0:
-            host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
-        elif host_snapshot.cpu_percent < 10000:
-            host_snapshot.cpu_percent_string = '{}%'.format(int(host_snapshot.cpu_percent))
-        else:
-            host_snapshot.cpu_percent_string = '9999+%'
-        host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
         host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
 
         return Snapshot(
@@ -391,28 +380,36 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
             gpu_memory=self.gpu_memory(),
             gpu_memory_human=self.gpu_memory_human(),
             gpu_memory_percent=self.gpu_memory_percent(),
-            gpu_memory_percent_string=self.gpu_memory_percent_string(),
             gpu_sm_utilization=self.gpu_sm_utilization(),
-            gpu_sm_utilization_string=self.gpu_sm_utilization_string(),
             gpu_memory_utilization=self.gpu_memory_utilization(),
-            gpu_memory_utilization_string=self.gpu_memory_utilization_string(),
             gpu_encoder_utilization=self.gpu_encoder_utilization(),
-            gpu_encoder_utilization_string=self.gpu_encoder_utilization_string(),
             gpu_decoder_utilization=self.gpu_decoder_utilization(),
-            gpu_decoder_utilization_string=self.gpu_decoder_utilization_string(),
             type=self.type,
             username=host_snapshot.username,
             name=host_snapshot.name,
             cmdline=host_snapshot.cmdline,
             command=host_snapshot.command,
             cpu_percent=host_snapshot.cpu_percent,
-            cpu_percent_string=host_snapshot.cpu_percent_string,
             memory_percent=host_snapshot.memory_percent,
-            memory_percent_string=host_snapshot.memory_percent_string,
             is_running=host_snapshot.is_running,
             running_time=host_snapshot.running_time,
             running_time_human=host_snapshot.running_time_human
         )
+
+    def gpu_memory_percent_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_memory_percent())
+
+    def gpu_sm_utilization_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_sm_utilization())
+
+    def gpu_memory_utilization_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_memory_utilization())
+
+    def gpu_encoder_utilization_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_encoder_utilization())
+
+    def gpu_decoder_utilization_string(self) -> str:  # in percentage
+        return utilization2string(self.gpu_decoder_utilization())
 
 
 HostProcess.register(GpuProcess)
