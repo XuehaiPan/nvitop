@@ -143,7 +143,8 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
         while len(queue) > 0:
             node = queue.popleft()
             try:
-                parent_process = node.process.parent()
+                with node.process.oneshot():
+                    parent_process = node.process.parent()
             except host.PsutilError:
                 continue
             if parent_process is None:
