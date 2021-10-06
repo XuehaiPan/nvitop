@@ -491,8 +491,10 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         ...     device.memory_percent()     # return cached value
         >>>
         """
+
         with self._lock:
-            if hasattr(self, "_cache"):
+            # pylint: disable=no-member
+            if hasattr(self, '_cache'):
                 # NOOP: this covers the use case where the user enters the
                 # context twice:
                 #
@@ -511,16 +513,16 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                 yield
             else:
                 try:
-                    self.memory_info.cache_activate(self)  # pylint: disable=no-member
-                    self.utilization_rates.cache_activate(self)  # pylint: disable=no-member
-                    self.power_usage.cache_activate(self)  # pylint: disable=no-member
-                    self.power_limit.cache_activate(self)  # pylint: disable=no-member
+                    self.memory_info.cache_activate(self)
+                    self.utilization_rates.cache_activate(self)
+                    self.power_usage.cache_activate(self)
+                    self.power_limit.cache_activate(self)
                     yield
                 finally:
-                    self.memory_info.cache_deactivate(self)  # pylint: disable=no-member
-                    self.utilization_rates.cache_deactivate(self)  # pylint: disable=no-member
-                    self.power_usage.cache_deactivate(self)  # pylint: disable=no-member
-                    self.power_limit.cache_deactivate(self)  # pylint: disable=no-member
+                    self.memory_info.cache_deactivate(self)
+                    self.utilization_rates.cache_deactivate(self)
+                    self.power_usage.cache_deactivate(self)
+                    self.power_limit.cache_deactivate(self)
 
 
 PhysicalDevice = Device

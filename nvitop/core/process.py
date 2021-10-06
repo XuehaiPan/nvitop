@@ -4,6 +4,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import contextlib
 import datetime
 import functools
 import os
@@ -12,12 +13,11 @@ from abc import ABCMeta
 from types import FunctionType
 from typing import List, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
 
-from cachetools.func import ttl_cache
-
 from nvitop.core import host
 from nvitop.core.libnvml import nvml
 from nvitop.core.utils import (NA, NaType, Snapshot,
-                               bytes2human, timedelta2human, utilization2string)
+                               bytes2human, timedelta2human,
+                               utilization2string, memoize_when_activated)
 
 
 if TYPE_CHECKING:
@@ -137,16 +137,21 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     __repr__ = __str__
 
-    cpu_percent = ttl_cache(ttl=1.0)(host.Process.cpu_percent)
-
-    memory_percent = ttl_cache(ttl=1.0)(host.Process.memory_percent)
-
     if host.WINDOWS:
         def username(self) -> str:
             return super().username().split('\\')[-1]
 
+    cmdline = memoize_when_activated(host.Process.cmdline)
+
     def command(self) -> str:
         return command_join(self.cmdline())
+
+    @memoize_when_activated
+    def running_time(self) -> datetime.timedelta:
+        return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+
+    def running_time_human(self) -> str:
+        return timedelta2human(self.running_time())
 
     def parent(self) -> Union['HostProcess', None]:
         parent = super().parent()
@@ -157,19 +162,32 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     def children(self, recursive: bool = False) -> List['HostProcess']:
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
+    @contextlib.contextmanager
+    def oneshot(self):
+        with self._lock:
+            if hasattr(self, '_cache'):
+                yield
+            else:
+                with super().oneshot():
+                    # pylint: disable=no-member
+                    try:
+                        self.cmdline.cache_activate(self)
+                        self.running_time.cache_activate(self)
+                        yield
+                    finally:
+                        self.cmdline.cache_deactivate(self)
+                        self.running_time.cache_deactivate(self)
+
     def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
         with self.oneshot():
             attributes = self.as_dict(attrs=attrs, ad_value=ad_value)
 
             if attrs is None:
-                try:
+                for attr in ('command', 'running_time', 'running_time_human'):
                     try:
-                        cmdline = attributes['cmdline']
-                    except KeyError:
-                        cmdline = self.cmdline()
-                    attributes['command'] = command_join(cmdline)
-                except (host.AccessDenied, host.ZombieProcess):
-                    attributes['command'] = ad_value
+                        attributes[attr] = getattr(self, attr)()
+                    except (host.AccessDenied, host.ZombieProcess):
+                        attributes[attr] = ad_value
 
         return Snapshot(real=self, **attributes)
 
@@ -195,9 +213,9 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
             instance = super().__new__(cls)
 
             instance._pid = pid
-            instance.host = HostProcess(pid)
-            instance._ident = identity = (*instance.host._ident, device.index)
-            instance.device = device
+            instance._host = HostProcess(pid)
+            instance._ident = identity = (*instance._host._ident, device.index)
+            instance._device = device
 
             instance._hash = None
             instance._username = None
@@ -258,6 +276,14 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
     def pid(self) -> int:
         return self._pid
 
+    @property
+    def host(self) -> HostProcess:
+        return self._host
+
+    @property
+    def device(self) -> 'Device':
+        return self._device
+
     def gpu_memory(self) -> Union[int, NaType]:  # in bytes
         return self._gpu_memory
 
@@ -317,17 +343,25 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
         else:
             self._type = NA
 
-    @ttl_cache(ttl=1.0)
     @auto_garbage_clean
-    def running_time(self) -> datetime.timedelta:
-        return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+    def is_running(self) -> bool:
+        return self.host.is_running()
 
-    def running_time_human(self) -> str:
-        return timedelta2human(self.running_time())
+    @auto_garbage_clean
+    def status(self) -> str:
+        return self.host.status()
 
     @auto_garbage_clean
     def create_time(self) -> float:
         return self.host.create_time()
+
+    @auto_garbage_clean
+    def running_time(self) -> datetime.timedelta:
+        return self.host.running_time()
+
+    @auto_garbage_clean
+    def running_time_human(self) -> str:
+        return timedelta2human(self.running_time())
 
     @auto_garbage_clean
     def username(self) -> str:
@@ -360,18 +394,17 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
         with self.host.oneshot():
             host_snapshot = Snapshot(
                 real=self.host,
-                is_running=self.host.is_running(),
-                status=self.host.status(),
+                is_running=self.is_running(),
+                status=self.status(),
                 username=self.username(),
                 name=self.name(),
                 cmdline=self.cmdline(),
+                command=self.command(),
                 cpu_percent=self.cpu_percent(),
                 memory_percent=self.memory_percent(),
-                running_time=self.running_time()
+                running_time=self.running_time(),
+                running_time_human=self.running_time_human()
             )
-
-        host_snapshot.command = command_join(host_snapshot.cmdline)
-        host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
 
         return Snapshot(
             real=self,

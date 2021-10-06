@@ -84,17 +84,18 @@ class GpuProcess(GpuProcessBase):
                 with self.host.oneshot():
                     host_snapshot = Snapshot(
                         real=self.host,
-                        is_running=self.host.is_running(),
-                        status=self.host.status(),
+                        is_running=self.is_running(),
+                        status=self.status(),
                         username=self.username(),
                         name=self.name(),
                         cmdline=self.cmdline(),
+                        command=self.command(),
                         cpu_percent=self.cpu_percent(),
                         memory_percent=self.memory_percent(),
-                        running_time=self.running_time()
+                        running_time=self.running_time(),
+                        running_time_human=self.running_time_human()
                     )
 
-                host_snapshot.command = command_join(host_snapshot.cmdline)
                 if host_snapshot.cpu_percent < 1000.0:
                     host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
                 elif host_snapshot.cpu_percent < 10000:
@@ -102,7 +103,6 @@ class GpuProcess(GpuProcessBase):
                 else:
                     host_snapshot.cpu_percent_string = '9999+%'
                 host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
-                host_snapshot.running_time_human = timedelta2human(host_snapshot.running_time)
 
                 self.HOST_SNAPSHOTS[self.pid] = host_snapshot
 
