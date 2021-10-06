@@ -550,6 +550,8 @@ class CudaDevice(Device):
 
         super().__init__(index=physical_index, uuid=uuid)
 
+        if cuda_index is None:
+            cuda_index = self.cuda_index
         self._cuda_index = cuda_index
 
     def __str__(self) -> str:
