@@ -19,7 +19,6 @@ __all__ = ['libnvml', 'nvml']
 
 class libnvml(object):
     LOGGER = logging.getLogger('NVML')
-    FLAGS = set()
     UNKNOWN_FUNCTIONS = set()
     NVMLError = pynvml.NVMLError
     NVMLError_LibraryNotFound = pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
@@ -27,7 +26,7 @@ class libnvml(object):
     def __new__(cls) -> 'libnvml':
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
-            instance._initialized = False
+            instance._flags = []
             instance._lib_lock = threading.Lock()
             for name, attr in vars(pynvml).items():
                 if name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
@@ -64,7 +63,7 @@ class libnvml(object):
 
     def nvmlInitWithFlags(self, flags: int) -> None:
         with self._lib_lock:
-            if self._initialized and flags in self.FLAGS:
+            if len(self._flags) > 0 and flags == self._flags[-1]:
                 return
 
         try:
@@ -81,13 +80,15 @@ class libnvml(object):
             raise
         else:
             with self._lib_lock:
-                self._initialized = True  # pylint: disable=attribute-defined-outside-init
-                self.FLAGS.add(flags)
+                self._flags.append(flags)
 
     def nvmlShutdown(self) -> None:
         pynvml.nvmlShutdown()
         with self._lib_lock:
-            self._initialized = False  # pylint: disable=attribute-defined-outside-init
+            try:
+                self._flags.pop()
+            except IndexError:
+                pass
 
     def nvmlQuery(self, func: Union[str, Callable[..., Any]], *args,
                   default: Any = NA,
