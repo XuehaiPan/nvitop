@@ -87,7 +87,7 @@ def auto_garbage_clean(func: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class HostProcess(host.Process, metaclass=ABCMeta):
-    INSTANCE_LOCK = threading.Lock()
+    INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
     def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
@@ -193,7 +193,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
 
 class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-    INSTANCE_LOCK = threading.Lock()
+    INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
     def __new__(cls, pid: int, device: 'Device',

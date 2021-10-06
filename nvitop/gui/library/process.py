@@ -48,8 +48,12 @@ def auto_garbage_clean(default=None):
 
 
 class GpuProcess(GpuProcessBase):
-    SNAPSHOT_LOCK = threading.Lock()
+    SNAPSHOT_LOCK = threading.RLock()
     HOST_SNAPSHOTS = {}
+
+    is_running = auto_garbage_clean(default=False)(GpuProcessBase.is_running)
+
+    status = auto_garbage_clean(default='terminated')(GpuProcessBase.status)
 
     running_time = auto_garbage_clean(default=NA)(GpuProcessBase.running_time)
 
@@ -96,13 +100,19 @@ class GpuProcess(GpuProcessBase):
                         running_time_human=self.running_time_human()
                     )
 
-                if host_snapshot.cpu_percent < 1000.0:
+                if host_snapshot.cpu_percent is NA:
+                    host_snapshot.cpu_percent_string = NA
+                elif host_snapshot.cpu_percent < 1000.0:
                     host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
                 elif host_snapshot.cpu_percent < 10000:
                     host_snapshot.cpu_percent_string = '{}%'.format(int(host_snapshot.cpu_percent))
                 else:
                     host_snapshot.cpu_percent_string = '9999+%'
-                host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
+
+                if host_snapshot.memory_percent is NA:
+                    host_snapshot.memory_percent_string = NA
+                else:
+                    host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
 
                 self.HOST_SNAPSHOTS[self.pid] = host_snapshot
 
