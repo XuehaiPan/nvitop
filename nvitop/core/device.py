@@ -302,21 +302,57 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             self._memory_total_human = bytes2human(self.memory_total())
         return self._memory_total_human
 
-    def memory_used_human(self) -> Union[str, NaType]:
+    def memory_used_human(self) -> Union[str, NaType]:  # in human readable
         return bytes2human(self.memory_used())
 
-    def memory_free_human(self) -> Union[str, NaType]:
+    def memory_free_human(self) -> Union[str, NaType]:  # in human readable
         return bytes2human(self.memory_free())
 
     def memory_percent(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
-        memory_total, memory_free, memory_used = self.memory_info()  # pylint: disable=unused-variable
+        memory_info = self.memory_info()
 
-        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
-            return round(100.0 * memory_used / memory_total, 1)
+        if nvml.nvmlCheckReturn(memory_info.used, int) and nvml.nvmlCheckReturn(memory_info.total, int):
+            return round(100.0 * memory_info.used / memory_info.total, 1)
         return NA
 
     def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
         return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
+
+    @memoize_when_activated
+    @ttl_cache(ttl=1.0)
+    def bar1_memory_info(self) -> MemoryInfo:  # in bytes
+        memory_info = nvml.nvmlQuery('nvmlDeviceGetBAR1MemoryInfo', self.handle)
+        if nvml.nvmlCheckReturn(memory_info):
+            return MemoryInfo(total=memory_info.bar1Total, free=memory_info.bar1Free, used=memory_info.bar1Used)
+        return MemoryInfo(total=NA, free=NA, used=NA)
+
+    def bar1_memory_total(self) -> Union[int, NaType]:  # in bytes
+        return self.bar1_memory_info().total
+
+    def bar1_memory_used(self) -> Union[int, NaType]:  # in bytes
+        return self.bar1_memory_info().used
+
+    def bar1_memory_free(self) -> Union[int, NaType]:  # in bytes
+        return self.bar1_memory_info().free
+
+    def bar1_memory_total_human(self) -> Union[str, NaType]:  # in human readable
+        return bytes2human(self.bar1_memory_total())
+
+    def bar1_memory_used_human(self) -> Union[str, NaType]:  # in human readable
+        return bytes2human(self.bar1_memory_used())
+
+    def bar1_memory_free_human(self) -> Union[str, NaType]:  # in human readable
+        return bytes2human(self.bar1_memory_free())
+
+    def bar1_memory_percent(self) -> Union[float, NaType]:  # used BAR1 memory over total BAR1 memory (in percentage)
+        memory_info = self.bar1_memory_info()
+
+        if nvml.nvmlCheckReturn(memory_info.used, int) and nvml.nvmlCheckReturn(memory_info.total, int):
+            return round(100.0 * memory_info.used / memory_info.total, 1)
+        return NA
+
+    def bar1_memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
+        return '{} / {}'.format(self.bar1_memory_used_human(), self.bar1_memory_total_human())
 
     @memoize_when_activated
     @ttl_cache(ttl=1.0)

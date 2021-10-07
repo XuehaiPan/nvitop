@@ -473,8 +473,8 @@ Out[16]: 9.5
 In [17]: nvidia1_snapshot['memory_info']  # snapshot also supports `__getitem__` by string
 Out[17]: MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
 
-In [18]: nvidia1_snapshot.encoder_utilization  # snapshot will automatically retrieve not presented attributes from `real`
-Out[18]: [0, 1000000]
+In [18]: nvidia1_snapshot.bar1_memory_info  # snapshot will automatically retrieve not presented attributes from `real`
+Out[18]: MemoryInfo(total=268435456, free=257622016, used=10813440)
 ```
 
 **NOTE:** Some entry values may be `'N/A'` (type: `NaType`, subclass of `str`) when the corresponding resources are not applicable. You can use `entry != 'N/A'` conditions to avoid exceptions. It's safe to use `float(entry)` for numbers while `NaType` will be converted to `math.nan`. For example:
