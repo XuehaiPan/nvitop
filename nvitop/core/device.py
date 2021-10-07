@@ -157,19 +157,19 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         if index is not None:
             self._index = index
             try:
-                self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByIndex', index, ignore_errors=False)
+                self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleByIndex', index, ignore_errors=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
-                self.handle = None
+                self._handle = None
         else:
             try:
                 if uuid is not None:
-                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
+                    self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
                 elif bus_id is not None:
-                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False)
+                    self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False)
                 elif serial is not None:
-                    self.handle = nvml.nvmlQuery('nvmlDeviceGetHandleBySerial', serial, ignore_errors=False)
+                    self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleBySerial', serial, ignore_errors=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
-                self.handle = None
+                self._handle = None
                 self._index = NA
             else:
                 self._index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
@@ -234,6 +234,10 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     @property
     def index(self) -> int:
         return self._index
+
+    @property
+    def handle(self) -> int:
+        return self._handle
 
     @property
     def physical_index(self) -> int:
@@ -331,6 +335,14 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     gpu_percent = gpu_utilization  # in percentage
 
     @ttl_cache(ttl=5.0)
+    def sm_clock(self) -> Union[int, NaType]:  # in MHz
+        return nvml.nvmlQuery('nvmlDeviceGetMaxClockInfo', self.handle, nvml.NVML_CLOCK_SM)
+
+    @ttl_cache(ttl=5.0)
+    def memory_clock(self) -> Union[int, NaType]:  # in MHz
+        return nvml.nvmlQuery('nvmlDeviceGetMaxClockInfo', self.handle, nvml.NVML_CLOCK_MEM)
+
+    @ttl_cache(ttl=5.0)
     def fan_speed(self) -> Union[int, NaType]:  # in percentage
         return nvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
 
@@ -426,7 +438,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                             **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
 
     SNAPSHOT_KEYS = [
-        'name', 'bus_id',
+        'name', 'uuid', 'bus_id',
 
         'memory_info',
         'memory_used', 'memory_free', 'memory_total',
@@ -434,6 +446,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         'memory_usage', 'memory_percent',
 
         'utilization_rates', 'gpu_utilization', 'memory_utilization',
+
+        'sm_clock', 'memory_clock',
 
         'fan_speed', 'temperature',
 

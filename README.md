@@ -31,7 +31,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
-  - [More than Monitoring](#more-than-monitoring)
+  - [More than a Monitor](#more-than-a-monitor)
     - [Device](#device)
     - [Process](#process)
     - [Host (inherited from psutil)](#host-inherited-from-psutil)
@@ -350,9 +350,9 @@ trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
 **NOTE:** Users should assign a logger to the trainer.
 
-### More than Monitoring
+### More than a Monitor
 
-`nvitop` can be easily integrated into other applications.
+`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
 
 #### Device
 
@@ -438,11 +438,13 @@ Out[15]: DeviceSnapshot(
     real=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     bus_id='00000000:05:00.0',
     compute_mode='Default',
+    current_driver_model='N/A',
     display_active='Off',
     ecc_errors='N/A',
     fan_speed=22,                       # in percentage
     gpu_utilization=17,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
     index=1,
+    memory_clock=7000,                  # in MHz
     memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
     memory_info=MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
@@ -459,8 +461,10 @@ Out[15]: DeviceSnapshot(
     power_limit=250000,                 # in milliwatts (mW)
     power_status='66W / 250W',          # in watts (W)
     power_usage=66051,                  # in milliwatts (mW)
+    sm_clock=2100,                      # in MHz
     temperature=39,                     # in Celsius
-    utilization_rates=UtilizationRates(gpu=17, memory=7)
+    utilization_rates=UtilizationRates(gpu=17, memory=7),
+    uuid='GPU-01234567-89ab-cdef-0123-456789abcdef'
 )
 
 In [16]: nvidia1_snapshot.memory_percent  # snapshot uses properties instead of function calls
