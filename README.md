@@ -439,8 +439,10 @@ Out[15]: DeviceSnapshot(
     bus_id='00000000:05:00.0',
     compute_mode='Default',
     current_driver_model='N/A',
+    decoder_utilization=0,              # in percentage
     display_active='Off',
     ecc_errors='N/A',
+    encoder_utilization=0,              # in percentage
     fan_speed=22,                       # in percentage
     gpu_utilization=17,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
     index=1,
@@ -463,7 +465,7 @@ Out[15]: DeviceSnapshot(
     power_usage=66051,                  # in milliwatts (mW)
     sm_clock=2100,                      # in MHz
     temperature=39,                     # in Celsius
-    utilization_rates=UtilizationRates(gpu=17, memory=7),
+    utilization_rates=UtilizationRates(gpu=17, memory=7, encoder=0, decoder=0),  # in percentage
     uuid='GPU-01234567-89ab-cdef-0123-456789abcdef'
 )
 

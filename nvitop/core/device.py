@@ -22,7 +22,7 @@ __all__ = ['Device', 'PhysicalDevice', 'CudaDevice']
 
 
 MemoryInfo = namedtuple('MemoryInfo', ['total', 'free', 'used'])
-UtilizationRates = namedtuple('UtilizationRates', ['gpu', 'memory'])
+UtilizationRates = namedtuple('UtilizationRates', ['gpu', 'memory', 'encoder', 'decoder'])
 
 
 class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -357,18 +357,35 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     @memoize_when_activated
     @ttl_cache(ttl=1.0)
     def utilization_rates(self) -> UtilizationRates:  # in percentage
+        gpu, memory, encoder, decoder = NA, NA, NA, NA
+
         utilization_rates = nvml.nvmlQuery('nvmlDeviceGetUtilizationRates', self.handle)
         if nvml.nvmlCheckReturn(utilization_rates):
-            return UtilizationRates(gpu=utilization_rates.gpu, memory=utilization_rates.memory)
-        return UtilizationRates(gpu=NA, memory=NA)
+            gpu, memory = utilization_rates.gpu, utilization_rates.memory
 
-    def memory_utilization(self) -> Union[float, NaType]:  # in percentage
-        return self.utilization_rates().memory
+        encoder_utilization = nvml.nvmlQuery('nvmlDeviceGetEncoderUtilization', self.handle)
+        if nvml.nvmlCheckReturn(encoder_utilization, list) and len(encoder_utilization) > 0:
+            encoder = encoder_utilization[0]
+
+        decoder_utilization = nvml.nvmlQuery('nvmlDeviceGetDecoderUtilization', self.handle)
+        if nvml.nvmlCheckReturn(decoder_utilization, list) and len(decoder_utilization) > 0:
+            decoder = decoder_utilization[0]
+
+        return UtilizationRates(gpu=gpu, memory=memory, encoder=encoder, decoder=decoder)
 
     def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
         return self.utilization_rates().gpu
 
     gpu_percent = gpu_utilization  # in percentage
+
+    def memory_utilization(self) -> Union[float, NaType]:  # in percentage
+        return self.utilization_rates().memory
+
+    def encoder_utilization(self) -> Union[float, NaType]:  # in percentage
+        return self.utilization_rates().encoder
+
+    def decoder_utilization(self) -> Union[float, NaType]:  # in percentage
+        return self.utilization_rates().decoder
 
     @ttl_cache(ttl=5.0)
     def sm_clock(self) -> Union[int, NaType]:  # in MHz
@@ -479,9 +496,11 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         'memory_info',
         'memory_used', 'memory_free', 'memory_total',
         'memory_used_human', 'memory_free_human', 'memory_total_human',
-        'memory_usage', 'memory_percent',
+        'memory_percent', 'memory_usage',
 
-        'utilization_rates', 'gpu_utilization', 'memory_utilization',
+        'utilization_rates',
+        'gpu_utilization', 'memory_utilization',
+        'encoder_utilization', 'decoder_utilization',
 
         'sm_clock', 'memory_clock',
 
