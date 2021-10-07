@@ -39,14 +39,14 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
         self.formats_full = [
             '│ {index:>3}  {name:<18}  {persistence_mode:<4} '
-            '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │',
+            '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
             '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 
         if host.WINDOWS:
             self.formats_full[0] = ('│ {index:>3}  {name:<18}  {current_driver_model:<4} '
-                                    '│ {bus_id:<16} {display_active:>3} │ {ecc_errors:>20} │')
+                                    '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │')
 
         self._snapshot_buffer = []
         self._snapshots = []

@@ -425,6 +425,13 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return '{} / {}'.format(power_usage, power_limit)
 
     @ttl_cache(ttl=60.0)
+    def current_driver_model(self) -> Union[str, NaType]:
+        return {
+            nvml.NVML_DRIVER_WDDM: 'WDDM',
+            nvml.NVML_DRIVER_WDM: 'WDM',
+        }.get(nvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self.handle), NA)
+
+    @ttl_cache(ttl=60.0)
     def display_active(self) -> Union[str, NaType]:
         return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), NA)
 
@@ -439,15 +446,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             performance_state = 'P' + str(performance_state)
         return performance_state
 
-    @ttl_cache(ttl=60.0)
-    def current_driver_model(self) -> Union[str, NaType]:
-        return {
-            nvml.NVML_DRIVER_WDDM: 'WDDM',
-            nvml.NVML_DRIVER_WDM: 'WDM',
-        }.get(nvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self.handle), NA)
-
     @ttl_cache(ttl=5.0)
-    def ecc_errors(self) -> Union[int, NaType]:
+    def total_volatile_uncorrected_ecc_errors(self) -> Union[int, NaType]:
         return nvml.nvmlQuery('nvmlDeviceGetTotalEccErrors', self.handle,
                               nvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
                               nvml.NVML_VOLATILE_ECC)
@@ -508,8 +508,9 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         'power_usage', 'power_limit', 'power_status',
 
-        'display_active', 'persistence_mode', 'performance_state',
-        'current_driver_model', 'ecc_errors', 'compute_mode',
+        'current_driver_model', 'display_active',
+        'persistence_mode', 'performance_state',
+        'total_volatile_uncorrected_ecc_errors', 'compute_mode',
     ]
 
     def memory_percent_string(self) -> Union[str, NaType]:  # in percentage
