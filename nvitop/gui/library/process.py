@@ -8,7 +8,7 @@ import functools
 import threading
 
 from nvitop.core import (host, HostProcess, GpuProcess as GpuProcessBase,
-                         NA, Snapshot, command_join, timedelta2human)
+                         NA, Snapshot)
 
 
 __all__ = ['host', 'HostProcess', 'GpuProcess', 'NA', 'Snapshot']

@@ -6,7 +6,6 @@
 import curses
 import shutil
 import sys
-import threading
 import time
 from functools import partial
 

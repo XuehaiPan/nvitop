@@ -1,10 +1,14 @@
+#!/usr/bin/env python3
+
+# pylint: disable=missing-module-docstring
+
 import os
 import sys
 
 from setuptools import find_packages, setup
 
 try:
-    import nvitop.version as version
+    from nvitop import version
 except ImportError:
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'nvitop'))
     import version
@@ -12,7 +16,7 @@ except ImportError:
 
 extra_description = {}
 try:
-    with open('README.md', mode='r') as doc:
+    with open('README.md', mode='rt', encoding='UTF-8') as doc:
         extra_description['long_description'] = doc.read()
         extra_description['long_description_content_type'] = 'text/markdown'
 except (OSError, UnicodeError):
@@ -37,7 +41,7 @@ setup(
         'colorama >= 0.4.0; platform_system == "Windows"',
         'windows-curses >= 2.2.0; platform_system == "Windows"',
     ],
-    python_requires='>=3.5',
+    python_requires='>= 3.5',
     classifiers=[
         'Development Status :: 4 - Beta',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',

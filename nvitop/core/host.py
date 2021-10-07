@@ -37,7 +37,7 @@ swap_memory = _ttl_cache(ttl=0.25)(_psutil.swap_memory)
 ppid_map = _psutil._ppid_map  # pylint: disable=protected-access
 
 
-def reverse_ppid_map():
+def reverse_ppid_map():  # pylint: disable=function-redefined
     tree = _defaultdict(list)
     for pid, ppid in ppid_map().items():
         tree[ppid].append(pid)

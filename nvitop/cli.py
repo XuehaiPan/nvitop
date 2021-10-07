@@ -13,7 +13,7 @@ from nvitop.gui import Top, Device, libcurses, colored, CURRENT_USER
 from nvitop.version import __version__
 
 
-def parse_arguments():
+def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
                                                                colored('moderate', 'yellow'),
                                                                colored('heavy', 'red'))

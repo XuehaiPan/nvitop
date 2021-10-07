@@ -50,7 +50,7 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
     def __hash__(self):
         return hash(self.process)
 
-    def as_snapshot(self):
+    def as_snapshot(self):  # pylint: disable=too-many-branches
         if not isinstance(self.process, Snapshot):
             with self.process.oneshot():
                 try:
