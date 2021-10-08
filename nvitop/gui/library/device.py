@@ -19,7 +19,21 @@ class Device(DeviceBase):
     INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
 
     SNAPSHOT_KEYS = [
-        *DeviceBase.SNAPSHOT_KEYS,
+        'name', 'bus_id',
+
+        'memory_used', 'memory_free', 'memory_total',
+        'memory_used_human', 'memory_free_human', 'memory_total_human',
+        'memory_percent', 'memory_usage',
+
+        'gpu_utilization', 'memory_utilization',
+
+        'fan_speed', 'temperature',
+
+        'power_usage', 'power_limit', 'power_status',
+
+        'current_driver_model', 'display_active',
+        'persistence_mode', 'performance_state',
+        'total_volatile_uncorrected_ecc_errors', 'compute_mode',
 
         'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
         'fan_speed_string', 'temperature_string',
