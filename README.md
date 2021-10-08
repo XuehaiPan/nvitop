@@ -438,6 +438,8 @@ Out[15]: DeviceSnapshot(
     real=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     bus_id='00000000:05:00.0',
     compute_mode='Default',
+    clock_infos=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680),  # in MHz
+    clock_speed_infos=ClockSpeedInfos(current=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680), max=ClockInfos(graphics=2100, sm=2100, memory=7000, video=1950)),  # in MHz
     current_driver_model='N/A',
     decoder_utilization=0,              # in percentage
     display_active='Off',
@@ -445,10 +447,11 @@ Out[15]: DeviceSnapshot(
     fan_speed=22,                       # in percentage
     gpu_utilization=17,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
     index=1,
-    memory_clock=7000,                  # in MHz
+    max_clock_infos=ClockInfos(graphics=2100, sm=2100, memory=7000, video=1950),  # in MHz
+    memory_clock=6800,                  # in MHz
     memory_free=10462232576,            # in bytes
     memory_free_human='9977MiB',
-    memory_info=MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
+    memory_info=MemoryInfo(total=11554717696, free=10462232576, used=1092485120)  # in bytes
     memory_percent=9.5,                 # in percentage (NOTE: this is the percentage of used GPU memory)
     memory_total=11554717696,           # in bytes
     memory_total_human='11019MiB',
@@ -462,7 +465,7 @@ Out[15]: DeviceSnapshot(
     power_limit=250000,                 # in milliwatts (mW)
     power_status='66W / 250W',          # in watts (W)
     power_usage=66051,                  # in milliwatts (mW)
-    sm_clock=2100,                      # in MHz
+    sm_clock=1815,                      # in MHz
     temperature=39,                     # in Celsius
     total_volatile_uncorrected_ecc_errors='N/A',
     utilization_rates=UtilizationRates(gpu=17, memory=7, encoder=0, decoder=0),  # in percentage

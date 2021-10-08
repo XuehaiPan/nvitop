@@ -8,8 +8,7 @@ import contextlib
 import os
 import re
 import threading
-from collections import namedtuple
-from typing import List, Dict, Iterable, Callable, Union, Optional, Any
+from typing import List, Dict, Iterable, NamedTuple, Callable, Union, Optional, Any
 
 from cachetools.func import ttl_cache
 
@@ -21,8 +20,23 @@ from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2str
 __all__ = ['Device', 'PhysicalDevice', 'CudaDevice']
 
 
-MemoryInfo = namedtuple('MemoryInfo', ['total', 'free', 'used'])
-UtilizationRates = namedtuple('UtilizationRates', ['gpu', 'memory', 'encoder', 'decoder'])
+MemoryInfo = NamedTuple('MemoryInfo',  # in bytes
+                        [('total', Union[int, NaType]),
+                         ('free', Union[int, NaType]),
+                         ('used', Union[int, NaType])])
+ClockInfos = NamedTuple('ClockInfos',  # in MHz
+                        [('graphics', Union[int, NaType]),
+                         ('sm', Union[int, NaType]),
+                         ('memory', Union[int, NaType]),
+                         ('video', Union[int, NaType])])
+ClockSpeedInfos = NamedTuple('ClockSpeedInfos',
+                             [('current', ClockInfos),
+                              ('max', ClockInfos)])
+UtilizationRates = NamedTuple('UtilizationRates',  # in percentage
+                              [('gpu', Union[int, NaType]),
+                               ('memory', Union[int, NaType]),
+                               ('encoder', Union[int, NaType]),
+                               ('decoder', Union[int, NaType])])
 
 
 class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -181,6 +195,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         self._bus_id = NA
         self._memory_total = NA
         self._memory_total_human = NA
+        self._max_clock_infos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
         self._timestamp = 0
         self._lock = threading.RLock()
 
@@ -387,13 +402,40 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     def decoder_utilization(self) -> Union[float, NaType]:  # in percentage
         return self.utilization_rates().decoder
 
+    @memoize_when_activated
     @ttl_cache(ttl=5.0)
-    def sm_clock(self) -> Union[int, NaType]:  # in MHz
-        return nvml.nvmlQuery('nvmlDeviceGetMaxClockInfo', self.handle, nvml.NVML_CLOCK_SM)
+    def clock_infos(self) -> ClockInfos:  # in MHz
+        return ClockInfos(
+            graphics=nvml.nvmlQuery('nvmlDeviceGetClockInfo', self.handle, nvml.NVML_CLOCK_GRAPHICS),
+            sm=nvml.nvmlQuery('nvmlDeviceGetClockInfo', self.handle, nvml.NVML_CLOCK_SM),
+            memory=nvml.nvmlQuery('nvmlDeviceGetClockInfo', self.handle, nvml.NVML_CLOCK_MEM),
+            video=nvml.nvmlQuery('nvmlDeviceGetClockInfo', self.handle, nvml.NVML_CLOCK_VIDEO)
+        )
 
+    clocks = clock_infos
+
+    @memoize_when_activated
     @ttl_cache(ttl=5.0)
+    def max_clock_infos(self) -> ClockInfos:  # in MHz
+        clock_infos = self._max_clock_infos._asdict()
+        for name, clock in clock_infos.items():
+            if clock is NA:
+                clock_type = getattr(nvml, 'NVML_CLOCK_{}'.format(name.replace('memory', 'mem').upper()))
+                clock = nvml.nvmlQuery('nvmlDeviceGetMaxClockInfo', self.handle, clock_type)
+                clock_infos[name] = clock
+        self._max_clock_infos = ClockInfos(**clock_infos)
+        return self._max_clock_infos
+
+    max_clocks = max_clock_infos
+
+    def clock_speed_infos(self) -> ClockSpeedInfos:  # in MHz
+        return ClockSpeedInfos(current=self.clock_infos(), max=self.max_clock_infos())
+
+    def sm_clock(self) -> Union[int, NaType]:  # in MHz
+        return self.clock_infos().sm
+
     def memory_clock(self) -> Union[int, NaType]:  # in MHz
-        return nvml.nvmlQuery('nvmlDeviceGetMaxClockInfo', self.handle, nvml.NVML_CLOCK_MEM)
+        return self.clock_infos().memory
 
     @ttl_cache(ttl=5.0)
     def fan_speed(self) -> Union[int, NaType]:  # in percentage
@@ -502,6 +544,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         'gpu_utilization', 'memory_utilization',
         'encoder_utilization', 'decoder_utilization',
 
+        'clock_infos', 'max_clock_infos', 'clock_speed_infos',
         'sm_clock', 'memory_clock',
 
         'fan_speed', 'temperature',
@@ -584,13 +627,19 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             else:
                 try:
                     self.memory_info.cache_activate(self)
+                    self.bar1_memory_info.cache_activate(self)
                     self.utilization_rates.cache_activate(self)
+                    self.clock_infos.cache_activate(self)
+                    self.max_clock_infos.cache_activate(self)
                     self.power_usage.cache_activate(self)
                     self.power_limit.cache_activate(self)
                     yield
                 finally:
                     self.memory_info.cache_deactivate(self)
+                    self.bar1_memory_info.cache_deactivate(self)
                     self.utilization_rates.cache_deactivate(self)
+                    self.clock_infos.cache_deactivate(self)
+                    self.max_clock_infos.cache_deactivate(self)
                     self.power_usage.cache_deactivate(self)
                     self.power_limit.cache_deactivate(self)
 
