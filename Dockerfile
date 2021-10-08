@@ -11,7 +11,7 @@ RUN echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu bionic main universe
 RUN apt-get update && \
   apt-get install --quiet --yes --no-install-recommends \
   python3-dev python3-pip python3-setuptools python3-wheel locales && \
-  rm -rf /var/lib/{apt,dpkg,cache,log}
+  rm -rf /var/lib/apt/lists/*
 
 # Setup locale
 ENV LC_ALL=C.UTF-8
