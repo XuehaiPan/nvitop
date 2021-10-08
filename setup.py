@@ -35,7 +35,7 @@ setup(
     entry_points={'console_scripts': ['nvitop=nvitop.cli:main']},
     install_requires=[
         'nvidia-ml-py == 11.450.51',
-        'psutil >= 5.4.2',
+        'psutil >= 5.5.0',
         'cachetools >= 1.0.1',
         'termcolor >= 1.0.0',
         'colorama >= 0.4.0; platform_system == "Windows"',
