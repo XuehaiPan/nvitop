@@ -40,7 +40,7 @@ UtilizationRates = NamedTuple('UtilizationRates',  # in percentage
 
 
 class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-    UUID_PATTEN = re.compile(r'^GPU-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+    UUID_PATTERN = re.compile(r'^GPU-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
     GPU_PROCESS_CLASS = GpuProcess
 
     @staticmethod
@@ -122,7 +122,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             if isinstance(index_or_uuid, str):
                 if index_or_uuid.isdigit():
                     index_or_uuid = int(index_or_uuid)
-                elif Device.UUID_PATTEN.match(index_or_uuid) is None:
+                elif Device.UUID_PATTERN.match(index_or_uuid) is None:
                     raise nvml.NVMLError_NotFound()  # pylint: disable=no-member
 
             if use_integer_identifiers is None:
@@ -162,7 +162,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             )
 
         if index is not None:
-            if isinstance(index, str) and self.UUID_PATTEN.match(index) is not None:  # passed by UUID
+            if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
                 index, uuid = None, index
 
         index, uuid, bus_id, serial = [arg.encode() if isinstance(arg, str) else arg
@@ -230,11 +230,18 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             if self.handle is None:
                 return NA
 
+            match = nvml.VERSIONED_PATTERN.match(name)
+            if match is not None:
+                name = match.group('name')
+                suffix = match.group('suffix')
+            else:
+                suffix = ''
+
             try:
-                func = getattr(nvml, 'nvmlDeviceGet' + name.title().replace('_', ''))
+                func = getattr(nvml, 'nvmlDeviceGet' + name.title().replace('_', '') + suffix)
             except AttributeError:
                 pascal_case = ''.join(part[:1].upper() + part[1:] for part in filter(None, name.split('_')))
-                func = getattr(nvml, 'nvmlDeviceGet' + pascal_case)
+                func = getattr(nvml, 'nvmlDeviceGet' + pascal_case + suffix)
 
             @ttl_cache(ttl=1.0)
             def attribute(*args, **kwargs):

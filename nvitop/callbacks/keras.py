@@ -68,7 +68,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     - **temperature** – Core GPU temperature, in degrees C.
     """
 
-    GPU_NAME_PATTEN = re.compile(r'^/(\w*device:)?GPU:(?P<ID>\d+)$', flags=re.IGNORECASE)
+    GPU_NAME_PATTERN = re.compile(r'^/(\w*device:)?GPU:(?P<ID>\d+)$', flags=re.IGNORECASE)
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -92,8 +92,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         if isinstance(gpus, (list, tuple)):
             gpus = list(gpus)
             for i, gpu_id in enumerate(gpus):
-                if isinstance(gpu_id, str) and self.GPU_NAME_PATTEN.match(gpu_id):
-                    gpus[i] = self.GPU_NAME_PATTEN.match(gpu_id).group('ID')
+                if isinstance(gpu_id, str) and self.GPU_NAME_PATTERN.match(gpu_id):
+                    gpus[i] = self.GPU_NAME_PATTERN.match(gpu_id).group('ID')
             gpu_ids = sorted(set(map(int, gpus)))
         else:
             gpu_ids = list(range(gpus))

@@ -5,6 +5,7 @@
 # pylint: disable=invalid-name
 
 import logging
+import re
 import threading
 from types import FunctionType
 from typing import Tuple, Callable, Union, Optional, Any
@@ -22,6 +23,7 @@ class libnvml(object):
     UNKNOWN_FUNCTIONS = set()
     NVMLError = pynvml.NVMLError
     NVMLError_LibraryNotFound = pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
+    VERSIONED_PATTERN = re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
 
     def __new__(cls) -> 'libnvml':
         if not hasattr(cls, '_instance'):
