@@ -361,7 +361,7 @@ class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-ma
 
     @auto_garbage_clean
     def running_time_human(self) -> str:
-        return timedelta2human(self.running_time())
+        return self.host.running_time_human()
 
     @auto_garbage_clean
     def username(self) -> str:
