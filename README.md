@@ -200,6 +200,8 @@ docker build --tag nvitop:latest .  # build the Docker image
 docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest -m  # run the Docker container
 ```
 
+The [`Dockerfile`](Dockerfile) has a optional build argument `basetag` (default: `418.87.01-ubuntu18.04`) for the tag of image [`nvidia/driver`](https://hub.docker.com/r/nvidia/driver/tags).
+
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
 
 #### For SSH Users

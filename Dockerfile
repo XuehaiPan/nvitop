@@ -1,4 +1,5 @@
-FROM nvidia/driver:418.87.01-ubuntu18.04
+ARG basetag="418.87.01-ubuntu18.04"
+FROM nvidia/driver:"${basetag}"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
