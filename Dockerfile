@@ -1,12 +1,13 @@
-ARG basetag="418.87.01-ubuntu18.04"
+ARG basetag="418.87.01-ubuntu18.04"  # Ubuntu only
 FROM nvidia/driver:"${basetag}"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update APT sources
-RUN echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu bionic main universe" > /etc/apt/sources.list && \
-  echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu bionic-updates main universe" >> /etc/apt/sources.list && \
-  echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu bionic-security main universe" >> /etc/apt/sources.list
+RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] && \
+  echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME} main universe" > /etc/apt/sources.list && \
+  echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME}-updates main universe" >> /etc/apt/sources.list && \
+  echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME}-security main universe" >> /etc/apt/sources.list
 
 # Install Python 3
 RUN apt-get update && \
