@@ -505,9 +505,9 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     def compute_mode(self) -> Union[str, NaType]:
         return {
             nvml.NVML_COMPUTEMODE_DEFAULT: 'Default',
-            nvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD: 'E. Thread',
+            nvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD: 'Exclusive Thread',
             nvml.NVML_COMPUTEMODE_PROHIBITED: 'Prohibited',
-            nvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'E. Process',
+            nvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
         }.get(nvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
 
     @ttl_cache(ttl=2.0)
