@@ -79,7 +79,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     @staticmethod
     def from_cuda_visible_devices(cuda_visible_devices: Optional[str] = None) -> List['CudaDevice']:
         visible_device_indices = Device.parse_cuda_visible_devices(cuda_visible_devices)
-        cuda_devices = Device.from_indices(visible_device_indices)
 
         cuda_devices = []
         for cuda_index, device_index in enumerate(visible_device_indices):
@@ -666,7 +665,11 @@ class CudaDevice(Device):
 
     @classmethod
     def all(cls) -> List['CudaDevice']:
-        return super().from_cuda_visible_devices()
+        return cls.from_indices()
+
+    @classmethod
+    def from_indices(cls, indices: Optional[Union[int, Iterable[int]]] = None) -> List['CudaDevice']:
+        return super().from_cuda_indices(indices)
 
     def __init__(self, cuda_index: Optional[int] = None, *,
                  physical_index: Optional[Union[int, str]] = None,
@@ -681,7 +684,7 @@ class CudaDevice(Device):
         super().__init__(index=physical_index, uuid=uuid)
 
         if cuda_index is None:
-            cuda_index = self.cuda_index
+            cuda_index = super().cuda_index
         self._cuda_index = cuda_index
 
     def __str__(self) -> str:
