@@ -51,11 +51,12 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
     def cuda_version() -> Union[str, NaType]:
         cuda_version = nvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
         if nvml.nvmlCheckReturn(cuda_version, int):
-            version_major = cuda_version // 1000
-            version_minor = (cuda_version % 1000) / 10
-            if cuda_version % 10 == 0:
-                version_minor = int(version_minor)
-            return '{}.{}'.format(version_major, version_minor)
+            major = cuda_version // 1000
+            minor = (cuda_version % 1000) // 10
+            revision = cuda_version % 10
+            if revision == 0:
+                return '{}.{}'.format(major, minor)
+            return '{}.{}.{}'.format(major, minor, revision)
         return NA
 
     @classmethod
