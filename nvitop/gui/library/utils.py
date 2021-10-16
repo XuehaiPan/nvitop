@@ -56,7 +56,7 @@ def make_bar(prefix, percent, width):
         if isinstance(percent, float) and len('{} {:.1f}%'.format(bar, percent)) <= width:
             bar += ' {:.1f}%'.format(percent)
         else:
-            bar += ' {:d}%'.format(int(percent)).replace('100%', 'MAX')
+            bar += ' {:d}%'.format(round(percent)).replace('100%', 'MAX')
     else:
         bar += '░' * (width - len(bar) - 4) + ' N/A'
     return bar.ljust(width)
