@@ -6,7 +6,7 @@
 import threading
 from functools import partial
 
-from nvitop.gui.library import DisplayableContainer
+from nvitop.gui.library import DisplayableContainer, MouseEvent
 from nvitop.gui.screens.main.device import DevicePanel
 from nvitop.gui.screens.main.host import HostPanel
 from nvitop.gui.screens.main.process import ProcessPanel
@@ -136,6 +136,11 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         for panel in self.container:
             panel.width = self.width
             panel.print()
+
+    def __contains__(self, item):
+        if self.visible and isinstance(item, MouseEvent):
+            return True
+        return super().__contains__(item)
 
     def init_keybindings(self):
         # pylint: disable=too-many-locals,too-many-statements,multiple-statements
