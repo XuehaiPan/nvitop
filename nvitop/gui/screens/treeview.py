@@ -90,6 +90,11 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
                     else:
                         memory_percent_string = NA
 
+                try:
+                    num_threads = self.process.num_threads()
+                except host.PsutilError:
+                    num_threads = NA
+
             self.process = Snapshot(
                 real=self.process,
                 pid=self.process.pid,
@@ -98,7 +103,8 @@ class TreeNode(object):  # pylint: disable=too-many-instance-attributes
                 cpu_percent=cpu_percent,
                 cpu_percent_string=cpu_percent_string,
                 memory_percent=memory_percent,
-                memory_percent_string=memory_percent_string
+                memory_percent_string=memory_percent_string,
+                num_threads=num_threads
             )
 
         if len(self.children) > 0:
@@ -327,10 +333,11 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         pid_width = max(3, max([len(str(process.pid)) for process in self.snapshots], default=3))
         username_width = max(4, max([len(str(process.username)) for process in self.snapshots], default=4))
         device_width = max(6, max([len(str(process.devices)) for process in self.snapshots], default=6))
+        num_threads_width = max(4, max([len(str(process.num_threads)) for process in self.snapshots], default=4))
         command_offset = pid_width + username_width + device_width + 19
 
-        header = '  '.join(['PID'.rjust(pid_width), 'USER'.ljust(username_width),
-                            'DEVICE'.rjust(device_width), ' %CPU', '%MEM', 'COMMAND'])
+        header = '  '.join(['PID'.rjust(pid_width), 'USER'.ljust(username_width), 'DEVICE'.rjust(device_width),
+                            'NLWP'.rjust(num_threads_width), '%CPU', '%MEM', 'COMMAND'])
         if self.x_offset < command_offset:
             self.addstr(self.y, self.x, header[self.x_offset:self.x_offset + self.width].ljust(self.width))
         else:
@@ -348,12 +355,13 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         processes = islice(self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height)
         for y, process in enumerate(processes, start=self.y + 1):
             prefix_length = len(process.prefix)
-            line = '{}  {}  {}  {:>5} {:>5}  {}{}'.format(str(process.pid).rjust(pid_width),
-                                                          process.username.ljust(username_width),
-                                                          process.devices.rjust(device_width),
-                                                          process.cpu_percent_string.replace('%', ''),
-                                                          process.memory_percent_string.replace('%', ''),
-                                                          process.prefix, process.command)
+            line = '{}  {}  {}  {} {:>5} {:>5}  {}{}'.format(str(process.pid).rjust(pid_width),
+                                                             process.username.ljust(username_width),
+                                                             process.devices.rjust(device_width),
+                                                             str(process.num_threads).rjust(num_threads_width),
+                                                             process.cpu_percent_string.replace('%', ''),
+                                                             process.memory_percent_string.replace('%', ''),
+                                                             process.prefix, process.command)
 
             line = str(WideString(line)[self.x_offset:].ljust(self.width)[:self.width])
             self.addstr(y, self.x, line)

@@ -123,7 +123,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return self._super_gone
 
     @_gone.setter
-    def _gone(self, value: str) -> None:
+    def _gone(self, value: bool) -> None:
         if value:
             with self.INSTANCE_LOCK:
                 try:
