@@ -334,7 +334,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         username_width = max(4, max([len(str(process.username)) for process in self.snapshots], default=4))
         device_width = max(6, max([len(str(process.devices)) for process in self.snapshots], default=6))
         num_threads_width = max(4, max([len(str(process.num_threads)) for process in self.snapshots], default=4))
-        command_offset = pid_width + username_width + device_width + 19
+        command_offset = pid_width + username_width + device_width + num_threads_width + 20
 
         header = '  '.join(['PID'.rjust(pid_width), 'USER'.ljust(username_width), 'DEVICE'.rjust(device_width),
                             'NLWP'.rjust(num_threads_width), '%CPU', '%MEM', 'COMMAND'])
