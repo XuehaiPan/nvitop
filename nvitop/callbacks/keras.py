@@ -10,8 +10,8 @@ from typing import Dict, List, Tuple, Union
 
 from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error
 
-from nvitop.core import nvml, MiB
-from nvitop.callbacks.utils import get_devices_by_logical_ids
+from nvitop.core import nvml
+from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
 
 
 # Ported version of .lightning.GpuStatsLogger for Keras
@@ -79,7 +79,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         inter_step_time: bool = False,
         fan_speed: bool = False,
         temperature: bool = False
-    ):
+    ) -> None:
         super().__init__()
 
         try:
@@ -141,26 +141,10 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             logs['batch_time/intra_step (ms)'] = (time.monotonic() - self._snap_intra_step_time) * 1000.0
 
     def _get_gpu_stats(self) -> Dict[str, float]:
-        """Get the gpu stats from NVML queries"""
+        """Get the gpu status from NVML queries"""
 
-        stats = {}
-        for device in self._devices:
-            prefix = 'gpu_id: {}'.format(device.cuda_index)
-            if device.cuda_index != device.physical_index:
-                prefix += ' (physical index: {})'.format(device.physical_index)
-            with device.oneshot():
-                if self._memory_utilization or self._gpu_utilization:
-                    utilization = device.utilization_rates()
-                    if self._memory_utilization:
-                        stats['{}/utilization.memory (%)'.format(prefix)] = float(utilization.memory)
-                    if self._gpu_utilization:
-                        stats['{}/utilization.gpu (%)'.format(prefix)] = float(utilization.gpu)
-                if self._memory_utilization:
-                    stats['{}/memory.used (MiB)'.format(prefix)] = float(device.memory_used()) / MiB
-                    stats['{}/memory.free (MiB)'.format(prefix)] = float(device.memory_free()) / MiB
-                if self._fan_speed:
-                    stats['{}/fan.speed (%)'.format(prefix)] = float(device.fan_speed())
-                if self._temperature:
-                    stats['{}/temperature.gpu (℃)'.format(prefix)] = float(device.fan_speed())
-
-        return stats
+        return get_gpu_stats(devices=self._devices,
+                             memory_utilization=self._memory_utilization,
+                             gpu_utilization=self._gpu_utilization,
+                             fan_speed=self._fan_speed,
+                             temperature=self._temperature)

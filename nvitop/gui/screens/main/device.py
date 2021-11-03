@@ -46,7 +46,8 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         if host.WINDOWS:
             self.formats_full[0] = ('│ {index:>3}  {name:<18}  {current_driver_model:<4} '
-                                    '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │')
+                                    '│ {bus_id:<16} {display_active:>3} '
+                                    '│ {total_volatile_uncorrected_ecc_errors:>20} │')
 
         self._snapshot_buffer = []
         self._snapshots = []

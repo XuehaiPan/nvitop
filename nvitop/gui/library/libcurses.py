@@ -34,7 +34,7 @@ def _init_color_theme(light_theme=False):
 def _get_color(fg, bg):
     """Returns the curses color pair for the given fg/bg combination."""
 
-    global COLOR_PAIRS  # pylint: disable=global-statement
+    global COLOR_PAIRS  # pylint: disable=global-statement,global-variable-not-assigned
 
     if isinstance(fg, str):
         fg = getattr(curses, 'COLOR_{}'.format(fg.upper()), -1)
