@@ -29,7 +29,8 @@ class libnvml(object):
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
             instance._flags = []
-            instance._lib_lock = threading.Lock()
+            instance._initialized = False
+            instance._lock = threading.Lock()
             for name, attr in vars(pynvml).items():
                 if name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
                     continue
@@ -60,12 +61,19 @@ class libnvml(object):
         except AttributeError:
             return getattr(pynvml, name)
 
+    def _lazy_init(self) -> None:
+        with self._lock:
+            if self._initialized:
+                return
+        self.nvmlInit()
+
     def nvmlInit(self) -> None:
         self.nvmlInitWithFlags(0)
 
     def nvmlInitWithFlags(self, flags: int) -> None:
-        with self._lib_lock:
+        with self._lock:
             if len(self._flags) > 0 and flags == self._flags[-1]:
+                self._initialized = True  # pylint: disable=attribute-defined-outside-init
                 return
 
         try:
@@ -81,16 +89,18 @@ class libnvml(object):
             )
             raise
         else:
-            with self._lib_lock:
+            with self._lock:
                 self._flags.append(flags)
+                self._initialized = True  # pylint: disable=attribute-defined-outside-init
 
     def nvmlShutdown(self) -> None:
         pynvml.nvmlShutdown()
-        with self._lib_lock:
+        with self._lock:
             try:
                 self._flags.pop()
             except IndexError:
                 pass
+            self._initialized = (len(self._flags) > 0)  # pylint: disable=attribute-defined-outside-init
 
     def nvmlQuery(self, func: Union[str, Callable[..., Any]], *args,
                   default: Any = NA,
@@ -100,18 +110,21 @@ class libnvml(object):
         if isinstance(func, str):
             func = getattr(self, func)
 
-        self.nvmlInit()
+        self._lazy_init()
 
         try:
             retval = func(*args, **kwargs)
         except pynvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
-            if not ignore_function_not_found and func not in self.UNKNOWN_FUNCTIONS:
-                self.UNKNOWN_FUNCTIONS.add(func)
-                self.LOGGER.error(
-                    'ERROR: A FunctionNotFound error occurred while calling %s.\n'
-                    'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.',
-                    'nvmlQuery({!r}, *args, **kwargs)'.format(func)
-                )
+            if not ignore_function_not_found:
+                with self._lock:
+                    if func not in self.UNKNOWN_FUNCTIONS:
+                        self.UNKNOWN_FUNCTIONS.add(func)
+                        self.LOGGER.error(
+                            'ERROR: A FunctionNotFound error occurred while calling %s.\n'
+                            'Please verify whether the `nvidia-ml-py` package is '
+                            'compatible with your NVIDIA driver version.',
+                            'nvmlQuery({!r}, *args, **kwargs)'.format(func)
+                        )
             if ignore_errors or ignore_function_not_found:
                 return default
             raise
