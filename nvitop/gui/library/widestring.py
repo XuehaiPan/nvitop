@@ -110,14 +110,14 @@ class WideString(object):  # pylint: disable=too-few-public-methods
         if stop is None or stop > length:
             stop = length
         if stop < 0:
-            stop = length + stop
-        if start is None or start < 0:
+            stop = max(0, length + stop)
+        if start is None:
             start = 0
-        if start >= length or stop < 0:
+        if start < 0:
+            start = max(0, length + start)
+        if start >= length or start >= stop:
             return WideString('')
-        if start is None or start < 0:
-            start = 0
-        if stop < len(self.chars) and self.chars[stop] == '':
+        if stop < length and self.chars[stop] == '':
             if self.chars[start] == '':
                 return WideString(' ' + ''.join(self.chars[start:stop - 1]) + ' ')
             return WideString(''.join(self.chars[start:stop - 1]) + ' ')
