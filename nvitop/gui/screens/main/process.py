@@ -12,7 +12,8 @@ from operator import attrgetter, xor
 from cachetools.func import ttl_cache
 
 from nvitop.gui.library import (host, GpuProcess, NA,
-                                Displayable, MouseEvent, CURRENT_USER, IS_SUPERUSER,
+                                Displayable, MouseEvent,
+                                CURRENT_USER, IS_SUPERUSER, HOSTNAME, USER_CONTEXT,
                                 WideString, colored, cut_string)
 from nvitop.gui.screens.main.utils import Order, Selected
 
@@ -197,7 +198,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     def header_lines(self):
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
-            '│ {} │'.format('Processes:'.ljust(self.width - 4)),
+            '│ {} {} │'.format('Processes:', USER_CONTEXT.rjust(self.width - 15)),
             '│ GPU     PID      USER  GPU-MEM %SM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 40)),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
@@ -260,6 +261,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
+
+            offset = self.x + self.width - len(USER_CONTEXT) - 2
+            self.color_at(self.y + 2, self.x + offset, width=len(USER_CONTEXT), attr='bold')
+            self.color_at(self.y + 2, self.x + offset, width=len(CURRENT_USER),
+                          fg=('yellow'if IS_SUPERUSER else 'magenta'), attr='bold')
+            self.color_at(self.y + 2, self.x + offset + len(CURRENT_USER) + 1, width=len(HOSTNAME),
+                          fg='green', attr='bold')
 
         self.addstr(self.y + 3, self.x + 1, ' GPU     PID      USER  GPU-MEM %SM  ')
         host_offset = max(self.host_offset, 0)
@@ -381,6 +389,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def print(self):
         lines = ['', *self.header_lines()]
+        lines[2] = ''.join((lines[2][:-2 - len(USER_CONTEXT)],
+                            colored(CURRENT_USER, color=('yellow' if IS_SUPERUSER else 'magenta'), attrs=('bold',)),
+                            colored('@', attrs=('bold',)),
+                            colored(HOSTNAME, color='green', attrs=('bold',)),
+                            lines[2][-2:]))
 
         if len(self.snapshots) > 0:
             key, reverse, *_ = self.ORDERS['natural']

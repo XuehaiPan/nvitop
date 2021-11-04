@@ -5,6 +5,7 @@
 # pylint: disable=disallowed-name,invalid-name
 
 import getpass
+import platform
 import sys
 
 from nvitop.core import host, NA
@@ -75,3 +76,7 @@ else:
             IS_SUPERUSER = (os.getuid() == 0)
         except AttributeError:
             IS_SUPERUSER = False
+
+HOSTNAME = platform.node()
+
+USER_CONTEXT = '{}@{}'.format(CURRENT_USER, HOSTNAME)
