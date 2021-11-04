@@ -63,6 +63,9 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
             except host.PsutilError:
                 self.username = 'N/A'
 
+        self.command = WideString(self.command)
+        self.username = WideString(self.username)
+
     @property
     def environ(self):
         return self._environ
@@ -73,7 +76,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         def normalize(s): return s.replace('\n', newline)  # pylint: disable=multiple-statements
 
         if value is not None:
-            self.items = [(key, normalize(value[key]))
+            self.items = [(WideString(key), WideString('{}={}'.format(key, normalize(value[key]))))
                           for key in sorted(value.keys())]
             value = OrderedDict(self.items)
         else:
@@ -142,12 +145,12 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
             process_type = 'GPU: {}'.format(self.process.type.replace('C', 'Compute').replace('G', 'Graphics'))
         else:
             process_type = 'Host'
-        header_prefix = 'Environment of process {} ({}@{}): '.format(self.process.pid,
-                                                                     self.username, process_type)
+        header_prefix = WideString('Environment of process {} ({}@{}): '.format(self.process.pid,
+                                                                                self.username, process_type))
         offset = max(0, min(self.x_offset, len(self.command) + len(header_prefix) - self.width))
-        header = header_prefix + self.command[offset:]
+        header = str((header_prefix + self.command[offset:]).ljust(self.width))
 
-        self.addstr(self.y, self.x, header.ljust(self.width))
+        self.addstr(self.y, self.x, header)
         self.addstr(self.y + 1, self.x, '#' * self.width)
         self.color_at(self.y, self.x, width=len(header_prefix) - 1, fg='cyan', attr='bold')
         self.color_at(self.y + 1, self.x, width=self.width, fg='green', attr='bold')
@@ -158,10 +161,9 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
             return
 
         items = islice(self.items, self.scroll_offset, self.scroll_offset + self.display_height)
-        for y, (key, value) in enumerate(items, start=self.y + 2):
+        for y, (key, line) in enumerate(items, start=self.y + 2):
             key_length = len(key)
-            line = '{}={}'.format(key, value)
-            line = str(WideString(line)[self.x_offset:].ljust(self.width)[:self.width])
+            line = str(line[self.x_offset:].ljust(self.width)[:self.width])
             self.addstr(y, self.x, line)
             if self.x_offset < key_length:
                 self.color_at(y, self.x, width=key_length - self.x_offset, fg='blue', attr='bold')

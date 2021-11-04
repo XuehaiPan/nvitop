@@ -14,7 +14,7 @@ from cachetools.func import ttl_cache
 from nvitop.gui.library import (host, GpuProcess, NA,
                                 Displayable, MouseEvent,
                                 CURRENT_USER, IS_SUPERUSER, HOSTNAME, USER_CONTEXT,
-                                WideString, colored, cut_string)
+                                WideString, wcslen, colored, cut_string)
 from nvitop.gui.screens.main.utils import Order, Selected
 
 
@@ -198,7 +198,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     def header_lines(self):
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
-            '│ {} {} │'.format('Processes:', USER_CONTEXT.rjust(self.width - 15)),
+            '│ {} {} │'.format('Processes:', WideString(USER_CONTEXT).rjust(self.width - 15)),
             '│ GPU     PID      USER  GPU-MEM %SM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 40)),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
@@ -262,11 +262,14 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-            offset = self.x + self.width - len(USER_CONTEXT) - 2
-            self.color_at(self.y + 2, self.x + offset, width=len(USER_CONTEXT), attr='bold')
-            self.color_at(self.y + 2, self.x + offset, width=len(CURRENT_USER),
+            context_length = wcslen(USER_CONTEXT)
+            user_length = wcslen(CURRENT_USER)
+            host_length = wcslen(HOSTNAME)
+            offset = self.x + self.width - context_length - 2
+            self.color_at(self.y + 2, self.x + offset, width=context_length, attr='bold')
+            self.color_at(self.y + 2, self.x + offset, width=user_length,
                           fg=('yellow'if IS_SUPERUSER else 'magenta'), attr='bold')
-            self.color_at(self.y + 2, self.x + offset + len(CURRENT_USER) + 1, width=len(HOSTNAME),
+            self.color_at(self.y + 2, self.x + offset + user_length + 1, width=host_length,
                           fg='green', attr='bold')
 
         self.addstr(self.y + 3, self.x + 1, ' GPU     PID      USER  GPU-MEM %SM  ')

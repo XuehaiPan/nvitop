@@ -33,6 +33,12 @@ def string_to_charlist(string):
     return result
 
 
+def wcslen(string):
+    """Return the length of a string with wide chars"""
+
+    return len(WideString(string))
+
+
 class WideString(object):  # pylint: disable=too-few-public-methods
     def __init__(self, string, chars=None):
         if isinstance(string, WideString):
