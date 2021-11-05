@@ -198,7 +198,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     def header_lines(self):
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
-            '│ {} {} │'.format('Processes:', WideString(USER_CONTEXT).rjust(self.width - 15)),
+            '│ {} │'.format('Processes:'.ljust(self.width - 4)),
             '│ GPU     PID      USER  GPU-MEM %SM  {} │'.format('  '.join(self.host_headers).ljust(self.width - 40)),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
@@ -262,15 +262,18 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-            context_length = wcslen(USER_CONTEXT)
-            user_length = wcslen(CURRENT_USER)
-            host_length = wcslen(HOSTNAME)
-            offset = self.x + self.width - context_length - 2
-            self.color_at(self.y + 2, self.x + offset, width=context_length, attr='bold')
-            self.color_at(self.y + 2, self.x + offset, width=user_length,
-                          fg=('yellow'if IS_SUPERUSER else 'magenta'), attr='bold')
-            self.color_at(self.y + 2, self.x + offset + user_length + 1, width=host_length,
-                          fg='green', attr='bold')
+            context_width = wcslen(USER_CONTEXT)
+            if not host.WINDOWS or len(USER_CONTEXT) == context_width:
+                # Do not support windows-curses with wide characters
+                username_width = wcslen(CURRENT_USER)
+                hostname_width = wcslen(HOSTNAME)
+                offset = self.x + self.width - context_width - 2
+                self.addstr(self.y + 2, self.x + offset, USER_CONTEXT)
+                self.color_at(self.y + 2, self.x + offset, width=context_width, attr='bold')
+                self.color_at(self.y + 2, self.x + offset, width=username_width,
+                              fg=('yellow'if IS_SUPERUSER else 'magenta'), attr='bold')
+                self.color_at(self.y + 2, self.x + offset + username_width + 1, width=hostname_width,
+                              fg='green', attr='bold')
 
         self.addstr(self.y + 3, self.x + 1, ' GPU     PID      USER  GPU-MEM %SM  ')
         host_offset = max(self.host_offset, 0)
@@ -392,7 +395,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def print(self):
         lines = ['', *self.header_lines()]
-        lines[2] = ''.join((lines[2][:-2 - len(USER_CONTEXT)],
+        lines[2] = ''.join((lines[2][:-2 - wcslen(USER_CONTEXT)],
                             colored(CURRENT_USER, color=('yellow' if IS_SUPERUSER else 'magenta'), attrs=('bold',)),
                             colored('@', attrs=('bold',)),
                             colored(HOSTNAME, color='green', attrs=('bold',)),
