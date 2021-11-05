@@ -63,20 +63,20 @@ def make_bar(prefix, percent, width):
     return bar.ljust(width)
 
 
-CURRENT_USER = getpass.getuser()
+USERNAME = getpass.getuser()
 if host.WINDOWS:  # pylint: disable=no-member
     import ctypes
-    IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
+    SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
 else:
     import os
     try:
-        IS_SUPERUSER = (os.geteuid() == 0)
+        SUPERUSER = (os.geteuid() == 0)
     except AttributeError:
         try:
-            IS_SUPERUSER = (os.getuid() == 0)
+            SUPERUSER = (os.getuid() == 0)
         except AttributeError:
-            IS_SUPERUSER = False
+            SUPERUSER = False
 
 HOSTNAME = platform.node()
 
-USER_CONTEXT = '{}@{}'.format(CURRENT_USER, HOSTNAME)
+USERCONTEXT = '{}@{}'.format(USERNAME, HOSTNAME)

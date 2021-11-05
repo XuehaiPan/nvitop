@@ -13,7 +13,7 @@ from itertools import islice
 from cachetools.func import ttl_cache
 
 from nvitop.gui.library import (host, HostProcess, NA, Snapshot,
-                                Displayable, WideString, CURRENT_USER, IS_SUPERUSER)
+                                Displayable, WideString, USERNAME, SUPERUSER)
 from nvitop.gui.screens.main.utils import Selected
 
 
@@ -379,7 +379,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
                 self.selected.within_window = (1 <= y - self.y < self.height and self.width >= 79)
             else:
-                if process.username != CURRENT_USER and not IS_SUPERUSER:
+                if process.username != USERNAME and not SUPERUSER:
                     self.color_at(y, self.x, width=self.width, attr='dim')
 
         self.color(fg='cyan', attr='bold | reverse')

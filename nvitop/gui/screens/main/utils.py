@@ -7,7 +7,7 @@ import signal
 import time
 from collections import namedtuple
 
-from nvitop.gui.library import host, NA, Snapshot, CURRENT_USER, IS_SUPERUSER
+from nvitop.gui.library import host, NA, Snapshot, USERNAME, SUPERUSER
 
 
 class Selected(object):
@@ -73,9 +73,9 @@ class Selected(object):
     def owned(self):
         if not self.is_set():
             return False
-        if IS_SUPERUSER:
+        if SUPERUSER:
             return True
-        return self.username == CURRENT_USER
+        return self.username == USERNAME
 
     def send_signal(self, sig):
         if self.owned() and self.within_window:

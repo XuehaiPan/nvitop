@@ -13,7 +13,7 @@ from cachetools.func import ttl_cache
 
 from nvitop.gui.library import (host, GpuProcess, NA,
                                 Displayable, MouseEvent,
-                                CURRENT_USER, IS_SUPERUSER, HOSTNAME, USER_CONTEXT,
+                                USERNAME, SUPERUSER, HOSTNAME, USERCONTEXT,
                                 WideString, wcslen, colored, cut_string)
 from nvitop.gui.screens.main.utils import Order, Selected
 
@@ -254,7 +254,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.color_reset()
 
         if self.need_redraw:
-            if IS_SUPERUSER:
+            if SUPERUSER:
                 self.addstr(self.y, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
                 self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
                 self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
@@ -262,16 +262,16 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-            context_width = wcslen(USER_CONTEXT)
-            if not host.WINDOWS or len(USER_CONTEXT) == context_width:
+            context_width = wcslen(USERCONTEXT)
+            if not host.WINDOWS or len(USERCONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
-                username_width = wcslen(CURRENT_USER)
+                username_width = wcslen(USERNAME)
                 hostname_width = wcslen(HOSTNAME)
                 offset = self.x + self.width - context_width - 2
-                self.addstr(self.y + 2, self.x + offset, USER_CONTEXT)
+                self.addstr(self.y + 2, self.x + offset, USERCONTEXT)
                 self.color_at(self.y + 2, self.x + offset, width=context_width, attr='bold')
                 self.color_at(self.y + 2, self.x + offset, width=username_width,
-                              fg=('yellow'if IS_SUPERUSER else 'magenta'), attr='bold')
+                              fg=('yellow'if SUPERUSER else 'magenta'), attr='bold')
                 self.color_at(self.y + 2, self.x + offset + username_width + 1, width=hostname_width,
                               fg='green', attr='bold')
 
@@ -359,7 +359,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         self.addstr(y, self.x + 1, '=')
                         self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                     self.color_at(y, self.x + 2, width=3, fg=color)
-                    if process.username != CURRENT_USER and not IS_SUPERUSER:
+                    if process.username != USERNAME and not SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
                     if is_zombie or no_permissions:
                         self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
@@ -395,8 +395,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def print(self):
         lines = ['', *self.header_lines()]
-        lines[2] = ''.join((lines[2][:-2 - wcslen(USER_CONTEXT)],
-                            colored(CURRENT_USER, color=('yellow' if IS_SUPERUSER else 'magenta'), attrs=('bold',)),
+        lines[2] = ''.join((lines[2][:-2 - wcslen(USERCONTEXT)],
+                            colored(USERNAME, color=('yellow' if SUPERUSER else 'magenta'), attrs=('bold',)),
                             colored('@', attrs=('bold',)),
                             colored(HOSTNAME, color='green', attrs=('bold',)),
                             lines[2][-2:]))
@@ -427,10 +427,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 is_gone = (not process.is_running and process.cmdline == ['No Such Process'])
                 if is_zombie or no_permissions or is_gone:
                     info = info.split(process.command)
-                    if process.username != CURRENT_USER and not IS_SUPERUSER:
+                    if process.username != USERNAME and not SUPERUSER:
                         info = map(lambda item: colored(item, attrs=('dark',)), info)
                     info = colored(process.command, color=('red' if is_gone else 'yellow')).join(info)
-                elif process.username != CURRENT_USER and not IS_SUPERUSER:
+                elif process.username != USERNAME and not SUPERUSER:
                     info = colored(info, attrs=('dark',))
                 lines.append('│ {} {} │'.format(colored('{:>3}'.format(device_index), color), info))
 

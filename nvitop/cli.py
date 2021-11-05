@@ -9,7 +9,7 @@ import os
 import sys
 
 from nvitop.core import nvml
-from nvitop.gui import Top, Device, libcurses, colored, CURRENT_USER
+from nvitop.gui import Top, Device, libcurses, colored, USERNAME
 from nvitop.version import __version__
 
 
@@ -75,7 +75,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     if not args.light:
         args.light = (os.getenv('NVITOP_MONITOR_THEME', 'dark').lower() == 'light')
     if args.user is not None and len(args.user) == 0:
-        args.user.append(CURRENT_USER)
+        args.user.append(USERNAME)
     if args.gpu_util_thresh is None:
         try:
             gpu_util_thresh = os.getenv('NVITOP_GPU_UTILIZATION_THRESHOLDS', None)

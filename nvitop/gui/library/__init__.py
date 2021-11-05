@@ -13,4 +13,4 @@ from nvitop.gui.library.mouse import MouseEvent
 from nvitop.gui.library.history import HistoryGraph, BufferedHistoryGraph
 from nvitop.gui.library.widestring import WideString, wcslen
 from nvitop.gui.library.utils import (colored, cut_string, make_bar,
-                                      CURRENT_USER, IS_SUPERUSER, HOSTNAME, USER_CONTEXT)
+                                      USERNAME, SUPERUSER, HOSTNAME, USERCONTEXT)
