@@ -45,7 +45,7 @@ elif host.WINDOWS:
         if s == '':
             return '""'
         if '%' not in s and '^' not in s and '\n' not in s:
-            if ' ' not in s and '\\' not in s:
+            if ' ' not in s:
                 return s
             if '"' not in s:
                 return '"{}"'.format(s)
