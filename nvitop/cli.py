@@ -121,7 +121,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
 
     try:
         device_count = Device.count()
-    except nvml.NVMLError_LibraryNotFound:
+    except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
         return 1
     except nvml.NVMLError as e:  # pylint: disable=invalid-name
         print('{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), e), file=sys.stderr)

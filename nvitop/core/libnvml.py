@@ -22,8 +22,9 @@ class libnvml(object):
     LOGGER = logging.getLogger('NVML')
     UNKNOWN_FUNCTIONS = set()
     NVMLError = pynvml.NVMLError
-    NVMLError_LibraryNotFound = pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
     VERSIONED_PATTERN = re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
+
+    c_nvmlDevice_t = pynvml.c_nvmlDevice_t
 
     def __new__(cls) -> 'libnvml':
         if not hasattr(cls, '_instance'):
@@ -46,7 +47,7 @@ class libnvml(object):
     def __del__(self) -> None:
         try:
             self.nvmlShutdown()
-        except pynvml.NVMLError:
+        except nvml.NVMLError:
             pass
 
     def __enter__(self) -> 'libnvml':
@@ -78,7 +79,7 @@ class libnvml(object):
 
         try:
             pynvml.nvmlInitWithFlags(flags)
-        except pynvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
+        except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
             self.LOGGER.critical(
                 'FATAL ERROR: NVIDIA Management Library (NVML) not found.\n'
                 'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
@@ -114,7 +115,7 @@ class libnvml(object):
 
         try:
             retval = func(*args, **kwargs)
-        except pynvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
+        except nvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
             if not ignore_function_not_found:
                 with self._lock:
                     if func not in self.UNKNOWN_FUNCTIONS:
@@ -128,7 +129,7 @@ class libnvml(object):
             if ignore_errors or ignore_function_not_found:
                 return default
             raise
-        except pynvml.NVMLError:
+        except nvml.NVMLError:
             if ignore_errors:
                 return default
             raise

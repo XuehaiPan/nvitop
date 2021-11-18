@@ -186,6 +186,13 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                 'but (index, uuid, bus_id) = {} were given'.format((index, uuid, bus_id))
             )
 
+        self._name = NA
+        self._uuid = NA
+        self._bus_id = NA
+        self._memory_total = NA
+        self._memory_total_human = NA
+        self._cuda_index = None
+
         if index is not None:
             if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
                 index, uuid = None, index
@@ -211,12 +218,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
             else:
                 self._index = nvml.nvmlQuery('nvmlDeviceGetIndex', self.handle)
 
-        self._cuda_index = None
-        self._name = NA
-        self._uuid = NA
-        self._bus_id = NA
-        self._memory_total = NA
-        self._memory_total_human = NA
         self._max_clock_infos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
         self._timestamp = 0
         self._lock = threading.RLock()
@@ -280,7 +281,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return self._index
 
     @property
-    def handle(self) -> int:
+    def handle(self) -> nvml.c_nvmlDevice_t:
         return self._handle
 
     @property
@@ -352,7 +353,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
     def memory_percent(self) -> Union[float, NaType]:  # used memory over total memory (in percentage)
         memory_info = self.memory_info()
-
         if nvml.nvmlCheckReturn(memory_info.used, int) and nvml.nvmlCheckReturn(memory_info.total, int):
             return round(100.0 * memory_info.used / memory_info.total, 1)
         return NA
@@ -388,7 +388,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
     def bar1_memory_percent(self) -> Union[float, NaType]:  # used BAR1 memory over total BAR1 memory (in percentage)
         memory_info = self.bar1_memory_info()
-
         if nvml.nvmlCheckReturn(memory_info.used, int) and nvml.nvmlCheckReturn(memory_info.total, int):
             return round(100.0 * memory_info.used / memory_info.total, 1)
         return NA
