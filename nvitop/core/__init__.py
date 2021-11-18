@@ -9,14 +9,14 @@ from typing import List, NamedTuple, Iterable, Hashable, Union, Optional
 
 from nvitop.core import host, utils
 from nvitop.core.libnvml import nvml, nvmlCheckReturn
-from nvitop.core.device import Device, PhysicalDevice, CudaDevice
+from nvitop.core.device import Device, PhysicalDevice, MigDevice, CudaDevice
 from nvitop.core.process import HostProcess, GpuProcess, command_join
 from nvitop.core.utils import *
 
 
 __all__ = ['take_snapshots',
            'nvml', 'nvmlCheckReturn', 'NVMLError',
-           'Device', 'PhysicalDevice', 'CudaDevice',
+           'Device', 'PhysicalDevice', 'MigDevice', 'CudaDevice',
            'host', 'HostProcess', 'GpuProcess', 'command_join']
 __all__.extend(utils.__all__)
 
