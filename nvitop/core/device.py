@@ -178,21 +178,20 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
     def __init__(self, index: Optional[Union[int, str]] = None, *,
                  uuid: Optional[str] = None,
-                 bus_id: Optional[str] = None,
-                 serial: Optional[str] = None) -> None:
+                 bus_id: Optional[str] = None) -> None:
 
-        if (index, uuid, bus_id, serial).count(None) != 3:
+        if (index, uuid, bus_id).count(None) != 2:
             raise TypeError(
-                'Device(index=None, uuid=None, serial=None, bus_id=None) takes 1 non-None arguments '
-                'but (index, uuid, bus_id, serial) = {} were given'.format((index, uuid, bus_id, serial))
+                'Device(index=None, uuid=None, bus_id=None) takes 1 non-None arguments '
+                'but (index, uuid, bus_id) = {} were given'.format((index, uuid, bus_id))
             )
 
         if index is not None:
             if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
                 index, uuid = None, index
 
-        index, uuid, bus_id, serial = [arg.encode() if isinstance(arg, str) else arg
-                                       for arg in (index, uuid, bus_id, serial)]
+        index, uuid, bus_id = [arg.encode() if isinstance(arg, str) else arg
+                               for arg in (index, uuid, bus_id)]
 
         if index is not None:
             self._index = index
@@ -206,8 +205,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                     self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
                 elif bus_id is not None:
                     self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False)
-                elif serial is not None:
-                    self._handle = nvml.nvmlQuery('nvmlDeviceGetHandleBySerial', serial, ignore_errors=False)
             except nvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
                 self._handle = None
                 self._index = NA
@@ -216,7 +213,6 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         self._cuda_index = None
         self._name = NA
-        self._serial = NA
         self._uuid = NA
         self._bus_id = NA
         self._memory_total = NA
@@ -322,9 +318,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return self._bus_id
 
     def serial(self) -> Union[str, NaType]:
-        if self._serial is NA:
-            self._serial = nvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
-        return self._serial
+        return nvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
 
     @memoize_when_activated
     @ttl_cache(ttl=1.0)
