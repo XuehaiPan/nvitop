@@ -40,7 +40,29 @@ UtilizationRates = NamedTuple('UtilizationRates',  # in percentage
 
 
 class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-    UUID_PATTERN = re.compile(r'^GPU-[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$')
+
+    # https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+    # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
+    # GPU UUID        : `GPU-<GPU-UUID>`
+    # MIG UUID        : `MIG-GPU-<GPU-UUID>/<GPU instance ID>/<compute instance ID>`
+    # MIG UUID (R470+): `MIG-<MIG-UUID>`
+    UUID_PATTERN = re.compile(
+        r"""^                                                  # full match
+        (?:(?P<MigMode>MIG)-)?                                 # prefix for MIG UUID
+        (?:(?P<GpuUuid>GPU)-)?                                 # prefix for GPU UUID
+        (?(MigMode)|(?(GpuUuid)|GPU-))                         # always have a prefix
+        (?P<UUID>[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})  # UUID for the GPU/MIG device in lower case
+        # Suffix for MIG device while using GPU UUID with GPU instance (GI) ID and compute instance (CI) ID
+        (?(MigMode)                                            # match only when the MIG prefix matches
+            (?(GpuUuid)                                        # match only when provide with GPU UUID
+                /(?P<GpuInstanceId>\d+)                        # GI ID of the MIG device
+                /(?P<ComputeInstanceId>\d+)                    # CI ID of the MIG device
+            |)
+        |)
+        $""",                                                  # full match
+        flags=re.VERBOSE
+    )
+
     GPU_PROCESS_CLASS = GpuProcess
 
     @staticmethod
