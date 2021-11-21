@@ -261,7 +261,8 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
                 suffix = ''
 
             try:
-                func = getattr(nvml, 'nvmlDeviceGet' + name.title().replace('_', '') + suffix)
+                pascal_case = name.title().replace('_', '')
+                func = getattr(nvml, 'nvmlDeviceGet' + pascal_case + suffix)
             except AttributeError:
                 pascal_case = ''.join(part[:1].upper() + part[1:] for part in filter(None, name.split('_')))
                 func = getattr(nvml, 'nvmlDeviceGet' + pascal_case + suffix)

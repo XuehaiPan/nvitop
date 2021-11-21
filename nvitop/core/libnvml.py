@@ -108,12 +108,16 @@ class libnvml(object):
                   ignore_errors: bool = True,
                   ignore_function_not_found: bool = False,
                   **kwargs) -> Any:
-        if isinstance(func, str):
-            func = getattr(self, func)
 
         self._lazy_init()
 
         try:
+            if isinstance(func, str):
+                try:
+                    func = getattr(self, func)
+                except AttributeError as e:
+                    raise nvml.NVMLError_FunctionNotFound from e
+
             retval = func(*args, **kwargs)
         except nvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
             if not ignore_function_not_found:
