@@ -49,6 +49,12 @@ class NotApplicableType(str):
             return True
         return super().__ge__(x)
 
+    def __format__(self, format_spec):
+        try:
+            return super().__format__(format_spec)
+        except ValueError:
+            return format(math.nan, format_spec)
+
 
 # isinstance(NA, str)       -> True
 # NA == 'N/A'               -> True
