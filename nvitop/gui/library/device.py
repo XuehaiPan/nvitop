@@ -86,7 +86,7 @@ class Device(DeviceBase):
         thresholds = {'memory': Device.MEMORY_UTILIZATION_THRESHOLDS,
                       'gpu': Device.GPU_UTILIZATION_THRESHOLDS}.get(type)
         if utilization is NA:
-            return 'heavy'
+            return 'moderate'
         if isinstance(utilization, str):
             utilization = utilization.replace('%', '')
         utilization = float(utilization)
