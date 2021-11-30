@@ -444,7 +444,7 @@ Out[15]: DeviceSnapshot(
     clock_speed_infos=ClockSpeedInfos(current=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680), max=ClockInfos(graphics=2100, sm=2100, memory=7000, video=1950)),  # in MHz
     current_driver_model='N/A',
     decoder_utilization=0,              # in percentage
-    display_active='Off',
+    display_active='Disabled',
     encoder_utilization=0,              # in percentage
     fan_speed=22,                       # in percentage
     gpu_utilization=17,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
@@ -463,7 +463,7 @@ Out[15]: DeviceSnapshot(
     memory_utilization=7,               # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
-    persistence_mode='Off',
+    persistence_mode='Disabled',
     power_limit=250000,                 # in milliwatts (mW)
     power_status='66W / 250W',          # in watts (W)
     power_usage=66051,                  # in milliwatts (mW)

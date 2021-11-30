@@ -502,11 +502,11 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
     @ttl_cache(ttl=60.0)
     def display_active(self) -> Union[str, NaType]:
-        return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), NA)
+        return {0: 'Disabled', 1: 'Enabled'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), NA)
 
     @ttl_cache(ttl=60.0)
     def persistence_mode(self) -> Union[str, NaType]:
-        return {0: 'Off', 1: 'On'}.get(nvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self.handle), NA)
+        return {0: 'Disabled', 1: 'Enabled'}.get(nvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self.handle), NA)
 
     @ttl_cache(ttl=5.0)
     def performance_state(self) -> Union[str, NaType]:
