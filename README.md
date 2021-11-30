@@ -445,6 +445,7 @@ Out[15]: DeviceSnapshot(
     current_driver_model='N/A',
     decoder_utilization=0,              # in percentage
     display_active='Disabled',
+    display_mode='Disabled',
     encoder_utilization=0,              # in percentage
     fan_speed=22,                       # in percentage
     gpu_utilization=17,                 # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)

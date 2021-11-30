@@ -494,15 +494,19 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
         return '{} / {}'.format(power_usage, power_limit)
 
     @ttl_cache(ttl=60.0)
+    def display_active(self) -> Union[str, NaType]:
+        return {0: 'Disabled', 1: 'Enabled'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), NA)
+
+    @ttl_cache(ttl=60.0)
+    def display_mode(self) -> Union[str, NaType]:
+        return {0: 'Disabled', 1: 'Enabled'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayMode', self.handle), NA)
+
+    @ttl_cache(ttl=60.0)
     def current_driver_model(self) -> Union[str, NaType]:
         return {
             nvml.NVML_DRIVER_WDDM: 'WDDM',
             nvml.NVML_DRIVER_WDM: 'WDM',
         }.get(nvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self.handle), NA)
-
-    @ttl_cache(ttl=60.0)
-    def display_active(self) -> Union[str, NaType]:
-        return {0: 'Disabled', 1: 'Enabled'}.get(nvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle), NA)
 
     @ttl_cache(ttl=60.0)
     def persistence_mode(self) -> Union[str, NaType]:
@@ -578,7 +582,7 @@ class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         'power_usage', 'power_limit', 'power_status',
 
-        'current_driver_model', 'display_active',
+        'display_active', 'display_mode', 'current_driver_model',
         'persistence_mode', 'performance_state',
         'total_volatile_uncorrected_ecc_errors', 'compute_mode',
     ]

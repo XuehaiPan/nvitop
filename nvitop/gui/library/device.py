@@ -31,7 +31,7 @@ class Device(DeviceBase):
 
         'power_usage', 'power_limit', 'power_status',
 
-        'current_driver_model', 'display_active',
+        'display_active', 'current_driver_model',
         'persistence_mode', 'performance_state',
         'total_volatile_uncorrected_ecc_errors', 'compute_mode',
 
