@@ -82,6 +82,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         else:
             self.items = None
         self._environ = value
+        self.x_offset = 0
         self.y_offset = 0
         self.scroll_offset = 0
 
