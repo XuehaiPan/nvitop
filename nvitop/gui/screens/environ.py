@@ -149,7 +149,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         header_prefix = WideString('Environment of process {} ({}@{}): '.format(self.process.pid,
                                                                                 self.username, process_type))
         offset = max(0, min(self.x_offset, len(self.command) + len(header_prefix) - self.width))
-        header = str((header_prefix + self.command[offset:]).ljust(self.width))
+        header = str((header_prefix + self.command[offset:]).ljust(self.width)[:self.width])
 
         self.addstr(self.y, self.x, header)
         self.addstr(self.y + 1, self.x, '#' * self.width)
