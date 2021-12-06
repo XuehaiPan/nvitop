@@ -76,7 +76,7 @@ class Selected(object):
                 direction = 0
 
             if direction != 0:
-                from nvitop.gui.screens.main.process import ProcessPanel
+                from nvitop.gui.screens.main.process import ProcessPanel  # pylint: disable=import-outside-toplevel,cyclic-import
 
                 if isinstance(self.panel, ProcessPanel):
                     self.panel.parent.y -= direction
