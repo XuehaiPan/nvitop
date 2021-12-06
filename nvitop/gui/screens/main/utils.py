@@ -58,6 +58,8 @@ class Selected(object):
             return
 
         processes = self.panel.snapshots
+        old_index = self.index
+
         if len(processes) > 0:
             if not self.is_set():
                 if abs(direction) < 1024:
@@ -67,6 +69,19 @@ class Selected(object):
             else:
                 self.index = min(max(0, self.index + direction), len(processes) - 1)
             self.process = processes[self.index]
+
+            if old_index is not None:
+                direction -= self.index - old_index
+            else:
+                direction = 0
+
+            if direction != 0:
+                from nvitop.gui.screens.main.process import ProcessPanel
+
+                if isinstance(self.panel, ProcessPanel):
+                    self.panel.parent.y -= direction
+                    self.panel.parent.update_size()
+                    self.panel.parent.need_redraw = True
         else:
             self.clear()
 
