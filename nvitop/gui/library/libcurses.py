@@ -196,6 +196,12 @@ class CursesShortcuts(object):
         """Change the colors to the default colors"""
         self.color()
 
+    def update_size(self, termsize=None):
+        if termsize is None:
+            self.update_lines_cols()
+            termsize = self.win.getmaxyx()
+        return termsize
+
     @staticmethod
     def update_lines_cols():
         curses.update_lines_cols()

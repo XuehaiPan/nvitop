@@ -131,10 +131,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         self.y_offset = self.y_offset + direction
 
     def update_size(self, termsize=None):
-        if termsize is None:
-            self.update_lines_cols()
-            termsize = self.win.getmaxyx()
-        n_term_lines, n_term_cols = termsize
+        n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
         self.width = n_term_cols - self.x
         self.height = n_term_lines - self.y

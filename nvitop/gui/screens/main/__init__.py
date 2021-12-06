@@ -73,10 +73,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self._compact = value
 
     def update_size(self, termsize=None):
-        if termsize is None:
-            self.update_lines_cols()  # pylint: disable=no-member
-            termsize = self.win.getmaxyx()
-        n_term_lines, n_term_cols = termsize
+        n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
         self.width = n_term_cols - self.x
         self.device_panel.width = self.width
@@ -113,6 +110,14 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         if self.height != height:
             self.height = height
             self.need_redraw = True
+
+    def move(self, direction=0):
+        if direction == 0:
+            return
+
+        self.y -= direction
+        self.update_size()
+        self.need_redraw = True
 
     def poke(self):
         super().poke()
@@ -165,9 +170,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         def select_clear(top): top.main_screen.selected.clear()
 
         def screen_move(top, direction):
-            top.main_screen.y -= direction
-            top.update_size()
-            top.need_redraw = True
+            top.main_screen.move(direction)
 
         def terminate(top): top.main_screen.selected.terminate()
         def kill(top): top.main_screen.selected.kill()

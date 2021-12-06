@@ -55,10 +55,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.init_keybindings()
 
     def update_size(self, termsize=None):
-        if termsize is None:
-            self.update_lines_cols()
-            termsize = self.win.getmaxyx()
-        n_term_lines, n_term_cols = termsize  # pylint: disable=unused-variable
+        n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
         self.width = n_term_cols - self.x
         self.height = n_term_lines - self.y

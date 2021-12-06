@@ -79,9 +79,7 @@ class Selected(object):
                 from nvitop.gui.screens.main.process import ProcessPanel  # pylint: disable=import-outside-toplevel,cyclic-import
 
                 if isinstance(self.panel, ProcessPanel):
-                    self.panel.parent.y -= direction
-                    self.panel.parent.update_size()
-                    self.panel.parent.need_redraw = True
+                    self.panel.parent.move(direction)
         else:
             self.clear()
 
