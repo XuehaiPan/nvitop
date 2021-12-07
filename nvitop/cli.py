@@ -8,7 +8,7 @@ import locale
 import os
 import sys
 
-from nvitop.core import nvml
+from nvitop.core import nvml, boolify
 from nvitop.gui import Top, Device, libcurses, colored, USERNAME
 from nvitop.version import __version__
 
@@ -65,7 +65,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     args = parser.parse_args()
 
-    if not hasattr(args, 'monitor') and os.getenv('NVITOP_MONITOR_ALWAYS', '').lower() in ('true', 'yes', '1'):
+    if not hasattr(args, 'monitor') and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'false')):
         args.monitor = None
     if hasattr(args, 'monitor') and args.monitor is None:
         mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()

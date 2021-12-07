@@ -10,8 +10,9 @@ import math
 import time
 
 
-__all__ = ['NA', 'NaType', 'bytes2human', 'timedelta2human', 'Snapshot',
-           'KiB', 'MiB', 'GiB', 'TiB', 'PiB']
+__all__ = ['NA', 'NaType', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB',
+           'bytes2human', 'timedelta2human', 'utilization2string', 'boolify',
+           'Snapshot']
 
 
 class NotApplicableType(str):
@@ -119,6 +120,14 @@ def utilization2string(utilization):
         if isinstance(utilization, float):
             return '{:.1f}%'.format(utilization)
     return NA
+
+
+def boolify(string):
+    if string.lower() in ('true', 'yes', 'on', 'enabled', '1'):
+        return True
+    if string.lower() in ('false', 'no', 'off', 'disabled', '0'):
+        return False
+    return bool(string)
 
 
 class Snapshot(object):

@@ -266,13 +266,13 @@ process filtering:
 
 `nvitop` can accept the following environment variables for monitor mode:
 
-| Name                                   | Description                      | Valid Values                                 | Fallback Value |
-| -------------------------------------- | -------------------------------- | -------------------------------------------- | -------------- |
-| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode   | `true` / `yes` / `1`<br>`false` / `no` / `0` | `false`        |
-| `NVITOP_MONITOR_MODE`                  | The default display mode         | `auto` / `full` / `compact`                  | `auto`         |
-| `NVITOP_MONITOR_THEME`                 | The default color theme          | `dark` / `light`                             | `dark`         |
-| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization    | `10,75` , `1,99`, ...                        | `10,75`        |
-| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent | `10,80` , `1,99`, ...                        | `10,80`        |
+| Name                                   | Description                      | Valid Values                                                | Fallback Value |
+| -------------------------------------- | -------------------------------- | ----------------------------------------------------------- | -------------- |
+| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode   | `true` / `yes` / `on` / `1`<br>`false` / `no` / `off` / `0` | `false`        |
+| `NVITOP_MONITOR_MODE`                  | The default display mode         | `auto` / `full` / `compact`                                 | `auto`         |
+| `NVITOP_MONITOR_THEME`                 | The default color theme          | `dark` / `light`                                            | `dark`         |
+| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization    | `10,75` , `1,99`, ...                                       | `10,75`        |
+| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent | `10,80` , `1,99`, ...                                       | `10,80`        |
 
 For example:
 
