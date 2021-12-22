@@ -7,3 +7,18 @@ __version__ = '0.5.2'
 __license__ = 'GPLv3'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
+__release__ = False
+
+if not __release__:
+    import os
+    import subprocess
+
+    try:
+        __version__ = subprocess.check_output(
+            ['git', 'describe', '--abbrev=6'],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            stderr=subprocess.DEVNULL,
+            universal_newlines=True,
+        ).strip().lstrip('v')
+    except (OSError, subprocess.CalledProcessError):
+        pass
