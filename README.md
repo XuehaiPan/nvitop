@@ -107,7 +107,7 @@ pip3 install --upgrade nvitop
 Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.5.2)):
 
 ```bash
-pip3 install --force-reinstall git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
+pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
 Or, clone this repo and install manually:
@@ -117,6 +117,8 @@ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
 cd nvitop
 pip3 install .
 ```
+
+**NOTE:** If you encounter the *"nvitop: command not found"* error after installation, please check whether you have added the Python console script path (e.g., `"${HOME}/.local/bin"`) to your `PATH` environment variable. Alternatively, you can use `python3 -m nvitop`.
 
 **IMPORTANT:** `pip` will install `nvidia-ml-py==11.450.51` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.450.51/#history), and install the compatible version manually by:
 
@@ -153,14 +155,17 @@ The result will be displayed **ONLY ONCE**, which is consistent with the default
 Run as a resource monitor:
 
 ```bash
+# Monitor mode (when the display mode is omitted, `NVITOP_MONITOR_MODE` will be used)
+$ nvitop -m  # or use `python3 -m nvitop -m`
+
 # Automatically configure the display mode according to the terminal size
-$ nvitop -m auto  # or use `python3 -m nvitop -m`
+$ nvitop -m auto     # shortcut `a` key
 
 # Arbitrarily display as `full` mode
-$ nvitop -m full
+$ nvitop -m full     # shortcut `f` key
 
 # Arbitrarily display as `compact` mode
-$ nvitop -m compact
+$ nvitop -m compact  # shortcut `c` key
 
 # Specify query devices (by integer indices)
 $ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
