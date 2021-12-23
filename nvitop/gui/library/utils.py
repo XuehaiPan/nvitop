@@ -5,12 +5,12 @@
 # pylint: disable=disallowed-name,invalid-name
 
 import getpass
+import os
 import platform
 import sys
 
 from nvitop.core import host, NA
 from nvitop.gui.library.widestring import WideString
-
 
 if host.WINDOWS:
     try:
@@ -63,12 +63,15 @@ def make_bar(prefix, percent, width):
     return bar.ljust(width)
 
 
-USERNAME = getpass.getuser()
+try:
+    USERNAME = getpass.getuser()
+except ModuleNotFoundError:
+    USERNAME = os.getlogin()
+
 if host.WINDOWS:  # pylint: disable=no-member
     import ctypes
     SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
 else:
-    import os
     try:
         SUPERUSER = (os.geteuid() == 0)
     except AttributeError:
