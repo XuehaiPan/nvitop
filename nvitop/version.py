@@ -15,7 +15,7 @@ if not __release__:
 
     try:
         __version__ = subprocess.check_output(
-            ['git', 'describe', '--abbrev=6'],
+            ['git', 'describe', '--abbrev=7'],
             cwd=os.path.dirname(os.path.abspath(__file__)),
             stderr=subprocess.DEVNULL,
             universal_newlines=True,
