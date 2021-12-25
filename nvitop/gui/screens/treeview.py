@@ -375,9 +375,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             if self.selected.is_same_on_host(process):
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
                 self.selected.within_window = (1 <= y - self.y < self.height and self.width >= 79)
-            else:
-                if process.username != USERNAME and not SUPERUSER:
-                    self.color_at(y, self.x, width=self.width, attr='dim')
+            elif str(process.username) != USERNAME and not SUPERUSER:
+                self.color_at(y, self.x, width=self.width, attr='dim')
 
         self.color(fg='cyan', attr='bold | reverse')
         text_offset = self.x + self.width - 47

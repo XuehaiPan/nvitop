@@ -87,6 +87,14 @@ class WideString(object):  # pylint: disable=too-few-public-methods
     def __repr__(self):
         return "<{} '{}'>".format(self.__class__.__name__, self.string)
 
+    def __eq__(self, other):
+        if not isinstance(other, (str, WideString)):
+            raise TypeError
+        return str(self) == str(other)
+
+    def __hash__(self):
+        return hash(self.string)
+
     def __getslice__(self, start, stop):
         """
         >>> WideString('asdf')[1:3]

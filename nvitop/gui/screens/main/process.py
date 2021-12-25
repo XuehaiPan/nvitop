@@ -359,7 +359,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         self.addstr(y, self.x + 1, '=')
                         self.color_at(y, self.x + 1, width=1, attr='bold | blink')
                     self.color_at(y, self.x + 2, width=3, fg=color)
-                    if process.username != USERNAME and not SUPERUSER:
+                    if str(process.username) != USERNAME and not SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
                     if is_zombie or no_permissions:
                         self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
