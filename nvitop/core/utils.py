@@ -122,11 +122,13 @@ def utilization2string(utilization):
     return NA
 
 
-def boolify(string):
+def boolify(string, default=None):
     if string.lower() in ('true', 'yes', 'on', 'enabled', '1'):
         return True
     if string.lower() in ('false', 'no', 'off', 'disabled', '0'):
         return False
+    if default is not None:
+        return bool(default)
     return bool(string)
 
 

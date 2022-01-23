@@ -65,7 +65,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     args = parser.parse_args()
 
-    if not hasattr(args, 'monitor') and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'false')):
+    if not hasattr(args, 'monitor') and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'false'), default=False):
         args.monitor = None
     if hasattr(args, 'monitor') and args.monitor is None:
         mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
