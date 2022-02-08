@@ -8,7 +8,7 @@
 import curses
 
 
-class MouseEvent(object):
+class MouseEvent:
     PRESSED = [
         0,
         curses.BUTTON1_PRESSED,

@@ -10,7 +10,7 @@ from collections import namedtuple
 from nvitop.gui.library import host, NA, Snapshot, USERNAME, SUPERUSER
 
 
-class Selected(object):
+class Selected:
     def __init__(self, panel):
         self.panel = panel
         self.index = None

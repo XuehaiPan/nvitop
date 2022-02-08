@@ -39,7 +39,7 @@ def wcslen(string):
     return len(WideString(string))
 
 
-class WideString(object):  # pylint: disable=too-few-public-methods
+class WideString:  # pylint: disable=too-few-public-methods
     def __init__(self, string, chars=None):
         if isinstance(string, WideString):
             string = string.string

@@ -45,7 +45,7 @@ def grouped(iterable, size, fillvalue=None):
     yield from itertools.zip_longest(*([iter(iterable)] * size), fillvalue=fillvalue)
 
 
-class HistoryGraph(object):  # pylint: disable=too-many-instance-attributes
+class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     MAX_WIDTH = 1024
 
     def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin,too-many-arguments

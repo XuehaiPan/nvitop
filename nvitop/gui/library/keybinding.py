@@ -283,7 +283,7 @@ class KeyMaps(dict):
                 pass
 
 
-class KeyBuffer(object):  # pylint: disable=too-many-instance-attributes
+class KeyBuffer:  # pylint: disable=too-many-instance-attributes
     any_key = ANYKEY
     passive_key = PASSIVE_ACTION
     quantifier_key = QUANT_KEY

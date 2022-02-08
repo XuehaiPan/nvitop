@@ -17,7 +17,7 @@ from nvitop.gui.library import (host, HostProcess, NA, Snapshot,
 from nvitop.gui.screens.main.utils import Selected
 
 
-class TreeNode(object):  # pylint: disable=too-many-instance-attributes
+class TreeNode:  # pylint: disable=too-many-instance-attributes
     def __init__(self, process, children=()):
         self.process = process
         self.parent = None

@@ -39,7 +39,7 @@ UtilizationRates = NamedTuple('UtilizationRates',  # in percentage
                                ('decoder', Union[int, NaType])])
 
 
-class Device(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
 
     # https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
     # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars

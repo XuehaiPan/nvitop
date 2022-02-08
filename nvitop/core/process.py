@@ -192,7 +192,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return Snapshot(real=self, **attributes)
 
 
-class GpuProcess(object):  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 

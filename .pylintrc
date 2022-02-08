@@ -79,7 +79,6 @@ confidence=
 # no Warning level messages displayed, use "--disable=all --enable=classes
 # --disable=W".
 disable=consider-using-f-string,
-        useless-object-inheritance,
         duplicate-code
 
 # Enable the message, report, category or checker with the given id(s). You can

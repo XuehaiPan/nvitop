@@ -18,7 +18,7 @@ from nvitop.core.utils import NA
 __all__ = ['libnvml', 'nvml']
 
 
-class libnvml(object):
+class libnvml:
     LOGGER = logging.getLogger('NVML')
     UNKNOWN_FUNCTIONS = set()
     NVMLError = pynvml.NVMLError

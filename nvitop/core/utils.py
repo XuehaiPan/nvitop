@@ -132,7 +132,7 @@ def boolify(string, default=None):
     return bool(string)
 
 
-class Snapshot(object):
+class Snapshot:
     def __init__(self, real, **items):
         self.real = real
         self.timestamp = time.monotonic()

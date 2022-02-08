@@ -128,7 +128,7 @@ def libcurses(light_theme=False):
         curses.endwin()
 
 
-class CursesShortcuts(object):
+class CursesShortcuts:
     """This class defines shortcuts to facilitate operations with curses.
 
     color(*keys) -- sets the color associated with the keys from
