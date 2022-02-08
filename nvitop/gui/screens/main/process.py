@@ -19,6 +19,8 @@ from nvitop.gui.screens.main.utils import Order, Selected
 
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
+    NAME = 'process'
+
     SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
         'natural': Order(

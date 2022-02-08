@@ -12,6 +12,8 @@ from nvitop.gui.library import (host, Device, NA,
 
 
 class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
+    NAME ='host'
+
     SNAPSHOT_INTERVAL = 0.5
 
     def __init__(self, devices, compact, win, root):

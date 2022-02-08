@@ -75,11 +75,8 @@ class Selected(object):
             else:
                 direction = 0
 
-            if direction != 0:
-                from nvitop.gui.screens.main.process import ProcessPanel  # pylint: disable=import-outside-toplevel,cyclic-import
-
-                if isinstance(self.panel, ProcessPanel):
-                    self.panel.parent.move(direction)
+            if direction != 0 and self.panel.NAME == 'process':
+                self.panel.parent.move(direction)
         else:
             self.clear()
 
