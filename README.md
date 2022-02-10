@@ -159,13 +159,13 @@ Run as a resource monitor:
 $ nvitop -m  # or use `python3 -m nvitop -m`
 
 # Automatically configure the display mode according to the terminal size
-$ nvitop -m auto     # shortcut `a` key
+$ nvitop -m auto     # shortcut: `a` key
 
 # Arbitrarily display as `full` mode
-$ nvitop -m full     # shortcut `f` key
+$ nvitop -m full     # shortcut: `f` key
 
 # Arbitrarily display as `compact` mode
-$ nvitop -m compact  # shortcut `c` key
+$ nvitop -m compact  # shortcut: `c` key
 
 # Specify query devices (by integer indices)
 $ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
@@ -282,9 +282,33 @@ process filtering:
 For example:
 
 ```bash
-export NVITOP_MONITOR_MODE="full"  # replace these export statements if you are not using Bash / Zsh
+# Replace the following export statements if you are not using Bash / Zsh
+export NVITOP_MONITOR_ALWAYS="true"
+export NVITOP_MONITOR_MODE="full"
 export NVITOP_MONITOR_THEME="light"
-nvitop -m  # full monitor mode on light terminal
+
+# Full monitor mode with light terminal tweaks
+nvitop
+```
+
+For convenience, you can add these environment variables to your shell startup file, e.g.:
+
+```bash
+# For Bash
+echo 'export NVITOP_MONITOR_ALWAYS="true"' >> ~/.bashrc
+echo 'export NVITOP_MONITOR_MODE="full"' >> ~/.bashrc
+
+# For Zsh
+echo 'export NVITOP_MONITOR_ALWAYS="true"' >> ~/.zshrc
+echo 'export NVITOP_MONITOR_MODE="full"' >> ~/.zshrc
+
+# For Fish
+echo 'set -gx NVITOP_MONITOR_ALWAYS "true"' >> ~/.config/fish/config.fish
+echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
+
+# For PowerShell
+'$Env:NVITOP_MONITOR_ALWAYS = "true"' >> $PROFILE.CurrentUserAllHosts
+'$Env:NVITOP_MONITOR_MODE = "full"' >> $PROFILE.CurrentUserAllHosts
 ```
 
 #### Keybindings for Monitor Mode
