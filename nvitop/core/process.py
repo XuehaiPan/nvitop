@@ -96,8 +96,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
         with cls.INSTANCE_LOCK:
             try:
-                instance, identity = cls.INSTANCES[pid]
-                if not instance._gone and instance._ident == identity:
+                instance = cls.INSTANCES[pid]
+                if instance.is_running():
                     return instance
             except KeyError:
                 pass
@@ -111,7 +111,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             except host.PsutilError:
                 pass
 
-            cls.INSTANCES[pid] = (instance, instance._ident)
+            cls.INSTANCES[pid] = instance
 
             return instance
 
@@ -204,8 +204,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
         with cls.INSTANCE_LOCK:
             try:
-                instance, identity = cls.INSTANCES[(pid, device)]
-                if not instance._gone and instance._ident == identity:
+                instance = cls.INSTANCES[(pid, device)]
+                if instance.is_running():
                     return instance
             except KeyError:
                 pass
@@ -214,13 +214,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             instance._pid = pid
             instance._host = HostProcess(pid)
-            instance._ident = identity = (*instance._host._ident, device.index)
+            instance._ident = (*instance._host._ident, device.index)
             instance._device = device
 
             instance._hash = None
             instance._username = None
 
-            cls.INSTANCES[(pid, device)] = (instance, identity)
+            cls.INSTANCES[(pid, device)] = instance
 
             return instance
 
