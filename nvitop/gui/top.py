@@ -7,7 +7,6 @@ import curses
 import shutil
 import sys
 import time
-from functools import partial
 
 from nvitop.gui.library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
 from nvitop.gui.screens import MainScreen, EnvironScreen, TreeViewScreen, HelpScreen, BreakLoop
@@ -32,6 +31,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.main_screen.visible = True
         self.main_screen.focused = False
         self.add_child(self.main_screen)
+        self.current_screen = self.previous_screen = self.main_screen
 
         if win is not None:
             self.environ_screen = EnvironScreen(win=win, root=self)
@@ -164,7 +164,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         keybuffer.add(key)
         if keybuffer.result is not None:
             try:
-                keybuffer.result(self)
+                keybuffer.result()
             finally:
                 if keybuffer.finished_parsing:
                     keybuffer.clear()
@@ -211,80 +211,67 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             if hasattr(screen, 'init_keybindings'):
                 screen.init_keybindings()
 
-        def return2main(top):
-            top.environ_screen.visible = False
-            top.treeview_screen.visible = False
-            top.help_screen.visible = False
+        def show_screen(screen, focused=None):
+            for s in self.container:  # pylint: disable=invalid-name
+                if s is screen:
+                    s.visible = True
+                    if focused is not None:
+                        s.focused = focused
+                else:
+                    s.visible = False
 
-            top.main_screen.visible = True
-            top.main_screen.focused = False
+            self.previous_screen = self.current_screen
+            self.current_screen = screen
 
-            if top.treeview_screen.selected.is_set():
-                top.main_screen.selected.process = top.treeview_screen.selected.process
-            top.treeview_screen.selected.clear()
+        def show_main():
+            show_screen(self.main_screen, focused=False)
 
-        def show_treeview(top):
-            top.main_screen.visible = False
-            top.environ_screen.visible = False
-            top.help_screen.visible = False
+            if self.treeview_screen.selected.is_set():
+                self.main_screen.selected.process = self.treeview_screen.selected.process
+            self.treeview_screen.selected.clear()
 
-            top.treeview_screen.visible = True
-            top.treeview_screen.focused = True
+        def show_treeview():
+            show_screen(self.treeview_screen, focused=True)
 
-            if not top.treeview_screen.selected.is_set():
-                top.treeview_screen.selected.process = top.main_screen.selected.process
+            if not self.treeview_screen.selected.is_set():
+                self.treeview_screen.selected.process = self.main_screen.selected.process
 
-        def show_environ(top, from_screen='main'):
-            top.main_screen.visible = False
-            top.treeview_screen.visible = False
-            top.help_screen.visible = False
+        def show_environ():
+            show_screen(self.environ_screen, focused=True)
 
-            top.environ_screen.visible = True
-            top.environ_screen.focused = True
-            top.environ_screen.previous_screen = from_screen
+            self.environ_screen.process = self.previous_screen.selected.process
 
-            if from_screen == 'treeview':
-                top.environ_screen.process = top.treeview_screen.selected.process
+        def environ_return():
+            if self.previous_screen is self.treeview_screen:
+                show_treeview()
             else:
-                top.environ_screen.process = top.main_screen.selected.process
+                show_main()
 
-        def environ_return(top):
-            if top.environ_screen.previous_screen == 'treeview':
-                show_treeview(top)
+        def show_help():
+            show_screen(self.help_screen, focused=True)
+
+        def help_return():
+            if self.previous_screen is self.treeview_screen:
+                show_treeview()
+            elif self.previous_screen is self.environ_screen:
+                show_environ()
             else:
-                return2main(top)
+                show_main()
 
-        def show_help(top, from_screen='main'):
-            top.main_screen.visible = False
-            top.environ_screen.visible = False
-            top.treeview_screen.visible = False
-
-            top.help_screen.visible = True
-            top.help_screen.focused = True
-            top.help_screen.previous_screen = from_screen
-
-        def help_return(top):
-            if top.help_screen.previous_screen == 'treeview':
-                show_treeview(top)
-            elif top.help_screen.previous_screen == 'environ':
-                show_environ(top, from_screen=top.environ_screen.previous_screen)
-            else:
-                return2main(top)
-
-        self.keymaps.bind('main', 'e', partial(show_environ, from_screen='main'))
+        self.keymaps.bind('main', 'e', show_environ)
         self.keymaps.bind('environ', 'e', environ_return)
         self.keymaps.copy('environ', 'e', '<Esc>')
         self.keymaps.copy('environ', 'e', 'q')
         self.keymaps.copy('environ', 'e', 'Q')
 
         self.keymaps.bind('main', 't', show_treeview)
-        self.keymaps.bind('treeview', 't', return2main)
+        self.keymaps.bind('treeview', 't', show_main)
         self.keymaps.copy('treeview', 't', 'q')
         self.keymaps.copy('treeview', 't', 'Q')
-        self.keymaps.bind('treeview', 'e', partial(show_environ, from_screen='treeview'))
+        self.keymaps.bind('treeview', 'e', show_environ)
 
         for screen in ('main', 'treeview', 'environ'):
-            self.keymaps.bind(screen, 'h', partial(show_help, from_screen=screen))
+            self.keymaps.bind(screen, 'h', show_help)
             self.keymaps.copy(screen, 'h', '?')
         self.keymaps.bind('help', '<Esc>', help_return)
         self.keymaps.bind('help', '<any>', help_return)

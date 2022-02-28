@@ -150,51 +150,48 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
     def init_keybindings(self):
         # pylint: disable=too-many-locals,too-many-statements,multiple-statements
 
-        def quit(top): raise BreakLoop  # pylint: disable=redefined-builtin
+        def quit(): raise BreakLoop  # pylint: disable=redefined-builtin
 
-        def change_mode(top, mode):
-            top.main_screen.mode = mode
-            top.update_size()
+        def change_mode(mode):
+            self.mode = mode
+            self.root.update_size()
 
-        def force_refresh(top):
-            top.main_screen.y = top.y
-            top.update_size()
-            top.need_redraw = True
+        def force_refresh():
+            self.y = self.root.y
+            self.root.update_size()
+            self.root.need_redraw = True
 
-        def host_left(top): top.main_screen.process_panel.host_offset -= 2
-        def host_right(top): top.main_screen.process_panel.host_offset += 2
-        def host_begin(top): top.main_screen.process_panel.host_offset = -1
-        def host_end(top): top.main_screen.process_panel.host_offset = 1024
+        def host_left(): self.process_panel.host_offset -= 2
+        def host_right(): self.process_panel.host_offset += 2
+        def host_begin(): self.process_panel.host_offset = -1
+        def host_end(): self.process_panel.host_offset = 1024
 
-        def select_move(top, direction): top.main_screen.selected.move(direction=direction)
-        def select_clear(top): top.main_screen.selected.clear()
+        def select_move(direction): self.selected.move(direction=direction)
+        def select_clear(): self.selected.clear()
 
-        def screen_move(top, direction):
-            top.main_screen.move(direction)
+        def screen_move(direction):
+            self.move(direction)
 
-        def terminate(top): top.main_screen.selected.terminate()
-        def kill(top): top.main_screen.selected.kill()
-        def interrupt(top): top.main_screen.selected.interrupt()
+        def terminate(): self.selected.terminate()
+        def kill(): self.selected.kill()
+        def interrupt(): self.selected.interrupt()
 
-        def sort_by(top, order, reverse):
-            top.main_screen.process_panel.order = order
-            top.main_screen.process_panel.reverse = reverse
-            top.update_size()
+        def sort_by(order, reverse):
+            self.process_panel.order = order
+            self.process_panel.reverse = reverse
+            self.root.update_size()
 
-        def order_previous(top):
-            sort_by(top,
-                    order=ProcessPanel.ORDERS[top.main_screen.process_panel.order].previous,
+        def order_previous():
+            sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].previous,
                     reverse=False)
 
-        def order_next(top):
-            sort_by(top,
-                    order=ProcessPanel.ORDERS[top.main_screen.process_panel.order].next,
+        def order_next():
+            sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].next,
                     reverse=False)
 
-        def order_reverse(top):
-            sort_by(top,
-                    order=top.main_screen.process_panel.order,
-                    reverse=(not top.main_screen.process_panel.reverse))
+        def order_reverse():
+            sort_by(order=self.process_panel.order,
+                    reverse=(not self.process_panel.reverse))
 
         self.root.keymaps.bind('main', 'q', quit)
         self.root.keymaps.copy('main', 'q', 'Q')

@@ -19,8 +19,6 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
 
         self.this = HostProcess()
 
-        self.previous_screen = 'main'
-
         self._process = None
         self._environ = None
         self.items = None
@@ -197,23 +195,14 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
     def init_keybindings(self):
         # pylint: disable=multiple-statements
 
-        def refresh_environ(top):
-            top.main_screen.visible = False
-            top.treeview_screen.visible = False
-            top.help_screen.visible = False
+        def refresh_environ():
+            self.process = self.root.previous_screen.selected.process
+            self.need_redraw = True
 
-            top.environ_screen.visible = True
-            top.environ_screen.focused = True
-
-            if top.environ_screen.previous_screen == 'treeview':
-                top.environ_screen.process = top.treeview_screen.selected.process
-            else:
-                top.environ_screen.process = top.main_screen.selected.process
-
-        def environ_left(top): top.environ_screen.x_offset = max(0, top.environ_screen.x_offset - 5)
-        def environ_right(top): top.environ_screen.x_offset += 5
-        def environ_begin(top): top.environ_screen.x_offset = 0
-        def environ_move(top, direction): top.environ_screen.move(direction=direction)
+        def environ_left(): self.x_offset = max(0, self.x_offset - 5)
+        def environ_right(): self.x_offset += 5
+        def environ_begin(): self.x_offset = 0
+        def environ_move(direction): self.move(direction=direction)
 
         self.root.keymaps.bind('environ', 'r', refresh_environ)
         self.root.keymaps.copy('environ', 'r', 'R')

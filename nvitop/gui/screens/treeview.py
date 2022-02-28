@@ -416,16 +416,16 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
     def init_keybindings(self):
         # pylint: disable=multiple-statements
 
-        def tree_left(top): top.treeview_screen.x_offset = max(0, top.treeview_screen.x_offset - 5)
-        def tree_right(top): top.treeview_screen.x_offset += 5
-        def tree_begin(top): top.treeview_screen.x_offset = 0
+        def tree_left(): self.x_offset = max(0, self.x_offset - 5)
+        def tree_right(): self.x_offset += 5
+        def tree_begin(): self.x_offset = 0
 
-        def select_move(top, direction): top.treeview_screen.selected.move(direction=direction)
-        def select_clear(top): top.treeview_screen.selected.clear()
+        def select_move(direction): self.selected.move(direction=direction)
+        def select_clear(): self.selected.clear()
 
-        def terminate(top): top.treeview_screen.selected.terminate()
-        def kill(top): top.treeview_screen.selected.kill()
-        def interrupt(top): top.treeview_screen.selected.interrupt()
+        def terminate(): self.selected.terminate()
+        def kill(): self.selected.kill()
+        def interrupt(): self.selected.interrupt()
 
         self.root.keymaps.bind('treeview', '<Left>', tree_left)
         self.root.keymaps.copy('treeview', '<Left>', '<A-h>')

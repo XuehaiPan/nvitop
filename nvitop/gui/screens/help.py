@@ -47,8 +47,6 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     def __init__(self, win, root):
         super().__init__(win, root)
 
-        self.previous_screen = 'main'
-
         HELP = HELP_TEMPLATE.format(__version__,
                                     *Device.GPU_UTILIZATION_THRESHOLDS,
                                     *Device.MEMORY_UTILIZATION_THRESHOLDS,
