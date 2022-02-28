@@ -19,6 +19,6 @@ if not __release__:
             cwd=os.path.dirname(os.path.abspath(__file__)),
             stderr=subprocess.DEVNULL,
             universal_newlines=True,
-        ).strip().lstrip('v')
+        ).strip().lstrip('v').replace('-', '+', 1).replace('-', '.')
     except (OSError, subprocess.CalledProcessError):
         pass
