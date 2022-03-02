@@ -59,7 +59,7 @@ else:
 def command_join(cmdline: List[str]) -> str:
     if len(cmdline) > 1:
         cmdline = '\0'.join(cmdline).strip('\0').split('\0')
-    if len(cmdline) == 1:
+    if len(cmdline) == 1 and not (os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0])):
         return cmdline[0]
     return ' '.join(map(add_quotes, cmdline))
 
