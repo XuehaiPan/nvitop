@@ -25,7 +25,7 @@ if not version.__release__:
     VERSION_FILE.write_text(data=re.sub(r"""__version__\s*=\s*('[^']+'|"[^"]+")""",
                                         r"__version__ = '{}'".format(version.__version__),
                                         string=VERSION_CONTENT),
-                            encoding='UTF-8', newline='\n')
+                            encoding='UTF-8')
 
 
 setup(
@@ -38,4 +38,4 @@ setup(
 
 
 if VERSION_CONTENT is not None:
-    VERSION_FILE.write_text(data=VERSION_CONTENT, encoding='UTF-8', newline='\n')
+    VERSION_FILE.write_text(data=VERSION_CONTENT, encoding='UTF-8')
