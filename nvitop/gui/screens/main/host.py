@@ -7,7 +7,7 @@
 import threading
 import time
 
-from nvitop.gui.library import (host, Device, NA,
+from nvitop.gui.library import (host, Device, NA, bytes2human,
                                 Displayable, BufferedHistoryGraph, colored, make_bar)
 
 
@@ -34,9 +34,11 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.height = (self.compact_height if compact else self.full_height)
 
         self.cpu_percent = None
+        self.load_average = None
         self.virtual_memory = None
         self.swap_memory = None
-        self.load_average = None
+        self.memory_percent = None
+        self.swap_percent = None
         self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_running = threading.Event()
@@ -123,12 +125,13 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def take_snapshots(self):
         host.cpu_percent()
-        host.virtual_memory()
-        host.swap_memory()
-        self.cpu_percent = host.cpu_percent.history.last_value
-        self.virtual_memory = host.virtual_memory.history.last_value
-        self.swap_memory = host.swap_memory.history.last_value
         self.load_average = host.load_average()
+        self.virtual_memory = host.virtual_memory()
+        self.swap_memory = host.swap_memory()
+
+        self.cpu_percent = host.cpu_percent.history.last_value
+        self.memory_percent = host.virtual_memory.history.last_value
+        self.swap_percent = host.swap_memory.history.last_value
 
         memory_percents = []
         gpu_utilizations = []
@@ -198,8 +201,8 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             width_right = len(load_average) + 4
             width_left = self.width - 2 - width_right
             cpu_bar = '[ {} ]'.format(make_bar('CPU', self.cpu_percent, width_left - 4))
-            memory_bar = '[ {} ]'.format(make_bar('MEM', self.virtual_memory, width_left - 4))
-            swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory, width_right - 4))
+            memory_bar = '[ {} ]'.format(make_bar('MEM', self.memory_percent, width_left - 4))
+            swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_percent, width_right - 4))
             self.addstr(self.y, self.x, '{}  ( {} )'.format(cpu_bar, load_average))
             self.addstr(self.y + 1, self.x, '{}  {}'.format(memory_bar, swap_bar))
             self.color_at(self.y, self.x, width=len(cpu_bar), fg='cyan', attr='bold')
@@ -272,8 +275,8 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def print(self):
         self.cpu_percent = host.cpu_percent()
-        self.virtual_memory = host.virtual_memory().percent
-        self.swap_memory = host.swap_memory().percent
+        self.memory_percent = host.virtual_memory().percent
+        self.swap_percent = host.swap_memory().percent
         self.load_average = host.load_average()
 
         if self.load_average is not None:
@@ -286,8 +289,8 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         width_right = len(load_average) + 4
         width_left = self.width - 2 - width_right
         cpu_bar = '[ {} ]'.format(make_bar('CPU', self.cpu_percent, width_left - 4))
-        memory_bar = '[ {} ]'.format(make_bar('MEM', self.virtual_memory, width_left - 4))
-        swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory, width_right - 4))
+        memory_bar = '[ {} ]'.format(make_bar('MEM', self.memory_percent, width_left - 4))
+        swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_percent, width_right - 4))
 
         lines = [
             '{}  {}'.format(colored(cpu_bar, color='cyan', attrs=('bold',)),

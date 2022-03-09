@@ -8,10 +8,10 @@ import functools
 import threading
 
 from nvitop.core import (host, HostProcess, GpuProcess as GpuProcessBase,
-                         NA, Snapshot)
+                         NA, Snapshot, bytes2human)
 
 
-__all__ = ['host', 'HostProcess', 'GpuProcess', 'NA', 'Snapshot']
+__all__ = ['host', 'HostProcess', 'GpuProcess', 'NA', 'Snapshot', 'bytes2human']
 
 
 def auto_garbage_clean(default=None):
