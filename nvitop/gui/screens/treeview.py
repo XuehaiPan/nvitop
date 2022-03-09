@@ -343,7 +343,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self.color_at(self.y, self.x, width=self.width, fg='cyan', attr='bold | reverse')
 
         if len(self.snapshots) == 0:
-            self.addstr(self.y + 1, self.x, 'No running GPU processes found.')
+            self.addstr(self.y + 1, self.x, 'No running GPU processes found{}.'.format(' (in WSL)' if host.WSL else ''))
             return
 
         if self.y_mouse is not None:

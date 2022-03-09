@@ -81,5 +81,7 @@ else:
             SUPERUSER = False
 
 HOSTNAME = platform.node()
+if host.WSL:
+    HOSTNAME = '{} (WSL)'.format(HOSTNAME)
 
 USERCONTEXT = '{}@{}'.format(USERNAME, HOSTNAME)

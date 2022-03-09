@@ -3,6 +3,7 @@
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
+import os as _os
 from collections import defaultdict as _defaultdict
 
 import psutil as _psutil
@@ -11,7 +12,7 @@ from psutil import *  # pylint: disable=wildcard-import,unused-wildcard-import,r
 
 
 __all__ = _psutil.__all__.copy()
-__all__.extend(['load_average', 'ppid_map', 'reverse_ppid_map'])
+__all__.extend(['load_average', 'ppid_map', 'reverse_ppid_map', 'WSL', 'WINDOWS_SUBSYSTEM_FOR_LINUX'])
 __all__[__all__.index('Error')] = 'PsutilError'
 
 
@@ -43,3 +44,12 @@ def reverse_ppid_map():  # pylint: disable=function-redefined
         tree[ppid].append(pid)
 
     return tree
+
+
+if LINUX:
+    WSL = _os.getenv('WSL_DISTRO_NAME', default=None)
+    if WSL is not None and WSL == '':
+        WSL = 'WSL'
+else:
+    WSL = None
+WINDOWS_SUBSYSTEM_FOR_LINUX = WSL

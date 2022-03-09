@@ -140,7 +140,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         else:
             header.extend([
                 '╞═════════════════════════════════════════════════════════════════════════════╡',
-                '│  No visible CUDA devices found                                              │',
+                '│  No visible devices found                                                   │',
                 '╘═════════════════════════════════════════════════════════════════════════════╛',
             ])
         return header

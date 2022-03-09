@@ -205,8 +205,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             '╞' + '═' * (self.width - 2) + '╡',
         ]
         if len(self.snapshots) == 0:
+            message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
             header.extend([
-                '│ {} │'.format(' No running processes found '.ljust(self.width - 4)),
+                '│ {} │'.format(message.ljust(self.width - 4)),
                 '╘' + '═' * (self.width - 2) + '╛',
             ])
         return header
@@ -370,7 +371,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛')
         else:
-            self.addstr(self.y + 5, self.x, '│ {} │'.format(' No running processes found '.ljust(self.width - 4)))
+            message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
+            self.addstr(self.y + 5, self.x, '│ {} │'.format(message.ljust(self.width - 4)))
 
         text_offset = self.x + self.width - 47
         if self.selected.owned() and self.selected.within_window:
