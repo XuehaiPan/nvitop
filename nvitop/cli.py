@@ -14,6 +14,9 @@ from nvitop.gui import Top, Device, libcurses, colored, USERNAME
 from nvitop.version import __version__
 
 
+TTY = (sys.stdin.isatty() and sys.stdout.isatty())
+
+
 def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
                                                                colored('moderate', 'yellow'),
@@ -67,15 +70,6 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     args = parser.parse_args()
 
-    if not hasattr(args, 'monitor') and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'true'), default=True):
-        args.monitor = None
-    if args.once:
-        del args.monitor
-    if hasattr(args, 'monitor') and args.monitor is None:
-        mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
-        if mode not in ('auto', 'full', 'compact'):
-            mode = 'auto'
-        args.monitor = mode
     if not args.light:
         args.light = (os.getenv('NVITOP_MONITOR_THEME', 'dark').lower() == 'light')
     if args.user is not None and len(args.user) == 0:
@@ -119,9 +113,23 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
     args = parse_arguments()
 
     messages = []
-    if hasattr(args, 'monitor') and not (sys.stdin.isatty() and sys.stdout.isatty()):
+    if args.once and hasattr(args, 'monitor'):
+        messages.append('ERROR: Both `--once` and `--monitor` switches are on.')
+        del args.monitor
+
+    if not args.once and not hasattr(args, 'monitor') and TTY \
+            and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'true'), default=True):
+        args.monitor = None
+
+    if hasattr(args, 'monitor') and not TTY:
         messages.append('ERROR: You must run monitor mode from a TTY terminal.')
         del args.monitor
+
+    if hasattr(args, 'monitor') and args.monitor is None:
+        mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
+        if mode not in ('auto', 'full', 'compact'):
+            mode = 'auto'
+        args.monitor = mode
 
     try:
         device_count = Device.count()
