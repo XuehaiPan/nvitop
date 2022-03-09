@@ -4,11 +4,12 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
 import argparse
+import curses
 import locale
 import os
 import sys
 
-from nvitop.core import nvml, boolify
+from nvitop.core import nvml, HostProcess, boolify
 from nvitop.gui import Top, Device, libcurses, colored, USERNAME
 from nvitop.version import __version__
 
@@ -116,7 +117,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
 
     messages = []
     if hasattr(args, 'monitor') and not (sys.stdin.isatty() and sys.stdout.isatty()):
-        messages.append('ERROR: You must run monitor mode from a terminal.')
+        messages.append('ERROR: You must run monitor mode from a TTY terminal.')
         del args.monitor
 
     try:
@@ -158,12 +159,28 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
         pids = set(args.pid)
         filters.append(lambda process: process.pid in pids)
 
+    top = None
     if hasattr(args, 'monitor') and len(devices) > 0:
-        with libcurses(light_theme=args.light) as win:
-            top = Top(devices, filters, ascii=args.ascii, mode=args.monitor, win=win)
-            top.loop()
-    else:
+        try:
+            with libcurses(light_theme=args.light) as win:
+                top = Top(devices, filters, ascii=args.ascii, mode=args.monitor, win=win)
+                top.loop()
+        except curses.error as e:  # pylint: disable=invalid-name
+            if top is not None:
+                raise
+            messages.append('ERROR: Failed to initialize `curses` ({})'.format(e))
+
+    if top is None:
         top = Top(devices, filters, ascii=args.ascii)
+        if not sys.stdout.isatty():
+            parent = HostProcess().parent()
+            grandparent = (parent.parent() if parent is not None else None)
+            if grandparent is not None and parent.name() == 'sh' and grandparent.name() == 'watch':
+                print(
+                    'HINT: You are running `nvitop` under `watch` command. Please try `nvitop -m` directly.',
+                    file=sys.stderr
+                )
+
     top.print()
     top.destroy()
 
