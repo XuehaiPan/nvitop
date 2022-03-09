@@ -136,19 +136,19 @@ Query the device and process status. The output is similar to `nvidia-smi`, but 
 
 ```bash
 # Query status of all devices
-$ nvitop  # or use `python3 -m nvitop`
+$ nvitop -1  # or use `python3 -m nvitop -1`
 
 # Specify query devices (by integer indices)
-$ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
+$ nvitop -1 -o 0 1  # only show <GPU 0> and <GPU 1>
 
 # Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
-$ nvitop -ov
+$ nvitop -1 -ov
 
 # Only show GPU processes with the compute context (type: 'C' or 'C+G')
-$ nvitop -c
+$ nvitop -1 -c
 ```
 
-The result will be displayed **ONLY ONCE**, which is consistent with the default behavior of `nvidia-smi`. See [Command Line Options](#command-line-options-and-environment-variables) for more command options.
+When the `-1` switch is on, the result will be displayed **ONLY ONCE** (same as the default behavior of `nvidia-smi`). This is much faster and has lower resource usage. You can omit the `-1` option by setting the environment variable `NVITOP_MONITOR_ALWAYS=false` to have this behavior by default. See [Command Line Options](#command-line-options-and-environment-variables) for more command options.
 
 ### Resource Monitor
 
@@ -156,7 +156,7 @@ Run as a resource monitor:
 
 ```bash
 # Monitor mode (when the display mode is omitted, `NVITOP_MONITOR_MODE` will be used)
-$ nvitop -m  # or use `python3 -m nvitop -m`
+$ nvitop  # or use `python3 -m nvitop`
 
 # Automatically configure the display mode according to the terminal size
 $ nvitop -m auto     # shortcut: `a` key
@@ -168,22 +168,22 @@ $ nvitop -m full     # shortcut: `f` key
 $ nvitop -m compact  # shortcut: `c` key
 
 # Specify query devices (by integer indices)
-$ nvitop -m -o 0 1  # only show <GPU 0> and <GPU 1>
+$ nvitop -o 0 1  # only show <GPU 0> and <GPU 1>
 
 # Only show devices in `CUDA_VISIBLE_DEVICES` (by integer indices or UUID strings)
-$ nvitop -m -ov
+$ nvitop -ov
 
 # Only show GPU processes with the compute context (type: 'C' or 'C+G')
-$ nvitop -m -c
+$ nvitop -c
 
 # Use ASCII characters only
-$ nvitop -m -U  # useful for terminals without Unicode support
+$ nvitop -U  # useful for terminals without Unicode support
 
 # For light terminals
-$ nvitop -m --light
+$ nvitop --light
 ```
 
-You can omit the `-m` option by setting the environment variable `NVITOP_MONITOR_ALWAYS=true`. See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
+You can configure the default monitor mode with the environment variable `NVITOP_MONITOR_MODE` (default `auto` if not set). See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
 
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
@@ -193,7 +193,7 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
 
-In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop -m` to terminate other users' processes.
+In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop` to terminate other users' processes.
 
 #### For Docker Users
 
@@ -202,7 +202,7 @@ Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/n
 ```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop  # clone this repo first
 docker build --tag nvitop:latest .  # build the Docker image
-docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest -m  # run the Docker container
+docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest  # run the Docker container
 ```
 
 The [`Dockerfile`](Dockerfile) has a optional build argument `basetag` (default: `418.87.01-ubuntu18.04`) for the tag of image [`nvidia/driver`](https://hub.docker.com/r/nvidia/driver/tags).
@@ -214,8 +214,8 @@ The [`Dockerfile`](Dockerfile) has a optional build argument `basetag` (default:
 Run `nvitop` directly on the SSH session instead of a login shell:
 
 ```bash
-ssh user@host -t nvitop -m                 # installed by `sudo pip3 install ...`
-ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user ...`
+ssh user@host -t nvitop                 # installed by `sudo pip3 install ...`
+ssh user@host -t '~/.local/bin/nvitop'  # installed by `pip3 install --user ...`
 ```
 
 **NOTE:** Users need to add the `-t` option to allocate a pseudo-terminal over the SSH session for monitor mode.
@@ -225,19 +225,19 @@ ssh user@host -t '~/.local/bin/nvitop' -m  # installed by `pip3 install --user .
 Type `nvitop --help` for more command options:
 
 ```text
-usage: nvitop [--help] [--version] [--monitor [{auto,full,compact}]] [--ascii]
+usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]] [--ascii]
               [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
-              [--user [USERNAME [USERNAME ...]]] [--pid PID [PID ...]]
+              [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
 
 optional arguments:
   --help, -h            Show this help message and exit.
   --version, -V         Show nvitop's version number and exit.
+  --once, -1            Report query data only once.
   --monitor [{auto,full,compact}], -m [{auto,full,compact}]
-                        Run as a resource monitor. Continuously report query data,
-                        rather than the default of just once.
+                        Run as a resource monitor. Continuously report query data and handle user inputs.
                         If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.
                         (default fallback mode: auto)
   --ascii, --no-unicode, -U
@@ -263,7 +263,7 @@ device filtering:
 process filtering:
   --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
   --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
-  --user [USERNAME [USERNAME ...]], -u [USERNAME [USERNAME ...]]
+  --user [USERNAME ...], -u [USERNAME ...]
                         Only show processes of the given users (or `$USER` for no argument).
   --pid PID [PID ...], -p PID [PID ...]
                         Only show processes of the given PIDs.
@@ -273,7 +273,7 @@ process filtering:
 
 | Name                                   | Description                      | Valid Values                                                | Fallback Value |
 | -------------------------------------- | -------------------------------- | ----------------------------------------------------------- | -------------- |
-| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode   | `true` / `yes` / `on` / `1`<br>`false` / `no` / `off` / `0` | `false`        |
+| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode   | `true` / `yes` / `on` / `1`<br>`false` / `no` / `off` / `0` | `true`         |
 | `NVITOP_MONITOR_MODE`                  | The default display mode         | `auto` / `full` / `compact`                                 | `auto`         |
 | `NVITOP_MONITOR_THEME`                 | The default color theme          | `dark` / `light`                                            | `dark`         |
 | `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization    | `10,75` , `1,99`, ...                                       | `10,75`        |
@@ -295,19 +295,15 @@ For convenience, you can add these environment variables to your shell startup f
 
 ```bash
 # For Bash
-echo 'export NVITOP_MONITOR_ALWAYS="true"' >> ~/.bashrc
 echo 'export NVITOP_MONITOR_MODE="full"' >> ~/.bashrc
 
 # For Zsh
-echo 'export NVITOP_MONITOR_ALWAYS="true"' >> ~/.zshrc
 echo 'export NVITOP_MONITOR_MODE="full"' >> ~/.zshrc
 
 # For Fish
-echo 'set -gx NVITOP_MONITOR_ALWAYS "true"' >> ~/.config/fish/config.fish
 echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 
 # For PowerShell
-'$Env:NVITOP_MONITOR_ALWAYS = "true"' >> $PROFILE.CurrentUserAllHosts
 '$Env:NVITOP_MONITOR_MODE = "full"' >> $PROFILE.CurrentUserAllHosts
 ```
 
@@ -664,13 +660,13 @@ Out[43]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, si
 
 ![Screen Recording](https://user-images.githubusercontent.com/16078332/113173772-508dc380-927c-11eb-84c5-b6f496e54c08.gif)
 
-Example output of `nvitop`:
+Example output of `nvitop -1`:
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/117765250-41793880-b260-11eb-8a1b-9c32868a46d4.png" alt="Screenshot">
 </p>
 
-Example output of `nvitop -m`:
+Example output of `nvitop`:
 
 <table>
   <tr valign="center" align="center">

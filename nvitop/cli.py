@@ -24,10 +24,11 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
                         help='Show this help message and exit.')
     parser.add_argument('--version', '-V', dest='version', action='version', version='%(prog)s {}'.format(__version__),
                         help="Show %(prog)s's version number and exit.")
+    parser.add_argument('--once', '-1', dest='once', action='store_true',
+                        help='Report query data only once.')
     parser.add_argument('--monitor', '-m', dest='monitor', type=str, default=argparse.SUPPRESS,
                         nargs='?', choices=['auto', 'full', 'compact'],
-                        help='Run as a resource monitor. Continuously report query data,\n'
-                             'rather than the default of just once.\n'
+                        help='Run as a resource monitor. Continuously report query data and handle user inputs.\n'
                              'If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.\n'
                              '(default fallback mode: auto)')
     parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
@@ -66,8 +67,10 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     args = parser.parse_args()
 
-    if not hasattr(args, 'monitor') and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'false'), default=False):
+    if not hasattr(args, 'monitor') and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'true'), default=True):
         args.monitor = None
+    if args.once:
+        del args.monitor
     if hasattr(args, 'monitor') and args.monitor is None:
         mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
         if mode not in ('auto', 'full', 'compact'):
