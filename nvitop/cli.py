@@ -10,7 +10,7 @@ import os
 import sys
 
 from nvitop.core import nvml, HostProcess, boolify
-from nvitop.gui import Top, Device, libcurses, colored, USERNAME
+from nvitop.gui import Top, Device, libcurses, colored, set_color, USERNAME
 from nvitop.version import __version__
 
 
@@ -38,6 +38,8 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
                         help='Use ASCII characters only, which is useful for terminals without Unicode support.')
 
     coloring = parser.add_argument_group('coloring')
+    coloring.add_argument('--force-color', dest='force_color', action='store_true',
+                        help='Force colorize even when `stdout` is not a TTY terminal.')
     coloring.add_argument('--light', action='store_true',
                           help='Tweak visual results for light theme terminals in monitor mode.\n'
                                'Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.')
@@ -98,7 +100,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     return args
 
 
-def main():  # pylint: disable=too-many-branches,too-many-statements
+def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
     try:
         locale.setlocale(locale.LC_ALL, 'C.UTF-8')
     except locale.Error:
@@ -111,6 +113,9 @@ def main():  # pylint: disable=too-many-branches,too-many-statements
                 pass
 
     args = parse_arguments()
+
+    if args.force_color:
+        set_color(True)
 
     messages = []
     if args.once and hasattr(args, 'monitor'):

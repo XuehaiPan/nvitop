@@ -225,9 +225,10 @@ ssh user@host -t '~/.local/bin/nvitop'  # installed by `pip3 install --user ...`
 Type `nvitop --help` for more command options:
 
 ```text
-usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]] [--ascii]
-              [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
+usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
+              [--ascii] [--force-color] [--light] [--gpu-util-thresh th1 th2]
+              [--mem-util-thresh th1 th2] [--only idx [idx ...]]
+              [--only-visible] [--compute] [--graphics]
               [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
@@ -244,6 +245,7 @@ optional arguments:
                         Use ASCII characters only, which is useful for terminals without Unicode support.
 
 coloring:
+  --force-color         Force colorize even when `stdout` is not a TTY terminal.
   --light               Tweak visual results for light theme terminals in monitor mode.
                         Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.
   --gpu-util-thresh th1 th2

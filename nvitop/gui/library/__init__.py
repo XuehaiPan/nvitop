@@ -12,5 +12,5 @@ from nvitop.gui.library.keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUAN
 from nvitop.gui.library.mouse import MouseEvent
 from nvitop.gui.library.history import HistoryGraph, BufferedHistoryGraph
 from nvitop.gui.library.widestring import WideString, wcslen
-from nvitop.gui.library.utils import (colored, cut_string, make_bar,
+from nvitop.gui.library.utils import (colored, set_color, cut_string, make_bar,
                                       USERNAME, SUPERUSER, HOSTNAME, USERCONTEXT)

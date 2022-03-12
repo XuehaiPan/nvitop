@@ -7,7 +7,7 @@
 import threading
 import time
 
-from nvitop.gui.library import (host, Device, NA, bytes2human,
+from nvitop.gui.library import (host, Device, NA,
                                 Displayable, BufferedHistoryGraph, colored, make_bar)
 
 

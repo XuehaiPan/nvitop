@@ -21,12 +21,24 @@ if host.WINDOWS:
         init()
 
 try:
-    if not sys.stdout.isatty():
-        raise ImportError
-    from termcolor import colored  # pylint: disable=unused-import
+    from termcolor import colored as _colored
 except ImportError:
-    def colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
+    def _colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
         return text
+
+
+COLOR = sys.stdout.isatty()
+
+
+def set_color(value):
+    global COLOR  # pylint: disable=global-statement
+    COLOR = bool(value)
+
+
+def colored(text, color=None, on_color=None, attrs=None):
+    if COLOR:
+        return _colored(text, color=color, on_color=on_color, attrs=attrs)
+    return text
 
 
 def cut_string(s, maxlen, padstr='...', align='left'):
