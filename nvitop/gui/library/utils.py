@@ -5,6 +5,7 @@
 # pylint: disable=disallowed-name,invalid-name
 
 import getpass
+import math
 import os
 import platform
 import sys
@@ -57,7 +58,7 @@ def cut_string(s, maxlen, padstr='...', align='left'):
 
 def make_bar(prefix, percent, width):
     bar = '{}: '.format(prefix)
-    if percent != NA:
+    if percent != NA and not (isinstance(percent, float) and not math.isfinite(percent)):
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent.replace('%', '')
             percent = float(percent) if '.' in percent else int(percent)

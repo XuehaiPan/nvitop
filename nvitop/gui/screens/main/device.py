@@ -218,15 +218,31 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
             if draw_bars:
                 matrix = [
-                    ('MEM', device.memory_percent, device.memory_display_color),
-                    ('UTL', device.gpu_utilization, device.gpu_display_color),
+                    (0, y_start, remaining_width - 3,
+                     'MEM', device.memory_percent, device.memory_display_color),
+                    (0, y_start + 1, remaining_width - 3,
+                     'UTL', device.gpu_utilization, device.gpu_display_color),
                 ]
                 if self.compact:
-                    matrix.pop()
-                for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
-                    bar = make_bar(prefix, utilization, width=remaining_width - 3)
-                    self.addstr(y, self.x + 80, bar + ' │')
-                    self.color_at(y, self.x + 80, width=remaining_width - 3, fg=color, attr=attr)
+                    if remaining_width >= 44:
+                        left_width = (remaining_width - 6 + 1) // 2 - 1
+                        right_width = (remaining_width - 6) // 2 + 1
+                        matrix = [
+                            (0, y_start, left_width,
+                             'MEM', device.memory_percent, device.memory_display_color),
+                            (left_width + 3, y_start, right_width,
+                             'UTL', device.gpu_utilization, device.gpu_display_color),
+                        ]
+                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, '┼' if index > 0 else '╤')
+                        self.addstr(y_start, self.x + 80 + left_width + 1, '│')
+                        if index == len(self.snapshots) - 1:
+                            self.addstr(y_start + 1, self.x + 80 + left_width + 1, '╧')
+                    else:
+                        matrix.pop()
+                for x_offset, y, width, prefix, utilization, color in matrix:
+                    bar = make_bar(prefix, utilization, width=width)
+                    self.addstr(y, self.x + 80 + x_offset, bar)
+                    self.color_at(y, self.x + 80 + x_offset, width=width, fg=color, attr=attr)
 
     def destroy(self):
         super().destroy()
