@@ -8,38 +8,9 @@ import getpass
 import math
 import os
 import platform
-import sys
 
-from nvitop.core import host, NA
+from nvitop.core import host, NA, colored, set_color  # pylint: disable=unused-import
 from nvitop.gui.library.widestring import WideString
-
-if host.WINDOWS:
-    try:
-        from colorama import init
-    except ImportError:
-        pass
-    else:
-        init()
-
-try:
-    from termcolor import colored as _colored
-except ImportError:
-    def _colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
-        return text
-
-
-COLOR = sys.stdout.isatty()
-
-
-def set_color(value):
-    global COLOR  # pylint: disable=global-statement
-    COLOR = bool(value)
-
-
-def colored(text, color=None, on_color=None, attrs=None):
-    if COLOR:
-        return _colored(text, color=color, on_color=on_color, attrs=attrs)
-    return text
 
 
 def cut_string(s, maxlen, padstr='...', align='left'):

@@ -12,7 +12,7 @@ from typing import Tuple, Callable, Union, Optional, Any
 
 import pynvml
 
-from nvitop.core.utils import NA
+from nvitop.core.utils import NA, colored
 
 
 __all__ = ['libnvml', 'nvml']
@@ -80,7 +80,7 @@ class libnvml:
         try:
             pynvml.nvmlInitWithFlags(flags)
         except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
-            self.LOGGER.critical(
+            message = (
                 'FATAL ERROR: NVIDIA Management Library (NVML) not found.\n'
                 'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
                 '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
@@ -88,6 +88,14 @@ class libnvml:
                 '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
                 '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.'
             )
+            for text, color, attrs in (('FATAL ERROR:', 'red', ('bold',)),
+                                       ('HINT:', 'yellow', ('bold',)),
+                                       ('https://www.nvidia.com/Download/index.aspx', None, ('underline',)),
+                                       ('https://developer.nvidia.com/cuda-downloads', None, ('underline',)),
+                                       ('https://docs.nvidia.com/deploy/nvml-api', None, ('underline',))):
+                message = message.replace(text, colored(text, color=color, attrs=attrs))
+
+            self.LOGGER.critical(message)
             raise
         else:
             with self._lock:
