@@ -180,7 +180,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-locals
+    def draw(self):  # pylint: disable=too-many-locals,too-many-branches
         self.color_reset()
 
         if self.need_redraw:
