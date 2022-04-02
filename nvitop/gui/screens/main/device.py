@@ -97,7 +97,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         for device in snapshots:
             if device.name.startswith('NVIDIA '):
                 device.name = device.name.replace('NVIDIA ', '', 1)
-            device.name = cut_string(device.name, maxlen=18)
+            device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
             device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
             device.display_active = device.display_active.replace('Enabled', 'On').replace('Disabled', 'Off')
             device.persistence_mode = device.persistence_mode.replace('Enabled', 'On').replace('Disabled', 'Off')
