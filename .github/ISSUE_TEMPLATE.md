@@ -15,7 +15,7 @@
 - Terminal emulator and version: [e.g. GNOME Terminal 3.36.2 / Windows Terminal 1.8.1521.0]
 - Python version: [e.g. `3.5.6` / `3.9.6`]
 - NVML version (driver version): [e.g. `460.84`]
-- `nvitop` version or commit: [e.g. `0.3.5.6` / `main@b669fa3`]
+- `nvitop` version or commit: [e.g. `0.5.3` / `0.5.3+9.g75ae3ca` / `main@75ae3c`]
 - `python-ml-py` version: [e.g. `11.450.51`]
 - Locale: [e.g. `C` / `C.UTF-8` / `en_US.UTF-8`]
 
