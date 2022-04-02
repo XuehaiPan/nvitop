@@ -10,6 +10,8 @@ import threading
 from types import FunctionType
 from typing import Tuple, Callable, Union, Optional, Any
 
+# Python Bindings for the NVIDIA Management Library (NVML)
+# https://pypi.org/project/nvidia-ml-py
 import pynvml
 
 from nvitop.core.utils import NA, colored
@@ -94,6 +96,21 @@ class libnvml:
                                        ('https://developer.nvidia.com/cuda-downloads', None, ('underline',)),
                                        ('https://docs.nvidia.com/deploy/nvml-api', None, ('underline',))):
                 message = message.replace(text, colored(text, color=color, attrs=attrs))
+
+            self.LOGGER.critical(message)
+            raise
+        except AttributeError:
+            message = (
+                'FATAL ERROR: The dependency package `nvidia-ml-py` is corrupted. You may have installed\n'
+                '             other packages overriding the module `pynvml`.\n'
+                'Please reinstall `nvitop` with command:\n'
+                '    python3 -m pip install --force-reinstall nvitop'
+            )
+            for text, color, attrs in (('FATAL ERROR:', 'red', ('bold',)),
+                                       ('nvidia-ml-py', None, ('bold',)),
+                                       ('pynvml', None, ('bold',)),
+                                       ('nvitop', None, ('bold',))):
+                message = message.replace(text, colored(text, color=color, attrs=attrs), 1)
 
             self.LOGGER.critical(message)
             raise
