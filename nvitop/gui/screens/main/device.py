@@ -35,6 +35,14 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.driver_version = Device.driver_version()
         self.cuda_version = Device.cuda_version()
 
+        self._snapshot_buffer = []
+        self._snapshots = []
+        self.snapshot_lock = threading.Lock()
+        self.snapshots = self.take_snapshots()
+        self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
+                                                 target=self._snapshot_target, daemon=True)
+        self._daemon_running = threading.Event()
+
         self.formats_compact = [
             '│ {index:>3} {fan_speed_string:>3} {temperature_string:>4} {performance_state:>3} {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
@@ -47,17 +55,14 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
 
         if host.WINDOWS:
-            self.formats_full[0] = ('│ {index:>3}  {name:<18}  {current_driver_model:<4} '
-                                    '│ {bus_id:<16} {display_active:>3} '
-                                    '│ {total_volatile_uncorrected_ecc_errors:>20} │')
+            self.formats_full[0] = self.formats_full[0].replace('persistence_mode', 'current_driver_model')
 
-        self._snapshot_buffer = []
-        self._snapshots = []
-        self.snapshot_lock = threading.Lock()
-        self.snapshots = self.take_snapshots()
-        self._snapshot_daemon = threading.Thread(name='device-snapshot-daemon',
-                                                 target=self._snapshot_target, daemon=True)
-        self._daemon_running = threading.Event()
+        self.support_mig = any('N/A' not in device.mig_mode for device in self.snapshots)
+        if self.support_mig:
+            self.formats_full[0] = self.formats_full[0].replace(
+                '{total_volatile_uncorrected_ecc_errors:>20}',
+                '{mig_mode:>8}  {total_volatile_uncorrected_ecc_errors:>10}',
+            )
 
     @property
     def width(self):
@@ -101,6 +106,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
             device.display_active = device.display_active.replace('Enabled', 'On').replace('Disabled', 'Off')
             device.persistence_mode = device.persistence_mode.replace('Enabled', 'On').replace('Disabled', 'Off')
+            device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')
             device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')
             if device.fan_speed >= 100:
                 device.fan_speed_string = 'MAX'
@@ -135,7 +141,9 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
                 ])
                 if host.WINDOWS:
-                    header[-2] = '│ GPU  Name            TCC/WDDM │ Bus-Id        Disp.A │ Volatile Uncorr. ECC │'
+                    header[-2] = header[-2].replace('Persistence-M', '    TCC/WDDM ')
+                if self.support_mig:
+                    header[-2] = header[-2].replace('Volatile Uncorr. ECC', 'MIG M.   Uncorr. ECC')
             header.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
         else:
             header.extend([

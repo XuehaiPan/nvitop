@@ -33,7 +33,8 @@ class Device(DeviceBase):
 
         'display_active', 'current_driver_model',
         'persistence_mode', 'performance_state',
-        'total_volatile_uncorrected_ecc_errors', 'compute_mode',
+        'total_volatile_uncorrected_ecc_errors',
+        'compute_mode', 'mig_mode',
 
         'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
         'fan_speed_string', 'temperature_string',
