@@ -489,6 +489,7 @@ Out[15]: DeviceSnapshot(
     memory_used=1092485120,             # in bytes
     memory_used_human='1041MiB',
     memory_utilization=7,               # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
+    mig_mode='N/A',
     name='GeForce RTX 2080 Ti',
     performance_state='P2',
     persistence_mode='Disabled',

@@ -14,7 +14,8 @@ from cachetools.func import ttl_cache
 
 from nvitop.core.libnvml import nvml
 from nvitop.core.process import GpuProcess
-from nvitop.core.utils import NA, NaType, Snapshot, bytes2human, utilization2string, memoize_when_activated
+from nvitop.core.utils import (NA, NaType, Snapshot, bytes2human,
+                               utilization2string, boolify, memoize_when_activated)
 
 
 __all__ = ['Device', 'PhysicalDevice', 'CudaDevice']
@@ -534,6 +535,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             nvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
         }.get(nvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
 
+    @ttl_cache(ttl=60.0)
+    def mig_mode(self) -> Union[str, NaType]:
+        mig_mode = nvml.nvmlQuery('nvmlDeviceGetMigMode', self.handle,
+                                  default=(NA, NA), ignore_function_not_found=True)[0]
+        return {0: 'Disabled', 1: 'Enabled'}.get(mig_mode, NA)
+
+    def is_mig_mode_enabled(self) -> bool:
+        return boolify(self.mig_mode())
+
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
         processes = {}
@@ -584,7 +594,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         'display_active', 'display_mode', 'current_driver_model',
         'persistence_mode', 'performance_state',
-        'total_volatile_uncorrected_ecc_errors', 'compute_mode',
+        'total_volatile_uncorrected_ecc_errors',
+        'compute_mode', 'mig_mode',
     ]
 
     def memory_percent_string(self) -> Union[str, NaType]:  # in percentage
