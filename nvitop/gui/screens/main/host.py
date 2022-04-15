@@ -12,7 +12,7 @@ from nvitop.gui.library import (host, Device, NA,
 
 
 class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME ='host'
+    NAME = 'host'
 
     SNAPSHOT_INTERVAL = 0.5
 
@@ -35,8 +35,6 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.cpu_percent = None
         self.load_average = None
-        self.virtual_memory = None
-        self.swap_memory = None
         self.memory_percent = None
         self.swap_percent = None
         self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
@@ -80,16 +78,16 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format='CPU: {:.1f}%'.format
         )(host.cpu_percent)
-        host.virtual_memory = BufferedHistoryGraph(
+        host.memory_percent = BufferedHistoryGraph(
             interval=1.0, width=77, height=4, upsidedown=True,
             baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format='MEM: {:.1f}%'.format
-        )(host.virtual_memory, get_value=lambda ret: ret.percent)
-        host.swap_memory = BufferedHistoryGraph(
+        )(host.memory_percent)
+        host.swap_percent = BufferedHistoryGraph(
             interval=1.0, width=77, height=1, upsidedown=False,
             baseline=0.0, upperbound=100.0, dynamic_bound=False,
             format='SWP: {:.1f}%'.format
-        )(host.swap_memory, get_value=lambda ret: ret.percent)
+        )(host.swap_percent)
 
         def percentage(x):
             if x is NA:
@@ -125,13 +123,13 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def take_snapshots(self):
         host.cpu_percent()
+        host.memory_percent()
+        host.swap_percent()
         self.load_average = host.load_average()
-        self.virtual_memory = host.virtual_memory()
-        self.swap_memory = host.swap_memory()
 
         self.cpu_percent = host.cpu_percent.history.last_value
-        self.memory_percent = host.virtual_memory.history.last_value
-        self.swap_percent = host.swap_memory.history.last_value
+        self.memory_percent = host.memory_percent.history.last_value
+        self.swap_percent = host.swap_percent.history.last_value
 
         memory_percents = []
         gpu_utilizations = []
@@ -233,14 +231,14 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
         self.addstr(self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history.last_value_string()))
 
-        for y, line in enumerate(host.virtual_memory.history.graph, start=self.y + 6):
+        for y, line in enumerate(host.memory_percent.history.graph, start=self.y + 6):
             self.addstr(y, self.x + 1, line)
             self.color_at(y, self.x + 1, width=77, fg='magenta')
-        self.addstr(self.y + 9, self.x + 1, ' {} '.format(host.virtual_memory.history.last_value_string()))
-        for y, line in enumerate(host.swap_memory.history.graph, start=self.y + 10):
+        self.addstr(self.y + 9, self.x + 1, ' {} '.format(host.memory_percent.history.last_value_string()))
+        for y, line in enumerate(host.swap_percent.history.graph, start=self.y + 10):
             self.addstr(y, self.x + 1, line)
             self.color_at(y, self.x + 1, width=77, fg='blue')
-        self.addstr(self.y + 10, self.x + 1, ' {} '.format(host.swap_memory.history.last_value_string()))
+        self.addstr(self.y + 10, self.x + 1, ' {} '.format(host.swap_percent.history.last_value_string()))
 
         if self.width >= 100:
             if self.device_count > 1 and self.parent.selected.is_set():
@@ -275,8 +273,8 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     def print(self):
         self.cpu_percent = host.cpu_percent()
-        self.memory_percent = host.virtual_memory().percent
-        self.swap_percent = host.swap_memory().percent
+        self.memory_percent = host.memory_percent()
+        self.swap_percent = host.swap_percent()
         self.load_average = host.load_average()
 
         if self.load_average is not None:

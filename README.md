@@ -653,8 +653,14 @@ Out[41]: (14.88, 17.8, 19.91)
 In [42]: host.virtual_memory()
 Out[42]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
 
-In [43]: host.swap_memory()
-Out[43]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
+In [43]: host.memory_percent()
+Out[43]: 28.9
+
+In [44]: host.swap_memory()
+Out[44]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
+
+In [45]: host.swap_percent()
+Out[45]: 0.0
 ```
 
 ---
