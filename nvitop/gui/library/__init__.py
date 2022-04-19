@@ -5,7 +5,7 @@
 
 from nvitop.gui.library.device import Device, NA
 from nvitop.gui.library.process import host, HostProcess, GpuProcess, Snapshot, bytes2human
-from nvitop.gui.library.libcurses import libcurses
+from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
 from nvitop.gui.library.displayable import Displayable, DisplayableContainer
 from nvitop.gui.library.keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUANT_KEY,
                                            SPECIAL_KEYS, KeyBuffer, KeyMaps)

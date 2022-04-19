@@ -5,12 +5,11 @@
 
 import argparse
 import curses
-import locale
 import os
 import sys
 
 from nvitop.core import nvml, HostProcess, boolify
-from nvitop.gui import Top, Device, libcurses, colored, set_color, USERNAME
+from nvitop.gui import Top, Device, libcurses, setlocale_utf8, colored, set_color, USERNAME
 from nvitop.version import __version__
 
 
@@ -39,7 +38,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     coloring = parser.add_argument_group('coloring')
     coloring.add_argument('--force-color', dest='force_color', action='store_true',
-                        help='Force colorize even when `stdout` is not a TTY terminal.')
+                          help='Force colorize even when `stdout` is not a TTY terminal.')
     coloring.add_argument('--light', action='store_true',
                           help='Tweak visual results for light theme terminals in monitor mode.\n'
                                'Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.')
@@ -101,17 +100,6 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
 
 def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
-    try:
-        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-    except locale.Error:
-        try:
-            locale.setlocale(locale.LC_ALL, 'C')
-        except locale.Error:
-            try:
-                locale.setlocale(locale.LC_ALL, '')
-            except locale.Error:
-                pass
-
     args = parse_arguments()
 
     if args.force_color:
@@ -135,6 +123,9 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         if mode not in ('auto', 'full', 'compact'):
             mode = 'auto'
         args.monitor = mode
+
+    if not setlocale_utf8():
+        args.ascii = True
 
     try:
         device_count = Device.count()

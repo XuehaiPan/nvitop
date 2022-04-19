@@ -82,19 +82,23 @@ def _get_color_attr(fg=-1, bg=-1, attr=0):
     return curses.color_pair(_get_color(fg, bg)) | attr
 
 
+def setlocale_utf8():
+    for code in ('C.UTF-8', 'en_US.UTF-8', '', 'C'):
+        try:
+            code = locale.setlocale(locale.LC_ALL, code)
+        except locale.Error:
+            continue
+        else:
+            if 'utf8' in code.lower() or 'utf-8' in code.lower():
+                return True
+
+    return False
+
+
 @contextlib.contextmanager
 def libcurses(light_theme=False):
     os.environ.setdefault('ESCDELAY', '25')
-    try:
-        locale.setlocale(locale.LC_ALL, 'C.UTF-8')
-    except locale.Error:
-        try:
-            locale.setlocale(locale.LC_ALL, 'C')
-        except locale.Error:
-            try:
-                locale.setlocale(locale.LC_ALL, '')
-            except locale.Error:
-                pass
+    setlocale_utf8()
 
     win = curses.initscr()
     win.nodelay(True)
