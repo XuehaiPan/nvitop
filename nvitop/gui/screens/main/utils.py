@@ -7,7 +7,7 @@ import signal
 import time
 from collections import namedtuple
 
-from nvitop.gui.library import host, NA, Snapshot, USERNAME, SUPERUSER
+from nvitop.gui.library import host, NA, Snapshot, LARGE_INTEGER, USERNAME, SUPERUSER
 
 
 class Selected:
@@ -62,7 +62,7 @@ class Selected:
 
         if len(processes) > 0:
             if not self.is_set():
-                if abs(direction) < 1024:
+                if abs(direction) < LARGE_INTEGER:
                     self.index = (0 if direction > 0 else len(processes) - 1)
                 else:
                     self.index = (len(processes) - 1 if direction > 0 else 0)

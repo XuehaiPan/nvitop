@@ -14,7 +14,7 @@ from cachetools.func import ttl_cache
 from nvitop.gui.library import (host, GpuProcess, NA,
                                 Displayable, MouseEvent,
                                 USERNAME, SUPERUSER, HOSTNAME, USERCONTEXT,
-                                WideString, wcslen, colored, cut_string)
+                                WideString, wcslen, colored, cut_string, LARGE_INTEGER)
 from nvitop.gui.screens.main.utils import Order, Selected
 
 
@@ -154,7 +154,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.height = height
             self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 39))
 
-        if old_host_offset not in (self.host_offset, 1024):
+        if old_host_offset not in (self.host_offset, LARGE_INTEGER):
             self.beep()
 
         if self.selected.is_set():

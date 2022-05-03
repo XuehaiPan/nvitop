@@ -13,6 +13,9 @@ from nvitop.core import host, NA, colored, set_color  # pylint: disable=unused-i
 from nvitop.gui.library.widestring import WideString
 
 
+LARGE_INTEGER = 65536
+
+
 def cut_string(s, maxlen, padstr='...', align='left'):
     assert align in ('left', 'right')
 

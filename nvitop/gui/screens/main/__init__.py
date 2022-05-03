@@ -6,7 +6,7 @@
 import threading
 from functools import partial
 
-from nvitop.gui.library import DisplayableContainer, MouseEvent
+from nvitop.gui.library import DisplayableContainer, MouseEvent, LARGE_INTEGER
 from nvitop.gui.screens.main.device import DevicePanel
 from nvitop.gui.screens.main.host import HostPanel
 from nvitop.gui.screens.main.process import ProcessPanel
@@ -164,7 +164,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         def host_left(): self.process_panel.host_offset -= 2
         def host_right(): self.process_panel.host_offset += 2
         def host_begin(): self.process_panel.host_offset = -1
-        def host_end(): self.process_panel.host_offset = 1024
+        def host_end(): self.process_panel.host_offset = LARGE_INTEGER
 
         def select_move(direction): self.selected.move(direction=direction)
         def select_clear(): self.selected.clear()
