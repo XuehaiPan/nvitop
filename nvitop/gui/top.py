@@ -18,8 +18,6 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
 
         self.x = self.y = 0
         self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns - self.x)
-        if not sys.stdout.isatty():
-            self.width = 1024
         self.termsize = None
 
         self.ascii = ascii
