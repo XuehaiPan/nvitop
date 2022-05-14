@@ -15,8 +15,7 @@ from nvitop.gui.library import (host, Device,
 
 class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'device'
-
-    SNAPSHOT_INTERVAL = 0.7
+    SNAPSHOT_INTERVAL = 0.67
 
     def __init__(self, devices, compact, win, root):
         super().__init__(win, root)

@@ -226,9 +226,9 @@ Type `nvitop --help` for more command options:
 
 ```text
 usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
-              [--ascii] [--force-color] [--light] [--gpu-util-thresh th1 th2]
-              [--mem-util-thresh th1 th2] [--only idx [idx ...]]
-              [--only-visible] [--compute] [--graphics]
+              [--interval SEC] [--ascii] [--force-color] [--light]
+              [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
+              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
               [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
@@ -241,6 +241,7 @@ optional arguments:
                         Run as a resource monitor. Continuously report query data and handle user inputs.
                         If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.
                         (default fallback mode: auto)
+  --interval SEC        Process status update interval in seconds. (default: 2)
   --ascii, --no-unicode, -U
                         Use ASCII characters only, which is useful for terminals without Unicode support.
 

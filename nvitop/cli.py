@@ -17,9 +17,18 @@ TTY = (sys.stdin.isatty() and sys.stdout.isatty())
 
 
 def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
+
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(colored('light', 'green'),
                                                                colored('moderate', 'yellow'),
                                                                colored('heavy', 'red'))
+
+    def posint(argstring):
+        x = int(argstring)
+        if x <= 0:
+            raise ValueError
+        return x
+    posint.__name__ = 'positive integer'
+
     parser = argparse.ArgumentParser(prog='nvitop', description='An interactive NVIDIA-GPU process viewer.',
                                      formatter_class=argparse.RawTextHelpFormatter, add_help=False)
     parser.add_argument('--help', '-h', dest='help', action='help', default=argparse.SUPPRESS,
@@ -33,6 +42,8 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
                         help='Run as a resource monitor. Continuously report query data and handle user inputs.\n'
                              'If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.\n'
                              '(default fallback mode: auto)')
+    parser.add_argument('--interval', dest='interval', type=posint, default=None, metavar='SEC',
+                        help='Process status update interval in seconds. (default: 2)')
     parser.add_argument('--ascii', '--no-unicode', '-U', dest='ascii', action='store_true',
                         help='Use ASCII characters only, which is useful for terminals without Unicode support.')
 
@@ -170,7 +181,11 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
     if hasattr(args, 'monitor') and len(devices) > 0:
         try:
             with libcurses(light_theme=args.light) as win:
-                top = Top(devices, filters, ascii=args.ascii, mode=args.monitor, win=win)
+                top = Top(devices, filters,
+                          ascii=args.ascii,
+                          mode=args.monitor,
+                          interval=args.interval,
+                          win=win)
                 top.loop()
         except curses.error as e:  # pylint: disable=invalid-name
             if top is not None:

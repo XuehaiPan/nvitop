@@ -200,7 +200,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
 
 class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'treeview'
-    SNAPSHOT_INTERVAL = 0.7
+    SNAPSHOT_INTERVAL = 0.67
 
     def __init__(self, win, root):
         super().__init__(win, root)
@@ -262,6 +262,14 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                     self.selected.index = i
                     self.selected.process = process
                     break
+
+    @classmethod
+    def set_snapshot_interval(cls, interval):
+        assert interval > 0.0
+        interval = float(interval)
+
+        cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
+        cls.take_snapshots = ttl_cache(ttl=interval)(cls.take_snapshots.__wrapped__)  # pylint: disable=no-member
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):

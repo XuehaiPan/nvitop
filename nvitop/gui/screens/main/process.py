@@ -20,8 +20,8 @@ from nvitop.gui.screens.main.utils import Order, Selected
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'process'
+    SNAPSHOT_INTERVAL = 0.67
 
-    SNAPSHOT_INTERVAL = 0.7
     ORDERS = {
         'natural': Order(
             key=attrgetter('device.index', '_gone', 'username', 'pid'),
@@ -169,6 +169,14 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     self.selected.index = i
                     self.selected.process = process
                     break
+
+    @classmethod
+    def set_snapshot_interval(cls, interval):
+        assert interval > 0.0
+        interval = float(interval)
+
+        cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
+        cls.take_snapshots = ttl_cache(ttl=interval)(cls.take_snapshots.__wrapped__)  # pylint: disable=no-member
 
     def ensure_snapshots(self):
         if not self.has_snapshots:

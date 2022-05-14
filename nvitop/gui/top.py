@@ -13,7 +13,9 @@ from nvitop.gui.screens import MainScreen, EnvironScreen, TreeViewScreen, HelpSc
 
 
 class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, devices, filters=(), ascii=False, mode='auto', win=None):  # pylint: disable=redefined-builtin,too-many-arguments
+    def __init__(self, devices, filters=(),
+                 ascii=False, mode='auto', interval=None,  # pylint: disable=redefined-builtin
+                 win=None):  # pylint: disable=too-many-arguments
         super().__init__(win, root=self)
 
         self.x = self.y = 0
@@ -46,6 +48,10 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.help_screen.visible = False
             self.help_screen.ascii = False
             self.add_child(self.help_screen)
+
+            if interval is not None:
+                self.main_screen.process_panel.set_snapshot_interval(interval)
+                self.treeview_screen.set_snapshot_interval(interval)
 
             self.keybuffer = KeyBuffer()
             self.keymaps = KeyMaps(self.keybuffer)
