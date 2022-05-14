@@ -213,7 +213,6 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         return header
 
     @property
-    @ttl_cache(ttl=1.0)
     def processes(self):
         processes = {}
         for device in self.devices:

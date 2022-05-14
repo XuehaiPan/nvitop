@@ -128,8 +128,6 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def merge(cls, leaves):  # pylint: disable=too-many-branches
-        reverse_ppid_map = host.reverse_ppid_map()
-
         nodes = {}
         for process in leaves:
             if isinstance(process, Snapshot):
@@ -166,12 +164,13 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
             finally:
                 parent.add(node)
 
+        cpid_map = host.reverse_ppid_map()
         for process in leaves:
             if isinstance(process, Snapshot):
                 process = process.real
 
             node = nodes[process.pid]
-            for cpid in reverse_ppid_map.get(process.pid, []):
+            for cpid in cpid_map.get(process.pid, []):
                 if cpid not in nodes:
                     nodes[cpid] = child = cls(HostProcess(cpid))
                     node.add(child)
@@ -205,8 +204,6 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
     def __init__(self, win, root):
         super().__init__(win, root)
-
-        host.reverse_ppid_map = ttl_cache(ttl=2.0)(host.reverse_ppid_map)
 
         self.selected = Selected(panel=self)
         self.x_offset = 0
