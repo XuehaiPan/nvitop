@@ -265,6 +265,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
+        self.root.main_screen.process_panel.ensure_snapshots()
         snapshots = self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
 
         roots = TreeNode.merge(snapshots)

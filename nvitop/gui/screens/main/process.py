@@ -77,10 +77,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._order = 'natural'
         self.reverse = False
 
-        self._snapshot_buffer = []
+        self.has_snapshots = False
+        self._snapshot_buffer = None
         self._snapshots = []
         self.snapshot_lock = threading.Lock()
-        self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(name='process-snapshot-daemon',
                                                  target=self._snapshot_target, daemon=True)
         self._daemon_running = threading.Event()
@@ -135,6 +135,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @snapshots.setter
     def snapshots(self, snapshots):
+        if snapshots is None:
+            return
+        self.has_snapshots = True
+
         time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
         time_header = ' ' * (time_length - 4) + 'TIME'
         info_length = max([len(p.host_info) for p in snapshots], default=0)
@@ -165,6 +169,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     self.selected.index = i
                     self.selected.process = process
                     break
+
+    def ensure_snapshots(self):
+        if not self.has_snapshots:
+            self.snapshots = self.take_snapshots()
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
@@ -205,7 +213,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             '╞' + '═' * (self.width - 2) + '╡',
         ]
         if len(self.snapshots) == 0:
-            message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
+            if self.has_snapshots:
+                message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
+            else:
+                message = ' Gathering process status...'
             header.extend([
                 '│ {} │'.format(message.ljust(self.width - 4)),
                 '╘' + '═' * (self.width - 2) + '╛',
@@ -369,7 +380,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         self.color_at(y, self.x + 38 + command_offset, width=15, fg='red')
                 y += 1
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛')
-        else:
+        elif self.has_snapshots:
             message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
             self.addstr(self.y + 5, self.x, '│ {} │'.format(message.ljust(self.width - 4)))
 
@@ -394,6 +405,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._daemon_running.clear()
 
     def print_width(self):
+        self.ensure_snapshots()
         return min(self.width, max((39 + len(process.host_info) for process in self.snapshots), default=79))
 
     def print(self):
@@ -404,6 +416,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                             colored(HOSTNAME, color='green', attrs=('bold',)),
                             lines[2][-2:]))
 
+        self.ensure_snapshots()
         if len(self.snapshots) > 0:
             key, reverse, *_ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)

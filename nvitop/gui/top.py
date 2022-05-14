@@ -229,6 +229,9 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.treeview_screen.selected.clear()
 
         def show_treeview():
+            if not self.main_screen.process_panel.has_snapshots:
+                return
+
             show_screen(self.treeview_screen, focused=True)
 
             if not self.treeview_screen.selected.is_set():
