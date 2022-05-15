@@ -199,7 +199,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 ' ' * (time_length - len(snapshot.running_time_human)) + snapshot.running_time_human,
                 snapshot.command
             ))
-            if snapshot.gpu_memory_human is NA and host.WINDOWS:
+            if snapshot.gpu_memory_human is NA and (host.WINDOWS or host.WSL):
                 snapshot.gpu_memory_human = 'WDDM:N/A'
 
         with self.snapshot_lock:
