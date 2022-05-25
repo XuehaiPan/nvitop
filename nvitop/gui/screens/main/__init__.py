@@ -157,6 +157,8 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.root.update_size()
 
         def force_refresh():
+            select_clear()
+            host_begin()
             self.y = self.root.y
             self.root.update_size()
             self.root.need_redraw = True
