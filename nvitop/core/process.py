@@ -57,8 +57,6 @@ else:
 
 
 def command_join(cmdline: List[str]) -> str:
-    if len(cmdline) > 1:
-        cmdline = '\0'.join(cmdline).strip('\0').split('\0')
     if len(cmdline) == 1 and not (os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0])):
         return cmdline[0]
     return ' '.join(map(add_quotes, cmdline))
@@ -141,7 +139,12 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         def username(self) -> str:
             return super().username().split('\\')[-1]
 
-    cmdline = memoize_when_activated(host.Process.cmdline)
+    @memoize_when_activated
+    def cmdline(self) -> List[str]:
+        cmdline = super().cmdline()
+        if len(cmdline) > 1:
+            cmdline = '\0'.join(cmdline).rstrip('\0').split('\0')
+        return cmdline
 
     def command(self) -> str:
         return command_join(self.cmdline())
@@ -192,6 +195,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return Snapshot(real=self, **attributes)
 
 
+@HostProcess.register
 class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
@@ -441,6 +445,3 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     def gpu_decoder_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_decoder_utilization())
-
-
-HostProcess.register(GpuProcess)
