@@ -9,7 +9,7 @@
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/117952038-5a104e00-b347-11eb-9ce5-27d2ac9fdd35.png" alt="Monitor">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/171005261-1aad126e-dc27-4ed3-a89b-7f9c1c998bf7.png" alt="Monitor">
   </br>
   Monitor mode of <code>nvitop</code>.
   </br>
