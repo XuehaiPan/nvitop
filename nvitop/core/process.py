@@ -103,6 +103,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             instance = super().__new__(cls)
 
             instance._super_gone = False
+            instance._username = None
             host.Process._init(instance, pid, True)
             try:
                 host.Process.cpu_percent(instance)
@@ -137,7 +138,14 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     if host.WINDOWS:
         def username(self) -> str:
-            return super().username().split('\\')[-1]
+            if self._username is None:
+                self._username = super().username().split('\\')[-1]  # pylint: disable=attribute-defined-outside-init
+            return self._username
+    else:
+        def username(self) -> str:
+            if self._username is None:
+                self._username = super().username()  # pylint: disable=attribute-defined-outside-init
+            return self._username
 
     @memoize_when_activated
     def cmdline(self) -> List[str]:

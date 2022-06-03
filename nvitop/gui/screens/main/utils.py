@@ -46,11 +46,10 @@ class Selected:
     @property
     def username(self):
         if self._username is None:
-            with self.process.oneshot():
-                try:
-                    self._username = self.process.username()
-                except host.PsutilError:
-                    self._username = NA
+            try:
+                self._username = self.process.username()
+            except host.PsutilError:
+                self._username = NA
         return self._username
 
     def move(self, direction=0):
