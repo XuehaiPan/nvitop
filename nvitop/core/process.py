@@ -477,6 +477,18 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         )
 
     @classmethod
+    def take_snapshots(cls, gpu_processes: Iterable['GpuProcess'], *,  # batched version of `as_snapshot`
+                       failsafe=False) -> List[Snapshot]:
+
+        cache = {}
+        context = (cls.failsafe if failsafe else contextlib.nullcontext)
+        with context():
+            snapshots = [process.as_snapshot(host_process_snapshot_cache=cache)
+                         for process in gpu_processes]
+
+        return snapshots
+
+    @classmethod
     @contextlib.contextmanager
     def failsafe(cls):
         global _USE_FALLBACK_WHEN_RAISE  # pylint: disable=global-statement,global-variable-not-assigned
