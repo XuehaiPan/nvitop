@@ -5,11 +5,11 @@
 
 from typing import List, Dict
 
-from nvitop.core import Device, MiB
+from nvitop.core import Device, CudaDevice, MiB
 
 
-def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> List[Device]:
-    cuda_devices = Device.from_cuda_indices(device_ids)
+def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> List[CudaDevice]:
+    cuda_devices = CudaDevice.from_indices(device_ids)
 
     devices = []
     presented = set()
