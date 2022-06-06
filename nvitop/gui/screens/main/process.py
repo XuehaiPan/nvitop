@@ -184,8 +184,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
-        GpuProcess.clear_host_snapshots()
-        snapshots = map(GpuProcess.as_snapshot, self.processes.values())
+        with GpuProcess.failsafe():
+            snapshots = [process.as_snapshot() for process in self.processes.values()]
         for condition in self.filters:
             snapshots = filter(condition, snapshots)
         snapshots = list(snapshots)

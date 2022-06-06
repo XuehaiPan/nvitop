@@ -15,7 +15,7 @@ from cachetools.func import ttl_cache
 from nvitop.core.libnvml import nvml
 from nvitop.core.process import GpuProcess
 from nvitop.core.utils import (NA, NaType, Snapshot, bytes2human,
-                               utilization2string, boolify, memoize_when_activated)
+                               boolify, memoize_when_activated)
 
 
 __all__ = ['Device', 'PhysicalDevice', 'CudaDevice']
@@ -597,26 +597,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'total_volatile_uncorrected_ecc_errors',
         'compute_mode', 'mig_mode',
     ]
-
-    def memory_percent_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.memory_percent())
-
-    def memory_utilization_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.memory_utilization())
-
-    def gpu_utilization_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.gpu_utilization())
-
-    gpu_percent_string = gpu_utilization_string  # in percentage
-
-    def fan_speed_string(self) -> Union[str, NaType]:  # in percentage
-        return utilization2string(self.fan_speed())
-
-    def temperature_string(self) -> Union[str, NaType]:  # in Celsius
-        temperature = self.temperature()
-        if nvml.nvmlCheckReturn(temperature, int):
-            temperature = str(temperature) + 'C'
-        return temperature
 
     # Modified from psutil (https://github.com/giampaolo/psutil)
     @contextlib.contextmanager

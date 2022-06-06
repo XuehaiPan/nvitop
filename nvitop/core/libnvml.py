@@ -17,7 +17,7 @@ import pynvml
 from nvitop.core.utils import NA, colored
 
 
-__all__ = ['libnvml', 'nvml']
+__all__ = ['libnvml', 'nvml', 'nvmlCheckReturn']
 
 
 class libnvml:
@@ -175,3 +175,4 @@ class libnvml:
 
 
 nvml = libnvml()
+nvmlCheckReturn = nvml.nvmlCheckReturn

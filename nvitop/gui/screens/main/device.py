@@ -96,7 +96,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @ttl_cache(ttl=1.0)
     def take_snapshots(self):
-        snapshots = list(map(lambda device: device.as_snapshot(), self.devices))
+        snapshots = [device.as_snapshot() for device in self.devices]
 
         for device in snapshots:
             if device.name.startswith('NVIDIA '):

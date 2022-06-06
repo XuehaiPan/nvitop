@@ -11,13 +11,13 @@ import os
 import threading
 from abc import ABCMeta
 from types import FunctionType
-from typing import List, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
+from typing import List, Dict, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
 
 from nvitop.core import host
 from nvitop.core.libnvml import nvml
 from nvitop.core.utils import (NA, NaType, Snapshot,
                                bytes2human, timedelta2human,
-                               utilization2string, memoize_when_activated)
+                               memoize_when_activated)
 
 
 if TYPE_CHECKING:
@@ -62,31 +62,48 @@ def command_join(cmdline: List[str]) -> str:
     return ' '.join(map(add_quotes, cmdline))
 
 
-def auto_garbage_clean(func: Callable[..., Any]) -> Callable[..., Any]:
-    @functools.wraps(func)
-    def wrapped(self: 'GpuProcess', *args, **kwargs) -> Any:
-        try:
-            return func(self, *args, **kwargs)
-        except host.PsutilError:
-            try:
-                with GpuProcess.INSTANCE_LOCK:
-                    del GpuProcess.INSTANCES[(self.pid, self.device)]
-            except KeyError:
-                pass
-            try:
-                with HostProcess.INSTANCE_LOCK:
-                    del HostProcess.INSTANCES[self.pid]
-            except KeyError:
-                pass
+_RAISE = object()
+_USE_FALLBACK_WHEN_RAISE = threading.local()  # see also `GpuProcess.failsafe`
 
-            raise
 
-    return wrapped
+def auto_garbage_clean(fallback=_RAISE):
+    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(func)
+        def wrapped(self: 'GpuProcess', *args, **kwargs):
+            try:
+                return func(self, *args, **kwargs)
+            except host.PsutilError as e:
+                try:
+                    with GpuProcess.INSTANCE_LOCK:
+                        del GpuProcess.INSTANCES[(self.pid, self.device)]
+                except (KeyError, AttributeError):
+                    pass
+                try:
+                    with HostProcess.INSTANCE_LOCK:
+                        del HostProcess.INSTANCES[self.pid]
+                except KeyError:
+                    pass
+                if (
+                    fallback is _RAISE
+                    or not getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False)  # see also `GpuProcess.failsafe`
+                ):
+                    raise e
+                if isinstance(fallback, tuple):
+                    if isinstance(e, host.AccessDenied) and fallback == ('No Such Process',):
+                        return ['No Permissions']
+                    return list(fallback)
+                return fallback
+
+        return wrapped
+
+    return wrapper
 
 
 class HostProcess(host.Process, metaclass=ABCMeta):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
+    SNAPSHOT_LOCK = threading.RLock()
+    HOST_SNAPSHOTS = {}
 
     def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
         if pid is None:
@@ -355,52 +372,55 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         else:
             self._type = NA
 
-    @auto_garbage_clean
+    @auto_garbage_clean(fallback=False)
     def is_running(self) -> bool:
         return self.host.is_running()
 
-    @auto_garbage_clean
+    @auto_garbage_clean(fallback='terminated')
     def status(self) -> str:
         return self.host.status()
 
-    @auto_garbage_clean
-    def create_time(self) -> float:
+    @auto_garbage_clean(fallback=NA)
+    def create_time(self) -> Union[float, NaType]:
         return self.host.create_time()
 
-    @auto_garbage_clean
-    def running_time(self) -> datetime.timedelta:
+    @auto_garbage_clean(fallback=NA)
+    def running_time(self) -> Union[datetime.timedelta, NaType]:
         return self.host.running_time()
 
     def running_time_human(self) -> str:
         return timedelta2human(self.running_time())
 
-    @auto_garbage_clean
-    def username(self) -> str:
+    @auto_garbage_clean(fallback=NA)
+    def username(self) -> Union[str, NaType]:
         if self._username is None:  # pylint: disable=access-member-before-definition
             self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
         return self._username
 
-    @auto_garbage_clean
-    def name(self) -> str:
+    @auto_garbage_clean(fallback=NA)
+    def name(self) -> Union[str, NaType]:
         return self.host.name()
 
-    @auto_garbage_clean
-    def cpu_percent(self) -> float:
+    @auto_garbage_clean(fallback=NA)
+    def cpu_percent(self) -> Union[float, NaType]:
         return self.host.cpu_percent()
 
-    @auto_garbage_clean
-    def memory_percent(self) -> float:
+    @auto_garbage_clean(fallback=NA)
+    def memory_percent(self) -> Union[float, NaType]:
         return self.host.memory_percent()
 
-    @auto_garbage_clean
+    @auto_garbage_clean(fallback=('No Such Process',))  # `fallback=['No Permissions']` for `AccessDenied` error
     def cmdline(self) -> List[str]:
-        return self.host.cmdline()
+        cmdline = self.host.cmdline()
+        if len(cmdline) == 0 and not self._gone:
+            cmdline = ['Zombie Process']
+        return cmdline
 
     def command(self) -> str:
         return command_join(self.cmdline())
 
-    @auto_garbage_clean
-    def as_snapshot(self) -> Snapshot:
+    @auto_garbage_clean(fallback=_RAISE)
+    def host_snapshot(self) -> Snapshot:
         with self.host.oneshot():
             host_snapshot = Snapshot(
                 real=self.host,
@@ -416,18 +436,25 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 running_time_human=self.running_time_human()
             )
 
+        return host_snapshot
+
+    @auto_garbage_clean(fallback=_RAISE)
+    def as_snapshot(
+        self, *,
+        host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
+    ) -> Snapshot:
+
+        host_process_snapshot_cache = host_process_snapshot_cache or {}
+        try:
+            host_snapshot = host_process_snapshot_cache[self.pid]
+        except KeyError:
+            host_snapshot = host_process_snapshot_cache[self.pid] = self.host_snapshot()
+
         return Snapshot(
             real=self,
             pid=self.pid,
-            device=self.device,
-            gpu_memory=self.gpu_memory(),
-            gpu_memory_human=self.gpu_memory_human(),
-            gpu_memory_percent=self.gpu_memory_percent(),
-            gpu_sm_utilization=self.gpu_sm_utilization(),
-            gpu_memory_utilization=self.gpu_memory_utilization(),
-            gpu_encoder_utilization=self.gpu_encoder_utilization(),
-            gpu_decoder_utilization=self.gpu_decoder_utilization(),
-            type=self.type,
+
+            host=host_snapshot,
             username=host_snapshot.username,
             name=host_snapshot.name,
             cmdline=host_snapshot.cmdline,
@@ -436,20 +463,27 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             memory_percent=host_snapshot.memory_percent,
             is_running=host_snapshot.is_running,
             running_time=host_snapshot.running_time,
-            running_time_human=host_snapshot.running_time_human
+            running_time_human=host_snapshot.running_time_human,
+
+            device=self.device,
+            type=self.type,
+            gpu_memory=self.gpu_memory(),
+            gpu_memory_human=self.gpu_memory_human(),
+            gpu_memory_percent=self.gpu_memory_percent(),
+            gpu_sm_utilization=self.gpu_sm_utilization(),
+            gpu_memory_utilization=self.gpu_memory_utilization(),
+            gpu_encoder_utilization=self.gpu_encoder_utilization(),
+            gpu_decoder_utilization=self.gpu_decoder_utilization(),
         )
 
-    def gpu_memory_percent_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_memory_percent())
+    @classmethod
+    @contextlib.contextmanager
+    def failsafe(cls):
+        global _USE_FALLBACK_WHEN_RAISE  # pylint: disable=global-statement,global-variable-not-assigned
 
-    def gpu_sm_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_sm_utilization())
-
-    def gpu_memory_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_memory_utilization())
-
-    def gpu_encoder_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_encoder_utilization())
-
-    def gpu_decoder_utilization_string(self) -> str:  # in percentage
-        return utilization2string(self.gpu_decoder_utilization())
+        prev_value = getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False)
+        try:
+            _USE_FALLBACK_WHEN_RAISE.value = True
+            yield
+        finally:
+            _USE_FALLBACK_WHEN_RAISE.value = prev_value

@@ -2,9 +2,9 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name
 
-from nvitop.core import Device as DeviceBase, NA, Snapshot
+from nvitop.core import (nvmlCheckReturn, Device as DeviceBase,
+                         NA, Snapshot, utilization2string)
 from nvitop.gui.library.process import GpuProcess
 
 
@@ -58,6 +58,24 @@ class Device(DeviceBase):
         if self._snapshot is None:
             self.as_snapshot()
         return self._snapshot
+
+    def memory_percent_string(self):  # in percentage
+        return utilization2string(self.memory_percent())
+
+    def memory_utilization_string(self):  # in percentage
+        return utilization2string(self.memory_utilization())
+
+    def gpu_utilization_string(self):  # in percentage
+        return utilization2string(self.gpu_utilization())
+
+    def fan_speed_string(self):  # in percentage
+        return utilization2string(self.fan_speed())
+
+    def temperature_string(self):  # in Celsius
+        temperature = self.temperature()
+        if nvmlCheckReturn(temperature, int):
+            temperature = str(temperature) + 'C'
+        return temperature
 
     def memory_loading_intensity(self):
         return self.loading_intensity_of(self.memory_percent(), type='memory')
