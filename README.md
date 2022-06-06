@@ -374,7 +374,7 @@ model.fit(.., callbacks=[gpu_stats, tb_callback])
 
 ```python
 from pytorch_lightning import Trainer
-from nvitop.callbacks.lightning import GpuStatsLogger
+from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
 gpu_stats = GpuStatsLogger()
 trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 ```

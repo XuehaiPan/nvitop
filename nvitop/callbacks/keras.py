@@ -14,7 +14,7 @@ from nvitop.core import nvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
 
 
-# Ported version of .lightning.GpuStatsLogger for Keras
+# Ported version of .pytorch_lightning.GpuStatsLogger for Keras
 class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     r"""
     Automatically log GPU stats during training stage. ``GpuStatsLogger`` is a
@@ -47,8 +47,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         >>> model = multi_gpu_model(model, gpus)
         >>> model.compile(..)
         >>> tb_callback = TensorBoard(log_dir='./logs')
-        >>> gpu_stats = GpuStatsLogger(gpus) # doctest: +SKIP
-        >>> model.fit(.., callbacks=[gpu_stats, tb_callback]) # doctest: +SKIP
+        >>> gpu_stats = GpuStatsLogger(gpus)
+        >>> model.fit(.., callbacks=[gpu_stats, tb_callback])
 
     Note::
         The GpuStatsLogger callback should be placed before the TensorBoard / CSVLogger callback.

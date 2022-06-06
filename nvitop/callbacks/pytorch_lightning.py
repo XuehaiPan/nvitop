@@ -40,9 +40,9 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     Example::
 
         >>> from pytorch_lightning import Trainer
-        >>> from nvitop.callbacks.lightning import GpuStatsLogger
-        >>> gpu_stats = GpuStatsLogger() # doctest: +SKIP
-        >>> trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats]) # doctest: +SKIP
+        >>> from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
+        >>> gpu_stats = GpuStatsLogger()
+        >>> trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
     GPU stats are mainly based on NVML queries. The description of the queries is as follows:
 
