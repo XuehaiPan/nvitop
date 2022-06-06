@@ -7,8 +7,8 @@
 import time
 from typing import Dict, Any
 
-from pytorch_lightning.callbacks import Callback   # pylint: disable=import-error
-from pytorch_lightning.utilities import DeviceType, rank_zero_only  # pylint: disable=import-error
+from pytorch_lightning.callbacks import Callback                              # pylint: disable=import-error
+from pytorch_lightning.utilities import DeviceType, rank_zero_only            # pylint: disable=import-error
 from pytorch_lightning.utilities.exceptions import MisconfigurationException  # pylint: disable=import-error
 
 from nvitop.core import nvml

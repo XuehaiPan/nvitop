@@ -132,7 +132,7 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
             yield char
     elif isinstance(obj, int):  # pylint: disable=too-many-nested-blocks
         yield obj
-    else:  # pylint: disable=too-many-nested-blocks
+    else:                       # pylint: disable=too-many-nested-blocks
         in_brackets = False
         bracket_content = []
         for char in obj:

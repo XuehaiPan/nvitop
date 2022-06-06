@@ -226,7 +226,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     INSTANCES = {}
 
     def __new__(cls, pid: int, device: 'Device',
-                gpu_memory: Optional[Union[int, NaType]] = None,  # pylint: disable=unused-argument
+                gpu_memory: Optional[Union[int, NaType]] = None,             # pylint: disable=unused-argument
                 type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=unused-argument,redefined-builtin
         if pid is None:
             pid = os.getpid()
@@ -253,7 +253,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             return instance
 
-    def __init__(self, pid: int, device: 'Device',  # pylint: disable=unused-argument
+    def __init__(self, pid: int, device: 'Device',                    # pylint: disable=unused-argument
                  gpu_memory: Optional[Union[int, NaType]] = None,
                  type: Optional[Union[str, NaType]] = None) -> None:  # pylint: disable=redefined-builtin
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
@@ -286,7 +286,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return not self == other
 
     def __hash__(self) -> int:
-        if self._hash is None:  # pylint: disable=access-member-before-definition
+        if self._hash is None:              # pylint: disable=access-member-before-definition
             self._hash = hash(self._ident)  # pylint: disable=attribute-defined-outside-init
         return self._hash
 
@@ -335,7 +335,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._gpu_decoder_utilization
 
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
-        self._gpu_memory = memory_used = value  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory = memory_used = value                   # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
         memory_total = self.device.memory_total()
         gpu_memory_percent = NA
@@ -347,8 +347,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                             gpu_memory_utilization: int = 0,
                             gpu_encoder_utilization: int = 0,
                             gpu_decoder_utilization: int = 0) -> None:
-        self._gpu_sm_utilization = gpu_sm_utilization  # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_utilization = gpu_memory_utilization  # pylint: disable=attribute-defined-outside-init
+        self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_utilization = gpu_memory_utilization    # pylint: disable=attribute-defined-outside-init
         self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
         self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
@@ -393,7 +393,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def username(self) -> Union[str, NaType]:
-        if self._username is None:  # pylint: disable=access-member-before-definition
+        if self._username is None:                 # pylint: disable=access-member-before-definition
             self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
         return self._username
 

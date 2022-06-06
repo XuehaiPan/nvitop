@@ -5,7 +5,6 @@
 
 import curses
 import shutil
-import sys
 import time
 
 from nvitop.gui.library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
@@ -13,9 +12,9 @@ from nvitop.gui.screens import MainScreen, EnvironScreen, TreeViewScreen, HelpSc
 
 
 class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, devices, filters=(),
+    def __init__(self, devices, filters=(),                # pylint: disable=too-many-arguments
                  ascii=False, mode='auto', interval=None,  # pylint: disable=redefined-builtin
-                 win=None):  # pylint: disable=too-many-arguments
+                 win=None):
         super().__init__(win, root=self)
 
         self.x = self.y = 0

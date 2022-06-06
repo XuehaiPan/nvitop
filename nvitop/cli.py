@@ -23,7 +23,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
                                                                colored('heavy', 'red'))
 
     def posint(argstring):
-        x = int(argstring)
+        x = int(argstring)  # pylint: disable=invalid-name
         if x <= 0:
             raise ValueError
         return x
@@ -142,7 +142,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         device_count = Device.count()
     except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
         return 1
-    except nvml.NVMLError as e:  # pylint: disable=invalid-name
+    except nvml.NVMLError as e:             # pylint: disable=invalid-name
         print('{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), e), file=sys.stderr)
         return 1
 
