@@ -699,6 +699,8 @@ class CudaDevice(Device):
             cuda_index = super().cuda_index
         self._cuda_index = cuda_index
 
+        self._ident = ((self._cuda_index, self.index), self.uuid())
+
     def __str__(self) -> str:
         return '{}(cuda_index={}, physical_index={}, name="{}", total_memory={})'.format(
             self.__class__.__name__,

@@ -32,6 +32,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
   - [More than a Monitor](#more-than-a-monitor)
+    - [Status Snapshot](#status-snapshot)
     - [Device](#device)
     - [Process](#process)
     - [Host (inherited from psutil)](#host-inherited-from-psutil)
@@ -384,6 +385,79 @@ trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
 `nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
 
+#### Status Snapshot
+
+`nvitop` provides a helper function to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
+
+```python
+In [1]: from nvitop import take_snapshots, Device, CudaDevice
+   ...: import os
+   ...: os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'  # comma-separated integers or UUID strings
+
+In [2]: take_snapshots()  # equivalent to `take_snapshots(Device.all())`
+Out[2]:
+SnapshotResult(
+    devices=[
+        DeviceSnapshot(
+            real=Device(index=0, ...),
+            ...
+        ),
+        ...
+    ],
+    gpu_processes=[
+        GpuProcessSnapshot(
+            real=GpuProcess(pid=xxxxxx, device=Device(index=0, ...), ...),
+            ...
+        ),
+        ...
+    ]
+)
+
+In [3]: device_snapshots, gpu_process_snapshots = take_snapshots(Device.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
+
+In [4]: take_snapshots(CudaDevice.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
+Out[4]:
+SnapshotResult(
+    devices=[
+        CudaDeviceSnapshot(
+            real=CudaDevice(cuda_index=0, physical_index=1, ...),
+            ...
+        ),
+        CudaDeviceSnapshot(
+            real=CudaDevice(cuda_index=1, physical_index=0, ...),
+            ...
+        ),
+    ],
+    gpu_processes=[
+        GpuProcessSnapshot(
+            real=GpuProcess(pid=xxxxxx, device=CudaDevice(cuda_index=0, ...), ...),
+            ...
+        ),
+        ...
+    ]
+)
+
+In [5]: take_snapshots(CudaDevice(1))  # <CUDA 1> only
+Out[5]:
+SnapshotResult(
+    devices=[
+        CudaDeviceSnapshot(
+            real=CudaDevice(cuda_index=1, physical_index=0, ...),
+            ...
+        )
+    ],
+    gpu_processes=[
+        GpuProcessSnapshot(
+            real=GpuProcess(pid=xxxxxx, device=CudaDevice(cuda_index=1, ...), ...),
+            ...
+        ),
+        ...
+    ]
+)
+```
+
+Please refer to the following sections for more information.
+
 #### Device
 
 ```python
@@ -456,7 +530,7 @@ Out[12]: '8862MiB'
 In [13]: nvidia0.gpu_utilization()  # in percentage
 Out[13]: 5
 
-In [14]: nvidia0.processes()
+In [14]: nvidia0.processes()  # type: Dict[int, GpuProcess]
 Out[14]: {
     52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
     53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
