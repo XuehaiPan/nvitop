@@ -33,7 +33,7 @@ def take_snapshots(
     devices: Optional[Union[Device, Iterable[Device]]] = None, *,
     gpu_processes: Optional[Union[GpuProcess, Iterable[GpuProcess]]] = None
 ) -> SnapshotResult:
-    """Return two lists of snapshots for demanded devices and GPU processes.
+    """Retrieve status of demanded devices and GPU processes.
 
     Args:
         devices (Optional[Union[Device, Iterable[Device]]]):
@@ -44,6 +44,9 @@ def take_snapshots(
         gpu_processes (Optional[Union[GpuProcess, Iterable[GpuProcess]]]):
             Requested GPU processes snapshots. If not given, all GPU processes
             running on the requested device will be returned.
+
+    Returns:
+        SnapshotResult: a named tuple containing two lists of snapshots
 
     Note:
         If not arguments are specified, all devices and all GPU processes will
