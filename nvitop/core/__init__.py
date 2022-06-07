@@ -135,8 +135,8 @@ def take_snapshots(
             devices = Device.all()
         else:
             devices = list(devices)
-        gpu_processes = list(itertools.chain.from_iterable([device.processes().values()
-                                                            for device in devices]))
+        gpu_processes = list(itertools.chain.from_iterable(device.processes().values()
+                                                           for device in devices))
 
     devices = [device.as_snapshot() for device in devices]
     gpu_processes = GpuProcess.take_snapshots(gpu_processes, failsafe=True)

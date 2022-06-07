@@ -4,9 +4,9 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+import itertools
 import threading
 import time
-from collections import OrderedDict
 from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
@@ -184,7 +184,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
-        snapshots = GpuProcess.take_snapshots(self.processes.values(), failsafe=True)
+        snapshots = GpuProcess.take_snapshots(self.processes, failsafe=True)
         for condition in self.filters:
             snapshots = filter(condition, snapshots)
         snapshots = list(snapshots)
@@ -232,11 +232,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @property
     def processes(self):
-        processes = {}
-        for device in self.devices:
-            for p in device.processes().values():
-                processes[(p.device.index, p._gone, p.username(), p.pid)] = p  # pylint: disable=protected-access
-        return OrderedDict([((key[-1], key[0]), processes[key]) for key in sorted(processes.keys())])
+        return list(itertools.chain.from_iterable(device.processes().values()
+                                                  for device in self.devices))
 
     def poke(self):
         if not self._daemon_running.is_set():
