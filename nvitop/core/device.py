@@ -54,7 +54,7 @@ def does_any_device_support_mig_mode() -> bool:
 
 def is_mig_device_uuid(uuid: Optional[str]) -> bool:
     if isinstance(uuid, str):
-        match = Device.UUID.match(uuid)
+        match = Device.UUID_PATTERN.match(uuid)
         if match is not None and match.group('MigMode') is not None:
             return True
     return False
