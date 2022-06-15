@@ -9,14 +9,14 @@ from typing import List, NamedTuple, Iterable, Hashable, Union, Optional
 
 from nvitop.core import host, utils
 from nvitop.core.libnvml import nvml, nvmlCheckReturn
-from nvitop.core.device import Device, PhysicalDevice, MigDevice, CudaDevice
+from nvitop.core.device import Device, PhysicalDevice, MigDevice, CudaDevice, CudaMigDevice
 from nvitop.core.process import HostProcess, GpuProcess, command_join
 from nvitop.core.utils import *
 
 
 __all__ = ['take_snapshots',
            'nvml', 'nvmlCheckReturn', 'NVMLError',
-           'Device', 'PhysicalDevice', 'MigDevice', 'CudaDevice',
+           'Device', 'PhysicalDevice', 'MigDevice', 'CudaDevice', 'CudaMigDevice',
            'host', 'HostProcess', 'GpuProcess', 'command_join']
 __all__.extend(utils.__all__)
 
@@ -80,11 +80,11 @@ def take_snapshots(
         SnapshotResult(
             devices=[
                 CudaDeviceSnapshot(
-                    real=CudaDevice(cuda_index=0, physical_index=1, ...),
+                    real=CudaDevice(cuda_index=0, nvml_index=1, ...),
                     ...
                 ),
                 CudaDeviceSnapshot(
-                    real=CudaDevice(cuda_index=1, physical_index=0, ...),
+                    real=CudaDevice(cuda_index=1, nvml_index=0, ...),
                     ...
                 ),
             ],
@@ -101,7 +101,7 @@ def take_snapshots(
         SnapshotResult(
             devices=[
                 CudaDeviceSnapshot(
-                    real=CudaDevice(cuda_index=1, physical_index=0, ...),
+                    real=CudaDevice(cuda_index=1, nvml_index=0, ...),
                     ...
                 )
             ],

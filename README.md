@@ -439,11 +439,11 @@ Out[4]:
 SnapshotResult(
     devices=[
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=0, physical_index=1, ...),
+            real=CudaDevice(cuda_index=0, nvml_index=1, ...),
             ...
         ),
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=1, physical_index=0, ...),
+            real=CudaDevice(cuda_index=1, nvml_index=0, ...),
             ...
         ),
     ],
@@ -461,7 +461,7 @@ Out[5]:
 SnapshotResult(
     devices=[
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=1, physical_index=0, ...),
+            real=CudaDevice(cuda_index=1, nvml_index=0, ...),
             ...
         )
     ],
@@ -518,10 +518,10 @@ In [7]: # NOTE: The function results might be different between calls when envir
    ...: cuda_visible_devices = CudaDevice.all()                    # shortcut to `Device.from_cuda_visible_devices()`
    ...: cuda_visible_devices
 Out[7]: [
-    CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
-    CudaDevice(cuda_index=1, physical_index=8, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
-    CudaDevice(cuda_index=2, physical_index=7, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
-    CudaDevice(cuda_index=3, physical_index=6, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
+    CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
+    CudaDevice(cuda_index=1, nvml_index=8, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
+    CudaDevice(cuda_index=2, nvml_index=7, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
+    CudaDevice(cuda_index=3, nvml_index=6, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
 In [8]: nvidia0 = Device(0)  # from device index (or `Device(index=0)`)
@@ -534,11 +534,11 @@ In [9]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # fro
 Out[9]: Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [10]: cuda0 = CudaDevice(0)                        # from CUDA device index (equivalent to `CudaDevice(cuda_index=0)`)
-    ...: cuda1 = CudaDevice(physical_index=8)         # from physical device index
+    ...: cuda1 = CudaDevice(nvml_index=8)             # from physical device index
     ...: cuda3 = CudaDevice(uuid='GPU-xxxxxxxx-...')  # from UUID string
     ...: cuda0
 Out[10]:
-CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
+CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [11]: nvidia0.memory_used()  # in bytes
 Out[11]: 9293398016
@@ -717,13 +717,13 @@ In [34]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
     ...: this = GpuProcess(os.getpid(), cuda0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
     ...: this
-Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
 In [35]: this.update_gpu_status()  # update used GPU memory from new driver queries
 Out[35]: 267386880
 
 In [36]: this
-Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
 In [37]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instance will be reused while the process is running
 Out[37]: True
