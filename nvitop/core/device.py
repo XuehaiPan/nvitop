@@ -640,7 +640,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def as_snapshot(self) -> Snapshot:
         with self.oneshot():
-            return Snapshot(real=self, index=self.index,
+            return Snapshot(real=self, index=self.index, physical_index=self.physical_index,
                             **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS})
 
     SNAPSHOT_KEYS = [
@@ -796,7 +796,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         self._memory_total_human = NA
         self._gpu_instance_id = NA
         self._compute_instance_id = NA
-        self._is_mig_device = None
+        self._is_mig_device = True
         self._cuda_index = None
 
         if index is not None:
@@ -863,7 +863,6 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
     def as_snapshot(self) -> Snapshot:
         snapshot = super().as_snapshot()
-        snapshot.physical_index = self.physical_index
         snapshot.mig_index = self.mig_index
 
         return snapshot
@@ -929,7 +928,6 @@ class CudaDevice(Device):
 
     def as_snapshot(self) -> Snapshot:
         snapshot = super().as_snapshot()
-        snapshot.physical_index = self.physical_index
         snapshot.cuda_index = self.cuda_index
 
         return snapshot

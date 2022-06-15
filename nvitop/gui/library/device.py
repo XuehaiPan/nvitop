@@ -3,7 +3,7 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.core import (nvmlCheckReturn, Device as DeviceBase,
+from nvitop.core import (nvml, PhysicalDevice as DeviceBase, MigDevice as MigDeviceBase,
                          NA, Snapshot, utilization2string)
 from nvitop.gui.library.process import GpuProcess
 
@@ -34,7 +34,7 @@ class Device(DeviceBase):
         'display_active', 'current_driver_model',
         'persistence_mode', 'performance_state',
         'total_volatile_uncorrected_ecc_errors',
-        'compute_mode', 'mig_mode',
+        'compute_mode', 'mig_mode', 'is_mig_device',
 
         'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
         'fan_speed_string', 'temperature_string',
@@ -48,9 +48,11 @@ class Device(DeviceBase):
         super().__init__(*args, **kwargs)
 
         self._snapshot = None
+        self.tuple_index = ((self.index,) if isinstance(self.index, int) else self.index)
 
     def as_snapshot(self):
         self._snapshot = super().as_snapshot()
+        self._snapshot.tuple_index = self.tuple_index
         return self._snapshot
 
     @property
@@ -58,6 +60,20 @@ class Device(DeviceBase):
         if self._snapshot is None:
             self.as_snapshot()
         return self._snapshot
+
+    def mig_devices(self):
+        mig_devices = []
+
+        if self.is_mig_mode_enabled():
+            for mig_index in range(self.max_mig_device_count()):
+                try:
+                    mig_device = MigDevice(index=(self.index, mig_index))
+                except nvml.NVMLError:
+                    break
+                else:
+                    mig_devices.append(mig_device)
+
+        return mig_devices
 
     def memory_percent_string(self):  # in percentage
         return utilization2string(self.memory_percent())
@@ -73,7 +89,7 @@ class Device(DeviceBase):
 
     def temperature_string(self):  # in Celsius
         temperature = self.temperature()
-        if nvmlCheckReturn(temperature, int):
+        if nvml.nvmlCheckReturn(temperature, int):
             temperature = str(temperature) + 'C'
         return temperature
 
@@ -118,3 +134,39 @@ class Device(DeviceBase):
     @staticmethod
     def color_of(utilization, type='memory'):  # pylint: disable=redefined-builtin
         return Device.INTENSITY2COLOR.get(Device.loading_intensity_of(utilization, type=type))
+
+
+class MigDevice(MigDeviceBase, Device):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._snapshot = None
+        self.tuple_index = ((self.index,) if isinstance(self.index, int) else self.index)
+
+    def as_snapshot(self):
+        self._snapshot = super().as_snapshot()
+        self._snapshot.tuple_index = self.tuple_index
+        return self._snapshot
+
+    loading_intensity = Device.memory_loading_intensity
+
+    SNAPSHOT_KEYS = [
+        'name',
+
+        'memory_used', 'memory_free', 'memory_total',
+        'memory_used_human', 'memory_free_human', 'memory_total_human',
+        'memory_percent', 'memory_usage',
+
+        'gpu_utilization', 'memory_utilization',
+
+        'total_volatile_uncorrected_ecc_errors',
+        'mig_mode', 'is_mig_device',
+        'gpu_instance_id', 'compute_instance_id',
+
+        'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
+
+        'memory_loading_intensity', 'memory_display_color',
+        'gpu_loading_intensity', 'gpu_display_color',
+        'loading_intensity', 'display_color'
+    ]

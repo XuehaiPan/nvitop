@@ -160,7 +160,8 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         elif len(invalid_indices) == 1:
             messages.append('ERROR: Invalid device index: {}.'.format(list(invalid_indices)[0]))
     elif args.only_visible:
-        indices = Device.parse_cuda_visible_devices()
+        indices = set(index if isinstance(index, int) else index[0]
+                      for index in Device.parse_cuda_visible_devices())
     else:
         indices = range(device_count)
     devices = Device.from_indices(sorted(set(indices)))

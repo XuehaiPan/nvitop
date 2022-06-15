@@ -23,10 +23,25 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.devices = devices
         self.device_count = len(self.devices)
 
+        self.mig_device_counts = [0] * self.device_count
+        self.mig_enabled_device_count = 0
+        self.leaf_devices = []
+        for i, device in enumerate(self.devices):
+            self.leaf_devices.append(device)
+
+            mig_devices = device.mig_devices()
+            self.mig_device_counts[i] = len(mig_devices)
+            if self.mig_device_counts[i] > 0:
+                self.leaf_devices.extend(mig_devices)
+                self.mig_enabled_device_count += 1
+
+        self.mig_device_count = sum(self.mig_device_counts)
+        self.leaf_device_count = len(self.leaf_devices)
+
         self._compact = compact
         self.width = max(79, root.width)
-        self.full_height = 4 + 3 * (self.device_count + 1)
-        self.compact_height = 4 + 2 * (self.device_count + 1)
+        self.compact_height = 4 + 2 * (self.device_count + 1) + self.mig_device_count + self.mig_enabled_device_count
+        self.full_height = self.compact_height + self.device_count + 1
         self.height = (self.compact_height if compact else self.full_height)
         if self.device_count == 0:
             self.height = self.full_height = self.compact_height = 6
@@ -43,14 +58,20 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
         self.formats_compact = [
-            '│ {index:>3} {fan_speed_string:>3} {temperature_string:>4} {performance_state:>3} {power_status:>12} '
+            '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
+            '{performance_state:>3} {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full = [
-            '│ {index:>3}  {name:<18}  {persistence_mode:<4} '
+            '│ {physical_index:>3}  {name:<18}  {persistence_mode:<4} '
             '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
             '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
+        ]
+
+        self.mig_formats = [
+            '│ {physical_index:>3}   GI ID: {gpu_instance_id:>3}  CI ID: {compute_instance_id:>3}  '
+            '│ {memory_usage:>20} │ Profile: {name:>11} │',
         ]
 
         if host.WINDOWS:
@@ -96,19 +117,24 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @ttl_cache(ttl=1.0)
     def take_snapshots(self):
-        snapshots = [device.as_snapshot() for device in self.devices]
+        snapshots = [device.as_snapshot() for device in self.leaf_devices]
 
         for device in snapshots:
             if device.name.startswith('NVIDIA '):
                 device.name = device.name.replace('NVIDIA ', '', 1)
-            device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
-            device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
-            device.display_active = device.display_active.replace('Enabled', 'On').replace('Disabled', 'Off')
-            device.persistence_mode = device.persistence_mode.replace('Enabled', 'On').replace('Disabled', 'Off')
-            device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')
-            device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')
-            if device.fan_speed >= 100:
-                device.fan_speed_string = 'MAX'
+            if device.is_mig_device:
+                device.name = ' '.join(device.name.split()[-2:])
+                if len(device.name) > 11:
+                    device.name = device.name.split()[-1]
+            else:
+                device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
+                device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
+                device.display_active = device.display_active.replace('Enabled', 'On').replace('Disabled', 'Off')
+                device.persistence_mode = device.persistence_mode.replace('Enabled', 'On').replace('Disabled', 'Off')
+                device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')
+                device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')
+                if device.fan_speed >= 100:
+                    device.fan_speed_string = 'MAX'
 
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots
@@ -135,21 +161,21 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             if compact:
                 header.append('│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │')
             else:
-                header.extend([
+                header.extend((
                     '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
                     '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-                ])
+                ))
                 if host.WINDOWS:
                     header[-2] = header[-2].replace('Persistence-M', '    TCC/WDDM ')
                 if self.support_mig:
                     header[-2] = header[-2].replace('Volatile Uncorr. ECC', 'MIG M.   Uncorr. ECC')
             header.append('╞═══════════════════════════════╪══════════════════════╪══════════════════════╡')
         else:
-            header.extend([
+            header.extend((
                 '╞═════════════════════════════════════════════════════════════════════════════╡',
                 '│  No visible devices found                                                   │',
                 '╘═════════════════════════════════════════════════════════════════════════════╛',
-            ])
+            ))
         return header
 
     def frame_lines(self, compact=None):
@@ -166,10 +192,15 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
         if self.device_count > 0:
-            if compact:
-                frame.extend(self.device_count * [data_line, separator_line])
-            else:
-                frame.extend(self.device_count * [data_line, data_line, separator_line])
+            for device in self.devices:
+                if compact:
+                    frame.extend((data_line, separator_line))
+                else:
+                    frame.extend((data_line, data_line, separator_line))
+                mig_device_count = self.mig_device_counts[device.physical_index]
+                if mig_device_count > 0:
+                    frame.extend((data_line,) * mig_device_count + (separator_line,))
+
             frame.pop()
             frame.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
             if self.width >= 100:
@@ -210,14 +241,22 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             selected_device = self.parent.selected.process.device
         except AttributeError:
             selected_device = None
-        for index, device in enumerate(self.snapshots):
-            y_start = self.y + 4 + (len(formats) + 1) * (index + 1)
-            if selected_device is not None:
-                attr = ('bold' if device.real == selected_device else 'dim')
-            else:
-                attr = 0
 
-            for y, fmt in enumerate(formats, start=y_start):
+        y_start = self.y + len(formats) + 5
+        prev_device_index = self.snapshots[0].tuple_index
+        for index, device in enumerate(self.snapshots):
+            if len(prev_device_index) != len(device.tuple_index) or prev_device_index[0] != device.tuple_index[0]:
+                y_start += 1
+
+            attr = 0
+            if selected_device is not None:
+                if device.real == selected_device:
+                    attr = 'bold'
+                elif device.is_mig_device or device.physical_index != selected_device.physical_index:
+                    attr = 'dim'
+
+            fmts = (self.mig_formats if device.is_mig_device else formats)
+            for y, fmt in enumerate(fmts, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
                 self.color_at(y, self.x + 1, width=31, fg=device.display_color, attr=attr)
                 self.color_at(y, self.x + 33, width=22, fg=device.display_color, attr=attr)
@@ -231,7 +270,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                      'UTL', device.gpu_utilization, device.gpu_display_color),
                 ]
                 if self.compact:
-                    if remaining_width >= 44:
+                    if remaining_width >= 44 and not device.is_mig_device:
                         left_width = (remaining_width - 6 + 1) // 2 - 1
                         right_width = (remaining_width - 6) // 2 + 1
                         matrix = [
@@ -240,16 +279,26 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                             (left_width + 3, y_start, right_width,
                              'UTL', device.gpu_utilization, device.gpu_display_color),
                         ]
-                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, '┼' if index > 0 else '╤')
+                        separator = ('┼' if index > 0 else '╤')
+                        if len(prev_device_index) == 2:
+                            separator = '┬'
+                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, separator)
                         self.addstr(y_start, self.x + 80 + left_width + 1, '│')
                         if index == len(self.snapshots) - 1:
                             self.addstr(y_start + 1, self.x + 80 + left_width + 1, '╧')
                     else:
+                        if remaining_width >= 44 and len(prev_device_index) == 1:
+                            self.addstr(y_start - 1, self.x + 80 + left_width + 1, '┴')
                         matrix.pop()
+                elif device.is_mig_device:
+                    matrix.pop()
                 for x_offset, y, width, prefix, utilization, color in matrix:
                     bar = make_bar(prefix, utilization, width=width)
                     self.addstr(y, self.x + 80 + x_offset, bar)
                     self.color_at(y, self.x + 80 + x_offset, width=width, fg=color, attr=attr)
+
+            y_start += len(fmts)
+            prev_device_index = device.tuple_index
 
     def destroy(self):
         super().destroy()
@@ -264,30 +313,37 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]
 
         if self.device_count > 0:
+            prev_device_index = self.snapshots[0].tuple_index
             for device in self.snapshots:
+                if (len(prev_device_index) != len(device.tuple_index) or
+                        prev_device_index[0] != device.tuple_index[0]):
+                    lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
+
                 def colorize(s):
                     if len(s) > 0:
                         return colored(s, device.display_color)  # pylint: disable=cell-var-from-loop
                     return ''
 
-                for fmt in self.formats_full:
+                fmts = (self.mig_formats if device.is_mig_device else self.formats_full)
+                for fmt in fmts:
                     line = fmt.format(**device.__dict__)
                     lines.append('│'.join(map(colorize, line.split('│'))))
 
-                lines.append('├───────────────────────────────┼──────────────────────┼──────────────────────┤')
-            lines.pop()
+                prev_device_index = device.tuple_index
+
             lines.append('╘═══════════════════════════════╧══════════════════════╧══════════════════════╛')
 
             if self.width >= 100:
                 remaining_width = self.width - 79
+                y_start = 7
+                prev_device_index = self.snapshots[0].tuple_index
                 for index, device in enumerate(self.snapshots):
-                    y_start = 4 + 3 * (index + 1)
-                    lines[y_start - 1] = lines[y_start - 1][:-1]
-
-                    if index == 0:
-                        lines[y_start - 1] += '╪' + '═' * (remaining_width - 1) + '╕'
-                    else:
-                        lines[y_start - 1] += '┼' + '─' * (remaining_width - 1) + '┤'
+                    if (len(prev_device_index) != len(device.tuple_index) or
+                            prev_device_index[0] != device.tuple_index[0]):
+                        lines[y_start] = lines[y_start][:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
+                        y_start += 1
+                    elif index == 0:
+                        lines[y_start - 1] = lines[y_start - 1][:-1] + '╪' + '═' * (remaining_width - 1) + '╕'
 
                     matrix = [
                         ('MEM', device.memory_percent,
@@ -295,12 +351,18 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         ('UTL', device.gpu_utilization,
                          Device.INTENSITY2COLOR[device.gpu_loading_intensity]),
                     ]
+                    if device.is_mig_device:
+                        matrix.pop()
                     for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
                         bar = make_bar(prefix, utilization, width=remaining_width - 3)
                         lines[y] += ' {} │'.format(colored(bar, color))
 
                     if index == len(self.snapshots) - 1:
-                        lines[y_start + 2] = lines[y_start + 2][:-1] + '╧' + '═' * (remaining_width - 1) + '╛'
+                        lines[y_start + len(matrix)] = lines[y_start + len(matrix)][:-1] + \
+                            '╧' + '═' * (remaining_width - 1) + '╛'
+
+                    y_start += len(matrix)
+                    prev_device_index = device.tuple_index
 
         lines = '\n'.join(lines)
         if self.ascii:
