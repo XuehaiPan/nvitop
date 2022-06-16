@@ -624,7 +624,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 proc = processes[p.pid] = self.GPU_PROCESS_CLASS(pid=p.pid, device=self)
                 proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
                                     else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
-                proc.set_gpu_utilization(0, 0, 0, 0)
                 proc.type = proc.type + type
 
         if len(processes) > 0:

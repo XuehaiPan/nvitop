@@ -272,7 +272,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self.type = type
         for util in ('sm', 'memory', 'encoder', 'decoder'):
             if not hasattr(self, '_gpu_{}_utilization'.format(util)):
-                setattr(self, '_gpu_{}_utilization'.format(util), 0)
+                setattr(self, '_gpu_{}_utilization'.format(util), NA)
 
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
@@ -349,14 +349,18 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
         self._gpu_memory_percent = gpu_memory_percent  # pylint: disable=attribute-defined-outside-init
 
-    def set_gpu_utilization(self, gpu_sm_utilization: int = 0,
-                            gpu_memory_utilization: int = 0,
-                            gpu_encoder_utilization: int = 0,
-                            gpu_decoder_utilization: int = 0) -> None:
-        self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_utilization = gpu_memory_utilization    # pylint: disable=attribute-defined-outside-init
-        self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
-        self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
+    def set_gpu_utilization(self, gpu_sm_utilization: Optional[int] = None,
+                            gpu_memory_utilization: Optional[int] = None,
+                            gpu_encoder_utilization: Optional[int] = None,
+                            gpu_decoder_utilization: Optional[int] = None) -> None:
+        if gpu_sm_utilization is not None:
+            self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
+        if gpu_memory_utilization is not None:
+            self._gpu_memory_utilization = gpu_memory_utilization    # pylint: disable=attribute-defined-outside-init
+        if gpu_encoder_utilization is not None:
+            self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
+        if gpu_decoder_utilization is not None:
+            self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
     def update_gpu_status(self) -> Union[int, NaType]:
         self.device.processes.cache_clear()
