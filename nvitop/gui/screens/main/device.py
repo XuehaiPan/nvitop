@@ -23,19 +23,23 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.devices = devices
         self.device_count = len(self.devices)
 
+        self.all_devices = []
+        self.leaf_devices = []
         self.mig_device_counts = [0] * self.device_count
         self.mig_enabled_device_count = 0
-        self.leaf_devices = []
         for i, device in enumerate(self.devices):
-            self.leaf_devices.append(device)
+            self.all_devices.append(device)
 
             mig_devices = device.mig_devices()
             self.mig_device_counts[i] = len(mig_devices)
             if self.mig_device_counts[i] > 0:
                 self.leaf_devices.extend(mig_devices)
                 self.mig_enabled_device_count += 1
+            else:
+                self.leaf_devices.append(device)
 
         self.mig_device_count = sum(self.mig_device_counts)
+        self.all_device_count = len(self.all_devices)
         self.leaf_device_count = len(self.leaf_devices)
 
         self._compact = compact
@@ -117,7 +121,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     @ttl_cache(ttl=1.0)
     def take_snapshots(self):
-        snapshots = [device.as_snapshot() for device in self.leaf_devices]
+        snapshots = [device.as_snapshot() for device in self.all_devices]
 
         for device in snapshots:
             if device.name.startswith('NVIDIA '):
