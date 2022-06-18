@@ -1,5 +1,7 @@
 # nvitop
 
+<!-- markdownlint-disable html -->
+
 ![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop)
 ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
@@ -16,7 +18,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
   (TERM: GNOME Terminal / OS: Ubuntu 16.04 LTS (over SSH) / Locale: <code>en_US.UTF-8</code>)
 </p>
 
-### Table of Contents  <!-- omit in toc -->
+### Table of Contents  <!-- omit in toc --> <!-- markdownlint-disable heading-increment -->
 
 - [Features](#features)
 - [Requirements](#requirements)
@@ -94,6 +96,17 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 - curses<sup>[*](#curses)</sup> (with `libncursesw`)
 
 **NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
+
+This repository contains a Bash script to install/upgrade the NVIDIA drivers for Ubuntu Linux. For example:
+
+```bash
+git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop
+
+bash install-nvidia-driver.sh --package=nvidia-driver-470  # install the R470 driver from ppa:graphics-drivers
+bash install-nvidia-driver.sh --latest                     # install the latest driver from ppa:graphics-drivers
+```
+
+Run `bash install-nvidia-driver.sh --help` for more information.
 
 <a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows using PDCurses. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
 
