@@ -46,12 +46,12 @@ function usage() {
 Usage: bash $(basename "$0") [--package=PKG] [--upgrade-only] [--latest] [--dry-run] [--yes] [--help]
 
 Options:
-  --package PKG            Install the specified driver package. (e.g. ${tty_bold}nvidia-driver-470${tty_reset})
-  --upgrade-only, --keep   Keep the installed NVIDIA driver package and only upgrade the package version.
-  --latest                 Upgrade to the latest NVIDIA driver, the old driver package may be removed.
-  --dry-run, -n            List all available NVIDIA driver packages and exit.
-  --yes, -y                Do not ask for confirmation.
-  --help, -h               Show this help and exit.
+  --package PKG    Install the specified driver package. (e.g. ${tty_bold}nvidia-driver-470${tty_reset})
+  --upgrade-only   Keep the installed NVIDIA driver package and only upgrade the package version.
+  --latest         Upgrade to the latest NVIDIA driver, the old driver package may be removed.
+  --dry-run, -n    List all available NVIDIA driver packages and exit.
+  --yes, -y        Do not ask for confirmation.
+  --help, -h       Show this help and exit.
 
 Examples:
 
@@ -67,7 +67,7 @@ EOS
 }
 
 REQUESTED_DRIVER=''
-KEEP=''
+UPGRADE_ONLY=''
 LATEST=''
 DRY_RUN=''
 YES=''
@@ -83,14 +83,14 @@ while [[ "$#" -gt 0 ]]; do
 		--package=*)
 			REQUESTED_DRIVER="${arg#*=}"
 			;;
-		--upgrade-only | --keep)
+		--upgrade-only)
 			if [[ -n "${LATEST}" ]]; then
 				abort 'Both option `--upgrade-only` and `--latest` are set.'
 			fi
-			KEEP=1
+			UPGRADE_ONLY=1
 			;;
 		--latest)
-			if [[ -n "${KEEP}" ]]; then
+			if [[ -n "${UPGRADE_ONLY}" ]]; then
 				abort 'Both option `--upgrade-only` and `--latest` are set.'
 			fi
 			LATEST=1
@@ -113,10 +113,6 @@ while [[ "$#" -gt 0 ]]; do
 			;;
 	esac
 done
-
-if [[ -z "${LATEST}" ]]; then
-	KEEP=1
-fi
 
 function apt-list-packages() {
 	dpkg-query --show --showformat='${Installed-Size} ${binary:Package} ${Version} ${Status}\n' |
@@ -282,7 +278,7 @@ function have_sudo_access() {
 	fi
 
 	if [[ -z "${HAVE_SUDO_ACCESS-}" ]]; then
-		ohai "Checking sudo access (press ${tty_yellow}Ctrl+C${tty_white} to check the driver versions only)." >&2
+		ohai "Checking sudo access (press ${tty_yellow}Ctrl+C${tty_white} to list the driver versions only)." >&2
 		exec_cmd "${SUDO[*]} -v && ${SUDO[*]} -l mkdir &>/dev/null"
 		HAVE_SUDO_ACCESS="$?"
 	fi
@@ -361,6 +357,9 @@ fi
 
 if [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" && "${INSTALLED_DRIVER_VERSION}" == "${REQUESTED_DRIVER_VERSION}" ]]; then
 	ohai "Your NVIDIA driver is already up-to-date."
+	exit
+elif [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" && -z "${UPGRADE_ONLY}" && -z "${LATEST}" ]]; then
+	ohai "The requested driver ${REQUESTED_DRIVER} is already installed. Run \`bash $(basename "$0") --upgrade-only\` to upgrade."
 	exit
 elif [[ -n "${DRY_RUN}" ]]; then
 	exit
