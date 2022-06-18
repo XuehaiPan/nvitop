@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
@@ -129,11 +129,11 @@ function apt-list-nvidia-packages() {
 	echo "${packages//$'\n'/ }"
 }
 
-function installed-version() {
+function apt-installed-version() {
 	apt-cache policy "$1" | grep -F 'Installed' | awk '{ print $2 }'
 }
 
-function candidate-version() {
+function apt-candidate-version() {
 	apt-cache policy "$1" | grep -F 'Candidate' | awk '{ print $2 }'
 }
 
@@ -305,16 +305,16 @@ AVAILABLE_DRIVERS=($(
 ))
 
 if [[ "${#AVAILABLE_DRIVERS[@]}" -eq 0 ]]; then
-	abort "No available drivers found."
+	abort "No available drivers found from APT."
 fi
 
 LATEST_DRIVER="${AVAILABLE_DRIVERS[-1]}"
-LATEST_DRIVER_VERSION="$(candidate-version "${LATEST_DRIVER}")"
+LATEST_DRIVER_VERSION="$(apt-candidate-version "${LATEST_DRIVER}")"
 
 INSTALLED_DRIVER="$(apt-list-packages | awk '$2 ~ /nvidia-driver-([0-9]+)$/ { print $2 }')"
 if [[ -n "${INSTALLED_DRIVER}" ]]; then
-	INSTALLED_DRIVER_VERSION="$(installed-version "${INSTALLED_DRIVER}")"
-	INSTALLED_DRIVER_CANDIDATE_VERSION="$(candidate-version "${INSTALLED_DRIVER}")"
+	INSTALLED_DRIVER_VERSION="$(apt-installed-version "${INSTALLED_DRIVER}")"
+	INSTALLED_DRIVER_CANDIDATE_VERSION="$(apt-candidate-version "${INSTALLED_DRIVER}")"
 else
 	INSTALLED_DRIVER_VERSION=''
 	INSTALLED_DRIVER_CANDIDATE_VERSION=''
@@ -335,7 +335,7 @@ for driver in "${AVAILABLE_DRIVERS[@]}"; do
 	elif [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
 		echo "${tty_bold}${tty_green}${driver} [${LATEST_DRIVER_VERSION}]${tty_reset} (latest)"
 	else
-		echo "${driver} [$(candidate-version "${driver}")]"
+		echo "${driver} [$(apt-candidate-version "${driver}")]"
 	fi
 done
 echo
@@ -349,7 +349,7 @@ if [[ -z "${REQUESTED_DRIVER}" ]]; then
 		REQUESTED_DRIVER_VERSION="${INSTALLED_DRIVER_CANDIDATE_VERSION}"
 	fi
 else
-	REQUESTED_DRIVER_VERSION="$(candidate-version "${REQUESTED_DRIVER}")"
+	REQUESTED_DRIVER_VERSION="$(apt-candidate-version "${REQUESTED_DRIVER}")"
 	if [[ -z "${REQUESTED_DRIVER_VERSION}" ]]; then
 		abort "Unable to locate package ${REQUESTED_DRIVER}."
 	fi
