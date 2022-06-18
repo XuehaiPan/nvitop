@@ -131,17 +131,20 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.memory_percent = host.memory_percent.history.last_value
         self.swap_percent = host.swap_percent.history.last_value
 
-        memory_percents = []
+        total_memory_used = 0
+        total_memory_total = 0
         gpu_utilizations = []
         for device in self.devices:
-            memory_percent = device.snapshot.memory_percent
+            memory_used = device.snapshot.memory_used
+            memory_total = device.snapshot.memory_total
             gpu_utilization = device.snapshot.gpu_utilization
-            if memory_percent is not NA:
-                memory_percents.append(float(memory_percent))
+            if memory_used is not NA and memory_total is not NA:
+                total_memory_used += memory_used
+                total_memory_total += memory_total
             if gpu_utilization is not NA:
                 gpu_utilizations.append(float(gpu_utilization))
-        if len(memory_percents) > 0:
-            self.average_memory_percent.add(sum(memory_percents) / len(memory_percents))
+        if total_memory_total > 0:
+            self.average_memory_percent.add(100.0 * total_memory_used / total_memory_total)
         if len(gpu_utilizations) > 0:
             self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
 
