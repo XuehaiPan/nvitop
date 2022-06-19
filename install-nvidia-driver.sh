@@ -447,7 +447,8 @@ PIDS=($(sudo lsof -t /dev/nvidia* 2>/dev/null || true))
 if [[ "${#PIDS[@]}" -gt 0 ]]; then
 	abort "$(
 		cat <<EOABORT
-Some processes are still running on GPU.
+
+${tty_red}FATAL:${tty_white} Some processes are still using the NVIDIA devices.${tty_reset}
 
 $(ps --format=pid,user,command --pid="${PIDS[*]}")
 EOABORT
