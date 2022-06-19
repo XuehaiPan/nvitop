@@ -339,26 +339,6 @@ else
 	INSTALLED_DRIVER_CANDIDATE_VERSION=''
 fi
 
-ohai "Available NVIDIA drivers:"
-for driver in "${AVAILABLE_DRIVERS[@]}"; do
-	if [[ "${driver}" == "${INSTALLED_DRIVER}" ]]; then
-		if [[ "${INSTALLED_DRIVER_VERSION}" == "${INSTALLED_DRIVER_CANDIDATE_VERSION}" ]]; then
-			if [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
-				echo "${tty_green}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
-			else
-				echo "${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
-			fi
-		else
-			echo "${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (upgradable to [${INSTALLED_DRIVER_CANDIDATE_VERSION}])"
-		fi
-	elif [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
-		echo "${tty_bold}${tty_green}${driver} [${LATEST_DRIVER_VERSION}]${tty_reset} (latest)"
-	else
-		echo "${driver} [$(apt-candidate-version "${driver}")]"
-	fi
-done
-echo
-
 if [[ -z "${REQUESTED_DRIVER}" ]]; then
 	if [[ -n "${LATEST}" || -z "${INSTALLED_DRIVER}" ]]; then
 		REQUESTED_DRIVER="${LATEST_DRIVER}"
@@ -374,19 +354,55 @@ else
 	fi
 fi
 
-if [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" && "${INSTALLED_DRIVER_VERSION}" == "${REQUESTED_DRIVER_VERSION}" ]]; then
+ohai "Available NVIDIA drivers:"
+for driver in "${AVAILABLE_DRIVERS[@]}"; do
+	prefix="    "
+	if [[ "${driver}" == "${REQUESTED_DRIVER}" ]]; then
+		prefix="--> "
+	fi
+	if [[ "${driver}" == "${INSTALLED_DRIVER}" ]]; then
+		if [[ "${driver}" != "${REQUESTED_DRIVER}" ]]; then
+			prefix="<-- "
+		elif [[ "${REQUESTED_DRIVER_VERSION}" != "${INSTALLED_DRIVER_VERSION}" ]]; then
+			prefix="--> "
+		else
+			prefix="--- "
+		fi
+		if [[ "${INSTALLED_DRIVER_VERSION}" == "${INSTALLED_DRIVER_CANDIDATE_VERSION}" ]]; then
+			if [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
+				echo "${prefix}${tty_green}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
+			else
+				echo "${prefix}${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
+			fi
+		else
+			echo "${prefix}${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (upgradable to [${INSTALLED_DRIVER_CANDIDATE_VERSION}])"
+		fi
+	elif [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
+		echo "${prefix}${tty_green}${driver} [${LATEST_DRIVER_VERSION}]${tty_reset} (latest)"
+	else
+		echo "${prefix}${driver} [$(apt-candidate-version "${driver}")]"
+	fi
+done
+
+if [[ "${INSTALLED_DRIVER}@${INSTALLED_DRIVER_VERSION}" == "${REQUESTED_DRIVER}@${REQUESTED_DRIVER_VERSION}" ]]; then
+	echo
 	ohai "Your NVIDIA driver is already up-to-date."
 	exit
 elif [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" && -z "${UPGRADE_ONLY}" && -z "${LATEST}" ]]; then
+	echo
 	ohai "The requested driver ${REQUESTED_DRIVER} is already installed. Run \`bash $(basename "$0") --upgrade-only\` to upgrade."
 	exit
 elif [[ -n "${DRY_RUN}" ]]; then
 	exit
 fi
 
+echo
+
 ### Show the installation plan and wait for user confirmation ######################################
 
-if [[ "${REQUESTED_DRIVER#nvidia-driver-}" -ge "${INSTALLED_DRIVER#nvidia-driver-}" ]]; then
+if [[ -z "${INSTALLED_DRIVER}" ]]; then
+	ohai "Install the NVIDIA driver ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
+elif [[ "${REQUESTED_DRIVER#nvidia-driver-}" -ge "${INSTALLED_DRIVER#nvidia-driver-}" ]]; then
 	ohai "Upgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
 else
 	ohai "Downgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
