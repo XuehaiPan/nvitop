@@ -423,18 +423,26 @@ for dm in "${DM_SERVICES[@]}"; do
 	trap "exec_cmd 'sudo service ${dm} start'" EXIT # restart the service on exit
 done
 
+sleep 1 # ensure the processes are stopped
+
+# Ensure no processes are using the NVIDIA devices
+# shellcheck disable=SC2207
+PIDS=($(sudo lsof -t /dev/nvidia* 2>/dev/null || true))
+if [[ "${#PIDS[@]}" -gt 0 ]]; then
+	abort "$(
+		cat <<EOABORT
+Some processes are still running on GPU.
+
+$(ps --format=pid,user,command --pid="${PIDS[*]}")
+EOABORT
+	)"
+fi
+
 # Offload the NVIDIA kernel modules
 MODULES="$(sudo lsmod | grep '^nvidia' | awk '{ print $1 }')"
 MODULES="${MODULES//$'\n'/ }"
 if [[ -n "${MODULES}" ]]; then
 	exec_cmd "sudo modprobe -r -f ${MODULES}"
-fi
-
-sleep 1 # ensure the processes are stopped
-
-# Ensure no processes are using the NVIDIA devices
-if [[ -n "$(sudo lsof -t /dev/nvidia* 2>/dev/null)" ]]; then
-	abort "Some processes are still running on GPU."
 fi
 
 if [[ -n "${INSTALLED_DRIVER}" ]]; then
