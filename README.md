@@ -106,6 +106,12 @@ bash install-nvidia-driver.sh --package=nvidia-driver-470  # install the R470 dr
 bash install-nvidia-driver.sh --latest                     # install the latest driver from ppa:graphics-drivers
 ```
 
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/174480112-e9a35edc-8f42-438e-a103-1d0ce998b381.png" alt="install-nvidia-driver">
+  </br>
+  NVIDIA driver installer for Ubuntu Linux.
+</p>
+
 Run `bash install-nvidia-driver.sh --help` for more information.
 
 <a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows using PDCurses. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
