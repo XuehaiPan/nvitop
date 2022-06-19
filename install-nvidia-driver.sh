@@ -7,10 +7,10 @@
 #
 # Examples:
 #
-# 	  bash install-nvidia-driver.sh
-# 	  bash install-nvidia-driver.sh --package=nvidia-driver-470
-# 	  bash install-nvidia-driver.sh --upgrade-only
-# 	  bash install-nvidia-driver.sh --latest
+#     bash install-nvidia-driver.sh
+#     bash install-nvidia-driver.sh --package=nvidia-driver-470
+#     bash install-nvidia-driver.sh --upgrade-only
+#     bash install-nvidia-driver.sh --latest
 
 # shellcheck disable=SC2016,SC2312
 
