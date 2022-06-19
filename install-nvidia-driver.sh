@@ -310,6 +310,8 @@ if have_sudo_access; then
 		exec_cmd 'sudo apt-get update'
 	fi
 	echo
+else
+	DRY_RUN=1
 fi
 
 ### Query and list available driver packages #######################################################
