@@ -3,6 +3,15 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
+# Usage: bash install-nvidia-driver.sh [--package=PKG] [--upgrade-only] [--latest] [--dry-run] [--yes] [--help]
+#
+# Examples:
+#
+# 	  bash install-nvidia-driver.sh
+# 	  bash install-nvidia-driver.sh --package=nvidia-driver-470
+# 	  bash install-nvidia-driver.sh --upgrade-only
+# 	  bash install-nvidia-driver.sh --latest
+
 # shellcheck disable=SC2016,SC2312
 
 set -e
@@ -20,9 +29,7 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 # shellcheck disable=1091
-if [[ "$(uname -s)" != "Linux" ]]; then
-	abort "This script only supports Ubuntu Linux."
-elif (source /etc/os-release && [[ "${NAME:-}" != "Ubuntu" ]]); then
+if [[ "$(uname -s)" != "Linux" ]] || (source /etc/os-release && [[ "${NAME:-}" != "Ubuntu" ]]); then
 	abort "This script only supports Ubuntu Linux."
 fi
 
@@ -65,6 +72,8 @@ processes that are using the NVIDIA GPUs, e.g., \`watch nvidia-smi\`, \`nvitop\`
 The script will install the latest NVIDIA driver if no NVIDIA driver is installed in the system.
 EOS
 }
+
+### Parse the command line arguments ###############################################################
 
 REQUESTED_DRIVER=''
 UPGRADE_ONLY=''
@@ -114,6 +123,8 @@ while [[ "$#" -gt 0 ]]; do
 	esac
 done
 
+### Functions ######################################################################################
+
 function apt-list-packages() {
 	dpkg-query --show --showformat='${Installed-Size} ${binary:Package} ${Version} ${Status}\n' |
 		grep -v deinstall | sort -n | awk '{ print $1" "$2" "$3 }'
@@ -137,6 +148,7 @@ function apt-candidate-version() {
 	apt-cache policy "$1" | grep -F 'Candidate' | awk '{ print $2 }'
 }
 
+# From https://github.com/XuehaiPan/Dev-Setup.git
 function exec_cmd() {
 	printf "%s" "$@" | awk \
 		'BEGIN {
@@ -214,6 +226,7 @@ function exec_cmd() {
 	eval "$@"
 }
 
+# From https://github.com/Homebrew/install.git
 shell_join() {
 	local arg
 	printf "%s" "$1"
@@ -233,7 +246,7 @@ ohai() {
 }
 
 warn() {
-	printf "${tty_red}Warning${tty_reset}: %s\n" "$(chomp "$1")"
+	printf "${tty_red}Warning:${tty_reset} %s\n" "$(chomp "$1")"
 }
 
 ring_bell() {
@@ -286,6 +299,8 @@ function have_sudo_access() {
 	return "${HAVE_SUDO_ACCESS}"
 }
 
+### Add Graphics Drivers PPA #######################################################################
+
 # shellcheck disable=SC2310
 if have_sudo_access; then
 	exec_cmd 'sudo apt-get update'
@@ -296,6 +311,8 @@ if have_sudo_access; then
 	fi
 	echo
 fi
+
+### Query and list available driver packages #######################################################
 
 # shellcheck disable=SC2207
 AVAILABLE_DRIVERS=($(
@@ -365,6 +382,8 @@ elif [[ -n "${DRY_RUN}" ]]; then
 	exit
 fi
 
+### Show the installation plan and wait for user confirmation ######################################
+
 if [[ "${REQUESTED_DRIVER#nvidia-driver-}" -ge "${INSTALLED_DRIVER#nvidia-driver-}" ]]; then
 	ohai "Upgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
 else
@@ -393,20 +412,25 @@ if [[ -z "${YES}" ]]; then
 	wait_for_user
 fi
 
+### Do install/upgrade the requested driver package ################################################
+
+# Stop display manager services
 for dm in "${DM_SERVICES[@]}"; do
 	exec_cmd "sudo service ${dm} stop"
 	# shellcheck disable=SC2064
-	trap "exec_cmd 'sudo service ${dm} start'" EXIT
+	trap "exec_cmd 'sudo service ${dm} start'" EXIT # restart the service on exit
 done
 
+# Offload the NVIDIA kernel modules
 MODULES="$(sudo lsmod | grep '^nvidia' | awk '{ print $1 }')"
 MODULES="${MODULES//$'\n'/ }"
 if [[ -n "${MODULES}" ]]; then
 	exec_cmd "sudo modprobe -r -f ${MODULES}"
 fi
 
-sleep 1
+sleep 1 # ensure the processes are stopped
 
+# Ensure no processes are using the NVIDIA devices
 if [[ -n "$(sudo lsof -t /dev/nvidia* 2>/dev/null)" ]]; then
 	abort "Some processes are still running on GPU."
 fi
@@ -417,19 +441,25 @@ if [[ -n "${INSTALLED_DRIVER}" ]]; then
 		exec_cmd "sudo apt-mark unhold ${NVIDIA_PACKAGES}"
 	fi
 	if [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" ]]; then
+		# Upgrade the existing driver packages
 		exec_cmd "sudo apt-get install --only-upgrade --yes ${NVIDIA_PACKAGES}"
 	else
+		# Uninstall the existing driver packages
 		exec_cmd "sudo apt-get purge --yes ${NVIDIA_PACKAGES}"
 	fi
 fi
 
 if [[ "${INSTALLED_DRIVER}" != "${REQUESTED_DRIVER}" ]]; then
+	# Install the required driver packages
 	exec_cmd "sudo apt-get install --yes ${REQUESTED_DRIVER}"
 fi
 
+# Hold the NVIDIA driver packages for `apt upgrade`
 NVIDIA_PACKAGES="$(apt-list-nvidia-packages)"
 if [[ -n "${NVIDIA_PACKAGES}" ]]; then
 	exec_cmd "sudo apt-mark hold ${NVIDIA_PACKAGES}"
 fi
+
+### Reload the NVIDIA kernel modules ###############################################################
 
 exec_cmd 'nvidia-smi'
