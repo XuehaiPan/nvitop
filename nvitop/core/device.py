@@ -614,6 +614,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def is_mig_mode_enabled(self) -> bool:
         return boolify(self.mig_mode())
 
+    def max_mig_device_count(self) -> int:
+        raise NotImplementedError  # implemented in PhysicalDevice
+
+    def mig_devices(self) -> List['MigDevice']:
+        raise NotImplementedError  # implemented in PhysicalDevice
+
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
         processes = {}
