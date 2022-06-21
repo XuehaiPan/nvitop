@@ -223,7 +223,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-locals,too-many-branches
+    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
         if self.need_redraw:
@@ -314,7 +314,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             return self.width
         return 79
 
-    def print(self):
+    def print(self):  # pylint: disable=too-many-locals,too-many-branches
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]
 
         if self.device_count > 0:

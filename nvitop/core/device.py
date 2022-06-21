@@ -107,11 +107,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return nvml.nvmlQuery('nvmlDeviceGetCount', default=0)
 
     @classmethod
-    def all(cls) -> List['Device']:
+    def all(cls) -> List['PhysicalDevice']:
         return cls.from_indices()
 
     @classmethod
-    def from_indices(cls, indices: Optional[Union[int, Iterable[int]]] = None) -> List['Device']:
+    def from_indices(
+        cls, indices: Optional[Union[int, Iterable[Union[int, Tuple[int, int]]]]] = None
+    ) -> List[Tuple['PhysicalDevice', 'MigDevice']]:
         if indices is None:
             indices = range(cls.count())
 
@@ -615,10 +617,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return boolify(self.mig_mode())
 
     def max_mig_device_count(self) -> int:
-        raise NotImplementedError  # implemented in PhysicalDevice
+        return 0  # implemented in PhysicalDevice
 
     def mig_devices(self) -> List['MigDevice']:
-        raise NotImplementedError  # implemented in PhysicalDevice
+        return []  # implemented in PhysicalDevice
 
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
@@ -776,7 +778,7 @@ _GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
 
 @contextlib.contextmanager
 def _global_physical_device(device: PhysicalDevice) -> PhysicalDevice:
-    global _GLOBAL_PHYSICAL_DEVICE
+    global _GLOBAL_PHYSICAL_DEVICE  # pylint: disable=global-statement
 
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
         try:

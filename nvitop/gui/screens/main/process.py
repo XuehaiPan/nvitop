@@ -139,9 +139,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             return
         self.has_snapshots = True
 
-        time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
+        time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         time_header = ' ' * (time_length - 4) + 'TIME'
-        info_length = max([len(p.host_info) for p in snapshots], default=0)
+        info_length = max((len(p.host_info) for p in snapshots), default=0)
         n_processes, n_devices = len(snapshots), len(set(p.device.physical_index for p in snapshots))
         self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
         self.compact_height = 1 + max(6, 5 + n_processes)
@@ -189,7 +189,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             snapshots = filter(condition, snapshots)
         snapshots = list(snapshots)
 
-        time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
+        time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         for snapshot in snapshots:
             snapshot.type = snapshot.type.replace('C+G', 'X')
             snapshot.host_info = WideString('{:>5} {:>5}  {}  {}'.format(
