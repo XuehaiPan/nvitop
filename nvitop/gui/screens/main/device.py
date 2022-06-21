@@ -33,6 +33,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             mig_devices = device.mig_devices()
             self.mig_device_counts[i] = len(mig_devices)
             if self.mig_device_counts[i] > 0:
+                self.all_devices.extend(mig_devices)
                 self.leaf_devices.extend(mig_devices)
                 self.mig_enabled_device_count += 1
             else:
