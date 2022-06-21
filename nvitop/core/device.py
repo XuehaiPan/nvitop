@@ -40,16 +40,16 @@ UtilizationRates = NamedTuple('UtilizationRates',  # in percentage
                                ('decoder', Union[int, NaType])])
 
 
-ANY_DEVICE_SUPPORTS_MIG_MODE = None
+_ANY_DEVICE_SUPPORTS_MIG_MODE = None
 
 
-def does_any_device_support_mig_mode() -> bool:
-    global ANY_DEVICE_SUPPORTS_MIG_MODE  # pylint: disable=global-statement
+def _does_any_device_support_mig_mode() -> bool:
+    global _ANY_DEVICE_SUPPORTS_MIG_MODE  # pylint: disable=global-statement
 
-    if ANY_DEVICE_SUPPORTS_MIG_MODE is None:
-        ANY_DEVICE_SUPPORTS_MIG_MODE = any(nvml.nvmlCheckReturn(device.mig_mode())
-                                           for device in PhysicalDevice.all())
-    return ANY_DEVICE_SUPPORTS_MIG_MODE
+    if _ANY_DEVICE_SUPPORTS_MIG_MODE is None:
+        _ANY_DEVICE_SUPPORTS_MIG_MODE = any(nvml.nvmlCheckReturn(device.mig_mode())
+                                            for device in PhysicalDevice.all())
+    return _ANY_DEVICE_SUPPORTS_MIG_MODE
 
 
 def is_mig_device_uuid(uuid: Optional[str]) -> bool:
@@ -158,7 +158,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if cuda_visible_devices is None:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
             if cuda_visible_devices is None:
-                if does_any_device_support_mig_mode():
+                if _does_any_device_support_mig_mode():
                     for device in map(PhysicalDevice, range(PhysicalDevice.count())):
                         if device.is_mig_mode_enabled():
                             return [(device.physical_index, 0)]  # at most one MIG device
@@ -757,15 +757,38 @@ class PhysicalDevice(Device):
         mig_devices = []
 
         if self.is_mig_mode_enabled():
-            for mig_index in range(self.max_mig_device_count()):
-                try:
-                    mig_device = MigDevice(index=(self.index, mig_index))
-                except nvml.NVMLError:
-                    break
-                else:
-                    mig_devices.append(mig_device)
+            max_mig_device_count = self.max_mig_device_count()
+            with _global_physical_device(self):
+                for mig_index in range(max_mig_device_count):
+                    try:
+                        mig_device = MigDevice(index=(self.index, mig_index))
+                    except nvml.NVMLError:
+                        break
+                    else:
+                        mig_devices.append(mig_device)
 
         return mig_devices
+
+
+_GLOBAL_PHYSICAL_DEVICE = None
+_GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
+
+
+@contextlib.contextmanager
+def _global_physical_device(device: PhysicalDevice) -> PhysicalDevice:
+    global _GLOBAL_PHYSICAL_DEVICE
+
+    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
+        try:
+            _GLOBAL_PHYSICAL_DEVICE = device
+            yield _GLOBAL_PHYSICAL_DEVICE
+        finally:
+            _GLOBAL_PHYSICAL_DEVICE = None
+
+
+def _get_global_physical_device() -> PhysicalDevice:
+    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
+        return _GLOBAL_PHYSICAL_DEVICE
 
 
 class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
@@ -807,7 +830,11 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         if index is not None:
             self._nvml_index = index
             self._handle = None
-            self._parent = PhysicalDevice(index=self.physical_index)
+
+            parent = _get_global_physical_device()
+            if parent is None or parent.handle is None or parent.physical_index != self.physical_index:
+                parent = PhysicalDevice(index=self.physical_index)
+            self._parent = parent
             if self.parent.handle is not None:
                 try:
                     self._handle = nvml.nvmlQuery('nvmlDeviceGetMigDeviceHandleByIndex',
