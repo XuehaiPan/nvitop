@@ -500,16 +500,16 @@ In [6]: all_devices = Device.all()                 # all devices on board (physi
    ...: nvidia_0_1  = Device.from_indices([0, 1])  # from physical device indices
    ...: all_devices
 Out[6]: [
-    Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=2, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=3, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=4, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=5, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=6, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=7, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+    PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=2, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=3, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=4, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=5, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=6, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=7, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
 In [7]: # NOTE: The function results might be different between calls when environment variable `CUDA_VISIBLE_DEVICES` has been modified
@@ -526,12 +526,12 @@ Out[7]: [
 
 In [8]: nvidia0 = Device(0)  # from device index (or `Device(index=0)`)
    ...: nvidia0
-Out[8]: Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+Out[8]: PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [9]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # from UUID string (or just`Device('GPU-xxxxxxxx-...')`)
    ...: nvidia2 = Device(bus_id='00000000:06:00.0')                        # from PCI bus ID
    ...: nvidia1
-Out[9]: Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+Out[9]: PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [10]: cuda0 = CudaDevice(0)                        # from CUDA device index (equivalent to `CudaDevice(cuda_index=0)`)
     ...: cuda1 = CudaDevice(nvml_index=8)             # from physical device index
@@ -551,14 +551,14 @@ Out[13]: 5
 
 In [14]: nvidia0.processes()  # type: Dict[int, GpuProcess]
 Out[14]: {
-    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
-    53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
+    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
+    53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
 }
 
 In [15]: nvidia1_snapshot = nvidia1.as_snapshot()
     ...: nvidia1_snapshot
-Out[15]: DeviceSnapshot(
-    real=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+Out[15]: PhysicalDeviceSnapshot(
+    real=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     bus_id='00000000:05:00.0',
     compute_mode='Default',
     clock_infos=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680),  # in MHz
@@ -651,11 +651,11 @@ Out[25]: '1031MiB'
 
 In [26]: process.as_snapshot()
 Out[26]: GpuProcessSnapshot(
-    real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
+    real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
     cpu_percent=98.5,                    # in percentage
-    device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     gpu_encoder_utilization=0,           # in percentage
     gpu_decoder_utilization=0,           # in percentage
     gpu_memory=1081081856,               # in bytes
@@ -682,8 +682,8 @@ In [28]: process.kill()  # GpuProcess will automatically inherit attributes from
 In [29]: list(map(Device.processes, all_devices))  # all processes
 Out[29]: [
     {
-        52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
-        53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
+        52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
+        53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
     },
     {},
     {},
@@ -693,10 +693,10 @@ Out[29]: [
     {},
     {},
     {
-        84748: GpuProcess(pid=84748, gpu_memory=8975MiB, type=C, device=Device(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
+        84748: GpuProcess(pid=84748, gpu_memory=8975MiB, type=C, device=PhysicalDevice(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
     },
     {
-        84748: GpuProcess(pid=84748, gpu_memory=8341MiB, type=C, device=Device(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
+        84748: GpuProcess(pid=84748, gpu_memory=8341MiB, type=C, device=PhysicalDevice(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
     }
 ]
 

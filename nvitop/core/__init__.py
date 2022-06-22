@@ -61,15 +61,15 @@ def take_snapshots(
         >>> take_snapshots()  # equivalent to `take_snapshots(Device.all())`
         SnapshotResult(
             devices=[
-                DeviceSnapshot(
-                    real=Device(index=0, ...),
+                PhysicalDeviceSnapshot(
+                    real=PhysicalDevice(index=0, ...),
                     ...
                 ),
                 ...
             ],
             gpu_processes=[
                 GpuProcessSnapshot(
-                    real=GpuProcess(pid=xxxxxx, device=Device(index=0, ...), ...),
+                    real=GpuProcess(pid=xxxxxx, device=PhysicalDevice(index=0, ...), ...),
                     ...
                 ),
                 ...
