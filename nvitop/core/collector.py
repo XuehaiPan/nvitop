@@ -223,7 +223,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_utilization (%)': 6.711118172407917,
             '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_sm_utilization (%)': 48.23283397736476,
             ...,
-            '<tag>/duration (s)': 7.247399162035435
+            '<tag>/duration (s)': 7.247399162035435,
+            '<tag>/timestamp': 1655909466.9981883
         }
     """  # pylint: disable=line-too-long
 
@@ -514,6 +515,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
         metrics = {'{}/{}'.format(self.key_prefix, key): maintainer.mean()
                    for key, maintainer in self.buffer.items()}
         metrics['{}/duration (s)'.format(self.key_prefix)] = timer() - self.start_timestamp
+        metrics['{}/timestamp'.format(self.key_prefix)] = time.time()
         return metrics
 
     def __len__(self) -> int:

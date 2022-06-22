@@ -528,7 +528,8 @@ In [6]: with collector(tag='<tag>'):
     '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_utilization (%)': 6.711118172407917,
     '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_sm_utilization (%)': 48.23283397736476,
     ...,
-    '<tag>/duration (s)': 7.247399162035435
+    '<tag>/duration (s)': 7.247399162035435,
+    '<tag>/timestamp': 1655909466.9981883
 }
 ```
 
