@@ -579,6 +579,33 @@ for epoch in range(num_epoch):
                            global_step=epoch)
 ```
 
+Another example for logging to CSV file:
+
+```python
+import datetime
+import time
+
+import pandas as pd
+
+from nvitop import ResourceMetricCollector
+
+collector = ResourceMetricCollector(root_pids={1}, interval=2.0)  # log all devices and all GPU processes
+df = pd.DataFrame()
+
+with collector(tag='resources'):
+    for _ in range(60):
+        # Do something
+        time.sleep(60)
+
+        metrics = collector.collect()
+        df_metrics = pd.DataFrame.from_records(metrics, index=[len(df)])
+        df = pd.concat([df, df_metrics], ignore_index=True)
+        # Flush to CSV file ...
+
+df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimestamp))
+df.to_csv('results.csv', index=False)
+```
+
 #### Low-level APIs
 
 ##### Device
