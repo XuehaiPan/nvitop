@@ -136,6 +136,9 @@ def bytes2human(x):  # pylint: disable=too-many-return-statements
 
 
 def timedelta2human(dt):
+    if isinstance(dt, (int, float)):
+        dt = datetime.timedelta(seconds=dt)
+
     if not isinstance(dt, datetime.timedelta):
         return NA
 

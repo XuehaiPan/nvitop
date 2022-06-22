@@ -181,6 +181,12 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     def running_time_human(self) -> str:
         return timedelta2human(self.running_time())
 
+    def running_time_in_seconds(self) -> float:  # in seconds
+        return self.running_time().total_seconds()
+
+    def rss_memory(self) -> int:  # in bytes
+        return self.memory_info().rss
+
     def parent(self) -> Union['HostProcess', None]:
         parent = super().parent()
         if parent is not None:
@@ -388,8 +394,14 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def running_time(self) -> Union[datetime.timedelta, NaType]:
         return self.host.running_time()
 
-    def running_time_human(self) -> str:
+    def running_time_human(self) -> Union[str, NaType]:
         return timedelta2human(self.running_time())
+
+    def running_time_in_seconds(self) -> Union[float, NaType]:
+        running_time = self.running_time()
+        if running_time is NA:
+            return NA
+        return running_time.total_seconds()
 
     @auto_garbage_clean(fallback=NA)
     def username(self) -> Union[str, NaType]:
@@ -402,12 +414,21 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.name()
 
     @auto_garbage_clean(fallback=NA)
-    def cpu_percent(self) -> Union[float, NaType]:
+    def cpu_percent(self) -> Union[float, NaType]:  # in percentage
         return self.host.cpu_percent()
 
     @auto_garbage_clean(fallback=NA)
-    def memory_percent(self) -> Union[float, NaType]:
+    def memory_percent(self) -> Union[float, NaType]:  # in percentage
         return self.host.memory_percent()
+
+    @auto_garbage_clean(fallback=NA)
+    def host_memory(self) -> Union[int, NaType]:  # in bytes
+        return self.host.rss_memory()
+
+    def host_memory_human(self) -> Union[str, NaType]:
+        return bytes2human(self.host_memory())
+
+    rss_memory = host_memory  # in bytes
 
     @auto_garbage_clean(fallback=('No Such Process',))  # `fallback=['No Permissions']` for `AccessDenied` error
     def cmdline(self) -> List[str]:
@@ -432,8 +453,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 command=self.command(),
                 cpu_percent=self.cpu_percent(),
                 memory_percent=self.memory_percent(),
+                host_memory=self.host_memory(),
+                host_memory_human=self.host_memory_human(),
                 running_time=self.running_time(),
-                running_time_human=self.running_time_human()
+                running_time_human=self.running_time_human(),
+                running_time_in_seconds=self.running_time_in_seconds(),
             )
 
         return host_snapshot
@@ -455,15 +479,19 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             pid=self.pid,
 
             host=host_snapshot,
+            is_running=host_snapshot.is_running,
+            status=host_snapshot.status,
             username=host_snapshot.username,
             name=host_snapshot.name,
             cmdline=host_snapshot.cmdline,
             command=host_snapshot.command,
             cpu_percent=host_snapshot.cpu_percent,
             memory_percent=host_snapshot.memory_percent,
-            is_running=host_snapshot.is_running,
+            host_memory=host_snapshot.host_memory,
+            host_memory_human=host_snapshot.host_memory_human,
             running_time=host_snapshot.running_time,
             running_time_human=host_snapshot.running_time_human,
+            running_time_in_seconds=host_snapshot.running_time_in_seconds,
 
             device=self.device,
             type=self.type,
