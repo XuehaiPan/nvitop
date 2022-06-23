@@ -170,8 +170,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     Core methods:
 
-        collector.start(tag='<tag>')
-        collector.stop()
+        collector.activate(tag='<tag>')  # alias: start
+        collector.deactivate()           # alias: stop
         collector.reset(tag='<tag>')
         collector.collect()
 
@@ -309,7 +309,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self._daemon = threading.Thread(name='gpu_metric_collector_daemon', target=self._target, daemon=True)
         self._daemon_running = threading.Event()
 
-    def start(self, tag: str) -> None:
+    def activate(self, tag: str) -> None:
         """Start a new metric collection with the given tag.
 
         Args:
@@ -321,11 +321,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
             >>> collector = ResourceMetricCollector()
 
-            >>> collector.start(tag='train')  # key prefix -> 'train'
-            >>> collector.start(tag='batch')  # key prefix -> 'train/batch'
-            >>> collector.stop()              # key prefix -> 'train'
-            >>> collector.stop()              # the collector has been stopped
-            >>> collector.start(tag='test')   # key prefix -> 'test'
+            >>> collector.activate(tag='train')  # key prefix -> 'train'
+            >>> collector.activate(tag='batch')  # key prefix -> 'train/batch'
+            >>> collector.deactivate()           # key prefix -> 'train'
+            >>> collector.deactivate()           # the collector has been stopped
+            >>> collector.activate(tag='test')   # key prefix -> 'test'
         """
 
         with self._lock:
@@ -344,15 +344,41 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         except RuntimeError:
             pass
 
-    def stop(self) -> None:
-        """Stop the current collection and pop out the last nested tag."""
+    start = activate
+
+    def deactivate(self, tag: Optional[str] = None) -> None:
+        """Stop the current collection with the given tag and remove all sub-tags.
+        If the tag is not specified, deactivate the current active collection.
+        For nested collections, the sub-collections will be deactivated as well.
+        """
 
         with self._lock:
-            if self._metric_buffer is not None:
-                self._tags.remove(self._metric_buffer.tag)
-                self._metric_buffer = self._metric_buffer.prev
-            else:
+            if self._metric_buffer is None:
+                if tag is not None:
+                    raise RuntimeError(
+                        'Resource metric collector has not been not started yet.'
+                    )
+                return
+
+            if tag is None:
+                tag = self._metric_buffer.tag
+            elif tag not in self._tags:
+                raise RuntimeError(
+                    'Resource metric collector has not been started with tag "{}".'.format(tag)
+                )
+
+            buffer = self._metric_buffer
+            while True:
+                self._tags.remove(buffer.tag)
+                if buffer.tag == tag:
+                    self._metric_buffer = buffer.prev
+                    break
+                buffer = buffer.prev
+
+            if self._metric_buffer is None:
                 self._daemon_running.clear()
+
+    stop = deactivate
 
     @contextlib.contextmanager
     def context(self, tag: str) -> 'ResourceMetricCollector':
@@ -373,17 +399,17 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         """
 
         try:
-            self.start(tag=tag)
+            self.activate(tag=tag)
             yield self
         finally:
-            self.stop()
+            self.deactivate(tag=tag)
 
     __call__ = context  # alias for `with collector(tag='<tag>')`
 
     def clear(self, tag: Optional[str] = None) -> None:
         """Reset the metric collection with the given tag. If the tag is not
-        specified, the current active collection will be reset. For nested
-        collections, the sub-collections will be reset as well.
+        specified, reset the current active collection. For nested collections,
+        the sub-collections will be reset as well.
 
         Args:
             tag (str or None):
@@ -425,7 +451,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 )
 
             buffer = self._metric_buffer
-            while buffer is not None:
+            while True:
                 buffer.clear()
                 if buffer.tag == tag:
                     break
