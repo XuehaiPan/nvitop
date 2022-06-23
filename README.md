@@ -494,7 +494,7 @@ In [4]: collector = ResourceMetricCollector(device=Device(0), root_pids={1})  # 
 In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())         # use the CUDA ordinal
 
 In [6]: with collector(tag='<tag>'):
-   ...:     # do something
+   ...:     # Do something
    ...:     collector.collect()  # -> Dict[str, float]
 {
     '<tag>/host/cpu_percent (%)': 8.967849777683456,

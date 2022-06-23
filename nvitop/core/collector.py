@@ -22,7 +22,7 @@ from nvitop.core.utils import Snapshot, MiB, GiB
 __all__ = ['take_snapshots', 'ResourceMetricCollector']
 
 
-SnapshotResult = NamedTuple('SnapshotResult',  # in bytes
+SnapshotResult = NamedTuple('SnapshotResult',
                             [('devices', List[Snapshot]),
                              ('gpu_processes', List[Snapshot])])
 
@@ -172,6 +172,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         collector.start(tag='<tag>')
         collector.stop()
+        collector.reset(tag='<tag>')
         collector.collect()
 
         with collector(tag='<tag>'):
@@ -189,7 +190,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         >>> collector = ResourceMetricCollector(devices=CudaDevice.all())  # use the CUDA ordinal
 
         >>> with collector(tag='<tag>'):
-        ...     # do something
+        ...     # Do something
         ...     collector.collect()  # -> Dict[str, float]
         {
             '<tag>/host/cpu_percent (%)': 8.967849777683456,
@@ -320,11 +321,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
             >>> collector = ResourceMetricCollector()
 
-            >>> collector.start(tag='train')  # tag -> 'train'
-            >>> collector.start(tag='batch')  # tag -> 'train/batch'
-            >>> collector.stop()              # tag -> 'train'
+            >>> collector.start(tag='train')  # key prefix -> 'train'
+            >>> collector.start(tag='batch')  # key prefix -> 'train/batch'
+            >>> collector.stop()              # key prefix -> 'train'
             >>> collector.stop()              # the collector has been stopped
-            >>> collector.start(tag='test')   # tag -> 'test'
+            >>> collector.start(tag='test')   # key prefix -> 'test'
         """
 
         with self._lock:
@@ -366,8 +367,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
             >>> collector = ResourceMetricCollector()
 
-            >>> with collector(tag='train'):  # tag -> 'train'
-            ...     # do something
+            >>> with collector.context(tag='train'):  # key prefix -> 'train'
+            ...     # Do something
             ...     collector.collect()  # -> Dict[str, float]
         """
 
@@ -377,7 +378,58 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         finally:
             self.stop()
 
-    __call__ = context
+    __call__ = context  # alias for `with collector(tag='<tag>')`
+
+    def clear(self, tag: Optional[str] = None) -> None:
+        """Reset the metric collection with the given tag. If the tag is not
+        specified, the current active collection will be reset. For nested
+        collections, the sub-collections will be reset as well.
+
+        Args:
+            tag (str or None):
+                The tag to reset. If None, the current active collection
+                will be reset.
+
+        Examples:
+
+            >>> collector = ResourceMetricCollector()
+
+            >>> with collector(tag='train'):          # key prefix -> 'train'
+            ...     time.sleep(5.0)
+            ...     collector.collect()               # metrics within the 5.0s interval
+            ...
+            ...     time.sleep(5.0)
+            ...     collector.collect()               # metrics within the cumulative 10.0s interval
+            ...
+            ...     collector.reset()                 # reset the active collection
+            ...     time.sleep(5.0)
+            ...     collector.collect()               # metrics within the 5.0s interval
+            ...
+            ...     with collector(tag='batch'):      # key prefix -> 'train/batch'
+            ...         collector.reset(tag='train')  # reset both 'train' and 'train/batch'
+        """
+
+        with self._lock:
+            if self._metric_buffer is None:
+                if tag is not None:
+                    raise RuntimeError(
+                        'Resource metric collector has not been not started yet.'
+                    )
+                return
+
+            if tag is None:
+                tag = self._metric_buffer.tag
+            elif tag not in self._tags:
+                raise RuntimeError(
+                    'Resource metric collector has not been started with tag "{}".'.format(tag)
+                )
+
+            buffer = self._metric_buffer
+            while buffer is not None:
+                buffer.clear()
+                if buffer.tag == tag:
+                    break
+                buffer = buffer.prev
 
     def collect(self) -> Dict[str, float]:
         """Get the average resource consumption during collection."""
@@ -510,6 +562,11 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
 
         if self.prev is not None:
             self.prev.add(metrics, timestamp=timestamp)
+
+    def clear(self) -> None:
+        self.last_timestamp = self.start_timestamp = timer()
+        self.buffer.clear()
+        self.len = 0
 
     def collect(self) -> Dict[str, float]:
         metrics = {'{}/{}'.format(self.key_prefix, key): maintainer.mean()
