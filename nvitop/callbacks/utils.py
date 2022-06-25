@@ -47,6 +47,6 @@ def get_gpu_stats(devices: List[Device],
             if fan_speed:
                 stats['{}/fan.speed (%)'.format(prefix)] = float(device.fan_speed())
             if temperature:
-                stats['{}/temperature.gpu (℃)'.format(prefix)] = float(device.fan_speed())
+                stats['{}/temperature.gpu (C)'.format(prefix)] = float(device.fan_speed())
 
     return stats

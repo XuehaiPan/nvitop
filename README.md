@@ -516,7 +516,7 @@ In [6]: with collector(tag='<tag>'):
     '<tag>/cuda:0 (gpu:3)/gpu_utilization (%)/mean': 0.0,
     '<tag>/cuda:0 (gpu:3)/memory_utilization (%)/mean': 0.0,
     '<tag>/cuda:0 (gpu:3)/fan_speed (%)/mean': 22.0,
-    '<tag>/cuda:0 (gpu:3)/temperature (℃)/mean': 25.0,
+    '<tag>/cuda:0 (gpu:3)/temperature (C)/mean': 25.0,
     '<tag>/cuda:0 (gpu:3)/power_usage (W)/mean': 19.11166264116916,
     ...,
     '<tag>/cuda:1 (gpu:2)/memory_used (MiB)/mean': 8878.875,
