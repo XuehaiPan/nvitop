@@ -496,7 +496,7 @@ In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())         # 
 In [6]: with collector(tag='<tag>'):
    ...:     # Do something
    ...:     collector.collect()  # -> Dict[str, float]
-# key -> '<tag>/<target>/<metric (unit)>/<mean/min/max>'
+# key -> '<tag>/<scope>/<metric (unit)>/<mean/min/max>'
 {
     '<tag>/host/cpu_percent (%)/mean': 8.967849777683456,
     '<tag>/host/cpu_percent (%)/min': 6.1,
@@ -525,10 +525,10 @@ In [6]: with collector(tag='<tag>'):
     ...,
     '<tag>/cuda:3 (gpu:0)/memory_used (MiB)/mean': 9286.875,
     ...,
-    '<tag>/pid:12345/cuda:1 (gpu:4)/cpu_percent (%)/mean': 151.34342772112265,
-    '<tag>/pid:12345/cuda:1 (gpu:4)/host_memory (MiB)/mean': 44749.72373447514,
-    '<tag>/pid:12345/cuda:1 (gpu:4)/host_memory_percent (%)/mean': 8.675082352111717,
-    '<tag>/pid:12345/cuda:1 (gpu:4)/running_time (min)/mean': 336.23803206741576,
+    '<tag>/pid:12345/host/cpu_percent (%)/mean': 151.34342772112265,
+    '<tag>/pid:12345/host/host_memory (MiB)/mean': 44749.72373447514,
+    '<tag>/pid:12345/host/host_memory_percent (%)/mean': 8.675082352111717,
+    '<tag>/pid:12345/host/running_time (min)': 336.23803206741576,
     '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory (MiB)/mean': 8861.0,
     '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_percent (%)/mean': 80.4,
     '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_utilization (%)/mean': 6.711118172407917,

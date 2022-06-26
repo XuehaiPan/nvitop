@@ -192,7 +192,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         >>> with collector(tag='<tag>'):
         ...     # Do something
         ...     collector.collect()  # -> Dict[str, float]
-        # key -> '<tag>/<target>/<metric (unit)>/<mean/min/max>'
+        # key -> '<tag>/<scope>/<metric (unit)>/<mean/min/max>'
         {
             '<tag>/host/cpu_percent (%)/mean': 8.967849777683456,
             '<tag>/host/cpu_percent (%)/min': 6.1,
@@ -221,10 +221,10 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             ...,
             '<tag>/cuda:3 (gpu:0)/memory_used (MiB)/mean': 9286.875,
             ...,
-            '<tag>/pid:12345/cuda:1 (gpu:4)/cpu_percent (%)/mean': 151.34342772112265,
-            '<tag>/pid:12345/cuda:1 (gpu:4)/host_memory (MiB)/mean': 44749.72373447514,
-            '<tag>/pid:12345/cuda:1 (gpu:4)/host_memory_percent (%)/mean': 8.675082352111717,
-            '<tag>/pid:12345/cuda:1 (gpu:4)/running_time (min)/mean': 336.23803206741576,
+            '<tag>/pid:12345/host/cpu_percent (%)/mean': 151.34342772112265,
+            '<tag>/pid:12345/host/host_memory (MiB)/mean': 44749.72373447514,
+            '<tag>/pid:12345/host/host_memory_percent (%)/mean': 8.675082352111717,
+            '<tag>/pid:12345/host/running_time (min)': 336.23803206741576,
             '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory (MiB)/mean': 8861.0,
             '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_percent (%)/mean': 80.4,
             '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_utilization (%)/mean': 6.711118172407917,
@@ -254,20 +254,20 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     ]
 
     PROCESS_METRICS = [
-        # (<attribute>, <name>, <unit>)
+        # (<attribute>, <scope>, <name>, <unit>)
         # Host resource metrics
-        ('cpu_percent', 'cpu_percent (%)', 1.0),
-        ('host_memory', 'host_memory (MiB)', MiB),
-        ('host_memory_percent', 'host_memory_percent (%)', 1.0),
-        ('running_time_in_seconds', 'running_time (min)', 60.0),
+        ('cpu_percent', 'host', 'cpu_percent (%)', 1.0),
+        ('host_memory', 'host', 'host_memory (MiB)', MiB),
+        ('host_memory_percent', 'host', 'host_memory_percent (%)', 1.0),
+        ('running_time_in_seconds', 'host', 'running_time (min)', 60.0),
 
         # GPU memory metrics
-        ('gpu_memory', 'gpu_memory (MiB)', MiB),
-        ('gpu_memory_percent', 'gpu_memory_percent (%)', 1.0),
-        ('gpu_memory_utilization', 'gpu_memory_utilization (%)', 1.0),
+        ('gpu_memory', None, 'gpu_memory (MiB)', MiB),
+        ('gpu_memory_percent', None, 'gpu_memory_percent (%)', 1.0),
+        ('gpu_memory_utilization', None, 'gpu_memory_utilization (%)', 1.0),
 
         # GPU utilization metrics
-        ('gpu_sm_utilization', 'gpu_sm_utilization (%)', 1.0),
+        ('gpu_sm_utilization', None, 'gpu_sm_utilization (%)', 1.0),
     ]
 
     def __init__(
@@ -549,11 +549,13 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 metrics['{}/{}'.format(identifier, name)] = value
 
         for process in gpu_processes:
-            identifier = 'pid:{}/{}'.format(process.pid, device_identifiers[process.device])
+            device_identifier = device_identifiers[process.device]
+            identifier = 'pid:{}'.format(process.pid)
 
-            for attr, name, unit in self.PROCESS_METRICS:
+            for attr, scope, name, unit in self.PROCESS_METRICS:
+                scope = scope or device_identifier
                 value = float(getattr(process, attr)) / unit
-                metrics['{}/{}'.format(identifier, name)] = value
+                metrics['{}/{}/{}'.format(identifier, scope, name)] = value
 
         with self._lock:
             if self._metric_buffer is not None:
@@ -610,6 +612,12 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             for key, stats in self.buffer.items()
             for name, value in stats.items()
         }
+        for key in tuple(metrics.keys()):
+            if key.endswith('host/running_time (min)/max'):
+                metrics[key[:-4]] = metrics[key]
+                del metrics[key]
+            elif key.endswith('host/running_time (min)/mean') or key.endswith('host/running_time (min)/min'):
+                del metrics[key]
         metrics['{}/duration (s)'.format(self.key_prefix)] = timer() - self.start_timestamp
         metrics['{}/timestamp'.format(self.key_prefix)] = time.time()
         return metrics
