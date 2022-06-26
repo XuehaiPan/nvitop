@@ -493,10 +493,10 @@ In [1]: from nvitop import ResourceMetricCollector, Device, CudaDevice
    ...: import os
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'  # comma-separated integers or UUID strings
 
-In [2]: collector = ResourceMetricCollector()                                 # log all devices and children processes on the GPUs of the current process
-In [3]: collector = ResourceMetricCollector(root_pids={1})                    # log all devices and all GPU processes
-In [4]: collector = ResourceMetricCollector(device=Device(0), root_pids={1})  # log <GPU 0> and all GPU processes on <GPU 0>
-In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())         # use the CUDA ordinal
+In [2]: collector = ResourceMetricCollector()                                  # log all devices and children processes of the current process on the GPUs
+In [3]: collector = ResourceMetricCollector(root_pids={1})                     # log all devices and all GPU processes
+In [4]: collector = ResourceMetricCollector(devices=Device(0), root_pids={1})  # log <GPU 0> and all GPU processes on <GPU 0>
+In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())          # use the CUDA ordinal
 
 In [6]: with collector(tag='<tag>'):
    ...:     # Do something

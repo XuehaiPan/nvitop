@@ -185,7 +185,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         >>> from nvitop import ResourceMetricCollector, Device, CudaDevice
 
-        >>> collector = ResourceMetricCollector()                          # log all devices and children processes on the GPUs of the current process
+        >>> collector = ResourceMetricCollector()                          # log all devices and children processes of the current process on the GPUs
         >>> collector = ResourceMetricCollector(root_pids={1})             # log all devices and all GPU processes
         >>> collector = ResourceMetricCollector(devices=CudaDevice.all())  # use the CUDA ordinal
 
