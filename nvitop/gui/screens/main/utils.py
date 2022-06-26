@@ -124,7 +124,7 @@ class Selected:
                 self.clear()
 
     def clear(self):
-        self.__init__(self.panel)
+        self.__init__(self.panel)  # pylint: disable=unnecessary-dunder-call
 
     reset = clear
 

@@ -33,11 +33,14 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
+    - [TensorBoard Integration](#tensorboard-integration)
   - [More than a Monitor](#more-than-a-monitor)
     - [Status Snapshot](#status-snapshot)
-    - [Device](#device)
-    - [Process](#process)
-    - [Host (inherited from psutil)](#host-inherited-from-psutil)
+    - [Resource Metric Collector](#resource-metric-collector)
+    - [Low-level APIs](#low-level-apis)
+      - [Device](#device)
+      - [Process](#process)
+      - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
 - [TODO List](#todo-list)
@@ -400,6 +403,10 @@ trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
 **NOTE:** Users should assign a logger to the trainer.
 
+#### [TensorBoard](https://github.com/tensorflow/tensorboard) Integration
+
+Please refer to [Resource Metric Collector](#resource-metric-collector) for an example.
+
 ### More than a Monitor
 
 `nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
@@ -439,11 +446,11 @@ Out[4]:
 SnapshotResult(
     devices=[
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=0, physical_index=1, ...),
+            real=CudaDevice(cuda_index=0, nvml_index=1, ...),
             ...
         ),
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=1, physical_index=0, ...),
+            real=CudaDevice(cuda_index=1, nvml_index=0, ...),
             ...
         ),
     ],
@@ -461,7 +468,7 @@ Out[5]:
 SnapshotResult(
     devices=[
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=1, physical_index=0, ...),
+            real=CudaDevice(cuda_index=1, nvml_index=0, ...),
             ...
         )
     ],
@@ -475,9 +482,145 @@ SnapshotResult(
 )
 ```
 
-Please refer to the following sections for more information.
+Please refer to section [Low-level APIs](#low-level-apis) for more information.
 
-#### Device
+#### Resource Metric Collector
+
+`ResourceMetricCollector` is a class that collects resource metrics for host, GPUs and processes running on the GPUs. All metrics will be collected in an asynchronous manner. You can type `help(nvitop.ResourceMetricCollector)` in Python REPL for detailed documentation.
+
+```python
+In [1]: from nvitop import ResourceMetricCollector, Device, CudaDevice
+   ...: import os
+   ...: os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'  # comma-separated integers or UUID strings
+
+In [2]: collector = ResourceMetricCollector()                                 # log all devices and children processes on the GPUs of the current process
+In [3]: collector = ResourceMetricCollector(root_pids={1})                    # log all devices and all GPU processes
+In [4]: collector = ResourceMetricCollector(device=Device(0), root_pids={1})  # log <GPU 0> and all GPU processes on <GPU 0>
+In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())         # use the CUDA ordinal
+
+In [6]: with collector(tag='<tag>'):
+   ...:     # Do something
+   ...:     collector.collect()  # -> Dict[str, float]
+# key -> '<tag>/<scope>/<metric (unit)>/<mean/min/max>'
+{
+    '<tag>/host/cpu_percent (%)/mean': 8.967849777683456,
+    '<tag>/host/cpu_percent (%)/min': 6.1,
+    '<tag>/host/cpu_percent (%)/max': 28.1,
+    ...,
+    '<tag>/host/memory_percent (%)/mean': 21.5,
+    '<tag>/host/swap_percent (%)/mean': 0.3,
+    '<tag>/host/memory_used (GiB)/mean': 91.0136418208109,
+    '<tag>/host/load_average (%) (1 min)/mean': 10.251427386878328,
+    '<tag>/host/load_average (%) (5 min)/mean': 10.072539414569503,
+    '<tag>/host/load_average (%) (15 min)/mean': 11.91126970422139,
+    ...,
+    '<tag>/cuda:0 (gpu:3)/memory_used (MiB)/mean': 3.875,
+    '<tag>/cuda:0 (gpu:3)/memory_free (MiB)/mean': 11015.562499999998,
+    '<tag>/cuda:0 (gpu:3)/memory_total (MiB)/mean': 11019.437500000002,
+    '<tag>/cuda:0 (gpu:3)/memory_percent (%)/mean': 0.0,
+    '<tag>/cuda:0 (gpu:3)/gpu_utilization (%)/mean': 0.0,
+    '<tag>/cuda:0 (gpu:3)/memory_utilization (%)/mean': 0.0,
+    '<tag>/cuda:0 (gpu:3)/fan_speed (%)/mean': 22.0,
+    '<tag>/cuda:0 (gpu:3)/temperature (C)/mean': 25.0,
+    '<tag>/cuda:0 (gpu:3)/power_usage (W)/mean': 19.11166264116916,
+    ...,
+    '<tag>/cuda:1 (gpu:2)/memory_used (MiB)/mean': 8878.875,
+    ...,
+    '<tag>/cuda:2 (gpu:1)/memory_used (MiB)/mean': 8182.875,
+    ...,
+    '<tag>/cuda:3 (gpu:0)/memory_used (MiB)/mean': 9286.875,
+    ...,
+    '<tag>/pid:12345/host/cpu_percent (%)/mean': 151.34342772112265,
+    '<tag>/pid:12345/host/host_memory (MiB)/mean': 44749.72373447514,
+    '<tag>/pid:12345/host/host_memory_percent (%)/mean': 8.675082352111717,
+    '<tag>/pid:12345/host/running_time (min)': 336.23803206741576,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory (MiB)/mean': 8861.0,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_percent (%)/mean': 80.4,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_utilization (%)/mean': 6.711118172407917,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_sm_utilization (%)/mean': 48.23283397736476,
+    ...,
+    '<tag>/duration (s)': 7.247399162035435,
+    '<tag>/timestamp': 1655909466.9981883
+}
+```
+
+The results can be easily logged into [TensorBoard](https://github.com/tensorflow/tensorboard) or to CSV file. For example:
+
+```python
+import os
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
+
+from nvitop import CudaDevice, ResourceMetricCollector
+from nvitop.callbacks.tensorboard import add_scalar_dict
+
+# Build networks and prepare datasets
+...
+
+# Logger and status collector
+writer = SummaryWriter()
+collector = ResourceMetricCollector(devices=CudaDevice.all(),  # log all visible CUDA devices and use the CUDA ordinal
+                                    root_pids={os.getpid()},   # only log the children processes of the current process
+                                    interval=1.0)              # snapshot interval for background daemon thread
+
+# Start training
+global_step = 0
+for epoch in range(num_epoch):
+    with collector(tag='train'):
+        for batch in train_dataset:
+            with collector(tag='batch'):
+                metrics = train(net, batch)
+                global_step += 1
+                add_scalar_dict(writer, 'train', metrics, global_step=global_step)
+                add_scalar_dict(writer, 'resources',      # tag='resources/train/batch/...'
+                                collector.collect(),
+                                global_step=global_step)
+
+        add_scalar_dict(writer, 'resources',              # tag='resources/train/...'
+                        collector.collect(),
+                        global_step=epoch)
+
+    with collector(tag='validate'):
+        metrics = validate(net, validation_dataset)
+        add_scalar_dict(writer, 'validate', metrics, global_step=epoch)
+        add_scalar_dict(writer, 'resources',              # tag='resources/validate/...'
+                        collector.collect(),
+                        global_step=epoch)
+```
+
+Another example for logging to CSV file:
+
+```python
+import datetime
+import time
+
+import pandas as pd
+
+from nvitop import ResourceMetricCollector
+
+collector = ResourceMetricCollector(root_pids={1}, interval=2.0)  # log all devices and all GPU processes
+df = pd.DataFrame()
+
+with collector(tag='resources'):
+    for _ in range(60):
+        # Do something
+        time.sleep(60)
+
+        metrics = collector.collect()
+        df_metrics = pd.DataFrame.from_records(metrics, index=[len(df)])
+        df = pd.concat([df, df_metrics], ignore_index=True)
+        # Flush to CSV file ...
+
+df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimestamp))
+df.to_csv('results.csv', index=False)
+```
+
+#### Low-level APIs
+
+##### Device
 
 ```python
 In [1]: from nvitop import host, Device, PhysicalDevice, CudaDevice, HostProcess, GpuProcess, NA
@@ -500,16 +643,16 @@ In [6]: all_devices = Device.all()                 # all devices on board (physi
    ...: nvidia_0_1  = Device.from_indices([0, 1])  # from physical device indices
    ...: all_devices
 Out[6]: [
-    Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=2, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=3, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=4, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=5, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=6, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=7, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    Device(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+    PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=2, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=3, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=4, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=5, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=6, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=7, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    PhysicalDevice(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
 In [7]: # NOTE: The function results might be different between calls when environment variable `CUDA_VISIBLE_DEVICES` has been modified
@@ -518,27 +661,27 @@ In [7]: # NOTE: The function results might be different between calls when envir
    ...: cuda_visible_devices = CudaDevice.all()                    # shortcut to `Device.from_cuda_visible_devices()`
    ...: cuda_visible_devices
 Out[7]: [
-    CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
-    CudaDevice(cuda_index=1, physical_index=8, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
-    CudaDevice(cuda_index=2, physical_index=7, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
-    CudaDevice(cuda_index=3, physical_index=6, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
+    CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
+    CudaDevice(cuda_index=1, nvml_index=8, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
+    CudaDevice(cuda_index=2, nvml_index=7, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
+    CudaDevice(cuda_index=3, nvml_index=6, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
 In [8]: nvidia0 = Device(0)  # from device index (or `Device(index=0)`)
    ...: nvidia0
-Out[8]: Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+Out[8]: PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [9]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # from UUID string (or just`Device('GPU-xxxxxxxx-...')`)
    ...: nvidia2 = Device(bus_id='00000000:06:00.0')                        # from PCI bus ID
    ...: nvidia1
-Out[9]: Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+Out[9]: PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [10]: cuda0 = CudaDevice(0)                        # from CUDA device index (equivalent to `CudaDevice(cuda_index=0)`)
-    ...: cuda1 = CudaDevice(physical_index=8)         # from physical device index
+    ...: cuda1 = CudaDevice(nvml_index=8)             # from physical device index
     ...: cuda3 = CudaDevice(uuid='GPU-xxxxxxxx-...')  # from UUID string
     ...: cuda0
 Out[10]:
-CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
+CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
 
 In [11]: nvidia0.memory_used()  # in bytes
 Out[11]: 9293398016
@@ -551,14 +694,14 @@ Out[13]: 5
 
 In [14]: nvidia0.processes()  # type: Dict[int, GpuProcess]
 Out[14]: {
-    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
-    53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
+    52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
+    53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
 }
 
 In [15]: nvidia1_snapshot = nvidia1.as_snapshot()
     ...: nvidia1_snapshot
-Out[15]: DeviceSnapshot(
-    real=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+Out[15]: PhysicalDeviceSnapshot(
+    real=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     bus_id='00000000:05:00.0',
     compute_mode='Default',
     clock_infos=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680),  # in MHz
@@ -621,7 +764,7 @@ devices_by_used_memory = sorted(Device.all(), key=Device.memory_used, reverse=Tr
 devices_by_free_memory = sorted(Device.all(), key=Device.memory_free, reverse=True)  # please add `memory_free != 'N/A'` checks if sort in descending order here
 ```
 
-#### Process
+##### Process
 
 ```python
 In [19]: processes = nvidia1.processes()  # type: Dict[int, GpuProcess]
@@ -651,11 +794,11 @@ Out[25]: '1031MiB'
 
 In [26]: process.as_snapshot()
 Out[26]: GpuProcessSnapshot(
-    real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
+    real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
     cpu_percent=98.5,                    # in percentage
-    device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
+    device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     gpu_encoder_utilization=0,           # in percentage
     gpu_decoder_utilization=0,           # in percentage
     gpu_memory=1081081856,               # in bytes
@@ -682,8 +825,8 @@ In [28]: process.kill()  # GpuProcess will automatically inherit attributes from
 In [29]: list(map(Device.processes, all_devices))  # all processes
 Out[29]: [
     {
-        52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
-        53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=Device(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
+        52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
+        53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
     },
     {},
     {},
@@ -693,10 +836,10 @@ Out[29]: [
     {},
     {},
     {
-        84748: GpuProcess(pid=84748, gpu_memory=8975MiB, type=C, device=Device(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
+        84748: GpuProcess(pid=84748, gpu_memory=8975MiB, type=C, device=PhysicalDevice(index=8, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
     },
     {
-        84748: GpuProcess(pid=84748, gpu_memory=8341MiB, type=C, device=Device(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
+        84748: GpuProcess(pid=84748, gpu_memory=8341MiB, type=C, device=PhysicalDevice(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=84748, name='python', status='running', started='11:13:38'))
     }
 ]
 
@@ -717,19 +860,19 @@ In [34]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
     ...: this = GpuProcess(os.getpid(), cuda0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
     ...: this
-Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
 In [35]: this.update_gpu_status()  # update used GPU memory from new driver queries
 Out[35]: 267386880
 
 In [36]: this
-Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, physical_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
 In [37]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instance will be reused while the process is running
 Out[37]: True
 ```
 
-#### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
+##### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
 ```python
 In [38]: host.cpu_count()

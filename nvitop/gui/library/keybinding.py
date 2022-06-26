@@ -305,7 +305,7 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
                 self.finished_parsing_quantifier = True
 
     def clear(self):
-        self.__init__(self.keymap)
+        self.__init__(self.keymap)  # pylint: disable=unnecessary-dunder-call
 
     def add(self, key):
         self.keys.append(key)

@@ -24,35 +24,35 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
     ORDERS = {
         'natural': Order(
-            key=attrgetter('device.index', '_gone', 'username', 'pid'),
+            key=attrgetter('device.tuple_index', '_gone', 'username', 'pid'),
             reverse=False, offset=3, column='ID', previous='time', next='pid'
         ),
         'pid': Order(
-            key=attrgetter('_gone', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'pid', 'device.tuple_index'),
             reverse=False, offset=10, column='PID', previous='natural', next='username'
         ),
         'username': Order(
-            key=attrgetter('_gone', 'username', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'username', 'pid', 'device.tuple_index'),
             reverse=False, offset=19, column='USER', previous='pid', next='gpu_memory'
         ),
         'gpu_memory': Order(
-            key=attrgetter('_gone', 'gpu_memory', 'gpu_sm_utilization', 'cpu_percent', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'gpu_memory', 'gpu_sm_utilization', 'cpu_percent', 'pid', 'device.tuple_index'),
             reverse=True, offset=25, column='GPU-MEM', previous='username', next='sm_utilization'
         ),
         'sm_utilization': Order(
-            key=attrgetter('_gone', 'gpu_sm_utilization', 'gpu_memory', 'cpu_percent', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'gpu_sm_utilization', 'gpu_memory', 'cpu_percent', 'pid', 'device.tuple_index'),
             reverse=True, offset=34, column='SM', previous='gpu_memory', next='cpu_percent'
         ),
         'cpu_percent': Order(
-            key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.tuple_index'),
             reverse=True, offset=38, column='%CPU', previous='sm_utilization', next='memory_percent'
         ),
         'memory_percent': Order(
-            key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.tuple_index'),
             reverse=True, offset=44, column='%MEM', previous='cpu_percent', next='time'
         ),
         'time': Order(
-            key=attrgetter('_gone', 'running_time', 'pid', 'device.index'),
+            key=attrgetter('_gone', 'running_time', 'pid', 'device.tuple_index'),
             reverse=True, offset=50, column='TIME', previous='memory_percent', next='natural'
         ),
     }
@@ -106,7 +106,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.need_redraw = True
             self._compact = value
             processes = self.snapshots
-            n_processes, n_devices = len(processes), len(set(p.device.index for p in processes))
+            n_processes, n_devices = len(processes), len(set(p.device.physical_index for p in processes))
             self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
             self.compact_height = 1 + max(6, 5 + n_processes)
             self.height = (self.compact_height if self.compact else self.full_height)
@@ -139,10 +139,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             return
         self.has_snapshots = True
 
-        time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
+        time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         time_header = ' ' * (time_length - 4) + 'TIME'
-        info_length = max([len(p.host_info) for p in snapshots], default=0)
-        n_processes, n_devices = len(snapshots), len(set(p.device.index for p in snapshots))
+        info_length = max((len(p.host_info) for p in snapshots), default=0)
+        n_processes, n_devices = len(snapshots), len(set(p.device.physical_index for p in snapshots))
         self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
         self.compact_height = 1 + max(6, 5 + n_processes)
         height = (self.compact_height if self.compact else self.full_height)
@@ -189,7 +189,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             snapshots = filter(condition, snapshots)
         snapshots = list(snapshots)
 
-        time_length = max(4, max([len(p.running_time_human) for p in snapshots], default=4))
+        time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         for snapshot in snapshots:
             snapshot.type = snapshot.type.replace('C+G', 'X')
             snapshot.host_info = WideString('{:>5} {:>5}  {}  {}'.format(
@@ -247,7 +247,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             y = self.y + 5
             prev_device_index = None
             for process in self.snapshots:
-                device_index = process.device.index
+                device_index = process.device.physical_index
                 if prev_device_index != device_index:
                     if not self.compact and prev_device_index is not None:
                         y += 1
@@ -334,7 +334,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             prev_device_index = None
             color = -1
             for process in self.snapshots:
-                device_index = process.device.index
+                device_index = process.device.physical_index
                 if prev_device_index != device_index:
                     color = process.device.snapshot.display_color
                     if not self.compact and prev_device_index is not None:
@@ -427,7 +427,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             prev_device_index = None
             color = None
             for process in self.snapshots:
-                device_index = process.device.index
+                device_index = process.device.physical_index
                 if prev_device_index != device_index:
                     color = process.device.snapshot.display_color
                     if prev_device_index is not None:

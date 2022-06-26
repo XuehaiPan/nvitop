@@ -11,7 +11,7 @@ import os
 import threading
 from abc import ABCMeta
 from types import FunctionType
-from typing import List, Dict, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
+from typing import List, Tuple, Dict, Iterable, Callable, Union, Optional, Type, Any, TYPE_CHECKING
 
 from nvitop.core import host
 from nvitop.core.libnvml import nvml
@@ -153,6 +153,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     __repr__ = __str__
 
+    def __reduce__(self) -> Tuple[Type['HostProcess'], Tuple[int]]:
+        return self.__class__, (self.pid,)
+
     if host.WINDOWS:
         def username(self) -> str:
             if self._username is None:
@@ -272,7 +275,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self.type = type
         for util in ('sm', 'memory', 'encoder', 'decoder'):
             if not hasattr(self, '_gpu_{}_utilization'.format(util)):
-                setattr(self, '_gpu_{}_utilization'.format(util), 0)
+                setattr(self, '_gpu_{}_utilization'.format(util), NA)
 
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
@@ -349,14 +352,18 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
         self._gpu_memory_percent = gpu_memory_percent  # pylint: disable=attribute-defined-outside-init
 
-    def set_gpu_utilization(self, gpu_sm_utilization: int = 0,
-                            gpu_memory_utilization: int = 0,
-                            gpu_encoder_utilization: int = 0,
-                            gpu_decoder_utilization: int = 0) -> None:
-        self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_utilization = gpu_memory_utilization    # pylint: disable=attribute-defined-outside-init
-        self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
-        self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
+    def set_gpu_utilization(self, gpu_sm_utilization: Optional[int] = None,
+                            gpu_memory_utilization: Optional[int] = None,
+                            gpu_encoder_utilization: Optional[int] = None,
+                            gpu_decoder_utilization: Optional[int] = None) -> None:
+        if gpu_sm_utilization is not None:
+            self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
+        if gpu_memory_utilization is not None:
+            self._gpu_memory_utilization = gpu_memory_utilization    # pylint: disable=attribute-defined-outside-init
+        if gpu_encoder_utilization is not None:
+            self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
+        if gpu_decoder_utilization is not None:
+            self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
     def update_gpu_status(self) -> Union[int, NaType]:
         self.device.processes.cache_clear()
@@ -420,6 +427,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     @auto_garbage_clean(fallback=NA)
     def memory_percent(self) -> Union[float, NaType]:  # in percentage
         return self.host.memory_percent()
+
+    host_memory_percent = memory_percent  # in percentage
 
     @auto_garbage_clean(fallback=NA)
     def host_memory(self) -> Union[int, NaType]:  # in bytes

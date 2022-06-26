@@ -38,11 +38,11 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.device_panel.focused = False
         self.add_child(self.device_panel)
 
-        self.host_panel = HostPanel(self.devices, compact, win=win, root=root)
+        self.host_panel = HostPanel(self.device_panel.leaf_devices, compact, win=win, root=root)
         self.host_panel.focused = False
         self.add_child(self.host_panel)
 
-        self.process_panel = ProcessPanel(self.devices, compact, filters, win=win, root=root)
+        self.process_panel = ProcessPanel(self.device_panel.leaf_devices, compact, filters, win=win, root=root)
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 

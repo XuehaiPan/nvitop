@@ -286,8 +286,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             snapshot.username = WideString(snapshot.username)
             snapshot.prefix = node.prefix
             if len(node.devices) > 0:
-                snapshot.devices = 'GPU ' + ','.join(map(lambda device: str(device.index),
-                                                         sorted(node.devices, key=lambda device: device.index)))
+                snapshot.devices = 'GPU ' + ','.join(map(lambda device: '/'.join(map(str, device.tuple_index)),
+                                                         sorted(node.devices, key=lambda device: device.tuple_index)))
             else:
                 snapshot.devices = 'Host'
             snapshots.append(snapshot)
@@ -334,10 +334,10 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
     def draw(self):
         self.color_reset()
 
-        pid_width = max(3, max([len(str(process.pid)) for process in self.snapshots], default=3))
-        username_width = max(4, max([len(process.username) for process in self.snapshots], default=4))
-        device_width = max(6, max([len(process.devices) for process in self.snapshots], default=6))
-        num_threads_width = max(4, max([len(str(process.num_threads)) for process in self.snapshots], default=4))
+        pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
+        username_width = max(4, max((len(process.username) for process in self.snapshots), default=4))
+        device_width = max(6, max((len(process.devices) for process in self.snapshots), default=6))
+        num_threads_width = max(4, max((len(str(process.num_threads)) for process in self.snapshots), default=4))
         command_offset = pid_width + username_width + device_width + num_threads_width + 20
 
         header = '  '.join(['PID'.rjust(pid_width), 'USER'.ljust(username_width), 'DEVICE'.rjust(device_width),

@@ -98,12 +98,12 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             device.memory_percent = BufferedHistoryGraph(
                 interval=1.0, width=20, height=5, upsidedown=False,
                 baseline=0.0, upperbound=100.0, dynamic_bound=False,
-                format=lambda x: ('GPU {} MEM: {}').format(device.index, percentage(x))
+                format=lambda x: ('GPU {} MEM: {}').format('/'.join(map(str, device.tuple_index)), percentage(x))
             )(device.memory_percent)
             device.gpu_utilization = BufferedHistoryGraph(
                 interval=1.0, width=20, height=5, upsidedown=True,
                 baseline=0.0, upperbound=100.0, dynamic_bound=False,
-                format=lambda x: ('GPU {} UTL: {}').format(device.index, percentage(x))
+                format=lambda x: ('GPU {} UTL: {}').format('/'.join(map(str, device.tuple_index)), percentage(x))
             )(device.gpu_utilization)
 
         for device in self.devices:
