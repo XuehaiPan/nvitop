@@ -551,6 +551,12 @@ from torch.utils.tensorboard import SummaryWriter
 
 from nvitop import CudaDevice, ResourceMetricCollector
 
+def add_scalars(writer, main_tag, tag_scalar_dict, global_step=None, walltime=None):
+    """Batched version of `writer.add_scalar`"""
+    for tag, scalar in tag_scalar_dict.items():
+        writer.add_scalar('{}/{}'.format(main_tag, tag), scalar,
+                          global_step=global_step, walltime=walltime)
+
 # Build networks and prepare datasets
 ...
 
@@ -568,21 +574,21 @@ for epoch in range(num_epoch):
             with collector(tag='batch'):
                 metrics = train(net, batch)
                 global_step += 1
-                writer.add_scalars('train', metrics, global_step=global_step)
-                writer.add_scalars('resources',          # tag='resources/train/batch/...'
-                                   collector.collect(),
-                                   global_step=global_step)
+                add_scalars(writer, 'train', metrics, global_step=global_step)
+                add_scalars(writer, 'resources',      # tag='resources/train/batch/...'
+                            collector.collect(),
+                            global_step=global_step)
 
-        writer.add_scalars('resources',                  # tag='resources/train/...'
-                           collector.collect(),
-                           global_step=epoch)
+        add_scalars(writer, 'resources',              # tag='resources/train/...'
+                    collector.collect(),
+                    global_step=epoch)
 
     with collector(tag='validate'):
         metrics = validate(net, validation_dataset)
-        writer.add_scalars('validate', metrics, global_step=epoch)
-        writer.add_scalars('resources',                  # tag='resources/validate/...'
-                           collector.collect(),
-                           global_step=epoch)
+        add_scalars(writer, 'validate', metrics, global_step=epoch)
+        add_scalars(writer, 'resources',              # tag='resources/validate/...'
+                    collector.collect(),
+                    global_step=epoch)
 ```
 
 Another example for logging to CSV file:
