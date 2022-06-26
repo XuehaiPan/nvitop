@@ -593,6 +593,8 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
         if timestamp is None:
             timestamp = timer()
 
+        for key in set(self.buffer).difference(metrics):
+            self.buffer[key].add(math.nan, timestamp=timestamp)
         for key, value in metrics.items():
             self.buffer[key].add(value, timestamp=timestamp)
         self.len += 1
