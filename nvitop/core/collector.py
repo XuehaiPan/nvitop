@@ -483,7 +483,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     def __del__(self) -> None:
         self._daemon_running.clear()
 
-    def take_snapshots(self) -> SnapshotResult:  # pylint: disable=missing-function-docstring,too-many-branches,too-many-locals
+    def take_snapshots(self) -> SnapshotResult:  # pylint: disable=missing-function-docstring,too-many-branches,too-many-locals,too-many-statements
         if len(self.root_pids) > 0:
             all_gpu_processes = []
             for device in self.leaf_devices:

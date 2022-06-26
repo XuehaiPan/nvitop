@@ -3,4 +3,4 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
+from nvitop.callbacks.pytorch_lightning import GpuStatsLogger  # pylint: disable=unused-import
