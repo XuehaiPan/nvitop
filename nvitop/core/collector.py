@@ -279,7 +279,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         if isinstance(interval, (int, float)) and interval > 0:
             interval = float(interval)
         else:
-            raise ValueError('Invalid argument interval={:!r}'.format(interval))
+            raise ValueError('Invalid argument interval={!r}'.format(interval))
 
         if devices is None:
             devices = Device.all()

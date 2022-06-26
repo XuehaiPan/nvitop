@@ -11,7 +11,7 @@ import os
 import threading
 from abc import ABCMeta
 from types import FunctionType
-from typing import List, Dict, Iterable, Callable, Union, Optional, Any, TYPE_CHECKING
+from typing import List, Tuple, Dict, Iterable, Callable, Union, Optional, Type, Any, TYPE_CHECKING
 
 from nvitop.core import host
 from nvitop.core.libnvml import nvml
@@ -152,6 +152,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return super().__str__().replace(self.__class__.__module__ + '.', '', 1)
 
     __repr__ = __str__
+
+    def __reduce__(self) -> Tuple[Type['HostProcess'], Tuple[int]]:
+        return self.__class__, (self.pid,)
 
     if host.WINDOWS:
         def username(self) -> str:
