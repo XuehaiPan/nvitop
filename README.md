@@ -33,6 +33,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
+    - [TensorBoard Integration](#tensorboard-integration)
   - [More than a Monitor](#more-than-a-monitor)
     - [Status Snapshot](#status-snapshot)
     - [Resource Metric Collector](#resource-metric-collector)
@@ -402,6 +403,10 @@ trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
 **NOTE:** Users should assign a logger to the trainer.
 
+#### [TensorBoard](https://github.com/tensorflow/tensorboard) Integration
+
+Please refer to [Resource Metric Collector](#resource-metric-collector) for an example.
+
 ### More than a Monitor
 
 `nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
@@ -550,21 +555,16 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
 from nvitop import CudaDevice, ResourceMetricCollector
-
-def add_scalars(writer, main_tag, tag_scalar_dict, global_step=None, walltime=None):
-    """Batched version of `writer.add_scalar`"""
-    for tag, scalar in tag_scalar_dict.items():
-        writer.add_scalar('{}/{}'.format(main_tag, tag), scalar,
-                          global_step=global_step, walltime=walltime)
+from nvitop.callbacks.tensorboard import add_scalar_dict
 
 # Build networks and prepare datasets
 ...
 
 # Logger and status collector
 writer = SummaryWriter()
-collector = ResourceMetricCollector(devices=CudaDevice.all()
-                                    root_pids={os.getpid()},
-                                    interval=1.0)
+collector = ResourceMetricCollector(devices=CudaDevice.all(),  # log all visible CUDA devices and use the CUDA ordinal
+                                    root_pids={os.getpid()},   # only log the children processes of the current process
+                                    interval=1.0)              # snapshot interval for background daemon thread
 
 # Start training
 global_step = 0
@@ -574,21 +574,21 @@ for epoch in range(num_epoch):
             with collector(tag='batch'):
                 metrics = train(net, batch)
                 global_step += 1
-                add_scalars(writer, 'train', metrics, global_step=global_step)
-                add_scalars(writer, 'resources',      # tag='resources/train/batch/...'
-                            collector.collect(),
-                            global_step=global_step)
+                add_scalar_dict(writer, 'train', metrics, global_step=global_step)
+                add_scalar_dict(writer, 'resources',      # tag='resources/train/batch/...'
+                                collector.collect(),
+                                global_step=global_step)
 
-        add_scalars(writer, 'resources',              # tag='resources/train/...'
-                    collector.collect(),
-                    global_step=epoch)
+        add_scalar_dict(writer, 'resources',              # tag='resources/train/...'
+                        collector.collect(),
+                        global_step=epoch)
 
     with collector(tag='validate'):
         metrics = validate(net, validation_dataset)
-        add_scalars(writer, 'validate', metrics, global_step=epoch)
-        add_scalars(writer, 'resources',              # tag='resources/validate/...'
-                    collector.collect(),
-                    global_step=epoch)
+        add_scalar_dict(writer, 'validate', metrics, global_step=epoch)
+        add_scalar_dict(writer, 'resources',              # tag='resources/validate/...'
+                        collector.collect(),
+                        global_step=epoch)
 ```
 
 Another example for logging to CSV file:

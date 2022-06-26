@@ -166,7 +166,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             A set of PIDs, only the status of the children processes on the GPUs
             will be collected. If not given, the PID of the current process will
             be used.
-        interval (float): The interval between two snapshots.
+        interval (float): The snapshot interval for background daemon thread.
 
     Core methods:
 
