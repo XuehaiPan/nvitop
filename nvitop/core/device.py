@@ -8,7 +8,7 @@ import contextlib
 import os
 import re
 import threading
-from typing import List, Tuple, Dict, Iterable, NamedTuple, Callable, Union, Optional, Any
+from typing import List, Tuple, Dict, Iterable, NamedTuple, Callable, Union, Optional, Type, Any
 
 from cachetools.func import ttl_cache
 
@@ -218,7 +218,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if (index, uuid, bus_id).count(None) != 2:
             raise TypeError(
                 'Device(index=None, uuid=None, bus_id=None) takes 1 non-None arguments '
-                'but (index, uuid, bus_id) = {:!r} were given'.format((index, uuid, bus_id))
+                'but (index, uuid, bus_id) = {!r} were given'.format((index, uuid, bus_id))
             )
 
         match = None
@@ -236,7 +236,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     ):
                         raise TypeError(
                             'index for MIG device must be a tuple of 2 integers '
-                            'but index = {:!r} was given'.format((index))
+                            'but index = {!r} was given'.format((index))
                         )
                     return super().__new__(MigDevice)
             elif uuid is not None:
@@ -339,6 +339,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             setattr(self, name, attribute)
             return attribute
+
+    def __reduce__(self) -> Tuple[Type['Device'], Tuple[Union[int, Tuple[int, int]]]]:
+        return self.__class__, (self._nvml_index,)
 
     @property
     def index(self) -> Union[int, Tuple[int, int]]:
@@ -959,6 +962,9 @@ class CudaDevice(Device):
         )
 
     __repr__ = __str__
+
+    def __reduce__(self) -> Tuple[Type['CudaDevice'], Tuple[int]]:
+        return self.__class__, (self._cuda_index,)
 
     def as_snapshot(self) -> Snapshot:
         snapshot = super().as_snapshot()

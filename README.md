@@ -33,11 +33,14 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
+    - [TensorBoard Integration](#tensorboard-integration)
   - [More than a Monitor](#more-than-a-monitor)
     - [Status Snapshot](#status-snapshot)
-    - [Device](#device)
-    - [Process](#process)
-    - [Host (inherited from psutil)](#host-inherited-from-psutil)
+    - [Resource Metric Collector](#resource-metric-collector)
+    - [Low-level APIs](#low-level-apis)
+      - [Device](#device)
+      - [Process](#process)
+      - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
 - [TODO List](#todo-list)
@@ -400,6 +403,10 @@ trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
 **NOTE:** Users should assign a logger to the trainer.
 
+#### [TensorBoard](https://github.com/tensorflow/tensorboard) Integration
+
+Please refer to [Resource Metric Collector](#resource-metric-collector) for an example.
+
 ### More than a Monitor
 
 `nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
@@ -475,9 +482,145 @@ SnapshotResult(
 )
 ```
 
-Please refer to the following sections for more information.
+Please refer to section [Low-level APIs](#low-level-apis) for more information.
 
-#### Device
+#### Resource Metric Collector
+
+`ResourceMetricCollector` is a class that collects resource metrics for host, GPUs and processes running on the GPUs. All metrics will be collected in an asynchronous manner. You can type `help(nvitop.ResourceMetricCollector)` in Python REPL for detailed documentation.
+
+```python
+In [1]: from nvitop import ResourceMetricCollector, Device, CudaDevice
+   ...: import os
+   ...: os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'  # comma-separated integers or UUID strings
+
+In [2]: collector = ResourceMetricCollector()                                 # log all devices and children processes on the GPUs of the current process
+In [3]: collector = ResourceMetricCollector(root_pids={1})                    # log all devices and all GPU processes
+In [4]: collector = ResourceMetricCollector(device=Device(0), root_pids={1})  # log <GPU 0> and all GPU processes on <GPU 0>
+In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())         # use the CUDA ordinal
+
+In [6]: with collector(tag='<tag>'):
+   ...:     # Do something
+   ...:     collector.collect()  # -> Dict[str, float]
+# key -> '<tag>/<scope>/<metric (unit)>/<mean/min/max>'
+{
+    '<tag>/host/cpu_percent (%)/mean': 8.967849777683456,
+    '<tag>/host/cpu_percent (%)/min': 6.1,
+    '<tag>/host/cpu_percent (%)/max': 28.1,
+    ...,
+    '<tag>/host/memory_percent (%)/mean': 21.5,
+    '<tag>/host/swap_percent (%)/mean': 0.3,
+    '<tag>/host/memory_used (GiB)/mean': 91.0136418208109,
+    '<tag>/host/load_average (%) (1 min)/mean': 10.251427386878328,
+    '<tag>/host/load_average (%) (5 min)/mean': 10.072539414569503,
+    '<tag>/host/load_average (%) (15 min)/mean': 11.91126970422139,
+    ...,
+    '<tag>/cuda:0 (gpu:3)/memory_used (MiB)/mean': 3.875,
+    '<tag>/cuda:0 (gpu:3)/memory_free (MiB)/mean': 11015.562499999998,
+    '<tag>/cuda:0 (gpu:3)/memory_total (MiB)/mean': 11019.437500000002,
+    '<tag>/cuda:0 (gpu:3)/memory_percent (%)/mean': 0.0,
+    '<tag>/cuda:0 (gpu:3)/gpu_utilization (%)/mean': 0.0,
+    '<tag>/cuda:0 (gpu:3)/memory_utilization (%)/mean': 0.0,
+    '<tag>/cuda:0 (gpu:3)/fan_speed (%)/mean': 22.0,
+    '<tag>/cuda:0 (gpu:3)/temperature (C)/mean': 25.0,
+    '<tag>/cuda:0 (gpu:3)/power_usage (W)/mean': 19.11166264116916,
+    ...,
+    '<tag>/cuda:1 (gpu:2)/memory_used (MiB)/mean': 8878.875,
+    ...,
+    '<tag>/cuda:2 (gpu:1)/memory_used (MiB)/mean': 8182.875,
+    ...,
+    '<tag>/cuda:3 (gpu:0)/memory_used (MiB)/mean': 9286.875,
+    ...,
+    '<tag>/pid:12345/host/cpu_percent (%)/mean': 151.34342772112265,
+    '<tag>/pid:12345/host/host_memory (MiB)/mean': 44749.72373447514,
+    '<tag>/pid:12345/host/host_memory_percent (%)/mean': 8.675082352111717,
+    '<tag>/pid:12345/host/running_time (min)': 336.23803206741576,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory (MiB)/mean': 8861.0,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_percent (%)/mean': 80.4,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_memory_utilization (%)/mean': 6.711118172407917,
+    '<tag>/pid:12345/cuda:1 (gpu:4)/gpu_sm_utilization (%)/mean': 48.23283397736476,
+    ...,
+    '<tag>/duration (s)': 7.247399162035435,
+    '<tag>/timestamp': 1655909466.9981883
+}
+```
+
+The results can be easily logged into [TensorBoard](https://github.com/tensorflow/tensorboard) or to CSV file. For example:
+
+```python
+import os
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.tensorboard import SummaryWriter
+
+from nvitop import CudaDevice, ResourceMetricCollector
+from nvitop.callbacks.tensorboard import add_scalar_dict
+
+# Build networks and prepare datasets
+...
+
+# Logger and status collector
+writer = SummaryWriter()
+collector = ResourceMetricCollector(devices=CudaDevice.all(),  # log all visible CUDA devices and use the CUDA ordinal
+                                    root_pids={os.getpid()},   # only log the children processes of the current process
+                                    interval=1.0)              # snapshot interval for background daemon thread
+
+# Start training
+global_step = 0
+for epoch in range(num_epoch):
+    with collector(tag='train'):
+        for batch in train_dataset:
+            with collector(tag='batch'):
+                metrics = train(net, batch)
+                global_step += 1
+                add_scalar_dict(writer, 'train', metrics, global_step=global_step)
+                add_scalar_dict(writer, 'resources',      # tag='resources/train/batch/...'
+                                collector.collect(),
+                                global_step=global_step)
+
+        add_scalar_dict(writer, 'resources',              # tag='resources/train/...'
+                        collector.collect(),
+                        global_step=epoch)
+
+    with collector(tag='validate'):
+        metrics = validate(net, validation_dataset)
+        add_scalar_dict(writer, 'validate', metrics, global_step=epoch)
+        add_scalar_dict(writer, 'resources',              # tag='resources/validate/...'
+                        collector.collect(),
+                        global_step=epoch)
+```
+
+Another example for logging to CSV file:
+
+```python
+import datetime
+import time
+
+import pandas as pd
+
+from nvitop import ResourceMetricCollector
+
+collector = ResourceMetricCollector(root_pids={1}, interval=2.0)  # log all devices and all GPU processes
+df = pd.DataFrame()
+
+with collector(tag='resources'):
+    for _ in range(60):
+        # Do something
+        time.sleep(60)
+
+        metrics = collector.collect()
+        df_metrics = pd.DataFrame.from_records(metrics, index=[len(df)])
+        df = pd.concat([df, df_metrics], ignore_index=True)
+        # Flush to CSV file ...
+
+df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimestamp))
+df.to_csv('results.csv', index=False)
+```
+
+#### Low-level APIs
+
+##### Device
 
 ```python
 In [1]: from nvitop import host, Device, PhysicalDevice, CudaDevice, HostProcess, GpuProcess, NA
@@ -621,7 +764,7 @@ devices_by_used_memory = sorted(Device.all(), key=Device.memory_used, reverse=Tr
 devices_by_free_memory = sorted(Device.all(), key=Device.memory_free, reverse=True)  # please add `memory_free != 'N/A'` checks if sort in descending order here
 ```
 
-#### Process
+##### Process
 
 ```python
 In [19]: processes = nvidia1.processes()  # type: Dict[int, GpuProcess]
@@ -729,7 +872,7 @@ In [37]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instan
 Out[37]: True
 ```
 
-#### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
+##### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
 ```python
 In [38]: host.cpu_count()
