@@ -639,8 +639,8 @@ Out[4]: 10
 In [5]: CudaDevice.count()
 Out[5]: 4
 
-In [6]: all_devices = Device.all()                 # all devices on board (physical device)
-   ...: nvidia_0_1  = Device.from_indices([0, 1])  # from physical device indices
+In [6]: all_devices      = Device.all()                 # all devices on board (physical device)
+   ...: nvidia0, nvidia1 = Device.from_indices([0, 1])  # from physical device indices
    ...: all_devices
 Out[6]: [
     PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
@@ -657,7 +657,7 @@ Out[6]: [
 
 In [7]: # NOTE: The function results might be different between calls when environment variable `CUDA_VISIBLE_DEVICES` has been modified
    ...: cuda_visible_devices = Device.from_cuda_visible_devices()  # from environment variable `CUDA_VISIBLE_DEVICES`
-   ...: cuda_0_1             = Device.from_cuda_indices([0, 1])    # from CUDA device indices (might be different from physical device indices if `CUDA_VISIBLE_DEVICES` is set)
+   ...: cuda0, cuda1         = Device.from_cuda_indices([0, 1])    # from CUDA device indices (might be different from physical device indices if `CUDA_VISIBLE_DEVICES` is set)
    ...: cuda_visible_devices = CudaDevice.all()                    # shortcut to `Device.from_cuda_visible_devices()`
    ...: cuda_visible_devices
 Out[7]: [
@@ -798,27 +798,43 @@ Out[26]: GpuProcessSnapshot(
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
     compute_instance_id='N/A',
-    cpu_percent=98.5,                   # in percentage
+    cpu_percent=98.5,                       # in percentage
     device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    gpu_encoder_utilization=0,          # in percentage
-    gpu_decoder_utilization=0,          # in percentage
+    gpu_encoder_utilization=0,              # in percentage
+    gpu_decoder_utilization=0,              # in percentage
     gpu_instance_id='N/A',
-    gpu_memory=1081081856,              # in bytes
+    gpu_memory=1081081856,                  # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_percent=9.4,             # in percentage (NOTE: this is the percentage of used GPU memory)
-    gpu_memory_utilization=5,           # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
-    gpu_sm_utilization=0,               # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
-    host_memory=9113627439,             # in bytes
+    gpu_memory_percent=9.4,                 # in percentage (NOTE: this is the percentage of used GPU memory)
+    gpu_memory_utilization=5,               # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
+    gpu_sm_utilization=0,                   # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
+    host=HostProcessSnapshot(
+        real=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'),
+        cmdline=['python3', 'rllib_train.py'],
+        command='python3 rllib_train.py',
+        cpu_percent=98.5,                   # in percentage
+        host_memory=9113627439,             # in bytes
+        host_memory_human='8691MiB',
+        is_running=True,
+        memory_percent=1.6849018430285683,  # in percentage
+        name='python3',
+        running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
+        running_time_human='46:13:33',
+        running_time_in_seconds=166413.470024,
+        status='running',
+        username='panxuehai'
+    ),
+    host_memory=9113627439,                 # in bytes
     host_memory_human='8691MiB',
     is_running=True,
-    memory_percent=1.6849018430285683,  # in percentage (NOTE: this is the percentage of used host memory)
+    memory_percent=1.6849018430285683,      # in percentage (NOTE: this is the percentage of used host memory)
     name='python3',
     pid=23266,
     running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
     running_time_human='46:13:33',
     running_time_in_seconds=166413.470024,
     status='running',
-    type='C',                           # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
+    type='C',                               # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
     username='panxuehai'
 )
 
