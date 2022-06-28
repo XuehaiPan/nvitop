@@ -273,6 +273,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             type = NA
         if type is not None:
             self.type = type
+        if device.is_mig_device():
+            self._gpu_instance_id = device.gpu_instance_id()
+            self._compute_instance_id = device.compute_instance_id()
+        else:
+            self._gpu_instance_id = self._compute_instance_id = NA
         for util in ('sm', 'memory', 'encoder', 'decoder'):
             if not hasattr(self, '_gpu_{}_utilization'.format(util)):
                 setattr(self, '_gpu_{}_utilization'.format(util), NA)
@@ -321,6 +326,12 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     @property
     def device(self) -> 'Device':
         return self._device
+
+    def gpu_instance_id(self) -> Union[int, NaType]:
+        return self._gpu_instance_id
+
+    def compute_instance_id(self) -> Union[int, NaType]:
+        return self._compute_instance_id
 
     def gpu_memory(self) -> Union[int, NaType]:  # in bytes
         return self._gpu_memory
@@ -504,6 +515,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             device=self.device,
             type=self.type,
+            gpu_instance_id=self.gpu_instance_id(),
+            compute_instance_id=self.compute_instance_id(),
             gpu_memory=self.gpu_memory(),
             gpu_memory_human=self.gpu_memory_human(),
             gpu_memory_percent=self.gpu_memory_percent(),

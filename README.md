@@ -797,23 +797,28 @@ Out[26]: GpuProcessSnapshot(
     real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
-    cpu_percent=98.5,                    # in percentage
+    compute_instance_id='N/A',
+    cpu_percent=98.5,                   # in percentage
     device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
-    gpu_encoder_utilization=0,           # in percentage
-    gpu_decoder_utilization=0,           # in percentage
-    gpu_memory=1081081856,               # in bytes
+    gpu_encoder_utilization=0,          # in percentage
+    gpu_decoder_utilization=0,          # in percentage
+    gpu_instance_id='N/A',
+    gpu_memory=1081081856,              # in bytes
     gpu_memory_human='1031MiB',
-    gpu_memory_percent=9.4,              # in percentage (NOTE: this is the percentage of used GPU memory)
-    gpu_memory_utilization=5,            # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
-    gpu_sm_utilization=0,                # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
-    identity=(23266, 1620651760.15, 1),
+    gpu_memory_percent=9.4,             # in percentage (NOTE: this is the percentage of used GPU memory)
+    gpu_memory_utilization=5,           # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
+    gpu_sm_utilization=0,               # in percentage (NOTE: this is the utilization rate of SMs, i.e. GPU percent)
+    host_memory=9113627439,             # in bytes
+    host_memory_human='8691MiB',
     is_running=True,
-    memory_percent=1.6849018430285683,   # in percentage (NOTE: this is the percentage of used host memory)
+    memory_percent=1.6849018430285683,  # in percentage (NOTE: this is the percentage of used host memory)
     name='python3',
     pid=23266,
     running_time=datetime.timedelta(days=1, seconds=80013, microseconds=470024),
     running_time_human='46:13:33',
-    type='C',                            # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
+    running_time_in_seconds=166413.470024,
+    status='running',
+    type='C',                           # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
     username='panxuehai'
 )
 
