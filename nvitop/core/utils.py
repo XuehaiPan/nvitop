@@ -178,12 +178,18 @@ class Snapshot:
             setattr(self, key, value)
 
     def __str__(self):
-        keys = set(self.__dict__.keys())
-        keys.remove('real')
-        keys.remove('timestamp')
+        keys = set(self.__dict__.keys()).difference({'real', 'timestamp'})
+        keys = ['real', *sorted(keys)]
+        keyvals = []
+        for key in keys:
+            value = getattr(self, key)
+            keyval = '{}={!r}'.format(key, value)
+            if isinstance(value, Snapshot):
+                keyval = keyval.replace('\n', '\n    ')  # extra indentation for nested snapshots
+            keyvals.append(keyval)
         return '{}{}(\n    {}\n)'.format(
             self.real.__class__.__name__, self.__class__.__name__,
-            ', \n    '.join('{}={!r}'.format(key, getattr(self, key)) for key in ['real', *sorted(keys)])
+            ',\n    '.join(keyvals)
         )
 
     __repr__ = __str__
