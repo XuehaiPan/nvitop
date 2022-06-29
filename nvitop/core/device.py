@@ -196,18 +196,27 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         for identifier in map(str.strip, cuda_visible_devices.split(',')):
             if identifier in presented:
                 raise RuntimeError('CUDA Error: invalid device ordinal')
+
             try:
                 device = from_index_or_uuid(identifier)
             except (ValueError, nvml.NVMLError):
                 break
-            else:
-                if device.is_mig_device():
-                    if len(devices) == 0:
-                        devices.append(device)
-                    break  # at most one MIG device
 
-                devices.append(device)  # non-MIG device
-                presented.add(identifier)
+            devices.append(device)
+            presented.add(identifier)
+
+        mig_devices = [device for device in devices if device.is_mig_device()]
+        if len(mig_devices) > 0:
+            # Got MIG devices enumerated, use the first one
+            devices = mig_devices[:1]  # at most one MIG device is visible
+        else:
+            # All devices in `CUDA_VISIBLE_DEVICES` are physical devices
+            # Check if any GPU that enables MIG mode
+            for device in tuple(devices):
+                if device.is_mig_mode_enabled():
+                    # Got available MIG devices, use the first MIG device and ignore all non-MIG GPUs
+                    devices = [device.mig_device(mig_index=0)]  # at most one MIG device is visible
+                    break
 
         return [device.index for device in devices]
 
@@ -756,6 +765,11 @@ class PhysicalDevice(Device):
     def max_mig_device_count(self) -> int:
         return nvml.nvmlQuery('nvmlDeviceGetMaxMigDeviceCount', self.handle,
                               default=0, ignore_function_not_found=True)
+
+    @ttl_cache(ttl=60.0)
+    def mig_device(self, mig_index: int) -> 'MigDevice':
+        with _global_physical_device(self):
+            return MigDevice(index=(self.index, mig_index))
 
     @ttl_cache(ttl=60.0)
     def mig_devices(self) -> List['MigDevice']:
