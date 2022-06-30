@@ -14,9 +14,9 @@
 
 # shellcheck disable=SC2016,SC2312
 
-set -e
-shopt -s inherit_errexit
 set -u
+set -e
+shopt -s inherit_errexit &>/dev/null || true
 
 function abort() {
 	echo "$@" >&2
@@ -31,6 +31,8 @@ fi
 # shellcheck disable=1091
 if [[ "$(uname -s)" != "Linux" ]] || (source /etc/os-release && [[ "${NAME:-}" != "Ubuntu" ]]); then
 	abort "This script only supports Ubuntu Linux."
+elif [[ -n "${WSL_DISTRO_NAME}" ]] || (uname -r | grep -qiF 'microsoft'); then
+	abort "Please install the NVIDIA driver in the Windows host system rather than in WSL."
 fi
 
 # String formatters
