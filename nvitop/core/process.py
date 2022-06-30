@@ -1,7 +1,8 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+"""The live classes for process running on the host and the GPU devices."""
+
 # pylint: disable=invalid-name
 
 import contextlib
@@ -29,6 +30,8 @@ __all__ = ['HostProcess', 'GpuProcess', 'command_join']
 
 if host.POSIX:
     def add_quotes(s: str) -> str:
+        """Returns a shell-escaped version of the string."""
+
         if s == '':
             return '""'
         if '$' not in s and '\\' not in s and '\n' not in s:
@@ -42,6 +45,8 @@ if host.POSIX:
                               .replace('$', r'\$').replace('\n', r'\n'))
 elif host.WINDOWS:
     def add_quotes(s: str) -> str:
+        """Returns a shell-escaped version of the string."""
+
         if s == '':
             return '""'
         if '%' not in s and '^' not in s and '\n' not in s:
@@ -53,11 +58,18 @@ elif host.WINDOWS:
                               .replace('%', '^%').replace('\n', r'\n'))
 else:
     def add_quotes(s: str) -> str:
+        """Returns a shell-escaped version of the string."""
+
         return '"{}"'.format(s.replace('\n', r'\n'))
 
 
 def command_join(cmdline: List[str]) -> str:
-    if len(cmdline) == 1 and not (os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0])):
+    """Returns a shell-escaped string from command line arguments."""
+
+    if (
+        len(cmdline) == 1 and
+        not (os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0]))  # may be modified by `setproctitle`
+    ):
         return cmdline[0]
     return ' '.join(map(add_quotes, cmdline))
 
@@ -67,6 +79,12 @@ _USE_FALLBACK_WHEN_RAISE = threading.local()  # see also `GpuProcess.failsafe`
 
 
 def auto_garbage_clean(fallback=_RAISE):
+    """Removes the object references in the instance cache if the method call fails (the process is gone).
+
+    The fallback value will be used with `GpuProcess.failsafe` context manager, otherwise raises an
+    exception when falls.
+    """
+
     def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
         def wrapped(self: 'GpuProcess', *args, **kwargs):
@@ -100,12 +118,51 @@ def auto_garbage_clean(fallback=_RAISE):
 
 
 class HostProcess(host.Process, metaclass=ABCMeta):
+    """Represents an OS process with the given PID.
+    If PID is omitted current process PID (os.getpid()) is used.
+    The instance will be cache during the lifetime of the process.
+
+    Examples:
+
+        >>> HostProcess()  # the current process
+        HostProcess(pid=12345, name='python3', status='running', started='00:55:43')
+
+        >>> p1 = HostProcess(12345)
+        >>> p2 = HostProcess(12345)
+        >>> p1 is p2                 # the same instance
+
+        >>> import copy
+        >>> copy.deepcopy(p1) is p1  # the same instance
+
+        >>> p = HostProcess(pid=12345)
+        >>> p.cmdline()
+        ['python3', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
+        >>> p.command()  # the result is in shell-escaped format
+        'python3 -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
+
+        >>> p.as_snapshot()
+        HostProcessSnapshot(
+            real=HostProcess(pid=12345, name='python3', status='running', started='00:55:43'),
+            cmdline=['python3', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()'],
+            command='python3 -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"',
+            connections=[],
+            cpu_percent=0.3,
+            cpu_times=pcputimes(user=2.180019456, system=0.18424464, children_user=0.0, children_system=0.0),
+            create_time=1656608143.31,
+            cwd='/home/panxuehai',
+            environ={...},
+            ...
+        )
+    """
+
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
     SNAPSHOT_LOCK = threading.RLock()
     HOST_SNAPSHOTS = {}
 
     def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
+        """Returns the cached instance of `HostProcess`."""
+
         if pid is None:
             pid = os.getpid()
 
@@ -158,49 +215,101 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     if host.WINDOWS:
         def username(self) -> str:
+            """The name of the user that owns the process.
+            On Windows, the domain name will be removed if it is present.
+            """
+
             if self._username is None:
                 self._username = super().username().split('\\')[-1]  # pylint: disable=attribute-defined-outside-init
             return self._username
     else:
         def username(self) -> str:
+            """The name of the user that owns the process.
+            On UNIX this is calculated by using *real* process uid.
+            """
+
             if self._username is None:
                 self._username = super().username()  # pylint: disable=attribute-defined-outside-init
             return self._username
 
     @memoize_when_activated
     def cmdline(self) -> List[str]:
+        """The command line this process has been called with."""
+
         cmdline = super().cmdline()
         if len(cmdline) > 1:
             cmdline = '\0'.join(cmdline).rstrip('\0').split('\0')
         return cmdline
 
     def command(self) -> str:
+        """Returns a shell-escaped string from command line arguments."""
+
         return command_join(self.cmdline())
 
     @memoize_when_activated
     def running_time(self) -> datetime.timedelta:
+        """The elapsed time this process has been running in `datetime.timedelta`."""
+
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
     def running_time_human(self) -> str:
+        """The elapsed time this process has been running in human readable format."""
+
         return timedelta2human(self.running_time())
 
     def running_time_in_seconds(self) -> float:  # in seconds
+        """The elapsed time this process has been running in seconds."""
+
         return self.running_time().total_seconds()
 
+    elapsed_time = running_time
+    elapsed_time_human = running_time_human
+    elapsed_time_in_seconds = running_time_in_seconds
+
     def rss_memory(self) -> int:  # in bytes
+        """The used resident set size (RSS) memory of the process in bytes."""
+
         return self.memory_info().rss
 
     def parent(self) -> Union['HostProcess', None]:
+        """Returns the parent process as a `HostProcess` instance. Returns `None` if there is no parent."""
+
         parent = super().parent()
         if parent is not None:
             return HostProcess(parent.pid)
         return None
 
     def children(self, recursive: bool = False) -> List['HostProcess']:
+        """Return the children of this process as a list of `HostProcess` instances.
+        If *recursive* is `True` return all the descendants.
+        """
+
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
     @contextlib.contextmanager
     def oneshot(self):
+        """Utility context manager which considerably speeds up the retrieval of multiple process
+        information at the same time.
+
+        Internally different process info (e.g. name, ppid, uids, gids, ...) may be fetched by using
+        the same routine, but only one information is returned and the others are discarded. When
+        using this context manager the internal routine is executed once (in the example below on
+        `name()`) and the other info are cached.
+
+        The cache is cleared when exiting the context manager block. The advice is to use this every
+        time you retrieve more than one information about the process.
+
+        Examples:
+
+            >>> from nvitop import HostProcess
+            >>> p = HostProcess()
+            >>> with p.oneshot():
+            ...     p.name()  # collect multiple info
+            ...     p.cpu_times()  # return cached value
+            ...     p.cpu_percent()  # return cached value
+            ...     p.create_time()  # return cached value
+        """
+
         with self._lock:
             if hasattr(self, '_cache'):
                 yield
@@ -216,6 +325,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                         self.running_time.cache_deactivate(self)
 
     def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
+        """Returns a onetime snapshot of the process."""
+
         with self.oneshot():
             attributes = self.as_dict(attrs=attrs, ad_value=ad_value)
 
@@ -231,12 +342,21 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
 @HostProcess.register
 class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
+    """Represents a process with the given PID running on the given GPU device.
+    The instance will be cache during the lifetime of the process.
+
+    The same host process can use multiple GPU devices. The `GpuProcess` instances representing the
+    same PID on the host but different GPU devices are different.
+    """
+
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
     def __new__(cls, pid: int, device: 'Device',
                 gpu_memory: Optional[Union[int, NaType]] = None,             # pylint: disable=unused-argument
                 type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=unused-argument,redefined-builtin
+        """Returns the cached instance of `GpuProcess`."""
+
         if pid is None:
             pid = os.getpid()
 
@@ -265,6 +385,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def __init__(self, pid: int, device: 'Device',                    # pylint: disable=unused-argument
                  gpu_memory: Optional[Union[int, NaType]] = None,
                  type: Optional[Union[str, NaType]] = None) -> None:  # pylint: disable=redefined-builtin
+        """Initializes the instance returned by `__new__()`."""
+
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
             gpu_memory = NA
         if gpu_memory is not None:
@@ -305,56 +427,89 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._hash
 
     def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
+        """Gets a member from the instance. Fallback to the host process instance if missing."""
+
         try:
             return super().__getattr__(name)
         except AttributeError:
             attribute = getattr(self.host, name)
             if isinstance(attribute, FunctionType):
-                attribute = auto_garbage_clean(attribute)
+                attribute = auto_garbage_clean(fallback=_RAISE)(attribute)
 
             setattr(self, name, attribute)
             return attribute
 
     @property
     def pid(self) -> int:
+        """The process PID."""
+
         return self._pid
 
     @property
     def host(self) -> HostProcess:
+        """The process instance running on the host."""
+
         return self._host
 
     @property
     def device(self) -> 'Device':
+        """The GPU device the process running on.
+
+        The same host process can use multiple GPU devices.
+        The `GpuProcess` instances representing the same PID on the host
+        but different GPU devices are different.
+        """
+
         return self._device
 
     def gpu_instance_id(self) -> Union[int, NaType]:
+        """The GPU instance ID of the MIG device, or `nvitop.NA` if not available."""
+
         return self._gpu_instance_id
 
     def compute_instance_id(self) -> Union[int, NaType]:
+        """The compute instance ID of the MIG device, or `nvitop.NA` if not available."""
+
         return self._compute_instance_id
 
     def gpu_memory(self) -> Union[int, NaType]:  # in bytes
+        """The used GPU memory in bytes, or `nvitop.NA` if not available."""
+
         return self._gpu_memory
 
     def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
+        """The used GPU memory in human readable format, or `nvitop.NA` if not available."""
+
         return self._gpu_memory_human
 
     def gpu_memory_percent(self) -> Union[float, NaType]:  # in percentage
+        """The percentage of used GPU memory by the process, or `nvitop.NA` if not available."""
+
         return self._gpu_memory_percent
 
-    def gpu_sm_utilization(self) -> int:  # in percentage
+    def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
+        """The utilization rate of SM (Streaming Multiprocessor), or `nvitop.NA` if not available."""
+
         return self._gpu_sm_utilization
 
-    def gpu_memory_utilization(self) -> int:  # in percentage
+    def gpu_memory_utilization(self) -> Union[int, NaType]:  # in percentage
+        """The utilization rate of GPU memory bandwidth, or `nvitop.NA` if not available."""
+
         return self._gpu_memory_utilization
 
-    def gpu_encoder_utilization(self) -> int:  # in percentage
+    def gpu_encoder_utilization(self) -> Union[int, NaType]:  # in percentage
+        """The utilization rate of the encoder, or `nvitop.NA` if not available."""
+
         return self._gpu_encoder_utilization
 
-    def gpu_decoder_utilization(self) -> int:  # in percentage
+    def gpu_decoder_utilization(self) -> Union[int, NaType]:  # in percentage
+        """The utilization rate of the decoder, or `nvitop.NA` if not available."""
+
         return self._gpu_decoder_utilization
 
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
+        """Sets the used GPU memory in bytes."""
+
         self._gpu_memory = memory_used = value                   # pylint: disable=attribute-defined-outside-init
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
         memory_total = self.device.memory_total()
@@ -367,6 +522,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                             gpu_memory_utilization: Optional[int] = None,
                             gpu_encoder_utilization: Optional[int] = None,
                             gpu_decoder_utilization: Optional[int] = None) -> None:
+        """Sets the GPU utilization rates."""
+
         if gpu_sm_utilization is not None:
             self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
         if gpu_memory_utilization is not None:
@@ -377,12 +534,22 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
 
     def update_gpu_status(self) -> Union[int, NaType]:
+        """Updates the GPU consumption status from a new NVML query."""
+
         self.device.processes.cache_clear()
         self.device.processes()
         return self.gpu_memory()
 
     @property
     def type(self) -> Union[str, NaType]:
+        """The type of the GPU context.
+
+        The type is one of the following:
+            - 'C': compute context
+            - 'G': graphics context
+            - 'C+G': both compute context and graphics context
+        """
+
         return self._type
 
     @type.setter
@@ -398,70 +565,106 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=False)
     def is_running(self) -> bool:
+        """Returns whether this process is running."""
+
         return self.host.is_running()
 
     @auto_garbage_clean(fallback='terminated')
     def status(self) -> str:
+        """The process current status."""
+
         return self.host.status()
 
     @auto_garbage_clean(fallback=NA)
     def create_time(self) -> Union[float, NaType]:
+        """The process creation time as a floating point number expressed in seconds since the epoch."""
+
         return self.host.create_time()
 
     @auto_garbage_clean(fallback=NA)
     def running_time(self) -> Union[datetime.timedelta, NaType]:
+        """The elapsed time this process has been running in `datetime.timedelta`."""
+
         return self.host.running_time()
 
     def running_time_human(self) -> Union[str, NaType]:
+        """The elapsed time this process has been running in human readable format."""
+
         return timedelta2human(self.running_time())
 
     def running_time_in_seconds(self) -> Union[float, NaType]:
+        """The elapsed time this process has been running in seconds."""
+
         running_time = self.running_time()
         if running_time is NA:
             return NA
         return running_time.total_seconds()
 
+    elapsed_time = running_time
+    elapsed_time_human = running_time_human
+    elapsed_time_in_seconds = running_time_in_seconds
+
     @auto_garbage_clean(fallback=NA)
     def username(self) -> Union[str, NaType]:
+        """The name of the user that owns the process."""
+
         if self._username is None:                 # pylint: disable=access-member-before-definition
             self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
         return self._username
 
     @auto_garbage_clean(fallback=NA)
     def name(self) -> Union[str, NaType]:
+        """The process name."""
+
         return self.host.name()
 
     @auto_garbage_clean(fallback=NA)
     def cpu_percent(self) -> Union[float, NaType]:  # in percentage
+        """Returns a float representing the current process CPU utilization as a percentage."""
+
         return self.host.cpu_percent()
 
     @auto_garbage_clean(fallback=NA)
     def memory_percent(self) -> Union[float, NaType]:  # in percentage
+        """Compares process RSS memory to total physical system memory
+        and calculate process memory utilization as a percentage.
+        """
+
         return self.host.memory_percent()
 
     host_memory_percent = memory_percent  # in percentage
 
     @auto_garbage_clean(fallback=NA)
     def host_memory(self) -> Union[int, NaType]:  # in bytes
+        """The used resident set size (RSS) memory of the process in bytes."""
+
         return self.host.rss_memory()
 
     def host_memory_human(self) -> Union[str, NaType]:
+        """The used resident set size (RSS) memory of the process in human readable format."""
+
         return bytes2human(self.host_memory())
 
     rss_memory = host_memory  # in bytes
 
     @auto_garbage_clean(fallback=('No Such Process',))  # `fallback=['No Permissions']` for `AccessDenied` error
     def cmdline(self) -> List[str]:
+        """The command line this process has been called with."""
+
         cmdline = self.host.cmdline()
         if len(cmdline) == 0 and not self._gone:
             cmdline = ['Zombie Process']
         return cmdline
 
     def command(self) -> str:
+        """Returns a shell-escaped string from command line arguments."""
+
         return command_join(self.cmdline())
 
     @auto_garbage_clean(fallback=_RAISE)
     def host_snapshot(self) -> Snapshot:
+        """Returns a onetime snapshot of the host process."""
+
         with self.host.oneshot():
             host_snapshot = Snapshot(
                 real=self.host,
@@ -487,6 +690,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self, *,
         host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
     ) -> Snapshot:
+        """Returns a onetime snapshot of the process on the GPU device."""
 
         host_process_snapshot_cache = host_process_snapshot_cache or {}
         try:
@@ -529,6 +733,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     @classmethod
     def take_snapshots(cls, gpu_processes: Iterable['GpuProcess'], *,  # batched version of `as_snapshot`
                        failsafe=False) -> List[Snapshot]:
+        """Takes snapshots for a list of `GpuProcess` instances.
+
+        If *failsafe* is `True`, then if any method fails, the fallback value in
+        `auto_garbage_clean(fallback)` will be used.
+        """
 
         cache = {}
         context = (cls.failsafe if failsafe else contextlib.nullcontext)
@@ -541,6 +750,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     @classmethod
     @contextlib.contextmanager
     def failsafe(cls):
+        """A context manager that enables fallback values for methods that fail."""
+
         global _USE_FALLBACK_WHEN_RAISE  # pylint: disable=global-statement,global-variable-not-assigned
 
         prev_value = getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False)
