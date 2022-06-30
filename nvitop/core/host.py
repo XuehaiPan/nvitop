@@ -1,7 +1,11 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-function-docstring
+"""Shortcuts for package `psutil`.
+
+psutil is a cross-platform library for retrieving information on running processes
+and system utilization (CPU, memory, disks, network, sensors) in Python.
+"""
 
 import os as _os
 from collections import defaultdict as _defaultdict
@@ -32,21 +36,29 @@ swap_memory = _ttl_cache(ttl=0.25)(_psutil.swap_memory)
 try:
     load_average = _ttl_cache(ttl=2.0)(_psutil.getloadavg)
 except AttributeError:
-    def load_average(): return None  # pylint: disable=multiple-statements
+    def load_average():  # pylint: disable=missing-function-docstring
+        return None
 
 
 def memory_percent():
+    """The percentage usage of virtual memory, calculated as (total - available) / total * 100."""
+
     return virtual_memory().percent
 
 
 def swap_percent():
+    """The percentage usage of virtual memory, calculated as used / total * 100."""
+
     return swap_memory().percent
 
 
 ppid_map = _psutil._ppid_map  # pylint: disable=protected-access
+"""Obtains a `{pid: ppid, ...}` dict for all running processes in one shot."""
 
 
 def reverse_ppid_map():  # pylint: disable=function-redefined
+    """Obtains a `{ppid: [pid, ...], ...}` dict for all running processes in one shot."""
+
     tree = _defaultdict(list)
     for pid, ppid in ppid_map().items():
         tree[ppid].append(pid)
@@ -61,3 +73,4 @@ if LINUX:
 else:
     WSL = None
 WINDOWS_SUBSYSTEM_FOR_LINUX = WSL
+"""The Linux distribution name of the Windows Subsystem for Linux."""
