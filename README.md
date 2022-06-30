@@ -43,7 +43,6 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
       - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
-- [TODO List](#todo-list)
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
@@ -965,20 +964,3 @@ Environment variable screen (shortcut: <kbd>e</kbd>):
 `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
 
 **NOTE:** Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
-
-## TODO List
-
-- [X] colorize device information based on the load intensity
-- [X] basic process information both on the device and host
-- [X] GPU process management (interrupt / terminate / kill)
-- [X] bar plots and history graphs
-- [X] process sorting
-- [X] help screen
-- [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai)
-- [X] process environment variable screen
-- [X] process filtering
-- [X] process management for parent processes (tree view / interrupt / terminate / kill)
-- [X] scrollable process list for large amounts of processes
-- [ ] NVIDIA MIG GPU support (help wanted for testing)
-- [ ] web interface (under consideration)
-- [ ] AMD ROCm support (help wanted for testing)
