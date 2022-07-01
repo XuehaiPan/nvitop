@@ -320,8 +320,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Args:
             cuda_indices (Iterable[int]):
-                The value of ``CUDA_VISIBLE_DEVICES``, if not given, the value from the environment
-                will be used.
+                The indices of the GPU in CUDA ordinal, if not given, returns all visible CUDA devices.
 
         Returns: List[CudaDevice]
             A list of ``CudaDevice`` of the given CUDA indices.
@@ -1919,8 +1918,7 @@ class CudaDevice(Device):
 
         Args:
             cuda_indices (Iterable[int]):
-                The value of ``CUDA_VISIBLE_DEVICES``, if not given, the value from the environment
-                will be used.
+                The indices of the GPU in CUDA ordinal, if not given, returns all visible CUDA devices.
 
         Returns: List[CudaDevice]
             A list of ``CudaDevice`` of the given CUDA indices.
