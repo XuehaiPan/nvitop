@@ -3,18 +3,24 @@
 
 """The live classes for GPU devices.
 
-The core classes are `Device` and `CudaDevice`. The type of returned instance created by `Class(args)`
+The core classes are ``Device`` and ``CudaDevice``. The type of returned instance created by ``Class(args)``
 is depending on the given arguments.
 
-`Device()` returns:
+``Device()`` returns:
+
+.. code-block:: python
+
     - (index: int)        -> PhysicalDevice
     - (index: (int, int)) -> MigDevice
     - (uuid: str)         -> Union[PhysicalDevice, MigDevice]  # depending on the UUID value
     - (bus_id: str)       -> PhysicalDevice
 
-`CudaDevice()` returns:
-    - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
-    - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
+``CudaDevice()`` returns:
+
+.. code-block:: python
+
+    - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+    - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
     - (nvml_index: int)        -> CudaDevice
     - (nvml_index: (int, int)) -> CudaMigDevice
 
@@ -127,7 +133,7 @@ def _does_any_device_support_mig_mode() -> bool:
 
 
 def is_mig_device_uuid(uuid: Optional[str]) -> bool:
-    """Returns `True` if the argument is a MIG device UUID, otherwise, returns `False`."""
+    """Returns ``True`` if the argument is a MIG device UUID, otherwise, returns ``False``."""
 
     if isinstance(uuid, str):
         match = Device.UUID_PATTERN.match(uuid)
@@ -139,7 +145,10 @@ def is_mig_device_uuid(uuid: Optional[str]) -> bool:
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Live class of the GPU devices, different from the device snapshots.
 
-    `Device.__new__()` returns different types depending on the given arguments.
+    ``Device.__new__()`` returns different types depending on the given arguments.
+
+    .. code-block:: python
+
         - (index: int)        -> PhysicalDevice
         - (index: (int, int)) -> MigDevice
         - (uuid: str)         -> Union[PhysicalDevice, MigDevice]  # depending on the UUID value
@@ -206,6 +215,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Command line equivalent:
 
+        .. code:: bash
+
             nvidia-smi --id=0 --format=csv,noheader,nounits --query-gpu=driver_version
         """
 
@@ -233,6 +244,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Command line equivalent:
 
+        .. code:: bash
+
             nvidia-smi --id=0 --format=csv,noheader,nounits --query-gpu=count
         """
 
@@ -251,14 +264,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a list of devices of the given indices.
 
         Args:
-            indices (list of int or tuple of two ints):
-                Indices of the devices. For each index, get `PhysicalDevice` for single int
-                and `MigDevice` for tuple (int, int). That is:
+            indices (Iterable[Union[int, Tuple[int, int]]]):
+                Indices of the devices. For each index, get ``PhysicalDevice`` for single int
+                and ``MigDevice`` for tuple (int, int). That is:
                     - (int)        -> PhysicalDevice
                     - ((int, int)) -> MigDevice
 
         Returns: List[Union[PhysicalDevice, MigDevice]]
-            A list of `PhysicalDevice` and/or `MigDevice` instances of the given indices.
+            A list of ``PhysicalDevice`` and/or ``MigDevice`` instances of the given indices.
         """
 
         if indices is None:
@@ -271,19 +284,19 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     def from_cuda_visible_devices() -> List['CudaDevice']:
-        """Returns a list of CUDA devices of the given CUDA indices.
-        The CUDA ordinal will be enumerate from the `CUDA_VISIBLE_DEVICES` environment variable.
+        """Returns a list of all CUDA visible devices.
+        The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
 
         See also for CUDA Device Enumeration:
             - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
             - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
 
         Returns: List[CudaDevice]
-            A list of `CudaDevice` instances.
+            A list of ``CudaDevice`` instances.
 
         Raises:
             RuntimeError:
-                If the `CUDA_VISIBLE_DEVICES` environment variable is invalid (e.g. duplicate entries).
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
         """
 
         visible_device_indices = Device.parse_cuda_visible_devices()
@@ -294,28 +307,30 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return cuda_devices
 
+    cuda_all = from_cuda_visible_devices
+
     @staticmethod
     def from_cuda_indices(cuda_indices: Optional[Union[int, Iterable[int]]] = None) -> List['CudaDevice']:
         """Returns a list of CUDA devices of the given CUDA indices.
-        The CUDA ordinal will be enumerate from the `CUDA_VISIBLE_DEVICES` environment variable.
+        The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
 
         See also for CUDA Device Enumeration:
             - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
             - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
 
         Args:
-            cuda_indices (list of int):
-                The value of `CUDA_VISIBLE_DEVICES`, if not given, the value from the environment
+            cuda_indices (Iterable[int]):
+                The value of ``CUDA_VISIBLE_DEVICES``, if not given, the value from the environment
                 will be used.
 
         Returns: List[CudaDevice]
-            A list of `CudaDevice` of the given CUDA indices.
+            A list of ``CudaDevice`` of the given CUDA indices.
 
         Raises:
             RuntimeError:
-                If the `CUDA_VISIBLE_DEVICES` environment variable is invalid (e.g. duplicate entries).
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
             RuntimeError:
-                If the index is out of range for the given `CUDA_VISIBLE_DEVICES` environment variable.
+                If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
         """
 
         cuda_devices = Device.from_cuda_visible_devices()
@@ -340,15 +355,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     @staticmethod
     def parse_cuda_visible_devices(cuda_visible_devices: Optional[str] = None) -> Union[List[int],
                                                                                         List[Tuple[int, int]]]:
-        """Parses the given `CUDA_VISIBLE_DEVICES` value into NVML device indices.
+        """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
 
         See also for CUDA Device Enumeration:
             - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
             - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
 
         Args:
-            cuda_visible_devices (str or None):
-                The value of the `CUDA_VISIBLE_DEVICES` variable. If not given, the value from the
+            cuda_visible_devices (Optional[str]):
+                The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
                 environment will be used.
 
         Returns: Union[List[int], List[Tuple[int, int]]]
@@ -357,7 +372,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the `CUDA_VISIBLE_DEVICES` environment variable is invalid (e.g. duplicate entries).
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
         """
 
         if cuda_visible_devices is None:
@@ -375,7 +390,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     @ttl_cache(ttl=300.0)
     def _parse_cuda_visible_devices(cuda_visible_devices: str) -> Union[List[int],
                                                                         List[Tuple[int, int]]]:
-        """The underlining implementation for `parse_cuda_visible_devices`. The result will be cached."""
+        """The underlining implementation for ``parse_cuda_visible_devices``. The result will be cached."""
 
         def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
             nonlocal use_integer_identifiers
@@ -430,15 +445,17 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 bus_id: Optional[str] = None) -> 'Device':
         """Creates a new instance of Device. The type of the result is determined by the given argument.
 
-        - (index: int)        -> PhysicalDevice
-        - (index: (int, int)) -> MigDevice
-        - (uuid: str)         -> Union[PhysicalDevice, MigDevice]  # depending on the UUID value
-        - (bus_id: str)       -> PhysicalDevice
+        .. code-block:: python
+
+            - (index: int)        -> PhysicalDevice
+            - (index: (int, int)) -> MigDevice
+            - (uuid: str)         -> Union[PhysicalDevice, MigDevice]  # depending on the UUID value
+            - (bus_id: str)       -> PhysicalDevice
 
         Note: This method takes exact 1 non-None argument.
 
         Returns: Union[PhysicalDevice, MigDevice]
-            A `PhysicalDevice` instance or a `MigDevice` instance.
+            A ``PhysicalDevice`` instance or a ``MigDevice`` instance.
 
         Raises:
             TypeError:
@@ -480,7 +497,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def __init__(self, index: Optional[Union[int, str]] = None, *,
                  uuid: Optional[str] = None,
                  bus_id: Optional[str] = None) -> None:
-        """Initializes the instance created by `__new__()`."""
+        """Initializes the instance created by ``__new__()``."""
 
         if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
             index, uuid = None, index
@@ -545,12 +562,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
         """Get the object attribute.
 
-        If the attribute is not defined, make a method from `pynvml.nvmlDeviceGet<AttributeName>(handle)`.
+        If the attribute is not defined, make a method from ``pynvml.nvmlDeviceGet<AttributeName>(handle)``.
         The attribute name will be converted to PascalCase string.
 
         Raises:
             AttributeError:
-                If the attribute is not defined in `pynvml.py`.
+                If the attribute is not defined in ``pynvml.py``.
 
         Examples:
 
@@ -646,9 +663,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the `CUDA_VISIBLE_DEVICES` environment variable is invalid (e.g. duplicate entries).
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
             RuntimeError:
-                If the current device is not visible to CUDA applications (i.e. not listed in `CUDA_VISIBLE_DEVICES`).
+                If the current device is not visible to CUDA applications (i.e. not listed in ``CUDA_VISIBLE_DEVICES``).
         """
 
         if self._cuda_index is None:
@@ -668,9 +685,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The official product name of the GPU. This is an alphanumeric string. For all products.
 
         Returns: Union[str, NaType]
-            The official product name, or `nvitop.NA` (str: 'N/A') when not available.
+            The official product name, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=name
         """
@@ -684,9 +703,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         not correspond to any physical label on the board.
 
         Returns: Union[str, NaType]
-            The UUID of the device, or `nvitop.NA` (str: 'N/A') when not available.
+            The UUID of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=name
         """
@@ -699,9 +720,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """PCI bus ID as "domain:bus:device.function", in hex.
 
         Returns: Union[str, NaType]
-            The PCI bus ID of the device, or `nvitop.NA` (str: 'N/A') when not available.
+            The PCI bus ID of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=pci.bus_id
         """
@@ -715,9 +738,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         unique immutable alphanumeric value.
 
         Returns: Union[str, NaType]
-            The serial number of the device, or `nvitop.NA` (str: 'N/A') when not available.
+            The serial number of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=serial
         """
@@ -730,7 +755,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with memory information (in bytes) for the device.
 
         Returns: MemoryInfo(total, free, used)
-            A named tuple with memory information, the item could be `nvitop.NA` (str: 'N/A') when not available.
+            A named tuple with memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         memory_info = nvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self.handle)
@@ -742,9 +767,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total installed GPU memory in bytes.
 
         Returns: Union[int, NaType]
-            Total installed GPU memory in bytes, or `nvitop.NA` (str: 'N/A') when not available.
+            Total installed GPU memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=memory.total
         """
@@ -757,9 +784,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total memory allocated by active contexts in bytes.
 
         Returns: Union[int, NaType]
-            Total memory allocated by active contexts in bytes, or `nvitop.NA` (str: 'N/A') when not available.
+            Total memory allocated by active contexts in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=memory.used
         """
@@ -770,9 +799,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free memory in bytes.
 
         Returns: Union[int, NaType]
-            Total free memory in bytes, or `nvitop.NA` (str: 'N/A') when not available.
+            Total free memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=memory.free
         """
@@ -783,7 +814,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total installed GPU memory in human readable format.
 
         Returns: Union[str, NaType]
-            Total installed GPU memory in human readable format, or `nvitop.NA` (str: 'N/A') when not available.
+            Total installed GPU memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         if self._memory_total_human is NA:
@@ -794,7 +825,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total memory allocated by active contexts in human readable format.
 
         Returns: Union[int, NaType]
-            Total memory allocated by active contexts in human readable format, or `nvitop.NA` (str: 'N/A') when not available.
+            Total memory allocated by active contexts in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """  # pylint: disable=line-too-long
 
         return bytes2human(self.memory_used())
@@ -803,7 +834,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total free memory in human readable format, or `nvitop.NA` (str: 'N/A') when not available.
+            Total free memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return bytes2human(self.memory_free())
@@ -812,7 +843,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The percentage of used memory over total memory (0 <= p <= 100).
 
         Returns: Union[float, NaType]
-            The percentage of used memory over total memory, or `nvitop.NA` (str: 'N/A') when not available.
+            The percentage of used memory over total memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         memory_info = self.memory_info()
@@ -835,7 +866,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with BAR1 memory information (in bytes) for the device.
 
         Returns: MemoryInfo(total, free, used)
-            A named tuple with BAR1 memory information, the item could be `nvitop.NA` (str: 'N/A') when not available.
+            A named tuple with BAR1 memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         memory_info = nvml.nvmlQuery('nvmlDeviceGetBAR1MemoryInfo', self.handle)
@@ -847,7 +878,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
-            Total BAR1 memory in bytes, or `nvitop.NA` (str: 'N/A') when not available.
+            Total BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return self.bar1_memory_info().total
@@ -856,7 +887,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total used BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
-            Total used BAR1 memory in bytes, or `nvitop.NA` (str: 'N/A') when not available.
+            Total used BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return self.bar1_memory_info().used
@@ -865,7 +896,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
-            Total free BAR1 memory in bytes, or `nvitop.NA` (str: 'N/A') when not available.
+            Total free BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return self.bar1_memory_info().free
@@ -874,7 +905,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total BAR1 memory in human readable format, or `nvitop.NA` (str: 'N/A') when not available.
+            Total BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return bytes2human(self.bar1_memory_total())
@@ -883,7 +914,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total used BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total used BAR1 memory in human readable format, or `nvitop.NA` (str: 'N/A') when not available.
+            Total used BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return bytes2human(self.bar1_memory_used())
@@ -892,7 +923,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total free BAR1 memory in human readable format, or `nvitop.NA` (str: 'N/A') when not available.
+            Total free BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return bytes2human(self.bar1_memory_free())
@@ -901,7 +932,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The percentage of used BAR1 memory over total BAR1 memory (0 <= p <= 100).
 
         Returns: Union[float, NaType]
-            The percentage of used BAR1 memory over total BAR1 memory, or `nvitop.NA` (str: 'N/A') when not available.
+            The percentage of used BAR1 memory over total BAR1 memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         memory_info = self.bar1_memory_info()
@@ -924,7 +955,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with GPU utilization rates (in percentage) for the device.
 
         Returns: UtilizationRates(gpu, memory, encoder, decoder)
-            A named tuple with GPU utilization rates (in percentage) for the device, the item could be `nvitop.NA` (str: 'N/A') when not available.
+            A named tuple with GPU utilization rates (in percentage) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """  # pylint: disable=line-too-long
 
         gpu, memory, encoder, decoder = NA, NA, NA, NA
@@ -948,9 +979,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The sample period may be between 1 second and 1/6 second depending on the product.
 
         Returns: Union[int, NaType]
-            The GPU utilization rate in percentage, or `nvitop.NA` (str: 'N/A') when not available.
+            The GPU utilization rate in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=utilization.gpu
         """
@@ -964,9 +997,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The sample period may be between 1 second and 1/6 second depending on the product.
 
         Returns: Union[int, NaType]
-            The memory bandwidth utilization rate of the GPU in percentage, or `nvitop.NA` (str: 'N/A') when not available.
+            The memory bandwidth utilization rate of the GPU in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=utilization.memory
         """  # pylint: disable=line-too-long
@@ -977,7 +1012,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The encoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
-            The encoder utilization rate  in percentage, or `nvitop.NA` (str: 'N/A') when not available.
+            The encoder utilization rate  in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return self.utilization_rates().encoder
@@ -986,7 +1021,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The decoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
-            The decoder utilization rate  in percentage, or `nvitop.NA` (str: 'N/A') when not available.
+            The decoder utilization rate  in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         return self.utilization_rates().decoder
@@ -997,7 +1032,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with current clock speeds (in MHz) for the device.
 
         Returns: ClockInfos(graphics, sm, memory, video)
-            A named tuple with current clock speeds (in MHz) for the device, the item could be `nvitop.NA` (str: 'N/A') when not available.
+            A named tuple with current clock speeds (in MHz) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """  # pylint: disable=line-too-long
 
         return ClockInfos(
@@ -1015,7 +1050,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with maximum clock speeds (in MHz) for the device.
 
         Returns: ClockInfos(graphics, sm, memory, video)
-            A named tuple with maximum clock speeds (in MHz) for the device, the item could be `nvitop.NA` (str: 'N/A') when not available.
+            A named tuple with maximum clock speeds (in MHz) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """  # pylint: disable=line-too-long
 
         clock_infos = self._max_clock_infos._asdict()
@@ -1042,9 +1077,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of graphics (shader) clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of graphics (shader) clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The current frequency of graphics (shader) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.current.graphics
         """
@@ -1055,9 +1092,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of SM (Streaming Multiprocessor) clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of SM (Streaming Multiprocessor) clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The current frequency of SM (Streaming Multiprocessor) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.current.sm
         """  # pylint: disable=line-too-long
@@ -1068,9 +1107,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of memory clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of memory clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The current frequency of memory clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.current.memory
         """
@@ -1081,9 +1122,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of video encoder/decoder clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of video encoder/decoder clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The current frequency of video encoder/decoder clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.current.video
         """
@@ -1094,9 +1137,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of graphics (shader) clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of graphics (shader) clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The maximum frequency of graphics (shader) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.graphics
         """
@@ -1107,9 +1152,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of SM (Streaming Multiprocessor) clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of SM (Streaming Multiprocessor) clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The maximum frequency of SM (Streaming Multiprocessor) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.sm
         """  # pylint: disable=line-too-long
@@ -1120,9 +1167,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of memory clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of memory clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The maximum frequency of memory clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.memory
         """
@@ -1133,9 +1182,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of video encoder/decoder clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of video encoder/decoder clock in MHz, or `nvitop.NA` (str: 'N/A') when not available.
+            The maximum frequency of video encoder/decoder clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.video
         """
@@ -1151,9 +1202,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         because they rely on cooling via fans in the surrounding enclosure.
 
         Returns: Union[int, NaType]
-            The fan speed value in percentage, or `nvitop.NA` (str: 'N/A') when not available.
+            The fan speed value in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=fan.speed
         """
@@ -1165,9 +1218,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Core GPU temperature. in degrees C.
 
         Returns: Union[int, NaType]
-            The core GPU temperature in Celsius degrees, or `nvitop.NA` (str: 'N/A') when not available.
+            The core GPU temperature in Celsius degrees, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=temperature.gpu
         """
@@ -1180,9 +1235,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The last measured power draw for the entire board in milliwatts.
 
         Returns: Union[int, NaType]
-            The power draw for the entire board in milliwatts, or `nvitop.NA` (str: 'N/A') when not available.
+            The power draw for the entire board in milliwatts, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             $(( "$(nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=power.draw)" * 1000 ))
         """
@@ -1197,9 +1254,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The software power limit in milliwatts. Set by software like nvidia-smi.
 
         Returns: Union[int, NaType]
-            The software power limit in milliwatts, or `nvitop.NA` (str: 'N/A') when not available.
+            The software power limit in milliwatts, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             $(( "$(nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=power.limit)" * 1000 ))
         """
@@ -1230,9 +1289,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if not an active display device.
             - 'Enabled': if an active display device.
-            - `nvitop.NA` (str: 'N/A'): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=display_active
         """
@@ -1248,9 +1309,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if the display mode is disabled.
             - 'Enabled': if the display mode is enabled.
-            - `nvitop.NA` (str: 'N/A'): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=display_mode
         """
@@ -1268,9 +1331,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'WDDM': for WDDM driver model on Windows.
             - 'WDM': for TTC (WDM) driver model on Windows.
-            - `nvitop.NA` (str: 'N/A'): if not available, e.g. on Linux.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not available, e.g. on Linux.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=driver_model.current
         """
@@ -1292,9 +1357,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if the persistence mode is disabled.
             - 'Enabled': if the persistence mode is enabled.
-            - `nvitop.NA` (str: 'N/A'): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=persistence_mode
         """
@@ -1307,9 +1374,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         P12 (minimum performance).
 
         Returns: Union[str, NaType]
-            The current performance state in format `P<int>`, or `nvitop.NA` (str: 'N/A') when not available.
+            The current performance state in format ``P<int>``, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=pstate
         """
@@ -1324,9 +1393,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total errors detected across entire chip.
 
         Returns: Union[int, NaType]
-            The total number of uncorrected errors in volatile ECC memory, or `nvitop.NA` (str: 'N/A') when not available.
+            The total number of uncorrected errors in volatile ECC memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=ecc.errors.uncorrected.volatile.total
         """  # pylint: disable=line-too-long
@@ -1345,9 +1416,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             - 'Exclusive Thread': deprecated, use Exclusive Process instead
             - 'Prohibited': means no contexts are allowed per device (no compute apps).
             - 'Exclusive Process': means only one context is allowed per device, usable from multiple threads at a time.
-            - `nvitop.NA` (str: 'N/A'): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_mode
         """
@@ -1375,9 +1448,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if the MIG mode is disabled.
             - 'Enabled': if the MIG mode is enabled.
-            - `nvitop.NA` (str: 'N/A'): if not available, e.g. the GPU does not support MIG mode.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not available, e.g. the GPU does not support MIG mode.
 
         Command line equivalent:
+
+        .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=mig.mode.current
         """
@@ -1390,7 +1465,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return {0: 'Disabled', 1: 'Enabled'}.get(mig_mode, NA)
 
     def is_mig_mode_enabled(self) -> bool:
-        """Returns whether the MIG mode is enabled on the device. Returns `False` if MIG mode is
+        """Returns whether the MIG mode is enabled on the device. Returns ``False`` if MIG mode is
         disabled or the device does not support MIG mode.
         """
 
@@ -1440,7 +1515,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return processes
 
     def as_snapshot(self) -> Snapshot:
-        """Returns a onetime snapshot of the device. The attributes are defined in `SNAPSHOT_KEYS`."""
+        """Returns a onetime snapshot of the device. The attributes are defined in ``SNAPSHOT_KEYS``."""
 
         with self.oneshot():
             return Snapshot(real=self, index=self.index, physical_index=self.physical_index,
@@ -1544,6 +1619,8 @@ class PhysicalDevice(Device):
 
         Command line equivalent:
 
+        .. code:: bash
+
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=index
         """
 
@@ -1636,18 +1713,18 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """Returns a list of MIG devices of the given indices.
 
         Args:
-            indices (list of tuple of two ints):
+            indices (Iterable[Tuple[int, int]]):
                 Indices of the MIG devices. Each index is a tuple of two integers.
 
         Returns: List[MigDevice]
-            A list of `MigDevice` instances of the given indices.
+            A list of ``MigDevice`` instances of the given indices.
         """
 
         return list(map(cls, indices))
 
     def __init__(self, index: Optional[Union[Tuple[int, int], str]] = None, *,  # pylint: disable=super-init-not-called
                  uuid: Optional[str] = None) -> None:
-        """Initializes the instance created by `__new__()`."""
+        """Initializes the instance created by ``__new__()``."""
 
         if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
             index, uuid = None, index
@@ -1727,7 +1804,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """The gpu instance ID of the MIG device.
 
         Returns: Union[int, NaType]
-            The gpu instance ID of the MIG device, or `nvitop.NA` (str: 'N/A') when not available.
+            The gpu instance ID of the MIG device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         if self._gpu_instance_id is NA:
@@ -1741,7 +1818,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """The compute instance ID of the MIG device.
 
         Returns: Union[int, NaType]
-            The compute instance ID of the MIG device, or `nvitop.NA` (str: 'N/A') when not available.
+            The compute instance ID of the MIG device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
         """
 
         if self._compute_instance_id is NA:
@@ -1752,7 +1829,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         return self._compute_instance_id
 
     def as_snapshot(self) -> Snapshot:
-        """Returns a onetime snapshot of the device. The attributes are defined in `SNAPSHOT_KEYS`."""
+        """Returns a onetime snapshot of the device. The attributes are defined in ``SNAPSHOT_KEYS``."""
 
         snapshot = super().as_snapshot()
         snapshot.mig_index = self.mig_index
@@ -1764,15 +1841,18 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
 class CudaDevice(Device):
     """Class for devices enumerated over the CUDA ordinal. The order can be vary for different
-    `CUDA_VISIBLE_DEVICES` environment variable.
+    environment variable ``CUDA_VISIBLE_DEVICES``.
 
     See also for CUDA Device Enumeration:
         - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
         - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
 
-    `CudaDevice.__new__()` returns different types depending on the given arguments.
-        - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
-        - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
+    ``CudaDevice.__new__()`` returns different types depending on the given arguments.
+
+    .. code-block:: python
+
+        - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+        - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
         - (nvml_index: int)        -> CudaDevice
         - (nvml_index: (int, int)) -> CudaMigDevice
 
@@ -1808,16 +1888,50 @@ class CudaDevice(Device):
 
     @classmethod
     def count(cls) -> int:
-        """The number of GPUs visible to CUDA applications."""
+        """The number of GPUs visible to CUDA applications.
+
+        Raises:
+            RuntimeError:
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+        """
 
         return len(super().parse_cuda_visible_devices())
 
     @classmethod
     def all(cls) -> List['CudaDevice']:
+        """All CUDA visible devices.
+
+        Raises:
+            RuntimeError:
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+        """
+
         return cls.from_indices()
 
     @classmethod
     def from_indices(cls, indices: Optional[Union[int, Iterable[int]]] = None) -> List['CudaDevice']:
+        """Returns a list of CUDA devices of the given CUDA indices.
+        The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
+
+        See also for CUDA Device Enumeration:
+            - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
+            - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+
+        Args:
+            cuda_indices (Iterable[int]):
+                The value of ``CUDA_VISIBLE_DEVICES``, if not given, the value from the environment
+                will be used.
+
+        Returns: List[CudaDevice]
+            A list of ``CudaDevice`` of the given CUDA indices.
+
+        Raises:
+            RuntimeError:
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+            RuntimeError:
+                If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
+        """
+
         return super().from_cuda_indices(indices)
 
     def __new__(cls, cuda_index: Optional[int] = None, *,
@@ -1825,15 +1939,17 @@ class CudaDevice(Device):
                 uuid: Optional[str] = None) -> 'Device':
         """Creates a new instance of CudaDevice. The type of the result is determined by the given argument.
 
-        - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
-        - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
-        - (nvml_index: int)        -> CudaDevice
-        - (nvml_index: (int, int)) -> CudaMigDevice
+        .. code-block:: python
+
+            - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+            - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+            - (nvml_index: int)        -> CudaDevice
+            - (nvml_index: (int, int)) -> CudaMigDevice
 
         Note: This method takes exact 1 non-None argument.
 
         Returns: Union[CudaDevice, CudaMigDevice]
-            A `CudaDevice` instance or a `CudaMigDevice` instance.
+            A ``CudaDevice`` instance or a ``CudaMigDevice`` instance.
 
         Raises:
             TypeError:
@@ -1842,9 +1958,9 @@ class CudaDevice(Device):
                 If the given index is a tuple but is not consist of two integers.
         Raises:
             RuntimeError:
-                If the `CUDA_VISIBLE_DEVICES` environment variable is invalid (e.g. duplicate entries).
+                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
             RuntimeError:
-                If the index is out of range for the given `CUDA_VISIBLE_DEVICES` environment variable.
+                If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
         """
 
         if cuda_index is not None and nvml_index is None and uuid is None:
@@ -1861,7 +1977,7 @@ class CudaDevice(Device):
     def __init__(self, cuda_index: Optional[int] = None, *,
                  nvml_index: Optional[Union[int, Tuple[int, int]]] = None,
                  uuid: Optional[str] = None) -> None:
-        """Initializes the instance created by `__new__()`.
+        """Initializes the instance created by ``__new__()``.
 
         Raises:
             RuntimeError:
@@ -1895,7 +2011,7 @@ class CudaDevice(Device):
         return self.__class__, (self._cuda_index,)
 
     def as_snapshot(self) -> Snapshot:
-        """Returns a onetime snapshot of the device. The attributes are defined in `SNAPSHOT_KEYS`."""
+        """Returns a onetime snapshot of the device. The attributes are defined in ``SNAPSHOT_KEYS``."""
 
         snapshot = super().as_snapshot()
         snapshot.cuda_index = self.cuda_index

@@ -1,7 +1,7 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-"""Shortcuts for package `psutil`.
+"""Shortcuts for package ``psutil``.
 
 psutil is a cross-platform library for retrieving information on running processes
 and system utilization (CPU, memory, disks, network, sensors) in Python.
@@ -53,11 +53,11 @@ def swap_percent():
 
 
 ppid_map = _psutil._ppid_map  # pylint: disable=protected-access
-"""Obtains a `{pid: ppid, ...}` dict for all running processes in one shot."""
+"""Obtains a ``{pid: ppid, ...}`` dict for all running processes in one shot."""
 
 
 def reverse_ppid_map():  # pylint: disable=function-redefined
-    """Obtains a `{ppid: [pid, ...], ...}` dict for all running processes in one shot."""
+    """Obtains a ``{ppid: [pid, ...], ...}`` dict for all running processes in one shot."""
 
     tree = _defaultdict(list)
     for pid, ppid in ppid_map().items():

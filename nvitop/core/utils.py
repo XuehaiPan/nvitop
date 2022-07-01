@@ -77,28 +77,28 @@ class NotApplicableType(str):
         return math.nan
 
     def __lt__(self, x):
-        """The `NA` is always greater than any number. Use the dictionary order for string."""
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return False
         return super().__lt__(x)
 
     def __le__(self, x):
-        """The `NA` is always greater than any number. Use the dictionary order for string."""
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return False
         return super().__le__(x)
 
     def __gt__(self, x):
-        """The `NA` is always greater than any number. Use the dictionary order for string."""
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return True
         return super().__gt__(x)
 
     def __ge__(self, x):
-        """The `NA` is always greater than any number. Use the dictionary order for string."""
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return True
@@ -116,7 +116,7 @@ class NotApplicableType(str):
 # NA is NotApplicableType() -> True (NotApplicableType is a singleton class)
 NaType = NotApplicableType
 NA = NotApplicable = NotApplicableType()
-"""The singleton instance of `NotApplicableType`. The actual value is 'NA'."""
+"""The singleton instance of ``NotApplicableType``. The actual value is 'NA'."""
 
 
 KiB = 1 << 10
@@ -167,7 +167,7 @@ def bytes2human(x):  # pylint: disable=too-many-return-statements
 
 
 def timedelta2human(dt):
-    """Converts `datetime.timedelta` instance to a human readable string."""
+    """Converts ``datetime.timedelta`` instance to a human readable string."""
 
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
@@ -209,7 +209,7 @@ def boolify(string, default=None):
 
 class Snapshot:
     """A dict-like object holds the snapshot values.
-    The value can be accessed by `snapshot.name` or `snapshot[name]` syntax.
+    The value can be accessed by ``snapshot.name`` or ``snapshot['name']`` syntax.
 
     Missing attributes will be automatically fetched from the original object.
     """
@@ -253,7 +253,7 @@ class Snapshot:
             return attribute
 
     def __getitem__(self, name):
-        """Supports `dict[name]` syntax."""
+        """Supports ``dict['name']`` syntax."""
 
         try:
             return self.__getattr__(name)
@@ -261,7 +261,7 @@ class Snapshot:
             raise KeyError from e
 
     def __setitem__(self, name, value):
-        """Supports `dict[name] = value` syntax."""
+        """Supports ``dict['name'] = value`` syntax."""
 
         self.__setattr__(name, value)
 

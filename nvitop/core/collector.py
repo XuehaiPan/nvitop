@@ -159,10 +159,10 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     """A class for collecting resource metrics.
 
     Args:
-        devices (iterable of Device):
+        devices (Iterable[Device]):
             Set of Device instances for logging. If not given, all physical
             devices on board will be used.
-        root_pids (set of int):
+        root_pids (Set[int]):
             A set of PIDs, only the status of the children processes on the GPUs
             will be collected. If not given, the PID of the current process will
             be used.
@@ -422,7 +422,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         the sub-collections will be reset as well.
 
         Args:
-            tag (str or None):
+            tag (Optional[str]):
                 The tag to reset. If None, the current active collection
                 will be reset.
 

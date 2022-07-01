@@ -18,11 +18,11 @@ import pynvml
 from nvitop.core.utils import NA, colored
 
 
-__all__ = ['nvml', 'nvmlCheckReturn', 'NVMLError']
+__all__ = ['libnvml', 'nvml', 'nvmlCheckReturn', 'NVMLError']
 
 
 class libnvml:
-    """The helper singleton class that holds members from package `nvidia-ml-py`."""
+    """The helper singleton class that holds members from package ``nvidia-ml-py``."""
 
     NVMLError = pynvml.NVMLError
     """Base exception class for NVML query errors."""
@@ -34,7 +34,7 @@ class libnvml:
     c_nvmlDevice_t = pynvml.c_nvmlDevice_t
 
     def __new__(cls) -> 'libnvml':
-        """Gets the singleton instance of `libnvml`."""
+        """Gets the singleton instance of ``libnvml``."""
 
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
@@ -62,13 +62,13 @@ class libnvml:
             pass
 
     def __enter__(self) -> 'libnvml':
-        """Entry of the context manager for `with` statement."""
+        """Entry of the context manager for ``with`` statement."""
 
         self._lazy_init()
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
-        """Shutdowns the NVML context in the context manager for `with` statement."""
+        """Shutdowns the NVML context in the context manager for ``with`` statement."""
 
         self.__del__()
 
@@ -100,8 +100,8 @@ class libnvml:
                 If RM detects a driver/library version mismatch, usually after a upgrade for NVIDIA
                 driver without reloading the kernel module.
             AttributeError:
-                If cannot find function `nvmlInitWithFlags`, usually the `pynvml` module is overridden
-                by other modules. Need to reinstall package `nvidia-ml-py`.
+                If cannot find function ``nvmlInitWithFlags``, usually the ``pynvml`` module is overridden
+                by other modules. Need to reinstall package ``nvidia-ml-py``.
         """
 
         self.nvmlInitWithFlags(0)
@@ -118,8 +118,8 @@ class libnvml:
                 If RM detects a driver/library version mismatch, usually after a upgrade for NVIDIA
                 driver without reloading the kernel module.
             AttributeError:
-                If cannot find function `nvmlInitWithFlags`, usually the `pynvml` module is overridden
-                by other modules. Need to reinstall package `nvidia-ml-py`.
+                If cannot find function ``nvmlInitWithFlags``, usually the ``pynvml`` module is overridden
+                by other modules. Need to reinstall package ``nvidia-ml-py``.
         """
 
         with self._lock:
@@ -179,7 +179,7 @@ class libnvml:
                 If RM detects a driver/library version mismatch, usually after a upgrade for NVIDIA
                 driver without reloading the kernel module.
             NVMLError_Uninitialized:
-                If NVML was not first initialized with `nvmlInit()`.
+                If NVML was not first initialized with ``nvmlInit()``.
         """
 
         pynvml.nvmlShutdown()
@@ -199,16 +199,16 @@ class libnvml:
         """Calls a function with the given arguments from NVML. The NVML context will be lazily initialized.
 
         Args:
-            func (function or str):
+            func (Union[Callable[..., Any], str]):
                 The function to call. If it is given by string, lookup for the
-                function first from `pynvml`.
-            default (any):
+                function first from ``pynvml``.
+            default (Any):
                 The default value if the query fails.
             ignore_errors (bool):
                 Whether to ignore errors and return the default value.
             ignore_function_not_found (bool):
                 Whether to ignore function not found errors and return the
-                default value. If set to `False`, a error message will be logged
+                default value. If set to ``False``, a error message will be logged
                 to the logger.
             *args:
                 Positional arguments to pass to the query function.
@@ -251,7 +251,7 @@ class libnvml:
 
     @staticmethod
     def nvmlCheckReturn(retval: Any, types: Optional[Union[type, Tuple[type, ...]]] = None) -> bool:
-        """Checks the return value is not `nvitop.NA` and is one of the given types."""
+        """Checks the return value is not ``nvitop.NA`` and is one of the given types."""
 
         if types is None:
             return retval != NA
@@ -259,7 +259,7 @@ class libnvml:
 
 
 nvml = libnvml()
-"""The singleton instance of `libnvml`."""
+"""The singleton instance of class ``libnvml``."""
 
 nvmlCheckReturn = nvml.nvmlCheckReturn
 
