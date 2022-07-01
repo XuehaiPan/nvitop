@@ -630,7 +630,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return self._nvml_index
 
-    # property
+    @property
     def nvml_index(self) -> Union[int, Tuple[int, int]]:
         """The NVML index of the device.
 
