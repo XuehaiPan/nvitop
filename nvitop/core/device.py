@@ -288,8 +288,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
 
         See also for CUDA Device Enumeration:
-            - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
-            - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+            - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+            - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
         Returns: List[CudaDevice]
             A list of ``CudaDevice`` instances.
@@ -297,7 +297,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Raises:
             RuntimeError:
                 If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
-        """
+        """  # pylint: disable=line-too-long
 
         visible_device_indices = Device.parse_cuda_visible_devices()
 
@@ -315,8 +315,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
 
         See also for CUDA Device Enumeration:
-            - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
-            - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+            - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+            - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
         Args:
             cuda_indices (Iterable[int]):
@@ -331,7 +331,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
             RuntimeError:
                 If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
-        """
+        """  # pylint: disable=line-too-long
 
         cuda_devices = Device.from_cuda_visible_devices()
         if cuda_indices is None:
@@ -358,8 +358,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
 
         See also for CUDA Device Enumeration:
-            - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
-            - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+            - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+            - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
         Args:
             cuda_visible_devices (Optional[str]):
@@ -373,7 +373,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Raises:
             RuntimeError:
                 If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
-        """
+        """  # pylint: disable=line-too-long
 
         if cuda_visible_devices is None:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
@@ -1800,7 +1800,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
         return self._parent
 
-    def gpu_instance_id(self) -> Union[int, NA]:
+    def gpu_instance_id(self) -> Union[int, NaType]:
         """The gpu instance ID of the MIG device.
 
         Returns: Union[int, NaType]
@@ -1814,7 +1814,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
                 self._gpu_instance_id = NA
         return self._gpu_instance_id
 
-    def compute_instance_id(self) -> Union[int, NA]:
+    def compute_instance_id(self) -> Union[int, NaType]:
         """The compute instance ID of the MIG device.
 
         Returns: Union[int, NaType]
@@ -1844,8 +1844,8 @@ class CudaDevice(Device):
     environment variable ``CUDA_VISIBLE_DEVICES``.
 
     See also for CUDA Device Enumeration:
-        - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
-        - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+        - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+        - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
     ``CudaDevice.__new__()`` returns different types depending on the given arguments.
 
@@ -1884,7 +1884,7 @@ class CudaDevice(Device):
             real=CudaDevice(cuda_index=0, nvml_index=3, ...),
             ...
         )
-    """
+    """  # pylint: disable=line-too-long
 
     @classmethod
     def count(cls) -> int:
@@ -1914,8 +1914,8 @@ class CudaDevice(Device):
         The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
 
         See also for CUDA Device Enumeration:
-            - https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
-            - https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices
+            - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+            - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
         Args:
             cuda_indices (Iterable[int]):

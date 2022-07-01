@@ -5,10 +5,11 @@
 ![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop)
 ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
+[![Documentation Status](https://readthedocs.org/projects/nvitop/badge/?version=latest)](https://nvitop.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month)](https://pepy.tech/project/nvitop)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
+An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references can be found at <https://nvitop.readthedocs.io>.
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/171005261-1aad126e-dc27-4ed3-a89b-7f9c1c998bf7.png" alt="Monitor">
@@ -408,7 +409,7 @@ Please refer to [Resource Metric Collector](#resource-metric-collector) for an e
 
 ### More than a Monitor
 
-`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
+`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references can be found at <https://nvitop.readthedocs.io>.
 
 #### Status Snapshot
 
@@ -618,6 +619,8 @@ df.to_csv('results.csv', index=False)
 ```
 
 #### Low-level APIs
+
+The full API references can be found at <https://nvitop.readthedocs.io>.
 
 ##### Device
 
