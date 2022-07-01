@@ -5,10 +5,11 @@
 ![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop)
 ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
+[![Documentation Status](https://readthedocs.org/projects/nvitop/badge/?version=latest)](https://nvitop.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month)](https://pepy.tech/project/nvitop)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. ([screenshots](#screenshots))
+An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references can be found at <https://nvitop.readthedocs.io>.
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/171005261-1aad126e-dc27-4ed3-a89b-7f9c1c998bf7.png" alt="Monitor">
@@ -43,7 +44,6 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
       - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
-- [TODO List](#todo-list)
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
@@ -409,7 +409,7 @@ Please refer to [Resource Metric Collector](#resource-metric-collector) for an e
 
 ### More than a Monitor
 
-`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools.
+`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references can be found at <https://nvitop.readthedocs.io>.
 
 #### Status Snapshot
 
@@ -619,6 +619,8 @@ df.to_csv('results.csv', index=False)
 ```
 
 #### Low-level APIs
+
+The full API references can be found at <https://nvitop.readthedocs.io>.
 
 ##### Device
 
@@ -946,13 +948,13 @@ Example output of `nvitop`:
   </tr>
 </table>
 
-Tree-view screen (shortcut: <kbd>t</kbd>) for GPU processes and their parents:
+Tree-view screen (shortcut: <kbd>t</kbd>) for GPU processes and their ancestors:
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png" alt="Tree-view">
 </p>
 
-**NOTE:** The process tree is built in backward (recursively back to the tree root). Only GPU processes along with their children and parents (and grandparents ...) will be shown. Not all running processes will be displayed.
+**NOTE:** The process tree is built in backward (recursively back to the tree root). Only GPU processes along with their children and ancestors (parents and grandparents ...) will be shown. Not all running processes will be displayed.
 
 Environment variable screen (shortcut: <kbd>e</kbd>):
 
@@ -965,20 +967,3 @@ Environment variable screen (shortcut: <kbd>e</kbd>):
 `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
 
 **NOTE:** Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
-
-## TODO List
-
-- [X] colorize device information based on the load intensity
-- [X] basic process information both on the device and host
-- [X] GPU process management (interrupt / terminate / kill)
-- [X] bar plots and history graphs
-- [X] process sorting
-- [X] help screen
-- [X] callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai)
-- [X] process environment variable screen
-- [X] process filtering
-- [X] process management for parent processes (tree view / interrupt / terminate / kill)
-- [X] scrollable process list for large amounts of processes
-- [ ] NVIDIA MIG GPU support (help wanted for testing)
-- [ ] web interface (under consideration)
-- [ ] AMD ROCm support (help wanted for testing)

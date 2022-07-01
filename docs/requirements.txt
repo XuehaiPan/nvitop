@@ -1,0 +1,6 @@
+sphinx
+sphinx-rtd-theme
+sphinx-copybutton
+
+pytorch-lightning >= 1.5.0
+tensorflow >= 2.0

@@ -1,7 +1,8 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+"""Utilities of nvitop APIs."""
+
 # pylint: disable=invalid-name
 
 import datetime
@@ -40,47 +41,84 @@ COLOR = sys.stdout.isatty()
 
 
 def set_color(value):
+    """Force enables text coloring."""
+
     global COLOR  # pylint: disable=global-statement
     COLOR = bool(value)
 
 
 def colored(text, color=None, on_color=None, attrs=None):
+    """Colorizes text.
+
+    Available text colors:
+        red, green, yellow, blue, magenta, cyan, white.
+
+    Available text highlights:
+        on_red, on_green, on_yellow, on_blue, on_magenta, on_cyan, on_white.
+
+    Available attributes:
+        bold, dark, underline, blink, reverse, concealed.
+
+    Examples:
+
+        >>> colored('Hello, World!', 'red', 'on_grey', ['blue', 'blink'])
+        >>> colored('Hello, World!', 'green')
+    """
+
     if COLOR:
         return _colored(text, color=color, on_color=on_color, attrs=attrs)
     return text
 
 
 class NotApplicableType(str):
+    """A singleton (str: 'N/A') class represents a not applicable value."""
+
     def __new__(cls):
+        """Gets the singleton instance."""
+
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
         return cls._instance
 
     def __bool__(self):
+        """bool(NA) -> False"""
+
         return False
 
     def __int__(self):
+        """int(NA) -> 0"""
+
         return 0
 
     def __float__(self):
+        """float(NA) -> math.nan"""
+
         return math.nan
 
     def __lt__(self, x):
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+
         if isinstance(x, (int, float)):
             return False
         return super().__lt__(x)
 
     def __le__(self, x):
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+
         if isinstance(x, (int, float)):
             return False
         return super().__le__(x)
 
     def __gt__(self, x):
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+
         if isinstance(x, (int, float)):
             return True
         return super().__gt__(x)
 
     def __ge__(self, x):
+        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+
         if isinstance(x, (int, float)):
             return True
         return super().__ge__(x)
@@ -97,16 +135,28 @@ class NotApplicableType(str):
 # NA is NotApplicableType() -> True (NotApplicableType is a singleton class)
 NaType = NotApplicableType
 NA = NotApplicable = NotApplicableType()
+"""The singleton instance of ``NotApplicableType``. The actual value is 'NA'."""
 
 
 KiB = 1 << 10
+"""Kibibyte (1024)"""
+
 MiB = 1 << 20
+"""Mebibyte (1024 * 1024)"""
+
 GiB = 1 << 30
+"""Gibibyte (1024 * 1024 * 1024)"""
+
 TiB = 1 << 40
+"""Tebibyte (1024 * 1024 * 1024 * 1024)"""
+
 PiB = 1 << 50
+"""Pebibyte (1024 * 1024 * 1024 * 1024 * 1024)"""
 
 
 def bytes2human(x):  # pylint: disable=too-many-return-statements
+    """Converts bytes to a human readable string."""
+
     if x is None or x == NA:
         return NA
 
@@ -136,6 +186,8 @@ def bytes2human(x):  # pylint: disable=too-many-return-statements
 
 
 def timedelta2human(dt):
+    """Converts ``datetime.timedelta`` instance to a human readable string."""
+
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
 
@@ -152,6 +204,8 @@ def timedelta2human(dt):
 
 
 def utilization2string(utilization):
+    """Converts a utilization rate to string."""
+
     if utilization != NA:
         if isinstance(utilization, int):
             return '{}%'.format(utilization)
@@ -161,6 +215,8 @@ def utilization2string(utilization):
 
 
 def boolify(string, default=None):
+    """Converts the given value, usually a string, to boolean."""
+
     if string.lower() in ('true', 'yes', 'on', 'enabled', '1'):
         return True
     if string.lower() in ('false', 'no', 'off', 'disabled', '0'):
@@ -171,9 +227,15 @@ def boolify(string, default=None):
 
 
 class Snapshot:
+    """A dict-like object holds the snapshot values.
+    The value can be accessed by ``snapshot.name`` or ``snapshot['name']`` syntax.
+
+    Missing attributes will be automatically fetched from the original object.
+    """
+
     def __init__(self, real, **items):
         self.real = real
-        self.timestamp = time.monotonic()
+        self.timestamp = time.time()
         for key, value in items.items():
             setattr(self, key, value)
 
@@ -195,6 +257,10 @@ class Snapshot:
     __repr__ = __str__
 
     def __getattr__(self, name):
+        """Gets a member from the instance.
+        If the attribute is not defined, fetches from the original object and makes a function call.
+        """
+
         try:
             return super().__getattr__(name)
         except AttributeError:
@@ -206,12 +272,16 @@ class Snapshot:
             return attribute
 
     def __getitem__(self, name):
+        """Supports ``dict['name']`` syntax."""
+
         try:
             return self.__getattr__(name)
         except AttributeError as e:
             raise KeyError from e
 
     def __setitem__(self, name, value):
+        """Supports ``dict['name'] = value`` syntax."""
+
         self.__setattr__(name, value)
 
 

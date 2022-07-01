@@ -5,10 +5,10 @@
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
 import time
-from typing import Dict, Any
+from typing import Dict
 
 from pytorch_lightning.callbacks import Callback                              # pylint: disable=import-error
-from pytorch_lightning.utilities import DeviceType, rank_zero_only            # pylint: disable=import-error
+from pytorch_lightning.utilities import rank_zero_only                        # pylint: disable=import-error
 from pytorch_lightning.utilities.exceptions import MisconfigurationException  # pylint: disable=import-error
 
 from nvitop.core import nvml
@@ -22,15 +22,21 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     callback and in order to use it you need to assign a logger in the ``Trainer``.
 
     Args:
-        memory_utilization: Set to ``True`` to log used, free and the percentage of memory
+        memory_utilization (bool):
+            Set to ``True`` to log used, free and the percentage of memory
             utilization at the start and end of each step. Default: ``True``.
-        gpu_utilization: Set to ``True`` to log the percentage of GPU utilization
+        gpu_utilization (bool):
+            Set to ``True`` to log the percentage of GPU utilization
             at the start and end of each step. Default: ``True``.
-        intra_step_time: Set to ``True`` to log the time of each step. Default: ``False``.
-        inter_step_time: Set to ``True`` to log the time between the end of one step
+        intra_step_time (bool):
+            Set to ``True`` to log the time of each step. Default: ``False``.
+        inter_step_time (bool):
+            Set to ``True`` to log the time between the end of one step
             and the start of the next step. Default: ``False``.
-        fan_speed: Set to ``True`` to log percentage of fan speed. Default: ``False``.
-        temperature: Set to ``True`` to log the gpu temperature in degree Celsius.
+        fan_speed (bool):
+            Set to ``True`` to log percentage of fan speed. Default: ``False``.
+        temperature (bool):
+            Set to ``True`` to log the gpu temperature in degree Celsius.
             Default: ``False``.
 
     Raises:
@@ -88,10 +94,10 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         if not trainer.logger:
             raise MisconfigurationException('Cannot use GpuStatsLogger callback with Trainer that has no logger.')
 
-        if trainer._device_type != DeviceType.GPU:  # pylint: disable=protected-access
+        if trainer.strategy.root_device.type != 'cuda':
             raise MisconfigurationException(
-                'You are using GpuStatsLogger but are not running on GPU '
-                'since gpus attribute in Trainer is set to {}.'.format(trainer.gpus)
+                'You are using GpuStatsLogger but are not running on GPU. '
+                'The root device type is {}.'.format(trainer.strategy.root_device.type)
             )
 
         device_ids = trainer.data_parallel_device_ids
@@ -108,8 +114,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         self._snap_inter_step_time = None
 
     @rank_zero_only
-    def on_train_batch_start(self, trainer, pl_module,  # pylint: disable=too-many-arguments
-                             batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+    def on_train_batch_start(self, trainer, **kwargs) -> None:  # pylint: disable=arguments-differ
         if self._intra_step_time:
             self._snap_intra_step_time = time.monotonic()
 
@@ -122,8 +127,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         trainer.logger.log_metrics(logs, step=trainer.global_step)
 
     @rank_zero_only
-    def on_train_batch_end(self, trainer, pl_module,  # pylint: disable=too-many-arguments
-                           outputs: Any, batch: Any, batch_idx: int, dataloader_idx: int) -> None:
+    def on_train_batch_end(self, trainer, **kwargs) -> None:  # pylint: disable=arguments-differ
         if self._inter_step_time:
             self._snap_inter_step_time = time.monotonic()
 

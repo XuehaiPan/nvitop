@@ -34,7 +34,7 @@ def take_snapshots(
     devices: Optional[Union[Device, Iterable[Device]]] = None, *,
     gpu_processes: Optional[Union[GpuProcess, Iterable[GpuProcess]]] = None
 ) -> SnapshotResult:
-    """Retrieve status of demanded devices and GPU processes.
+    """Retrieves status of demanded devices and GPU processes.
 
     Args:
         devices (Optional[Union[Device, Iterable[Device]]]):
@@ -46,8 +46,8 @@ def take_snapshots(
             Requested GPU processes snapshots. If not given, all GPU processes
             running on the requested device will be returned.
 
-    Returns:
-        SnapshotResult: a named tuple containing two lists of snapshots
+    Returns: SnapshotResult
+        A named tuple containing two lists of snapshots.
 
     Note:
         If not arguments are specified, all devices and all GPU processes will
@@ -159,10 +159,10 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     """A class for collecting resource metrics.
 
     Args:
-        devices (iterable of Device):
+        devices (Iterable[Device]):
             Set of Device instances for logging. If not given, all physical
             devices on board will be used.
-        root_pids (set of int):
+        root_pids (Set[int]):
             A set of PIDs, only the status of the children processes on the GPUs
             will be collected. If not given, the PID of the current process will
             be used.
@@ -316,7 +316,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
     def activate(self, tag: str) -> 'ResourceMetricCollector':
-        """Start a new metric collection with the given tag.
+        """Starts a new metric collection with the given tag.
 
         Args:
             tag (str):
@@ -355,7 +355,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     start = activate
 
     def deactivate(self, tag: Optional[str] = None) -> 'ResourceMetricCollector':
-        """Stop the current collection with the given tag and remove all sub-tags.
+        """Stops the current collection with the given tag and remove all sub-tags.
         If the tag is not specified, deactivate the current active collection.
         For nested collections, the sub-collections will be deactivated as well.
         """
@@ -417,12 +417,12 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     __call__ = context  # alias for `with collector(tag='<tag>')`
 
     def clear(self, tag: Optional[str] = None) -> None:
-        """Reset the metric collection with the given tag. If the tag is not
+        """Resets the metric collection with the given tag. If the tag is not
         specified, reset the current active collection. For nested collections,
         the sub-collections will be reset as well.
 
         Args:
-            tag (str or None):
+            tag (Optional[str]):
                 The tag to reset. If None, the current active collection
                 will be reset.
 
@@ -468,7 +468,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 buffer = buffer.prev
 
     def collect(self) -> Dict[str, float]:
-        """Get the average resource consumption during collection."""
+        """Gets the average resource consumption during collection."""
 
         with self._lock:
             if self._metric_buffer is None:
