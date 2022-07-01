@@ -8,7 +8,7 @@ import re
 import time
 from typing import Dict, List, Tuple, Union
 
-from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error
+from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error,no-name-in-module
 
 from nvitop.core import nvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats

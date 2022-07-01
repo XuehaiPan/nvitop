@@ -867,7 +867,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns: MemoryInfo(total, free, used)
             A named tuple with BAR1 memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
-        """
+        """  # pylint: disable=line-too-long
 
         memory_info = nvml.nvmlQuery('nvmlDeviceGetBAR1MemoryInfo', self.handle)
         if nvml.nvmlCheckReturn(memory_info):
@@ -933,7 +933,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns: Union[float, NaType]
             The percentage of used BAR1 memory over total BAR1 memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
-        """
+        """  # pylint: disable=line-too-long
 
         memory_info = self.bar1_memory_info()
         if nvml.nvmlCheckReturn(memory_info.used, int) and nvml.nvmlCheckReturn(memory_info.total, int):
@@ -1084,7 +1084,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.current.graphics
-        """
+        """  # pylint: disable=line-too-long
 
         return self.clock_infos().graphics
 
@@ -1129,7 +1129,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.current.video
-        """
+        """  # pylint: disable=line-too-long
 
         return self.clock_infos().video
 
@@ -1144,7 +1144,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.graphics
-        """
+        """  # pylint: disable=line-too-long
 
         return self.clock_infos().graphics
 
@@ -1189,7 +1189,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         .. code:: bash
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.video
-        """
+        """  # pylint: disable=line-too-long
 
         return self.clock_infos().video
 

@@ -41,11 +41,30 @@ COLOR = sys.stdout.isatty()
 
 
 def set_color(value):
+    """Force enables text coloring."""
+
     global COLOR  # pylint: disable=global-statement
     COLOR = bool(value)
 
 
 def colored(text, color=None, on_color=None, attrs=None):
+    """Colorizes text.
+
+    Available text colors:
+        red, green, yellow, blue, magenta, cyan, white.
+
+    Available text highlights:
+        on_red, on_green, on_yellow, on_blue, on_magenta, on_cyan, on_white.
+
+    Available attributes:
+        bold, dark, underline, blink, reverse, concealed.
+
+    Examples:
+
+        >>> colored('Hello, World!', 'red', 'on_grey', ['blue', 'blink'])
+        >>> colored('Hello, World!', 'green')
+    """
+
     if COLOR:
         return _colored(text, color=color, on_color=on_color, attrs=attrs)
     return text
