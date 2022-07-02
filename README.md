@@ -7,7 +7,9 @@
 ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
 [![Documentation Status](https://readthedocs.org/projects/nvitop/badge/?version=latest)](https://nvitop.readthedocs.io/en/latest/?badge=latest)
 [![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month)](https://pepy.tech/project/nvitop)
+[![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop/stargazers)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
+![Tweet](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop)
 
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references host at <https://nvitop.readthedocs.io>.
 
@@ -49,7 +51,7 @@ This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) 
 
 [nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
 
-If this repo is useful to you, please star ⭐️ it to let more people know 🤗.
+If this repo is useful to you, please star ⭐️ it to let more people know 🤗. [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop)
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/117765245-3f16de80-b260-11eb-99c7-077cd5519074.png" alt="Comparison">
