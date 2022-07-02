@@ -55,7 +55,7 @@ def take_snapshots(
 
     Examples:
 
-        >>> from nvitop import take_snapshots, Device, CudaDevice
+        >>> from nvitop import take_snapshots, Device
         >>> import os
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'
 
@@ -77,7 +77,7 @@ def take_snapshots(
             ]
         )
 
-        >>> take_snapshots(CudaDevice.all())
+        >>> take_snapshots(Device.cuda.all())
         SnapshotResult(
             devices=[
                 CudaDeviceSnapshot(
@@ -98,7 +98,7 @@ def take_snapshots(
             ]
         )
 
-        >>> take_snapshots(CudaDevice(1))  # <CUDA 1> only
+        >>> take_snapshots(Device.cuda(1))  # <CUDA 1> only
         SnapshotResult(
             devices=[
                 CudaDeviceSnapshot(
@@ -183,11 +183,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         >>> import os
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
-        >>> from nvitop import ResourceMetricCollector, Device, CudaDevice
+        >>> from nvitop import ResourceMetricCollector, Device
 
-        >>> collector = ResourceMetricCollector()                          # log all devices and children processes of the current process on the GPUs
-        >>> collector = ResourceMetricCollector(root_pids={1})             # log all devices and all GPU processes
-        >>> collector = ResourceMetricCollector(devices=CudaDevice.all())  # use the CUDA ordinal
+        >>> collector = ResourceMetricCollector()                           # log all devices and children processes of the current process on the GPUs
+        >>> collector = ResourceMetricCollector(root_pids={1})              # log all devices and all GPU processes
+        >>> collector = ResourceMetricCollector(devices=Device.cuda.all())  # use the CUDA ordinal
 
         >>> with collector(tag='<tag>'):
         ...     # Do something

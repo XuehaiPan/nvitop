@@ -9,7 +9,7 @@
 [![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month)](https://pepy.tech/project/nvitop)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
 
-An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references can be found at <https://nvitop.readthedocs.io>.
+An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references host at <https://nvitop.readthedocs.io>.
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/171005261-1aad126e-dc27-4ed3-a89b-7f9c1c998bf7.png" alt="Monitor">
@@ -409,14 +409,14 @@ Please refer to [Resource Metric Collector](#resource-metric-collector) for an e
 
 ### More than a Monitor
 
-`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references can be found at <https://nvitop.readthedocs.io>.
+`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references host at <https://nvitop.readthedocs.io>.
 
 #### Status Snapshot
 
 `nvitop` provides a helper function to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
 
 ```python
-In [1]: from nvitop import take_snapshots, Device, CudaDevice
+In [1]: from nvitop import take_snapshots, Device
    ...: import os
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'  # comma-separated integers or UUID strings
 
@@ -441,7 +441,7 @@ SnapshotResult(
 
 In [3]: device_snapshots, gpu_process_snapshots = take_snapshots(Device.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
 
-In [4]: take_snapshots(CudaDevice.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
+In [4]: take_snapshots(Device.cuda.all())  # type: Tuple[List[CudaDeviceSnapshot], List[GpuProcessSnapshot]]
 Out[4]:
 SnapshotResult(
     devices=[
@@ -463,7 +463,7 @@ SnapshotResult(
     ]
 )
 
-In [5]: take_snapshots(CudaDevice(1))  # <CUDA 1> only
+In [5]: take_snapshots(Device.cuda(1))  # <CUDA 1> only
 Out[5]:
 SnapshotResult(
     devices=[
@@ -489,14 +489,14 @@ Please refer to section [Low-level APIs](#low-level-apis) for more information.
 `ResourceMetricCollector` is a class that collects resource metrics for host, GPUs and processes running on the GPUs. All metrics will be collected in an asynchronous manner. You can type `help(nvitop.ResourceMetricCollector)` in Python REPL for detailed documentation.
 
 ```python
-In [1]: from nvitop import ResourceMetricCollector, Device, CudaDevice
+In [1]: from nvitop import ResourceMetricCollector, Device
    ...: import os
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'  # comma-separated integers or UUID strings
 
-In [2]: collector = ResourceMetricCollector()                                  # log all devices and children processes of the current process on the GPUs
-In [3]: collector = ResourceMetricCollector(root_pids={1})                     # log all devices and all GPU processes
-In [4]: collector = ResourceMetricCollector(devices=Device(0), root_pids={1})  # log <GPU 0> and all GPU processes on <GPU 0>
-In [5]: collector = ResourceMetricCollector(devices=CudaDevice.all())          # use the CUDA ordinal
+In [2]: collector = ResourceMetricCollector()                                   # log all devices and children processes of the current process on the GPUs
+In [3]: collector = ResourceMetricCollector(root_pids={1})                      # log all devices and all GPU processes
+In [4]: collector = ResourceMetricCollector(devices=Device(0), root_pids={1})   # log <GPU 0> and all GPU processes on <GPU 0>
+In [5]: collector = ResourceMetricCollector(devices=Device.cuda.all())          # use the CUDA ordinal
 
 In [6]: with collector(tag='<tag>'):
    ...:     # Do something
@@ -632,13 +632,13 @@ In [1]: from nvitop import host, Device, PhysicalDevice, CudaDevice, HostProcess
 In [2]: Device.driver_version()
 Out[2]: '430.64'
 
-In [3]: Device.cuda_version()
+In [3]: Device.cuda_version()  # the maximum CUDA version supported by the driver (can be different from the CUDA runtime version)
 Out[3]: '10.1'
 
 In [4]: Device.count()
 Out[4]: 10
 
-In [5]: CudaDevice.count()
+In [5]: CudaDevice.count()  # or `Device.cuda.count()`
 Out[5]: 4
 
 In [6]: all_devices      = Device.all()                 # all devices on board (physical device)
@@ -661,6 +661,7 @@ In [7]: # NOTE: The function results might be different between calls when envir
    ...: cuda_visible_devices = Device.from_cuda_visible_devices()  # from environment variable `CUDA_VISIBLE_DEVICES`
    ...: cuda0, cuda1         = Device.from_cuda_indices([0, 1])    # from CUDA device indices (might be different from physical device indices if `CUDA_VISIBLE_DEVICES` is set)
    ...: cuda_visible_devices = CudaDevice.all()                    # shortcut to `Device.from_cuda_visible_devices()`
+   ...: cuda_visible_devices = Device.cuda.all()                   # `Device.cuda` is aliased to `CudaDevice`
    ...: cuda_visible_devices
 Out[7]: [
     CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
@@ -681,6 +682,7 @@ Out[9]: PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019Mi
 In [10]: cuda0 = CudaDevice(0)                        # from CUDA device index (equivalent to `CudaDevice(cuda_index=0)`)
     ...: cuda1 = CudaDevice(nvml_index=8)             # from physical device index
     ...: cuda3 = CudaDevice(uuid='GPU-xxxxxxxx-...')  # from UUID string
+    ...: cuda4 = Device.cuda(4)                       # `Device.cuda` is aliased to `CudaDevice`
     ...: cuda0
 Out[10]:
 CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)

@@ -3,8 +3,8 @@
 
 """The live classes for GPU devices.
 
-The core classes are ``Device`` and ``CudaDevice``. The type of returned instance created by ``Class(args)``
-is depending on the given arguments.
+The core classes are ``Device`` and ``CudaDevice`` (also aliased as ``Device.cuda``).
+The type of returned instance created by ``Class(args)`` is depending on the given arguments.
 
 ``Device()`` returns:
 
@@ -19,13 +19,14 @@ is depending on the given arguments.
 
 .. code-block:: python
 
-    - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
-    - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+    - (cuda_index: int)        -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
+    - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
     - (nvml_index: int)        -> CudaDevice
     - (nvml_index: (int, int)) -> CudaMigDevice
 
 Examples:
 
+    >>> from nvitop import Device, CudaDevice
     >>> Device.driver_version()              # version of the installed NVIDIA display driver
     '470.129.06'
 
@@ -35,6 +36,7 @@ Examples:
     >>> Device.all()                         # all physical devices in the system
     [
         PhysicalDevice(index=0, ...),
+        PhysicalDevice(index=1, ...),
         ...
     ]
 
@@ -59,14 +61,17 @@ Examples:
 
     >>> CudaDevice.count()                     # number of NVIDIA GPUs visible to CUDA applications
     4
+    >>> Device.cuda.count()                    # use alias in class `Device`
+    4
 
-    >>> CudaDevice.all()                       # all CUDA visible devices
+    >>> CudaDevice.all()                       # all CUDA visible devices (or `Device.cuda.all()`)
     [
         CudaDevice(cuda_index=0, nvml_index=3, ...),
+        CudaDevice(cuda_index=1, nvml_index=2, ...),
         ...
     ]
 
-    >>> cuda0 = CudaDevice(cuda_index=0)       # use CUDA ordinal
+    >>> cuda0 = CudaDevice(cuda_index=0)       # use CUDA ordinal (or `Device.cuda(0)`)
     >>> cuda1 = CudaDevice(nvml_index=2)       # use NVML ordinal
     >>> cuda2 = CudaDevice(uuid='GPU-xxxxxx')  # use UUID string
 
@@ -77,7 +82,7 @@ Examples:
 
     >>> cuda1.as_snapshot()                    # takes an onetime snapshot of the device
     CudaDeviceSnapshot(
-        real=CudaDevice(cuda_index=0, nvml_index=3, ...),
+        real=CudaDevice(cuda_index=1, nvml_index=2, ...),
         ...
     )
 """
@@ -165,6 +170,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         >>> Device.all()                         # all physical devices in the system
         [
             PhysicalDevice(index=0, ...),
+            PhysicalDevice(index=1, ...),
             ...
         ]
 
@@ -208,6 +214,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     )
 
     GPU_PROCESS_CLASS = GpuProcess
+    cuda = None  # defined in below
+    """Shortcut for class ``CudaDevice``."""
 
     @staticmethod
     def driver_version() -> Union[str, NaType]:
@@ -1850,8 +1858,8 @@ class CudaDevice(Device):
 
     .. code-block:: python
 
-        - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
-        - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+        - (cuda_index: int)        -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
+        - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
         - (nvml_index: int)        -> CudaDevice
         - (nvml_index: (int, int)) -> CudaMigDevice
 
@@ -1862,14 +1870,17 @@ class CudaDevice(Device):
 
         >>> CudaDevice.count()                     # number of NVIDIA GPUs visible to CUDA applications
         4
+        >>> Device.cuda.count()                    # use alias in class `Device`
+        4
 
-        >>> CudaDevice.all()                       # all CUDA visible devices
+        >>> CudaDevice.all()                       # all CUDA visible devices (or `Device.cuda.all()`)
         [
             CudaDevice(cuda_index=0, nvml_index=3, ...),
+            CudaDevice(cuda_index=1, nvml_index=2, ...),
             ...
         ]
 
-        >>> cuda0 = CudaDevice(cuda_index=0)       # use CUDA ordinal
+        >>> cuda0 = CudaDevice(cuda_index=0)       # use CUDA ordinal (or `Device.cuda(0)`)
         >>> cuda1 = CudaDevice(nvml_index=2)       # use NVML ordinal
         >>> cuda2 = CudaDevice(uuid='GPU-xxxxxx')  # use UUID string
 
@@ -1880,7 +1891,7 @@ class CudaDevice(Device):
 
         >>> cuda1.as_snapshot()                    # takes an onetime snapshot of the device
         CudaDeviceSnapshot(
-            real=CudaDevice(cuda_index=0, nvml_index=3, ...),
+            real=CudaDevice(cuda_index=1, nvml_index=2, ...),
             ...
         )
     """  # pylint: disable=line-too-long
@@ -1939,8 +1950,8 @@ class CudaDevice(Device):
 
         .. code-block:: python
 
-            - (index: int)             -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
-            - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on ``CUDA_VISIBLE_DEVICES``
+            - (cuda_index: int)        -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
+            - (uuid: str)              -> Union[CudaDevice, CudaMigDevice]  # depending on `CUDA_VISIBLE_DEVICES`
             - (nvml_index: int)        -> CudaDevice
             - (nvml_index: (int, int)) -> CudaMigDevice
 
@@ -2015,6 +2026,10 @@ class CudaDevice(Device):
         snapshot.cuda_index = self.cuda_index
 
         return snapshot
+
+
+Device.cuda = CudaDevice
+"""Shortcut for class ``CudaDevice``."""
 
 
 class CudaMigDevice(CudaDevice, MigDevice):
