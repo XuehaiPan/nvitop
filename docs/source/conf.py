@@ -4,6 +4,8 @@
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
+# pylint: disable=all
+
 # -- Path setup --------------------------------------------------------------
 
 # If extensions (or modules to document with autodoc) are in another directory,
@@ -102,8 +104,13 @@ html_css_files = [
 #
 # html_sidebars = {}
 
+suppress_warnings = [
+    'ref.python'
+]
+
 extlinks = {
-    'gitcode': ('https://github.com/XuehaiPan/nvitop/blob/HEAD/%s', '')
+    'gitcode': ('https://github.com/XuehaiPan/nvitop/blob/HEAD/%s', '%s'),
+    'issue': ('https://github.com/XuehaiPan/nvitop/issues/%s', 'issue %s')
 }
 
 

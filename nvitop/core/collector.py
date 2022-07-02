@@ -40,8 +40,8 @@ def take_snapshots(
         devices (Optional[Union[Device, Iterable[Device]]]):
             Requested devices for snapshots. If not given, the devices will be
             determined from GPU processes:
-                - All devices (no GPU processes are given)
-                - Devices that used by given GPU processes
+            - All devices (no GPU processes are given)
+            - Devices that used by given GPU processes
         gpu_processes (Optional[Union[GpuProcess, Iterable[GpuProcess]]]):
             Requested GPU processes snapshots. If not given, all GPU processes
             running on the requested device will be returned.

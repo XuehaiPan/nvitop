@@ -275,8 +275,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             indices (Iterable[Union[int, Tuple[int, int]]]):
                 Indices of the devices. For each index, get ``PhysicalDevice`` for single int
                 and ``MigDevice`` for tuple (int, int). That is:
-                    - (int)        -> PhysicalDevice
-                    - ((int, int)) -> MigDevice
+                - (int)        -> PhysicalDevice
+                - ((int, int)) -> MigDevice
 
         Returns: List[Union[PhysicalDevice, MigDevice]]
             A list of ``PhysicalDevice`` and/or ``MigDevice`` instances of the given indices.

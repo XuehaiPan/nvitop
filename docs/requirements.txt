@@ -1,6 +1,8 @@
-sphinx
-sphinx-rtd-theme
+sphinx >= 5.0
+sphinx-autoapi
+sphinx-autobuild
 sphinx-copybutton
+sphinx-rtd-theme
 
 pytorch-lightning >= 1.5.0
 tensorflow >= 2.0
