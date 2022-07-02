@@ -6,3 +6,4 @@ nvitop.core.host module
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
+    :noindex: psutil.Process
