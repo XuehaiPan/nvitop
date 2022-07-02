@@ -10,6 +10,9 @@ build:
   os: ubuntu-22.04
   tools:
     python: "3.8"
+  jobs:
+    post_install:
+      - sed -i -E 's/^     process identity for every yielded instance$/  \0/' "$(python3 -c "print(__import__('psutil').__file__)")"
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
