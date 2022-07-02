@@ -9,7 +9,7 @@
 [![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month)](https://pepy.tech/project/nvitop)
 [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop/stargazers)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
-![Tweet](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop)
+[![Tweet](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop)
 
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references host at <https://nvitop.readthedocs.io>.
 
