@@ -474,47 +474,47 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._device
 
     def gpu_instance_id(self) -> Union[int, NaType]:
-        """The GPU instance ID of the MIG device, or ``nvitop.NA`` if not available."""
+        """The GPU instance ID of the MIG device, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_instance_id
 
     def compute_instance_id(self) -> Union[int, NaType]:
-        """The compute instance ID of the MIG device, or ``nvitop.NA`` if not available."""
+        """The compute instance ID of the MIG device, or ``nvitop.NA`` if not applicable."""
 
         return self._compute_instance_id
 
     def gpu_memory(self) -> Union[int, NaType]:  # in bytes
-        """The used GPU memory in bytes, or ``nvitop.NA`` if not available."""
+        """The used GPU memory in bytes, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_memory
 
     def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
-        """The used GPU memory in human readable format, or ``nvitop.NA`` if not available."""
+        """The used GPU memory in human readable format, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_memory_human
 
     def gpu_memory_percent(self) -> Union[float, NaType]:  # in percentage
-        """The percentage of used GPU memory by the process, or ``nvitop.NA`` if not available."""
+        """The percentage of used GPU memory by the process, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_memory_percent
 
     def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of SM (Streaming Multiprocessor), or ``nvitop.NA`` if not available."""
+        """The utilization rate of SM (Streaming Multiprocessor), or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_sm_utilization
 
     def gpu_memory_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of GPU memory bandwidth, or ``nvitop.NA`` if not available."""
+        """The utilization rate of GPU memory bandwidth, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_memory_utilization
 
     def gpu_encoder_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of the encoder, or ``nvitop.NA`` if not available."""
+        """The utilization rate of the encoder, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_encoder_utilization
 
     def gpu_decoder_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of the decoder, or ``nvitop.NA`` if not available."""
+        """The utilization rate of the decoder, or ``nvitop.NA`` if not applicable."""
 
         return self._gpu_decoder_utilization
 

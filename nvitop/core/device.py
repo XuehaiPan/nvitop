@@ -692,7 +692,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The official product name of the GPU. This is an alphanumeric string. For all products.
 
         Returns: Union[str, NaType]
-            The official product name, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The official product name, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -710,7 +710,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         not correspond to any physical label on the board.
 
         Returns: Union[str, NaType]
-            The UUID of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The UUID of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -727,7 +727,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """PCI bus ID as "domain:bus:device.function", in hex.
 
         Returns: Union[str, NaType]
-            The PCI bus ID of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The PCI bus ID of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -745,7 +745,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         unique immutable alphanumeric value.
 
         Returns: Union[str, NaType]
-            The serial number of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The serial number of the device, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -762,7 +762,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with memory information (in bytes) for the device.
 
         Returns: MemoryInfo(total, free, used)
-            A named tuple with memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            A named tuple with memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         memory_info = nvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self.handle)
@@ -774,7 +774,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total installed GPU memory in bytes.
 
         Returns: Union[int, NaType]
-            Total installed GPU memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total installed GPU memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -791,7 +791,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total memory allocated by active contexts in bytes.
 
         Returns: Union[int, NaType]
-            Total memory allocated by active contexts in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total memory allocated by active contexts in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -806,7 +806,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free memory in bytes.
 
         Returns: Union[int, NaType]
-            Total free memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total free memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -821,7 +821,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total installed GPU memory in human readable format.
 
         Returns: Union[str, NaType]
-            Total installed GPU memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total installed GPU memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         if self._memory_total_human is NA:
@@ -832,7 +832,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total memory allocated by active contexts in human readable format.
 
         Returns: Union[int, NaType]
-            Total memory allocated by active contexts in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total memory allocated by active contexts in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """  # pylint: disable=line-too-long
 
         return bytes2human(self.memory_used())
@@ -841,7 +841,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total free memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total free memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return bytes2human(self.memory_free())
@@ -850,7 +850,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The percentage of used memory over total memory (0 <= p <= 100).
 
         Returns: Union[float, NaType]
-            The percentage of used memory over total memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The percentage of used memory over total memory, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         memory_info = self.memory_info()
@@ -862,7 +862,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The used memory over total memory in human readable format.
 
         Returns: str
-            The used memory over total memory in human readable format, or 'N/A / N/A' when not available.
+            The used memory over total memory in human readable format, or 'N/A / N/A' when not applicable.
         """
 
         return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
@@ -873,7 +873,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with BAR1 memory information (in bytes) for the device.
 
         Returns: MemoryInfo(total, free, used)
-            A named tuple with BAR1 memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            A named tuple with BAR1 memory information, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """  # pylint: disable=line-too-long
 
         memory_info = nvml.nvmlQuery('nvmlDeviceGetBAR1MemoryInfo', self.handle)
@@ -885,7 +885,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
-            Total BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return self.bar1_memory_info().total
@@ -894,7 +894,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total used BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
-            Total used BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total used BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return self.bar1_memory_info().used
@@ -903,7 +903,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
-            Total free BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total free BAR1 memory in bytes, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return self.bar1_memory_info().free
@@ -912,7 +912,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return bytes2human(self.bar1_memory_total())
@@ -921,7 +921,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total used BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total used BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total used BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return bytes2human(self.bar1_memory_used())
@@ -930,7 +930,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total free BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
-            Total free BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            Total free BAR1 memory in human readable format, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return bytes2human(self.bar1_memory_free())
@@ -939,7 +939,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The percentage of used BAR1 memory over total BAR1 memory (0 <= p <= 100).
 
         Returns: Union[float, NaType]
-            The percentage of used BAR1 memory over total BAR1 memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The percentage of used BAR1 memory over total BAR1 memory, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """  # pylint: disable=line-too-long
 
         memory_info = self.bar1_memory_info()
@@ -951,7 +951,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The used BAR1 memory over total BAR1 memory in human readable format.
 
         Returns: str
-            The used BAR1 memory over total BAR1 memory in human readable format, or 'N/A / N/A' when not available.
+            The used BAR1 memory over total BAR1 memory in human readable format, or 'N/A / N/A' when not applicable.
         """
 
         return '{} / {}'.format(self.bar1_memory_used_human(), self.bar1_memory_total_human())
@@ -962,7 +962,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with GPU utilization rates (in percentage) for the device.
 
         Returns: UtilizationRates(gpu, memory, encoder, decoder)
-            A named tuple with GPU utilization rates (in percentage) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            A named tuple with GPU utilization rates (in percentage) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """  # pylint: disable=line-too-long
 
         gpu, memory, encoder, decoder = NA, NA, NA, NA
@@ -986,7 +986,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The sample period may be between 1 second and 1/6 second depending on the product.
 
         Returns: Union[int, NaType]
-            The GPU utilization rate in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The GPU utilization rate in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1004,7 +1004,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         The sample period may be between 1 second and 1/6 second depending on the product.
 
         Returns: Union[int, NaType]
-            The memory bandwidth utilization rate of the GPU in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The memory bandwidth utilization rate of the GPU in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1019,7 +1019,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The encoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
-            The encoder utilization rate  in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The encoder utilization rate  in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return self.utilization_rates().encoder
@@ -1028,7 +1028,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The decoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
-            The decoder utilization rate  in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The decoder utilization rate  in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         return self.utilization_rates().decoder
@@ -1039,7 +1039,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with current clock speeds (in MHz) for the device.
 
         Returns: ClockInfos(graphics, sm, memory, video)
-            A named tuple with current clock speeds (in MHz) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            A named tuple with current clock speeds (in MHz) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """  # pylint: disable=line-too-long
 
         return ClockInfos(
@@ -1057,7 +1057,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a named tuple with maximum clock speeds (in MHz) for the device.
 
         Returns: ClockInfos(graphics, sm, memory, video)
-            A named tuple with maximum clock speeds (in MHz) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            A named tuple with maximum clock speeds (in MHz) for the device, the item could be ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """  # pylint: disable=line-too-long
 
         clock_infos = self._max_clock_infos._asdict()
@@ -1084,7 +1084,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of graphics (shader) clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of graphics (shader) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The current frequency of graphics (shader) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1099,7 +1099,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of SM (Streaming Multiprocessor) clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of SM (Streaming Multiprocessor) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The current frequency of SM (Streaming Multiprocessor) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1114,7 +1114,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of memory clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of memory clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The current frequency of memory clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1129,7 +1129,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Current frequency of video encoder/decoder clock in MHz.
 
         Returns: Union[int, NaType]
-            The current frequency of video encoder/decoder clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The current frequency of video encoder/decoder clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1144,7 +1144,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of graphics (shader) clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of graphics (shader) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The maximum frequency of graphics (shader) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1159,7 +1159,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of SM (Streaming Multiprocessor) clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of SM (Streaming Multiprocessor) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The maximum frequency of SM (Streaming Multiprocessor) clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1174,7 +1174,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of memory clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of memory clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The maximum frequency of memory clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1189,7 +1189,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Maximum frequency of video encoder/decoder clock in MHz.
 
         Returns: Union[int, NaType]
-            The maximum frequency of video encoder/decoder clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The maximum frequency of video encoder/decoder clock in MHz, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1209,7 +1209,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         because they rely on cooling via fans in the surrounding enclosure.
 
         Returns: Union[int, NaType]
-            The fan speed value in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The fan speed value in percentage, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1225,7 +1225,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Core GPU temperature. in degrees C.
 
         Returns: Union[int, NaType]
-            The core GPU temperature in Celsius degrees, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The core GPU temperature in Celsius degrees, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1242,7 +1242,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The last measured power draw for the entire board in milliwatts.
 
         Returns: Union[int, NaType]
-            The power draw for the entire board in milliwatts, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The power draw for the entire board in milliwatts, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1261,7 +1261,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The software power limit in milliwatts. Set by software like nvidia-smi.
 
         Returns: Union[int, NaType]
-            The software power limit in milliwatts, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The software power limit in milliwatts, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1276,7 +1276,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """The string of power usage over power limit in watts.
 
         Returns: str
-            The string of power usage over power limit in watts, or 'N/A / N/A' when not available.
+            The string of power usage over power limit in watts, or 'N/A / N/A' when not applicable.
         """
 
         power_usage = self.power_usage()
@@ -1296,7 +1296,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if not an active display device.
             - 'Enabled': if an active display device.
-            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not applicable.
 
         Command line equivalent:
 
@@ -1316,7 +1316,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if the display mode is disabled.
             - 'Enabled': if the display mode is enabled.
-            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not applicable.
 
         Command line equivalent:
 
@@ -1338,7 +1338,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'WDDM': for WDDM driver model on Windows.
             - 'WDM': for TTC (WDM) driver model on Windows.
-            - ``nvitop.NA`` (str: ``'N/A'``): if not available, e.g. on Linux.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not applicable, e.g. on Linux.
 
         Command line equivalent:
 
@@ -1364,7 +1364,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if the persistence mode is disabled.
             - 'Enabled': if the persistence mode is enabled.
-            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not applicable.
 
         Command line equivalent:
 
@@ -1381,7 +1381,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         P12 (minimum performance).
 
         Returns: Union[str, NaType]
-            The current performance state in format ``P<int>``, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The current performance state in format ``P<int>``, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1400,7 +1400,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Total errors detected across entire chip.
 
         Returns: Union[int, NaType]
-            The total number of uncorrected errors in volatile ECC memory, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The total number of uncorrected errors in volatile ECC memory, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
 
         Command line equivalent:
 
@@ -1423,7 +1423,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             - 'Exclusive Thread': deprecated, use Exclusive Process instead
             - 'Prohibited': means no contexts are allowed per device (no compute apps).
             - 'Exclusive Process': means only one context is allowed per device, usable from multiple threads at a time.
-            - ``nvitop.NA`` (str: ``'N/A'``): if not available.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not applicable.
 
         Command line equivalent:
 
@@ -1455,7 +1455,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[str, NaType]
             - 'Disabled': if the MIG mode is disabled.
             - 'Enabled': if the MIG mode is enabled.
-            - ``nvitop.NA`` (str: ``'N/A'``): if not available, e.g. the GPU does not support MIG mode.
+            - ``nvitop.NA`` (str: ``'N/A'``): if not applicable, e.g. the GPU does not support MIG mode.
 
         Command line equivalent:
 
@@ -1815,7 +1815,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """The gpu instance ID of the MIG device.
 
         Returns: Union[int, NaType]
-            The gpu instance ID of the MIG device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The gpu instance ID of the MIG device, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         if self._gpu_instance_id is NA:
@@ -1829,7 +1829,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """The compute instance ID of the MIG device.
 
         Returns: Union[int, NaType]
-            The compute instance ID of the MIG device, or ``nvitop.NA`` (str: ``'N/A'``) when not available.
+            The compute instance ID of the MIG device, or ``nvitop.NA`` (str: ``'N/A'``) when not applicable.
         """
 
         if self._compute_instance_id is NA:
