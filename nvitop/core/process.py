@@ -702,7 +702,9 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self, *,
         host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
     ) -> Snapshot:
-        """Returns a onetime snapshot of the process on the GPU device."""
+        """Returns a onetime snapshot of the process on the GPU device.
+        See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         host_process_snapshot_cache = host_process_snapshot_cache or {}
         try:
