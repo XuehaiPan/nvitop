@@ -77,7 +77,9 @@ def take_snapshots(
             ]
         )
 
-        >>> take_snapshots(Device.cuda.all())
+        >>> device_snapshots, gpu_process_snapshots = take_snapshots(Device.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
+
+        >>> take_snapshots(Device.cuda.all())  # use CUDA device enumeration
         SnapshotResult(
             devices=[
                 CudaDeviceSnapshot(
@@ -114,7 +116,7 @@ def take_snapshots(
                 ...
             ]
         )
-    """
+    """  # pylint: disable=line-too-long
 
     def unique(iterable: Iterable[Hashable]) -> List[Hashable]:
         return list(OrderedDict.fromkeys(iterable).keys())

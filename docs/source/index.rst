@@ -74,6 +74,32 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 ------
 
+Quick Start
+"""""""""""
+
+.. code-block:: python
+
+    from nvitop import Device
+
+    devices = Device.all()  # or Device.cuda.all()
+    for device in devices:
+        processes = device.processes()  # type: Dict[int, GpuProcess]
+        sorted_pids = sorted(processes)
+
+        print(device)
+        print(f'  - Fan speed:       {device.fan_speed()}%')
+        print(f'  - Temperature:     {device.temperature()}C')
+        print(f'  - GPU utilization: {device.gpu_utilization()}%')
+        print(f'  - Total memory:    {device.memory_total_human()}')
+        print(f'  - Used memory:     {device.memory_used_human()}')
+        print(f'  - Free memory:     {device.memory_free_human()}')
+        print(f'  - Processes ({len(processes)}): {sorted_pids}')
+        for pid in sorted_pids:
+            print(f'    - {processes[pid]}')
+        print('-' * 80)
+
+------
+
 .. toctree::
     :maxdepth: 4
     :caption: API Reference:

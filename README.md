@@ -38,6 +38,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
     - [TensorBoard Integration](#tensorboard-integration)
   - [More than a Monitor](#more-than-a-monitor)
+    - [Quick Start](#quick-start)
     - [Status Snapshot](#status-snapshot)
     - [Resource Metric Collector](#resource-metric-collector)
     - [Low-level APIs](#low-level-apis)
@@ -413,6 +414,29 @@ Please refer to [Resource Metric Collector](#resource-metric-collector) for an e
 
 `nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references host at <https://nvitop.readthedocs.io>.
 
+#### Quick Start
+
+```python
+from nvitop import Device
+
+devices = Device.all()  # or `Device.cuda.all()` to use CUDA ordinal instead
+for device in devices:
+    processes = device.processes()  # type: Dict[int, GpuProcess]
+    sorted_pids = sorted(processes.keys())
+
+    print(device)
+    print(f'  - Fan speed:       {device.fan_speed()}%')
+    print(f'  - Temperature:     {device.temperature()}C')
+    print(f'  - GPU utilization: {device.gpu_utilization()}%')
+    print(f'  - Total memory:    {device.memory_total_human()}')
+    print(f'  - Used memory:     {device.memory_used_human()}')
+    print(f'  - Free memory:     {device.memory_free_human()}')
+    print(f'  - Processes ({len(processes)}): {sorted_pids}')
+    for pid in sorted_pids:
+        print(f'    - {processes[pid]}')
+    print('-' * 80)
+```
+
 #### Status Snapshot
 
 `nvitop` provides a helper function to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
@@ -443,7 +467,7 @@ SnapshotResult(
 
 In [3]: device_snapshots, gpu_process_snapshots = take_snapshots(Device.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
 
-In [4]: take_snapshots(Device.cuda.all())  # type: Tuple[List[CudaDeviceSnapshot], List[GpuProcessSnapshot]]
+In [4]: take_snapshots(Device.cuda.all())  # use CUDA device enumeration
 Out[4]:
 SnapshotResult(
     devices=[
