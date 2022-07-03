@@ -352,9 +352,12 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = {}
 
-    def __new__(cls, pid: int, device: 'Device',
-                gpu_memory: Optional[Union[int, NaType]] = None,             # pylint: disable=unused-argument
-                type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=unused-argument,redefined-builtin
+    # pylint: disable=unused-argument
+    def __new__(cls, pid: int, device: 'Device',                             # pylint: disable=too-many-arguments
+                gpu_memory: Optional[Union[int, NaType]] = None,
+                gpu_instance_id: Optional[Union[int, NaType]] = None,
+                compute_instance_id: Optional[Union[int, NaType]] = None,
+                type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=redefined-builtin
         """Returns the cached instance of ``GpuProcess``."""
 
         if pid is None:
@@ -382,24 +385,32 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             return instance
 
-    def __init__(self, pid: int, device: 'Device',                    # pylint: disable=unused-argument
+    def __init__(self, pid: int, device: 'Device',                          # pylint: disable=too-many-arguments,unused-argument
                  gpu_memory: Optional[Union[int, NaType]] = None,
-                 type: Optional[Union[str, NaType]] = None) -> None:  # pylint: disable=redefined-builtin
+                 gpu_instance_id: Optional[Union[int, NaType]] = None,
+                 compute_instance_id: Optional[Union[int, NaType]] = None,
+                 type: Optional[Union[str, NaType]] = None) -> None:        # pylint: disable=redefined-builtin
         """Initializes the instance returned by ``__new__()``."""
 
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
             gpu_memory = NA
         if gpu_memory is not None:
             self.set_gpu_memory(gpu_memory)
+
         if type is None and not hasattr(self, '_type'):
             type = NA
         if type is not None:
             self.type = type
-        if device.is_mig_device():
+
+        if gpu_instance_id is not None and compute_instance_id is not None:
+            self._gpu_instance_id = (gpu_instance_id if gpu_instance_id != 0xFFFFFFFF else NA)
+            self._compute_instance_id = (compute_instance_id if compute_instance_id != 0xFFFFFFFF else NA)
+        elif device.is_mig_device():
             self._gpu_instance_id = device.gpu_instance_id()
             self._compute_instance_id = device.compute_instance_id()
         else:
             self._gpu_instance_id = self._compute_instance_id = NA
+
         for util in ('sm', 'memory', 'encoder', 'decoder'):
             if not hasattr(self, '_gpu_{}_utilization'.format(util)):
                 setattr(self, '_gpu_{}_utilization'.format(util), NA)
@@ -548,6 +559,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             - 'C': compute context
             - 'G': graphics context
             - 'C+G': both compute context and graphics context
+            - 'N/A': not applicable
         """
 
         return self._type

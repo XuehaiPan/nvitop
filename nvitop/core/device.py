@@ -1505,9 +1505,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         for type, func in [('C', 'nvmlDeviceGetComputeRunningProcesses'),  # pylint: disable=redefined-builtin
                            ('G', 'nvmlDeviceGetGraphicsRunningProcesses')]:
             for p in nvml.nvmlQuery(func, self.handle, default=()):  # pylint: disable=invalid-name
-                proc = processes[p.pid] = self.GPU_PROCESS_CLASS(pid=p.pid, device=self)
-                proc.set_gpu_memory(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
-                                    else NA)  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
+                proc = processes[p.pid] = self.GPU_PROCESS_CLASS(
+                    pid=p.pid, device=self,
+                    gpu_memory=(p.usedGpuMemory if isinstance(p.usedGpuMemory, int)
+                                else NA),  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
+                    gpu_instance_id=getattr(p, 'gpuInstanceId', 0xFFFFFFFF),
+                    compute_instance_id=getattr(p, 'computeInstanceId', 0xFFFFFFFF)
+                )
                 proc.type = proc.type + type
 
         if len(processes) > 0:
