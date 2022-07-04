@@ -22,3 +22,42 @@ if not __release__:
         ).strip().lstrip('v').replace('-', '+', 1).replace('-', '.')
     except (OSError, subprocess.CalledProcessError):
         pass
+
+
+# The package `nvidia-ml-py` is not backward compatible over releases. This may
+# cause problems with Old versions of NVIDIA drivers.
+# The ideal solution is to let the user install the best-fit version of `nvidia-ml-py`.
+PYNVML_VERSION_CANDIDATES = [
+    '11.450.51',   # the last version supports the R430 driver (CUDA 10.x)
+    '11.450.129',  # requires at last the R450 driver
+    '11.460.79',
+    '11.470.66',
+    '11.495.46',
+]
+"""The list of supported ``nvidia-ml-py`` versions.
+See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
+
+To install ``nvitop`` with a specific version of ``nvidia-ml-py``, use ``nvitop[pynvml-xx.yyy.zzz]``, for example:
+
+.. code:: bash
+
+    pip3 install 'nvitop[pynvml-11.450.51]'
+
+or
+
+.. code:: bash
+
+    pip3 install nvitop nvidia-ml-py==11.450.51
+
+Note:
+    The package ``nvidia-ml-py`` is not backward compatible over releases. This may cause problems
+    such as *"Function Not Found"* errors with Old versions of NVIDIA drivers (e.g. the NVIDIA R430
+    driver on Ubuntu 16.04 LTS).
+    The ideal solution is to let the user install the best-fit version of ``nvidia-ml-py``.
+
+    ``nvidia-ml-py==11.450.51`` is the last version supports the NVIDIA R430 driver (CUDA 10.x).
+    Since ``nvidia-ml-py>=11.450.129``, the definition of struct ``nvmlProcessInfo_t`` has introduced
+    two new fields ``gpuInstanceId`` and ``computeInstanceId`` (GI ID and CI ID in newer ``nvidia-smi``)
+    which are incompatible with some old NVIDIA drivers. ``nvitop`` may not display the processes
+    correctly due to this incompatibility.
+"""

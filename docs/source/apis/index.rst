@@ -15,6 +15,12 @@ Subpackages
     core/utils
     callbacks
 
+.. automodule:: nvitop.version
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :member-order: bysource
+
 Module contents
 ---------------
 
