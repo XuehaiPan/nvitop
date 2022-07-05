@@ -165,9 +165,9 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             Set of Device instances for logging. If not given, all physical
             devices on board will be used.
         root_pids (Set[int]):
-            A set of PIDs, only the status of the children processes on the GPUs
-            will be collected. If not given, the PID of the current process will
-            be used.
+            A set of PIDs, only the status of the descendant processes on the
+            GPUs will be collected. If not given, the PID of the current process
+            will be used.
         interval (float): The snapshot interval for background daemon thread.
 
     Core methods:
@@ -187,7 +187,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         >>> from nvitop import ResourceMetricCollector, Device
 
-        >>> collector = ResourceMetricCollector()                           # log all devices and children processes of the current process on the GPUs
+        >>> collector = ResourceMetricCollector()                           # log all devices and descendant processes of the current process on the GPUs
         >>> collector = ResourceMetricCollector(root_pids={1})              # log all devices and all GPU processes
         >>> collector = ResourceMetricCollector(devices=Device.cuda.all())  # use the CUDA ordinal
 

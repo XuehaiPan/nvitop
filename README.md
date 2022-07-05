@@ -575,7 +575,7 @@ In [1]: from nvitop import ResourceMetricCollector, Device
    ...: import os
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'  # comma-separated integers or UUID strings
 
-In [2]: collector = ResourceMetricCollector()                                   # log all devices and children processes of the current process on the GPUs
+In [2]: collector = ResourceMetricCollector()                                   # log all devices and descendant processes of the current process on the GPUs
 In [3]: collector = ResourceMetricCollector(root_pids={1})                      # log all devices and all GPU processes
 In [4]: collector = ResourceMetricCollector(devices=Device(0), root_pids={1})   # log <GPU 0> and all GPU processes on <GPU 0>
 In [5]: collector = ResourceMetricCollector(devices=Device.cuda.all())          # use the CUDA ordinal
@@ -645,7 +645,7 @@ from nvitop.callbacks.tensorboard import add_scalar_dict
 # Logger and status collector
 writer = SummaryWriter()
 collector = ResourceMetricCollector(devices=CudaDevice.all(),  # log all visible CUDA devices and use the CUDA ordinal
-                                    root_pids={os.getpid()},   # only log the children processes of the current process
+                                    root_pids={os.getpid()},   # only log the descendant processes of the current process
                                     interval=1.0)              # snapshot interval for background daemon thread
 
 # Start training
