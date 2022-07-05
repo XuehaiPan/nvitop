@@ -5,6 +5,7 @@
 
 # pylint: disable=invalid-name
 
+import inspect
 import logging
 import re
 import threading
@@ -29,6 +30,7 @@ class libnvml:
 
     LOGGER = logging.getLogger('NVML')
     UNKNOWN_FUNCTIONS = {}
+    UNKNOWN_FUNCTIONS_CACHE_SIZE = 1024
     VERSIONED_PATTERN = re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
 
     c_nvmlDevice_t = pynvml.c_nvmlDevice_t
@@ -97,11 +99,11 @@ class libnvml:
             NVMLError_DriverNotLoaded:
                 If NVIDIA driver is not loaded.
             NVMLError_LibRmVersionMismatch:
-                If RM detects a driver/library version mismatch, usually after a upgrade for NVIDIA
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
                 driver without reloading the kernel module.
             AttributeError:
-                If cannot find function ``nvmlInitWithFlags``, usually the ``pynvml`` module is overridden
-                by other modules. Need to reinstall package ``nvidia-ml-py``.
+                If cannot find function ``nvmlInitWithFlags``, usually the ``pynvml`` module is
+                overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
         """
 
         self.nvmlInitWithFlags(0)
@@ -115,11 +117,11 @@ class libnvml:
             NVMLError_DriverNotLoaded:
                 If NVIDIA driver is not loaded.
             NVMLError_LibRmVersionMismatch:
-                If RM detects a driver/library version mismatch, usually after a upgrade for NVIDIA
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
                 driver without reloading the kernel module.
             AttributeError:
-                If cannot find function ``nvmlInitWithFlags``, usually the ``pynvml`` module is overridden
-                by other modules. Need to reinstall package ``nvidia-ml-py``.
+                If cannot find function ``nvmlInitWithFlags``, usually the ``pynvml`` module is
+                overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
         """
 
         with self._lock:
@@ -130,14 +132,14 @@ class libnvml:
         try:
             pynvml.nvmlInitWithFlags(flags)
         except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
-            message = (
-                'FATAL ERROR: NVIDIA Management Library (NVML) not found.\n'
-                'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
-                '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
-                '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
-                '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
-                '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.'
-            )
+            message = '\n'.join((
+                'FATAL ERROR: NVIDIA Management Library (NVML) not found.',
+                'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at',
+                '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the',
+                '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).',
+                '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be',
+                '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.',
+            ))
             for text, color, attrs in (('FATAL ERROR:', 'red', ('bold',)),
                                        ('HINT:', 'yellow', ('bold',)),
                                        ('https://www.nvidia.com/Download/index.aspx', None, ('underline',)),
@@ -148,12 +150,12 @@ class libnvml:
             self.LOGGER.critical(message)
             raise
         except AttributeError:
-            message = (
-                'FATAL ERROR: The dependency package `nvidia-ml-py` is corrupted. You may have installed\n'
-                '             other packages overriding the module `pynvml`.\n'
-                'Please reinstall `nvitop` with command:\n'
-                '    python3 -m pip install --force-reinstall nvitop'
-            )
+            message = '\n'.join((
+                'FATAL ERROR: The dependency package `nvidia-ml-py` is corrupted. You may have installed',
+                '             other packages overriding the module `pynvml`.',
+                'Please reinstall `nvitop` with command:',
+                '    python3 -m pip install --force-reinstall nvitop',
+            ))
             for text, color, attrs in (('FATAL ERROR:', 'red', ('bold',)),
                                        ('nvidia-ml-py', None, ('bold',)),
                                        ('pynvml', None, ('bold',)),
@@ -176,7 +178,7 @@ class libnvml:
             NVMLError_DriverNotLoaded:
                 If NVIDIA driver is not loaded.
             NVMLError_LibRmVersionMismatch:
-                If RM detects a driver/library version mismatch, usually after a upgrade for NVIDIA
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
                 driver without reloading the kernel module.
             NVMLError_Uninitialized:
                 If NVML was not first initialized with ``nvmlInit()``.
@@ -222,15 +224,22 @@ class libnvml:
             if isinstance(func, str):
                 try:
                     func = getattr(self, func)
-                except AttributeError as e:
-                    raise nvml.NVMLError_FunctionNotFound from e
+                except AttributeError as e1:
+                    raise nvml.NVMLError_FunctionNotFound from e1  # pylint: disable=no-member
 
             retval = func(*args, **kwargs)
-        except nvml.NVMLError_FunctionNotFound as e:  # pylint: disable=no-member
+        except nvml.NVMLError_FunctionNotFound as e2:  # pylint: disable=no-member
             if not ignore_function_not_found:
+                if identifier.__name__ == '<lambda>':
+                    identifier = inspect.getsource(func)
+                else:
+                    identifier = repr(func)
                 with self._lock:
-                    if func not in self.UNKNOWN_FUNCTIONS:
-                        self.UNKNOWN_FUNCTIONS[func] = e
+                    if (
+                        identifier not in self.UNKNOWN_FUNCTIONS
+                        and len(self.UNKNOWN_FUNCTIONS) < self.UNKNOWN_FUNCTIONS_CACHE_SIZE
+                    ):
+                        self.UNKNOWN_FUNCTIONS[identifier] = (func, e2)
                         self.LOGGER.error(
                             'ERROR: A FunctionNotFound error occurred while calling %s.\n'
                             'Please verify whether the `nvidia-ml-py` package is '

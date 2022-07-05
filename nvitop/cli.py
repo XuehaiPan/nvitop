@@ -213,15 +213,16 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
             if len(nvml.UNKNOWN_FUNCTIONS) > 1
             else 'ERROR: A FunctionNotFound error occurred while calling:'
         ]
-        unknown_function_messages.extend([
-            *list(map('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format, nvml.UNKNOWN_FUNCTIONS)),
-            ('Please verify whether the `{0}` package is compatible with your NVIDIA driver version.\n'
-             'You can check the release history of `{0}` and install the compatible version manually.\n'
-             'See {1} for more information.').format(
-                colored('nvidia-ml-py', attrs=('bold',)),
-                colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',))
-            )
-        ])
+        unknown_function_messages.extend('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format(func)
+                                         for func, _ in nvml.UNKNOWN_FUNCTIONS.values())
+        unknown_function_messages.append('\n'.join((
+            'Please verify whether the `{0}` package is compatible with your NVIDIA driver version.',
+            'You can check the release history of `{0}` and install the compatible version manually.',
+            'See {1} for more information.',
+        )).format(
+            colored('nvidia-ml-py', attrs=('bold',)),
+            colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',))
+        ))
         message = '\n'.join(unknown_function_messages)
         if (
             'nvmlDeviceGetComputeRunningProcesses' in message
