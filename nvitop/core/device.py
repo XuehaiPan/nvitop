@@ -1492,6 +1492,20 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return []  # implemented in PhysicalDevice
 
+    def is_leaf_device(self) -> bool:
+        """Returns ``True`` if the device is a physical device with MIG mode disabled or a MIG device.
+        Otherwise returns ``False`` if the device is a physical device with MIG mode enabled.
+        """
+
+        return (self.is_mig_device() or not self.is_mig_mode_enabled())
+
+    def to_leaf_devices(self) -> List[Union['PhysicalDevice', 'MigDevice', 'CudaDevice']]:
+        """Returns a list of leaf devices. Note that a CUDA device is always a leaf device."""
+
+        if isinstance(self, CudaDevice) or self.is_leaf_device():
+            return [self]
+        return self.mig_devices()
+
     @ttl_cache(ttl=2.0)
     def processes(self) -> Dict[int, GpuProcess]:
         """Returns a dictionary of processes running on the GPU.
