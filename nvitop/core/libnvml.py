@@ -28,7 +28,7 @@ class libnvml:
     """Base exception class for NVML query errors."""
 
     LOGGER = logging.getLogger('NVML')
-    UNKNOWN_FUNCTIONS = set()
+    UNKNOWN_FUNCTIONS = {}
     VERSIONED_PATTERN = re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
 
     c_nvmlDevice_t = pynvml.c_nvmlDevice_t
@@ -226,11 +226,11 @@ class libnvml:
                     raise nvml.NVMLError_FunctionNotFound from e
 
             retval = func(*args, **kwargs)
-        except nvml.NVMLError_FunctionNotFound:  # pylint: disable=no-member
+        except nvml.NVMLError_FunctionNotFound as e:  # pylint: disable=no-member
             if not ignore_function_not_found:
                 with self._lock:
                     if func not in self.UNKNOWN_FUNCTIONS:
-                        self.UNKNOWN_FUNCTIONS.add(func)
+                        self.UNKNOWN_FUNCTIONS[func] = e
                         self.LOGGER.error(
                             'ERROR: A FunctionNotFound error occurred while calling %s.\n'
                             'Please verify whether the `nvidia-ml-py` package is '

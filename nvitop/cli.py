@@ -208,10 +208,12 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
     top.destroy()
 
     if len(nvml.UNKNOWN_FUNCTIONS) > 0:
-        messages.append('ERROR: A FunctionNotFound error occurred while calling:')
-        if len(nvml.UNKNOWN_FUNCTIONS) > 1:
-            messages[-1] = messages[-1].replace('A FunctionNotFound error', 'Some FunctionNotFound errors')
-        messages.extend([
+        unknown_function_messages = [
+            'ERROR: Some FunctionNotFound errors occurred while calling:'
+            if len(nvml.UNKNOWN_FUNCTIONS) > 1
+            else 'ERROR: A FunctionNotFound error occurred while calling:'
+        ]
+        unknown_function_messages.extend([
             *list(map('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format, nvml.UNKNOWN_FUNCTIONS)),
             ('Please verify whether the `{0}` package is compatible with your NVIDIA driver version.\n'
              'You can check the release history of `{0}` and install the compatible version manually.\n'
@@ -220,6 +222,20 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
                 colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',))
             )
         ])
+        message = '\n'.join(unknown_function_messages)
+        if (
+            'nvmlDeviceGetComputeRunningProcesses' in message
+            or 'nvmlDeviceGetGraphicsRunningProcesses' in message
+            and Device.cuda_version().startswith('10.')
+        ):
+            message = '\n'.join((
+                message, '',
+                'You are using CUDA 10.x driver (yours is: @VERSION@) which is too old. Please contact',
+                'your system admin to update the NVIDIA driver, or reinstall `nvitop` using:',
+                '    pip3 install "nvitop[cuda10]"'
+            )).replace('@VERSION@', Device.driver_version())
+        messages.append(message)
+
     if len(messages) > 0:
         for message in messages:
             if message.startswith('ERROR:'):
