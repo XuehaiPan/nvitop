@@ -48,6 +48,8 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 - [Screenshots](#screenshots)
 - [License](#license)
 
+------
+
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
 [nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
@@ -59,6 +61,8 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
   </br>
   Compare to <code>nvidia-smi</code>.
 </p>
+
+------
 
 ## Features
 
@@ -91,6 +95,8 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
   (SHELL: PowerShell / TERM: Windows Terminal / OS: Windows 10 / Locale: <code>en-US</code>)
 </p>
 
+------
+
 ## Requirements
 
 - Python 3.5+ (with `pip>=10.0`)
@@ -121,6 +127,8 @@ bash install-nvidia-driver.sh --latest                     # install the latest 
 Run `bash install-nvidia-driver.sh --help` for more information.
 
 <a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows using PDCurses. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
+
+------
 
 ## Installation
 
@@ -159,6 +167,8 @@ You can specified the version of `nvidia-ml-py` while installing `nvitop` as:
 ```bash
 pip3 install 'nvitop[pynvml-11.450.51]'  # or 'nvitop[cuda10]'
 ```
+
+------
 
 ## Usage
 
@@ -380,6 +390,8 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 
 **HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).
 
+------
+
 ### Callback Functions for Machine Learning Frameworks
 
 `nvitop` provides two builtin callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai).
@@ -415,6 +427,8 @@ trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 #### [TensorBoard](https://github.com/tensorflow/tensorboard) Integration
 
 Please refer to [Resource Metric Collector](#resource-metric-collector) for an example.
+
+------
 
 ### More than a Monitor
 
@@ -499,6 +513,8 @@ for device in devices:
   An example monitoring script built with APIs from <code>nvitop</code>.
 </p>
 
+------
+
 #### Status Snapshot
 
 `nvitop` provides a helper function to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
@@ -571,6 +587,8 @@ SnapshotResult(
 ```
 
 Please refer to section [Low-level APIs](#low-level-apis) for more information.
+
+------
 
 #### Resource Metric Collector
 
@@ -705,6 +723,8 @@ with collector(tag='resources'):
 df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimestamp))
 df.to_csv('results.csv', index=False)
 ```
+
+------
 
 #### Low-level APIs
 
@@ -1013,7 +1033,7 @@ In [45]: host.swap_percent()
 Out[45]: 0.0
 ```
 
----
+------
 
 ## Screenshots
 
@@ -1051,6 +1071,8 @@ Environment variable screen (shortcut: <kbd>e</kbd>):
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914881-7a0cd700-d9b2-11eb-8da1-26f7a3a7c2b6.png" alt="Environment Screen">
 </p>
+
+------
 
 ## License
 
