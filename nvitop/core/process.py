@@ -13,6 +13,7 @@ import threading
 from abc import ABCMeta
 from types import FunctionType
 from typing import List, Tuple, Dict, Iterable, Callable, Union, Optional, Type, Any, TYPE_CHECKING
+from weakref import WeakValueDictionary
 
 from nvitop.core import host
 from nvitop.core.libnvml import nvml
@@ -130,9 +131,11 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         >>> p1 = HostProcess(12345)
         >>> p2 = HostProcess(12345)
         >>> p1 is p2                 # the same instance
+        True
 
         >>> import copy
         >>> copy.deepcopy(p1) is p1  # the same instance
+        True
 
         >>> p = HostProcess(pid=12345)
         >>> p.cmdline()
@@ -156,9 +159,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     """
 
     INSTANCE_LOCK = threading.RLock()
-    INSTANCES = {}
-    SNAPSHOT_LOCK = threading.RLock()
-    HOST_SNAPSHOTS = {}
+    INSTANCES = WeakValueDictionary()
 
     def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
         """Returns the cached instance of ``HostProcess``."""
@@ -417,7 +418,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     """
 
     INSTANCE_LOCK = threading.RLock()
-    INSTANCES = {}
+    INSTANCES = WeakValueDictionary()
 
     # pylint: disable=unused-argument
     def __new__(cls, pid: int, device: 'Device',                             # pylint: disable=too-many-arguments
