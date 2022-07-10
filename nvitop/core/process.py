@@ -217,6 +217,12 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         def username(self) -> str:
             """The name of the user that owns the process.
             On Windows, the domain name will be removed if it is present.
+
+            Raises:
+                host.NoSuchProcess:
+                    If the process is gone.
+                host.AccessDenied:
+                    If the user do not have read privilege to the process' status file.
             """
 
             if self._username is None:
@@ -226,6 +232,12 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         def username(self) -> str:
             """The name of the user that owns the process.
             On UNIX this is calculated by using *real* process uid.
+
+            Raises:
+                host.NoSuchProcess:
+                    If the process is gone.
+                host.AccessDenied:
+                    If the user do not have read privilege to the process' status file.
             """
 
             if self._username is None:
@@ -234,7 +246,14 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     @memoize_when_activated
     def cmdline(self) -> List[str]:
-        """The command line this process has been called with."""
+        """The command line this process has been called with.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         cmdline = super().cmdline()
         if len(cmdline) > 1:
@@ -242,23 +261,51 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return cmdline
 
     def command(self) -> str:
-        """Returns a shell-escaped string from command line arguments."""
+        """Returns a shell-escaped string from command line arguments.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         return command_join(self.cmdline())
 
     @memoize_when_activated
     def running_time(self) -> datetime.timedelta:
-        """The elapsed time this process has been running in ``datetime.timedelta``."""
+        """The elapsed time this process has been running in ``datetime.timedelta``.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
     def running_time_human(self) -> str:
-        """The elapsed time this process has been running in human readable format."""
+        """The elapsed time this process has been running in human readable format.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         return timedelta2human(self.running_time())
 
     def running_time_in_seconds(self) -> float:  # in seconds
-        """The elapsed time this process has been running in seconds."""
+        """The elapsed time this process has been running in seconds.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         return self.running_time().total_seconds()
 
@@ -267,12 +314,26 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     elapsed_time_in_seconds = running_time_in_seconds
 
     def rss_memory(self) -> int:  # in bytes
-        """The used resident set size (RSS) memory of the process in bytes."""
+        """The used resident set size (RSS) memory of the process in bytes.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         return self.memory_info().rss
 
     def parent(self) -> Union['HostProcess', None]:
-        """Returns the parent process as a ``HostProcess`` instance. Returns ``None`` if there is no parent."""
+        """Returns the parent process as a ``HostProcess`` instance. Returns ``None`` if there is no parent.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         parent = super().parent()
         if parent is not None:
@@ -282,6 +343,12 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     def children(self, recursive: bool = False) -> List['HostProcess']:
         """Return the children of this process as a list of ``HostProcess`` instances.
         If *recursive* is ``True`` return all the descendants.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
         """
 
         return [HostProcess(child.pid) for child in super().children(recursive)]
@@ -438,7 +505,16 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._hash
 
     def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
-        """Gets a member from the instance. Fallback to the host process instance if missing."""
+        """Gets a member from the instance. Fallback to the host process instance if missing.
+
+        Raises:
+            AttributeError:
+                If the attribute is not defined in either ``GpuProcess`` nor ``HostProcess``.
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+        """
 
         try:
             return super().__getattr__(name)
@@ -583,29 +659,79 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback='terminated')
     def status(self) -> str:
-        """The process current status."""
+        """The process current status.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return self.host.status()
 
     @auto_garbage_clean(fallback=NA)
     def create_time(self) -> Union[float, NaType]:
-        """The process creation time as a floating point number expressed in seconds since the epoch."""
+        """The process creation time as a floating point number expressed in seconds since the epoch.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return self.host.create_time()
 
     @auto_garbage_clean(fallback=NA)
     def running_time(self) -> Union[datetime.timedelta, NaType]:
-        """The elapsed time this process has been running in ``datetime.timedelta``."""
+        """The elapsed time this process has been running in ``datetime.timedelta``.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return self.host.running_time()
 
     def running_time_human(self) -> Union[str, NaType]:
-        """The elapsed time this process has been running in human readable format."""
+        """The elapsed time this process has been running in human readable format.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return timedelta2human(self.running_time())
 
     def running_time_in_seconds(self) -> Union[float, NaType]:
-        """The elapsed time this process has been running in seconds."""
+        """The elapsed time this process has been running in seconds.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         running_time = self.running_time()
         if running_time is NA:
@@ -618,7 +744,17 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def username(self) -> Union[str, NaType]:
-        """The name of the user that owns the process."""
+        """The name of the user that owns the process.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         if self._username is None:                 # pylint: disable=access-member-before-definition
             self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
@@ -626,13 +762,33 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def name(self) -> Union[str, NaType]:
-        """The process name."""
+        """The process name.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return self.host.name()
 
     @auto_garbage_clean(fallback=NA)
     def cpu_percent(self) -> Union[float, NaType]:  # in percentage
-        """Returns a float representing the current process CPU utilization as a percentage."""
+        """Returns a float representing the current process CPU utilization as a percentage.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return self.host.cpu_percent()
 
@@ -640,6 +796,15 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def memory_percent(self) -> Union[float, NaType]:  # in percentage
         """Compares process RSS memory to total physical system memory
         and calculate process memory utilization as a percentage.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.memory_percent()
@@ -648,12 +813,32 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def host_memory(self) -> Union[int, NaType]:  # in bytes
-        """The used resident set size (RSS) memory of the process in bytes."""
+        """The used resident set size (RSS) memory of the process in bytes.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return self.host.rss_memory()
 
     def host_memory_human(self) -> Union[str, NaType]:
-        """The used resident set size (RSS) memory of the process in human readable format."""
+        """The used resident set size (RSS) memory of the process in human readable format.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return bytes2human(self.host_memory())
 
@@ -661,7 +846,17 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=('No Such Process',))  # `fallback=['No Permissions']` for `AccessDenied` error
     def cmdline(self) -> List[str]:
-        """The command line this process has been called with."""
+        """The command line this process has been called with.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         cmdline = self.host.cmdline()
         if len(cmdline) == 0 and not self._gone:
@@ -669,7 +864,17 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return cmdline
 
     def command(self) -> str:
-        """Returns a shell-escaped string from command line arguments."""
+        """Returns a shell-escaped string from command line arguments.
+
+        Raises:
+            host.NoSuchProcess:
+                If the process is gone.
+            host.AccessDenied:
+                If the user do not have read privilege to the process' status file.
+
+        Note: To return the fallback value rather than raise an exception, please use the context
+              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        """
 
         return command_join(self.cmdline())
 
