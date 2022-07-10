@@ -668,8 +668,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.status()
@@ -684,8 +686,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.create_time()
@@ -700,8 +704,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.running_time()
@@ -715,8 +721,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return timedelta2human(self.running_time())
@@ -730,8 +738,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         running_time = self.running_time()
@@ -753,8 +763,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         if self._username is None:                 # pylint: disable=access-member-before-definition
@@ -771,8 +783,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.name()
@@ -787,8 +801,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.cpu_percent()
@@ -804,8 +820,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.memory_percent()
@@ -822,8 +840,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.rss_memory()
@@ -837,8 +857,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return bytes2human(self.host_memory())
@@ -855,8 +877,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         cmdline = self.host.cmdline()
@@ -873,8 +897,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.AccessDenied:
                 If the user do not have read privilege to the process' status file.
 
-        Note: To return the fallback value rather than raise an exception, please use the context
-              manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+        Note:
+
+            To return the fallback value rather than raise an exception, please use the context
+            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return command_join(self.cmdline())
