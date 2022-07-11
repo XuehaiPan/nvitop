@@ -18,26 +18,26 @@ from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor
 class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     r"""
-    Automatically log GPU stats during training stage. ``GpuStatsLogger`` is a
+    Automatically log GPU stats during training stage. :class:`GpuStatsLogger` is a
     callback and in order to use it you need to assign a logger in the ``Trainer``.
 
     Args:
         memory_utilization (bool):
-            Set to ``True`` to log used, free and the percentage of memory
-            utilization at the start and end of each step. Default: ``True``.
+            Set to :data:`True` to log used, free and the percentage of memory
+            utilization at the start and end of each step. Default: :data:`True`.
         gpu_utilization (bool):
-            Set to ``True`` to log the percentage of GPU utilization
-            at the start and end of each step. Default: ``True``.
+            Set to :data:`True` to log the percentage of GPU utilization
+            at the start and end of each step. Default: :data:`True`.
         intra_step_time (bool):
-            Set to ``True`` to log the time of each step. Default: ``False``.
+            Set to :data:`True` to log the time of each step. Default: :data:`False`.
         inter_step_time (bool):
-            Set to ``True`` to log the time between the end of one step
-            and the start of the next step. Default: ``False``.
+            Set to :data:`True` to log the time between the end of one step
+            and the start of the next step. Default: :data:`False`.
         fan_speed (bool):
-            Set to ``True`` to log percentage of fan speed. Default: ``False``.
+            Set to :data:`True` to log percentage of fan speed. Default: :data:`False`.
         temperature (bool):
-            Set to ``True`` to log the gpu temperature in degree Celsius.
-            Default: ``False``.
+            Set to :data:`True` to log the gpu temperature in degree Celsius.
+            Default: :data:`False`.
 
     Raises:
         MisconfigurationException:

@@ -15,7 +15,9 @@ from psutil import WINDOWS
 
 
 __all__ = [
-    'NA', 'NaType', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB',
+    'NA', 'NaType',
+    'NotApplicable', 'NotApplicableType',
+    'KiB', 'MiB', 'GiB', 'TiB', 'PiB',
     'bytes2human', 'timedelta2human', 'utilization2string',
     'colored', 'set_color', 'boolify',
     'Snapshot'
@@ -70,54 +72,54 @@ def colored(text, color=None, on_color=None, attrs=None):
     return text
 
 
-class NotApplicableType(str):
-    """A singleton (str: 'N/A') class represents a not applicable value."""
+class NaType(str):
+    """A singleton (:const:`str: 'N/A'`) class represents a not applicable value."""
 
     def __new__(cls):
-        """Gets the singleton instance."""
+        """Gets the singleton instance (:const:`nvitop.NA`)."""
 
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
         return cls._instance
 
     def __bool__(self):
-        """bool(NA) -> False"""
+        """``bool(NA)`` -> :data:`False`"""
 
         return False
 
     def __int__(self):
-        """int(NA) -> 0"""
+        """``int(NA)`` -> :data:`0`"""
 
         return 0
 
     def __float__(self):
-        """float(NA) -> math.nan"""
+        """``float(NA)`` -> :data:`math.nan`"""
 
         return math.nan
 
     def __lt__(self, x):
-        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return False
         return super().__lt__(x)
 
     def __le__(self, x):
-        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return False
         return super().__le__(x)
 
     def __gt__(self, x):
-        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return True
         return super().__gt__(x)
 
     def __ge__(self, x):
-        """The ``NA`` is always greater than any number. Use the dictionary order for string."""
+        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return True
@@ -130,13 +132,15 @@ class NotApplicableType(str):
             return format(math.nan, format_spec)
 
 
-# isinstance(NA, str)       -> True
-# NA == 'N/A'               -> True
-# NA is NotApplicableType() -> True (NotApplicableType is a singleton class)
-NaType = NotApplicableType
-NA = NotApplicable = NotApplicableType()
-"""The singleton instance of ``NotApplicableType``. The actual value is 'NA'."""
+NotApplicableType = NaType
 
+# isinstance(NA, str) -> True
+# NA == 'N/A'         -> True
+# NA is NaType()      -> True (`NaType` is a singleton class)
+NA = NaType()
+NA.__doc__ = """The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""   # pylint: disable=attribute-defined-outside-init
+
+NotApplicable = NA
 
 KiB = 1 << 10
 """Kibibyte (1024)"""
@@ -186,7 +190,7 @@ def bytes2human(x):  # pylint: disable=too-many-return-statements
 
 
 def timedelta2human(dt):
-    """Converts ``datetime.timedelta`` instance to a human readable string."""
+    """Converts :class:`datetime.timedelta` instance to a human readable string."""
 
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
@@ -287,10 +291,9 @@ class Snapshot:
 
 # Modified from psutil (https://github.com/giampaolo/psutil)
 def memoize_when_activated(func):
-    """A memoize decorator which is disabled by default. It can be
-    activated and deactivated on request.
-    For efficiency reasons it can be used only against class methods
-    accepting no arguments.
+    """A memoize decorator which is disabled by default. It can be activated and
+    deactivated on request. For efficiency reasons it can be used only against
+    class methods accepting no arguments.
     """
 
     @functools.wraps(func)
@@ -314,8 +317,9 @@ def memoize_when_activated(func):
         return ret
 
     def cache_activate(self):
-        """Activate cache. Expects a Process instance. Cache will be
-        stored as a "_cache" instance attribute."""
+        """Activate cache. Expects a Process instance. Cache will be stored as
+        a "_cache" instance attribute.
+        """
 
         if not hasattr(self, '_cache'):
             setattr(self, '_cache', {})

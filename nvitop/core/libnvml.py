@@ -36,7 +36,7 @@ class libnvml:
     c_nvmlDevice_t = pynvml.c_nvmlDevice_t
 
     def __new__(cls) -> 'libnvml':
-        """Gets the singleton instance of ``libnvml``."""
+        """Gets the singleton instance of :class:`libnvml`."""
 
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
@@ -210,7 +210,7 @@ class libnvml:
                 Whether to ignore errors and return the default value.
             ignore_function_not_found (bool):
                 Whether to ignore function not found errors and return the
-                default value. If set to ``False``, a error message will be logged
+                default value. If set to :data:`False`, a error message will be logged
                 to the logger.
             *args:
                 Positional arguments to pass to the query function.
@@ -260,7 +260,7 @@ class libnvml:
 
     @staticmethod
     def nvmlCheckReturn(retval: Any, types: Optional[Union[type, Tuple[type, ...]]] = None) -> bool:
-        """Checks the return value is not ``nvitop.NA`` and is one of the given types."""
+        """Checks the return value is not :const:`nvitop.NA` and is one of the given types."""
 
         if types is None:
             return retval != NA
@@ -268,7 +268,7 @@ class libnvml:
 
 
 nvml = libnvml()
-"""The singleton instance of class ``libnvml``."""
+"""The singleton instance of class :class:`libnvml`."""
 
 nvmlCheckReturn = nvml.nvmlCheckReturn
 

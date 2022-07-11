@@ -3,7 +3,7 @@
 
 """The live classes for process running on the host and the GPU devices."""
 
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name,too-many-lines
 
 import contextlib
 import datetime
@@ -82,7 +82,7 @@ _USE_FALLBACK_WHEN_RAISE = threading.local()  # see also `GpuProcess.failsafe`
 def auto_garbage_clean(fallback=_RAISE):
     """Removes the object references in the instance cache if the method call fails (the process is gone).
 
-    The fallback value will be used with ``GpuProcess.failsafe`` context manager, otherwise raises an
+    The fallback value will be used with `:meth:`GpuProcess.failsafe`` context manager, otherwise raises an
     exception when falls.
     """
 
@@ -120,7 +120,7 @@ def auto_garbage_clean(fallback=_RAISE):
 
 class HostProcess(host.Process, metaclass=ABCMeta):
     """Represents an OS process with the given PID.
-    If PID is omitted current process PID (os.getpid()) is used.
+    If PID is omitted current process PID (:func:`os.getpid`) is used.
     The instance will be cache during the lifetime of the process.
 
     Examples:
@@ -162,7 +162,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     INSTANCES = WeakValueDictionary()
 
     def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
-        """Returns the cached instance of ``HostProcess``."""
+        """Returns the cached instance of :class:`HostProcess`."""
 
         if pid is None:
             pid = os.getpid()
@@ -275,7 +275,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     @memoize_when_activated
     def running_time(self) -> datetime.timedelta:
-        """The elapsed time this process has been running in ``datetime.timedelta``.
+        """The elapsed time this process has been running in :class:`datetime.timedelta`.
 
         Raises:
             host.NoSuchProcess:
@@ -327,7 +327,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return self.memory_info().rss
 
     def parent(self) -> Union['HostProcess', None]:
-        """Returns the parent process as a ``HostProcess`` instance. Returns ``None`` if there is no parent.
+        """Returns the parent process as a :class:`HostProcess` instance. Returns :data:`None` if there is no parent.
 
         Raises:
             host.NoSuchProcess:
@@ -342,8 +342,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return None
 
     def children(self, recursive: bool = False) -> List['HostProcess']:
-        """Return the children of this process as a list of ``HostProcess`` instances.
-        If *recursive* is ``True`` return all the descendants.
+        """Return the children of this process as a list of :class:`HostProcess` instances.
+        If *recursive* is :data:`True` return all the descendants.
 
         Raises:
             host.NoSuchProcess:
@@ -372,8 +372,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             >>> from nvitop import HostProcess
             >>> p = HostProcess()
             >>> with p.oneshot():
-            ...     p.name()  # collect multiple info
-            ...     p.cpu_times()  # return cached value
+            ...     p.name()         # collect multiple info
+            ...     p.cpu_times()    # return cached value
             ...     p.cpu_percent()  # return cached value
             ...     p.create_time()  # return cached value
         """
@@ -413,7 +413,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     """Represents a process with the given PID running on the given GPU device.
     The instance will be cache during the lifetime of the process.
 
-    The same host process can use multiple GPU devices. The ``GpuProcess`` instances representing the
+    The same host process can use multiple GPU devices. The :class:`GpuProcess` instances representing the
     same PID on the host but different GPU devices are different.
     """
 
@@ -426,7 +426,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 gpu_instance_id: Optional[Union[int, NaType]] = None,
                 compute_instance_id: Optional[Union[int, NaType]] = None,
                 type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=redefined-builtin
-        """Returns the cached instance of ``GpuProcess``."""
+        """Returns the cached instance of :class:`GpuProcess`."""
 
         if pid is None:
             pid = os.getpid()
@@ -510,7 +510,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
         Raises:
             AttributeError:
-                If the attribute is not defined in either ``GpuProcess`` nor ``HostProcess``.
+                If the attribute is not defined in either :class:`GpuProcess` nor :class:`HostProcess`.
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
@@ -544,54 +544,54 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """The GPU device the process running on.
 
         The same host process can use multiple GPU devices.
-        The ``GpuProcess`` instances representing the same PID on the host
+        The :class:`GpuProcess` instances representing the same PID on the host
         but different GPU devices are different.
         """
 
         return self._device
 
     def gpu_instance_id(self) -> Union[int, NaType]:
-        """The GPU instance ID of the MIG device, or ``nvitop.NA`` if not applicable."""
+        """The GPU instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_instance_id
 
     def compute_instance_id(self) -> Union[int, NaType]:
-        """The compute instance ID of the MIG device, or ``nvitop.NA`` if not applicable."""
+        """The compute instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
 
         return self._compute_instance_id
 
     def gpu_memory(self) -> Union[int, NaType]:  # in bytes
-        """The used GPU memory in bytes, or ``nvitop.NA`` if not applicable."""
+        """The used GPU memory in bytes, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_memory
 
     def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
-        """The used GPU memory in human readable format, or ``nvitop.NA`` if not applicable."""
+        """The used GPU memory in human readable format, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_memory_human
 
     def gpu_memory_percent(self) -> Union[float, NaType]:  # in percentage
-        """The percentage of used GPU memory by the process, or ``nvitop.NA`` if not applicable."""
+        """The percentage of used GPU memory by the process, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_memory_percent
 
     def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of SM (Streaming Multiprocessor), or ``nvitop.NA`` if not applicable."""
+        """The utilization rate of SM (Streaming Multiprocessor), or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_sm_utilization
 
     def gpu_memory_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of GPU memory bandwidth, or ``nvitop.NA`` if not applicable."""
+        """The utilization rate of GPU memory bandwidth, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_memory_utilization
 
     def gpu_encoder_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of the encoder, or ``nvitop.NA`` if not applicable."""
+        """The utilization rate of the encoder, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_encoder_utilization
 
     def gpu_decoder_utilization(self) -> Union[int, NaType]:  # in percentage
-        """The utilization rate of the decoder, or ``nvitop.NA`` if not applicable."""
+        """The utilization rate of the decoder, or :const:`nvitop.NA` if not applicable."""
 
         return self._gpu_decoder_utilization
 
@@ -671,7 +671,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.status()
@@ -689,14 +689,14 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.create_time()
 
     @auto_garbage_clean(fallback=NA)
     def running_time(self) -> Union[datetime.timedelta, NaType]:
-        """The elapsed time this process has been running in ``datetime.timedelta``.
+        """The elapsed time this process has been running in :class:`datetime.timedelta`.
 
         Raises:
             host.NoSuchProcess:
@@ -707,7 +707,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.running_time()
@@ -724,7 +724,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return timedelta2human(self.running_time())
@@ -741,7 +741,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         running_time = self.running_time()
@@ -766,7 +766,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         if self._username is None:                 # pylint: disable=access-member-before-definition
@@ -786,7 +786,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.name()
@@ -804,7 +804,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.cpu_percent()
@@ -823,7 +823,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.memory_percent()
@@ -843,7 +843,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return self.host.rss_memory()
@@ -860,7 +860,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return bytes2human(self.host_memory())
@@ -880,7 +880,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         cmdline = self.host.cmdline()
@@ -900,7 +900,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         Note:
 
             To return the fallback value rather than raise an exception, please use the context
-            manager `GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
+            manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         return command_join(self.cmdline())
@@ -979,10 +979,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     @classmethod
     def take_snapshots(cls, gpu_processes: Iterable['GpuProcess'], *,  # batched version of `as_snapshot`
                        failsafe=False) -> List[Snapshot]:
-        """Takes snapshots for a list of ``GpuProcess`` instances.
+        """Takes snapshots for a list of :class:`GpuProcess` instances.
 
-        If *failsafe* is ``True``, then if any method fails, the fallback value in
-        ``auto_garbage_clean(fallback)`` will be used.
+        If *failsafe* is :data:`True`, then if any method fails, the fallback value in
+        :func:`auto_garbage_clean` will be used.
         """
 
         cache = {}

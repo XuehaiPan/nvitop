@@ -6,3 +6,4 @@ nvitop.core.utils module
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
+    :exclude-members: NA, NaType, NotApplicable, NotApplicableType

@@ -172,6 +172,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     Core methods:
 
+    .. code-block:: python
+
         collector.activate(tag='<tag>')  # alias: start
         collector.deactivate()           # alias: stop
         collector.reset(tag='<tag>')
