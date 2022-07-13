@@ -49,10 +49,12 @@ class Device(DeviceBase):
 
         self._snapshot = None
         self.tuple_index = ((self.index,) if isinstance(self.index, int) else self.index)
+        self.display_index = ':'.join(map(str, self.tuple_index))
 
     def as_snapshot(self):
         self._snapshot = super().as_snapshot()
         self._snapshot.tuple_index = self.tuple_index
+        self._snapshot.display_index = self.display_index
         return self._snapshot
 
     @property
@@ -143,11 +145,7 @@ class MigDevice(MigDeviceBase, Device):
 
         self._snapshot = None
         self.tuple_index = ((self.index,) if isinstance(self.index, int) else self.index)
-
-    def as_snapshot(self):
-        self._snapshot = super().as_snapshot()
-        self._snapshot.tuple_index = self.tuple_index
-        return self._snapshot
+        self.display_index = ':'.join(map(str, self.tuple_index))
 
     loading_intensity = Device.memory_loading_intensity
 
@@ -157,6 +155,7 @@ class MigDevice(MigDeviceBase, Device):
         'memory_used', 'memory_free', 'memory_total',
         'memory_used_human', 'memory_free_human', 'memory_total_human',
         'memory_percent', 'memory_usage',
+        'bar1_memory_used_human', 'bar1_memory_percent',
 
         'gpu_utilization', 'memory_utilization',
 

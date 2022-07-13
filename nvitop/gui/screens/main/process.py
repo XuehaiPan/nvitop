@@ -332,17 +332,21 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if len(self.snapshots) > 0:
             y = self.y + 5
             prev_device_index = None
+            prev_device_display_index = None
             color = -1
             for process in self.snapshots:
                 device_index = process.device.physical_index
+                device_display_index = process.device.display_index
                 if prev_device_index != device_index:
-                    color = process.device.snapshot.display_color
                     if not self.compact and prev_device_index is not None:
                         self.addstr(y, self.x, '├' + '─' * (self.width - 2) + '┤')
                         if y == self.y_mouse:
                             self.y_mouse += 1
                         y += 1
                     prev_device_index = device_index
+                if prev_device_display_index != device_display_index:
+                    color = process.device.snapshot.display_color
+                    prev_device_display_index = device_display_index
 
                 host_info = process.host_info
                 if self.host_offset < 0:
@@ -350,8 +354,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 else:
                     host_info = WideString(host_info)[self.host_offset:]
                 self.addstr(y, self.x,
-                            '│ {:>3} {:>7} {} {:>7} {:>8} {:>3} {} │'.format(
-                                device_index, cut_string(process.pid, maxlen=7, padstr='.'),
+                            '│{:>4} {:>7} {} {:>7} {:>8} {:>3} {} │'.format(
+                                device_display_index, cut_string(process.pid, maxlen=7, padstr='.'),
                                 process.type, cut_string(process.username, maxlen=7, padstr='+'),
                                 process.gpu_memory_human, process.gpu_sm_utilization_string.replace('%', ''),
                                 WideString(host_info).ljust(self.width - 39)[:self.width - 39]
@@ -425,14 +429,18 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             key, reverse, *_ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)
             prev_device_index = None
+            prev_device_display_index = None
             color = None
             for process in self.snapshots:
                 device_index = process.device.physical_index
+                device_display_index = process.device.display_index
                 if prev_device_index != device_index:
-                    color = process.device.snapshot.display_color
                     if prev_device_index is not None:
                         lines.append('├' + '─' * (self.width - 2) + '┤')
                     prev_device_index = device_index
+                if prev_device_display_index != device_display_index:
+                    color = process.device.snapshot.display_color
+                    prev_device_display_index = device_display_index
 
                 host_info = cut_string(process.host_info, padstr='..', maxlen=self.width - 39)
 
@@ -452,7 +460,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     info = colored(process.command, color=('red' if is_gone else 'yellow')).join(info)
                 elif process.username != USERNAME and not SUPERUSER:
                     info = colored(info, attrs=('dark',))
-                lines.append('│ {} {} │'.format(colored('{:>3}'.format(device_index), color), info))
+                lines.append('│{} {} │'.format(colored('{:>4}'.format(device_display_index), color), info))
 
             lines.append('╘' + '═' * (self.width - 2) + '╛')
 

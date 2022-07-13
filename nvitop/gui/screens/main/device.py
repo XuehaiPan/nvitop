@@ -9,7 +9,7 @@ import time
 
 from cachetools.func import ttl_cache
 
-from nvitop.gui.library import (host, Device,
+from nvitop.gui.library import (host, Device, NA,
                                 Displayable, colored, cut_string, make_bar)
 
 
@@ -75,8 +75,8 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
 
         self.mig_formats = [
-            '│ {physical_index:>3}   GI ID: {gpu_instance_id:>3}  CI ID: {compute_instance_id:>3}  '
-            '│ {memory_usage:>20} │ Profile: {name:>11} │',
+            '│ MIG: {mig_index:<3}{name:>8} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
+            '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │',
         ]
 
         if host.WINDOWS:
@@ -128,9 +128,13 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             if device.name.startswith('NVIDIA '):
                 device.name = device.name.replace('NVIDIA ', '', 1)
             if device.is_mig_device:
-                device.name = ' '.join(device.name.split()[-2:])
-                if len(device.name) > 11:
-                    device.name = device.name.split()[-1]
+                device.name = device.name.rpartition(' ')[-1]
+                if device.bar1_memory_percent is not NA:
+                    device.bar1_memory_percent = round(device.bar1_memory_percent)
+                    if device.bar1_memory_percent >= 100:
+                        device.bar1_memory_percent_string = 'MAX'
+                    else:
+                        device.bar1_memory_percent_string = '{}%'.format(round(device.bar1_memory_percent))
             else:
                 device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
                 device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
