@@ -75,7 +75,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
 
         self.mig_formats = [
-            '│ MIG: {mig_index:<3}{name:>8} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
+            '│{physical_index:>2}:{mig_index:<2}{name:>12} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
             '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │',
         ]
 
