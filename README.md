@@ -154,6 +154,13 @@ pip3 install .
 
 **NOTE:** If you encounter the *"nvitop: command not found"* error after installation, please check whether you have added the Python console script path (e.g., `"${HOME}/.local/bin"`) to your `PATH` environment variable. Alternatively, you can use `python3 -m nvitop`.
 
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/178963038-a5cd4eb5-02a8-4456-966f-d5ff04eb44d8.png" alt="MIG Device Support">
+  </br>
+  MIG Device Support
+  </br>
+</p>
+
 **IMPORTANT:** `pip` will install `nvidia-ml-py>=11.450.51,<=11.495.46` as a dependency for `nvitop`. Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version. You can check the release history of `nvidia-ml-py` at [nvidia-ml-py's Release History](https://pypi.org/project/nvidia-ml-py/11.495.46/#history), and install the compatible version manually by:
 
 ```bash
