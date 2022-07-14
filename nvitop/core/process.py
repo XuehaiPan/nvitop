@@ -996,7 +996,27 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     @classmethod
     @contextlib.contextmanager
     def failsafe(cls):
-        """A context manager that enables fallback values for methods that fail."""
+        """A context manager that enables fallback values for methods that fail.
+
+        Examples:
+
+            >>> p = GpuProcess(pid=10000, device=Device(0))  # process does not exist
+            >>> p
+            GpuProcess(pid=10000, gpu_memory=N/A, type=N/A, device=PhysicalDevice(index=0, name="NVIDIA GeForce RTX 3070", total_memory=8192MiB), host=HostProcess(pid=10000, status='terminated'))
+            >>> p.cpu_percent()
+            Traceback (most recent call last):
+                ...
+            NoSuchProcess: process no longer exists (pid=10000)
+
+            >>> # Failsafe to the fallback value instead of raising exceptions
+            ... with GpuProcess.failsafe():
+            ...     print('fallback:              {!r}'.format(p.cpu_percent()))
+            ...     print('fallback (float cast): {!r}'.format(float(p.cpu_percent())))  # `nvitop.NA` can be cast to float or int
+            ...     print('fallback (int cast):   {!r}'.format(float(p.cpu_percent())))  # `nvitop.NA` can be cast to float or int
+            fallback:              'N/A'
+            fallback (float cast): nan
+            fallback (int cast):   0
+        """  # pylint: disable=line-too-long
 
         global _USE_FALLBACK_WHEN_RAISE  # pylint: disable=global-statement,global-variable-not-assigned
 
