@@ -104,10 +104,6 @@ html_css_files = [
 #
 # html_sidebars = {}
 
-suppress_warnings = [
-    'ref.python'
-]
-
 extlinks = {
     'gitcode': ('https://github.com/XuehaiPan/nvitop/blob/HEAD/%s', '%s'),
     'issue': ('https://github.com/XuehaiPan/nvitop/issues/%s', 'issue %s')

@@ -41,4 +41,5 @@ Module contents
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
+    :noindex: Device
     :exclude-members: NA, NaType, NotApplicable, NotApplicableType
