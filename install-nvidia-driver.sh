@@ -31,7 +31,7 @@ fi
 # shellcheck disable=1091
 if [[ "$(uname -s)" != "Linux" ]] || (source /etc/os-release && [[ "${NAME:-}" != "Ubuntu" ]]); then
 	abort "This script only supports Ubuntu Linux."
-elif [[ -n "${WSL_DISTRO_NAME}" ]] || (uname -r | grep -qiF 'microsoft'); then
+elif [[ -n "${WSL_DISTRO_NAME:-}" ]] || (uname -r | grep -qiF 'microsoft'); then
 	abort "Please install the NVIDIA driver in the Windows host system rather than in WSL."
 fi
 
