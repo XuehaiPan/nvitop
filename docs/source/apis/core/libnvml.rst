@@ -6,4 +6,3 @@ nvitop.core.libnvml module
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
-    :noindex: pynvml.NVMLError
