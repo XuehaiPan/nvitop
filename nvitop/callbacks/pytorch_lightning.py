@@ -11,7 +11,7 @@ from pytorch_lightning.callbacks import Callback                              # 
 from pytorch_lightning.utilities import rank_zero_only                        # pylint: disable=import-error
 from pytorch_lightning.utilities.exceptions import MisconfigurationException  # pylint: disable=import-error
 
-from nvitop.core import nvml
+from nvitop.core import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
 
 
@@ -77,8 +77,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         super().__init__()
 
         try:
-            nvml.nvmlInit()
-        except nvml.NVMLError as ex:
+            libnvml.nvmlInit()
+        except libnvml.NVMLError as ex:
             raise MisconfigurationException(
                 'Cannot use GpuStatsLogger callback because NVIDIA driver is not installed.'
             ) from ex
@@ -103,7 +103,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         device_ids = trainer.data_parallel_device_ids
         try:
             self._devices = get_devices_by_logical_ids(device_ids, unique=True)
-        except (nvml.NVMLError, RuntimeError) as ex:
+        except (libnvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
                 'Cannot use GpuStatsLogger callback because devices unavailable. '
                 'Received: `gpus={}`'.format(device_ids)

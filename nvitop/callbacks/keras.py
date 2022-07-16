@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Union
 
 from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error,no-name-in-module
 
-from nvitop.core import nvml
+from nvitop.core import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
 
 
@@ -89,8 +89,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         super().__init__()
 
         try:
-            nvml.nvmlInit()
-        except nvml.NVMLError as ex:
+            libnvml.nvmlInit()
+        except libnvml.NVMLError as ex:
             raise ValueError(
                 'Cannot use the GpuStatsLogger callback because the NVIDIA driver is not installed.'
             ) from ex
@@ -106,7 +106,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
         try:
             self._devices = get_devices_by_logical_ids(gpu_ids, unique=True)
-        except (nvml.NVMLError, RuntimeError) as ex:
+        except (libnvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
                 'Cannot use GpuStatsLogger callback because devices unavailable. '
                 'Received: `gpus={}`'.format(gpu_ids)

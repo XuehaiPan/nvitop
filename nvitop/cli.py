@@ -8,7 +8,7 @@ import curses
 import os
 import sys
 
-from nvitop.core import nvml, HostProcess, boolify
+from nvitop.core import libnvml, HostProcess, boolify
 from nvitop.gui import Top, Device, libcurses, setlocale_utf8, colored, set_color, USERNAME
 from nvitop.version import __version__
 
@@ -140,9 +140,9 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
 
     try:
         device_count = Device.count()
-    except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
+    except libnvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
         return 1
-    except nvml.NVMLError as e:             # pylint: disable=invalid-name
+    except libnvml.NVMLError as e:             # pylint: disable=invalid-name
         print('{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), e), file=sys.stderr)
         return 1
 
@@ -207,14 +207,14 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
     top.print()
     top.destroy()
 
-    if len(nvml.UNKNOWN_FUNCTIONS) > 0:
+    if len(libnvml.UNKNOWN_FUNCTIONS) > 0:
         unknown_function_messages = [
             'ERROR: Some FunctionNotFound errors occurred while calling:'
-            if len(nvml.UNKNOWN_FUNCTIONS) > 1
+            if len(libnvml.UNKNOWN_FUNCTIONS) > 1
             else 'ERROR: A FunctionNotFound error occurred while calling:'
         ]
         unknown_function_messages.extend('    nvmlQuery({.__name__!r}, *args, **kwargs)'.format(func)
-                                         for func, _ in nvml.UNKNOWN_FUNCTIONS.values())
+                                         for func, _ in libnvml.UNKNOWN_FUNCTIONS.values())
         unknown_function_messages.append('\n'.join((
             'Please verify whether the `{0}` package is compatible with your NVIDIA driver version.',
             'You can check the release history of `{0}` and install the compatible version manually.',
