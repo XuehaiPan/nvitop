@@ -10,6 +10,7 @@ import logging as _logging
 import re as _re
 import sys as _sys
 import threading as _threading
+from collections import OrderedDict as _OrderedDict
 from types import FunctionType as _FunctionType, ModuleType as _ModuleType
 from typing import (Tuple as _Tuple, Callable as _Callable, Type as _Type,
                     Union as _Union, Optional as _Optional, Any as _Any)
@@ -21,8 +22,13 @@ import pynvml as _pynvml
 from nvitop.core.utils import NA, colored as __colored
 
 
-__all__ = ['NA', 'nvmlCheckReturn', 'nvmlQuery', 'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown', 'NVMLError']
+__all__ = [  # will be updated in below
+    'NA', 'nvmlCheckReturn', 'nvmlQuery',
+    'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown',
+    'NVMLError'
+]
 
+# Members from `pynvml` ################################################################################################
 
 NVMLError = _pynvml.NVMLError
 NVMLError.__doc__ = """Base exception class for NVML query errors."""
@@ -30,20 +36,26 @@ NVMLError.__new__.__doc__ = """Maps value to a proper subclass of :class:`NVMLEr
 nvmlExceptionClass = _pynvml.nvmlExceptionClass
 nvmlExceptionClass.__doc__ = """Maps value to a proper subclass of :class:`NVMLError`."""
 
-# Load members from module `pynvml` and register them in `__all__`.
+# Load members from module `pynvml` and register them in `__all__` and globals.
+_vars_pynvml = vars(_pynvml)
+_vars = _OrderedDict()
 _name = _attr = None
 _errcode_to_name = {}
-# Put error classes in `__all__` first
-for _name, _attr in vars(_pynvml).items():
+_const_names = []
+_errcode_to_string = NVMLError._errcode_to_string  # pylint: disable=protected-access
+
+# 1. Put error classes in `__all__` first
+for _name, _attr in _vars_pynvml.items():
     if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
         continue
     if _name.startswith('NVML_ERROR_') or _name.startswith('NVMLError_'):
-        globals()[_name] = _attr
-        __all__.append(_name)
+        _vars[_name] = _attr
         if _name.startswith('NVML_ERROR_'):
             _errcode_to_name[_attr] = _name
-# Then the remaining members
-for _name, _attr in vars(_pynvml).items():
+            _const_names.append(_name)
+
+# 2. Then the remaining members
+for _name, _attr in _vars_pynvml.items():
     if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
         continue
     if (
@@ -51,26 +63,73 @@ for _name, _attr in vars(_pynvml).items():
     ) or (
         _name.startswith('nvml') and isinstance(_attr, _FunctionType)
     ):
-        globals()[_name] = _attr
-        __all__.append(_name)
-del _name, _attr
+        _vars[_name] = _attr
+        if _name.startswith('NVML_'):
+            _const_names.append(_name)
 
-# Add docstring to exception classes
-_errcode = _reason = None
-for _errcode, _reason in NVMLError._errcode_to_string.items():  # pylint: disable=protected-access
+# 3. Register the inherited members into `__all__` and globals.
+__all__.extend(_vars.keys())
+globals().update(_vars)
+
+# 4. Add docstring to exception classes
+_errcode = _reason = _subclass = None
+for _errcode, _reason in _errcode_to_string.items():
     _subclass = _pynvml.nvmlExceptionClass(_errcode)
-    _subclass.__doc__ = '{}. Code: :data:`{}` (:data:`{}`)'.format(_reason.rstrip('.'),
-                                                                   _errcode_to_name[_errcode],
-                                                                   _errcode)
-del _errcode, _reason, _errcode_to_name
+    _subclass.__doc__ = '{}. Code: :data:`{}` ({})'.format(_reason.rstrip('.'),
+                                                           _errcode_to_name[_errcode],
+                                                           _errcode)
 
-# Add explicit references to appease linters
+# 5. Add undocumented constants into module docstring
+_data_docs = []
+_sphinx_doc = None
+for _name in _const_names:
+    _attr = _vars_pynvml[_name]
+    _sphinx_doc = """
+.. data:: {}
+    :type: {}
+    :value: {!r}
+""".format(_name, _attr.__class__.__name__, _attr)
+    if _name.startswith('NVML_ERROR_') and _attr in _errcode_to_string:
+        _sphinx_doc += """
+See also class :class:`NVMLError` and :class:`{}`.
+""".format(_pynvml.nvmlExceptionClass(_attr).__name__)
+    _data_docs.append(_sphinx_doc.strip())
+
+__doc__ += """
+
+---------
+
+Constants
+^^^^^^^^^
+
+{}
+
+---------
+
+Functions and Exceptions
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. function:: __enter__() -> libnvml
+
+    Entry of the context manager for ``with`` statement.
+
+.. function:: __exit__(*args, **kwargs) -> None
+
+    Shutdowns the NVML context in the context manager for ``with`` statement.
+
+""".format('\n\n'.join(_data_docs))
+
+del (_name, _attr, _vars_pynvml, _vars,
+     _errcode, _reason, _subclass, _errcode_to_name, _errcode_to_string,
+     _const_names, _data_docs, _sphinx_doc)
+
+# 6. Add explicit references to appease linters
 c_nvmlDevice_t = _pynvml.c_nvmlDevice_t
 NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
 NVMLError_FunctionNotFound = _pynvml.NVMLError_FunctionNotFound  # pylint: disable=no-member
 
+# New members in `libnvml` #############################################################################################
 
-# Module attributes
 __flags = []
 __initialized = False
 __lock = _threading.Lock()
@@ -325,5 +384,5 @@ __modself.__class__ = _CustomModule
 del _CustomModule
 
 del _inspect, _logging, _re, _sys, _threading
-del _FunctionType, _ModuleType
+del _OrderedDict, _FunctionType, _ModuleType
 del _Tuple, _Callable, _Type, _Union, _Optional, _Any
