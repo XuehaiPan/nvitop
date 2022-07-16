@@ -74,3 +74,6 @@ else:
     WSL = None
 WINDOWS_SUBSYSTEM_FOR_LINUX = WSL
 """The Linux distribution name of the Windows Subsystem for Linux."""
+
+
+del _os, _defaultdict, _ttl_cache
