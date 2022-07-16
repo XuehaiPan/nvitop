@@ -97,7 +97,7 @@ from typing import List, Tuple, Dict, Iterable, NamedTuple, Callable, Union, Opt
 
 from cachetools.func import ttl_cache
 
-from nvitop.core.libnvml import libnvml
+from nvitop.core import libnvml
 from nvitop.core.process import GpuProcess
 from nvitop.core.utils import (NA, NaType, Snapshot, bytes2human,
                                boolify, memoize_when_activated)

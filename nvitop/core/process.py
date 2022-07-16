@@ -15,8 +15,7 @@ from types import FunctionType
 from typing import List, Tuple, Dict, Iterable, Callable, Union, Optional, Type, Any, TYPE_CHECKING
 from weakref import WeakValueDictionary
 
-from nvitop.core import host
-from nvitop.core.libnvml import libnvml
+from nvitop.core import host, libnvml
 from nvitop.core.utils import (NA, NaType, Snapshot,
                                bytes2human, timedelta2human,
                                memoize_when_activated)
