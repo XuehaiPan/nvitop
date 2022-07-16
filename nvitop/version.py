@@ -51,9 +51,10 @@ or
 
 Note:
     The package ``nvidia-ml-py`` is not backward compatible over releases. This may cause problems
-    such as *"Function Not Found"* errors with Old versions of NVIDIA drivers (e.g. the NVIDIA R430
+    such as *"Function Not Found"* errors with old versions of NVIDIA drivers (e.g. the NVIDIA R430
     driver on Ubuntu 16.04 LTS).
     The ideal solution is to let the user install the best-fit version of ``nvidia-ml-py``.
+    See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
 
     ``nvidia-ml-py==11.450.51`` is the last version supports the NVIDIA R430 driver (CUDA 10.x).
     Since ``nvidia-ml-py>=11.450.129``, the definition of struct ``nvmlProcessInfo_t`` has introduced
