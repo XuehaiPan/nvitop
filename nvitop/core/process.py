@@ -16,7 +16,7 @@ from typing import List, Tuple, Dict, Iterable, Callable, Union, Optional, Type,
 from weakref import WeakValueDictionary
 
 from nvitop.core import host
-from nvitop.core.libnvml import nvml
+from nvitop.core.libnvml import libnvml
 from nvitop.core.utils import (NA, NaType, Snapshot,
                                bytes2human, timedelta2human,
                                memoize_when_activated)
@@ -602,7 +602,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
         memory_total = self.device.memory_total()
         gpu_memory_percent = NA
-        if nvml.nvmlCheckReturn(memory_used, int) and nvml.nvmlCheckReturn(memory_total, int):
+        if libnvml.nvmlCheckReturn(memory_used, int) and libnvml.nvmlCheckReturn(memory_total, int):
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
         self._gpu_memory_percent = gpu_memory_percent  # pylint: disable=attribute-defined-outside-init
 

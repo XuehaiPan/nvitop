@@ -19,11 +19,13 @@ import pynvml
 from nvitop.core.utils import NA, colored
 
 
-__all__ = ['libnvml', 'nvml', 'nvmlCheckReturn', 'NVMLError']
+__all__ = ['LibnvmlSingleton', 'libnvml', 'nvmlCheckReturn', 'NVMLError']
 
 
-class libnvml:
-    """The helper singleton class that holds members from package ``nvidia-ml-py``."""
+class LibnvmlSingleton:
+    """The helper singleton class that holds members from
+    package `nvidia-ml-py <https://pypi.org/project/nvidia-ml-py>`_.
+    """
 
     NVMLError = pynvml.NVMLError
     """Base exception class for NVML query errors."""
@@ -35,8 +37,8 @@ class libnvml:
 
     c_nvmlDevice_t = pynvml.c_nvmlDevice_t
 
-    def __new__(cls) -> 'libnvml':
-        """Gets the singleton instance of :class:`libnvml`."""
+    def __new__(cls) -> 'LibnvmlSingleton':
+        """Gets the singleton instance of :class:`LibnvmlSingleton`."""
 
         if not hasattr(cls, '_instance'):
             instance = cls._instance = super().__new__(cls)
@@ -60,10 +62,10 @@ class libnvml:
 
         try:
             self.nvmlShutdown()
-        except nvml.NVMLError:
+        except libnvml.NVMLError:
             pass
 
-    def __enter__(self) -> 'libnvml':
+    def __enter__(self) -> 'LibnvmlSingleton':
         """Entry of the context manager for ``with`` statement."""
 
         self._lazy_init()
@@ -131,7 +133,7 @@ class libnvml:
 
         try:
             pynvml.nvmlInitWithFlags(flags)
-        except nvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
+        except libnvml.NVMLError_LibraryNotFound:  # pylint: disable=no-member
             message = '\n'.join((
                 'FATAL ERROR: NVIDIA Management Library (NVML) not found.',
                 'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at',
@@ -225,10 +227,10 @@ class libnvml:
                 try:
                     func = getattr(self, func)
                 except AttributeError as e1:
-                    raise nvml.NVMLError_FunctionNotFound from e1  # pylint: disable=no-member
+                    raise libnvml.NVMLError_FunctionNotFound from e1  # pylint: disable=no-member
 
             retval = func(*args, **kwargs)
-        except nvml.NVMLError_FunctionNotFound as e2:  # pylint: disable=no-member
+        except libnvml.NVMLError_FunctionNotFound as e2:  # pylint: disable=no-member
             if not ignore_function_not_found:
                 if identifier.__name__ == '<lambda>':
                     identifier = inspect.getsource(func)
@@ -249,7 +251,7 @@ class libnvml:
             if ignore_errors or ignore_function_not_found:
                 return default
             raise
-        except nvml.NVMLError:
+        except libnvml.NVMLError:
             if ignore_errors:
                 return default
             raise
@@ -267,9 +269,9 @@ class libnvml:
         return retval != NA and isinstance(retval, types)
 
 
-nvml = libnvml()
-"""The singleton instance of class :class:`libnvml`."""
+libnvml = LibnvmlSingleton()
+"""The singleton instance of class :class:`LibnvmlSingleton`."""
 
-nvmlCheckReturn = nvml.nvmlCheckReturn
+nvmlCheckReturn = libnvml.nvmlCheckReturn
 
-NVMLError = nvml.NVMLError
+NVMLError = libnvml.NVMLError

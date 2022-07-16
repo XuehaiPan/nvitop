@@ -3,7 +3,7 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.core import (nvml, PhysicalDevice as DeviceBase, MigDevice as MigDeviceBase,
+from nvitop.core import (libnvml, PhysicalDevice as DeviceBase, MigDevice as MigDeviceBase,
                          NA, Snapshot, utilization2string)
 from nvitop.gui.library.process import GpuProcess
 
@@ -70,7 +70,7 @@ class Device(DeviceBase):
             for mig_index in range(self.max_mig_device_count()):
                 try:
                     mig_device = MigDevice(index=(self.index, mig_index))
-                except nvml.NVMLError:
+                except libnvml.NVMLError:
                     break
                 else:
                     mig_devices.append(mig_device)
@@ -91,7 +91,7 @@ class Device(DeviceBase):
 
     def temperature_string(self):  # in Celsius
         temperature = self.temperature()
-        if nvml.nvmlCheckReturn(temperature, int):
+        if libnvml.nvmlCheckReturn(temperature, int):
             temperature = str(temperature) + 'C'
         return temperature
 
