@@ -55,7 +55,7 @@ try:
 except ModuleNotFoundError:
     USERNAME = os.getlogin()
 
-if host.WINDOWS:  # pylint: disable=no-member
+if host.WINDOWS:
     import ctypes
     SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
 else:

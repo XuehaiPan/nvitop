@@ -632,10 +632,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """The type of the GPU context.
 
         The type is one of the following:
-            - 'C': compute context
-            - 'G': graphics context
-            - 'C+G': both compute context and graphics context
-            - 'N/A': not applicable
+            - :data:`'C'`: compute context
+            - :data:`'G'`: graphics context
+            - :data:`'C+G'`: both compute context and graphics context
+            - :data:`'N/A'`: not applicable
         """
 
         return self._type
@@ -668,7 +668,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -686,7 +685,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -704,7 +702,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -721,7 +718,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -738,7 +734,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -763,7 +758,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -783,7 +777,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -801,7 +794,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -820,7 +812,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -840,7 +831,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -857,7 +847,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -877,7 +866,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
@@ -897,7 +885,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
 
         Note:
-
             To return the fallback value rather than raise an exception, please use the context
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """

@@ -18,6 +18,7 @@ from typing import (Tuple as _Tuple, Callable as _Callable, Type as _Type,
 # Python Bindings for the NVIDIA Management Library (NVML)
 # https://pypi.org/project/nvidia-ml-py
 import pynvml as _pynvml
+from pynvml import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 from nvitop.core.utils import NA, colored as __colored
 
@@ -49,7 +50,7 @@ for _name, _attr in _vars_pynvml.items():
     if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
         continue
     if _name.startswith('NVML_ERROR_') or _name.startswith('NVMLError_'):
-        _vars[_name] = _attr
+        __all__.append(_name)
         if _name.startswith('NVML_ERROR_'):
             _errcode_to_name[_attr] = _name
             _const_names.append(_name)
@@ -63,15 +64,11 @@ for _name, _attr in _vars_pynvml.items():
     ) or (
         _name.startswith('nvml') and isinstance(_attr, _FunctionType)
     ):
-        _vars[_name] = _attr
+        __all__.append(_name)
         if _name.startswith('NVML_'):
             _const_names.append(_name)
 
-# 3. Register the inherited members into `__all__` and globals.
-__all__.extend(_vars.keys())
-globals().update(_vars)
-
-# 4. Add docstring to exception classes
+# 3. Add docstring to exception classes
 _errcode = _reason = _subclass = None
 for _errcode, _reason in _errcode_to_string.items():
     _subclass = _pynvml.nvmlExceptionClass(_errcode)
@@ -79,7 +76,7 @@ for _errcode, _reason in _errcode_to_string.items():
                                                            _errcode_to_name[_errcode],
                                                            _errcode)
 
-# 5. Add undocumented constants into module docstring
+# 4. Add undocumented constants into module docstring
 _data_docs = []
 _sphinx_doc = None
 for _name in _const_names:
@@ -119,14 +116,17 @@ Functions and Exceptions
 
 """.format('\n\n'.join(_data_docs))
 
-del (_name, _attr, _vars_pynvml, _vars,
+del (_name, _attr, _vars_pynvml,
      _errcode, _reason, _subclass, _errcode_to_name, _errcode_to_string,
      _const_names, _data_docs, _sphinx_doc)
 
-# 6. Add explicit references to appease linters
+# 5. Add explicit references to appease linters
 c_nvmlDevice_t = _pynvml.c_nvmlDevice_t
-NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
+NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound    # pylint: disable=no-member
 NVMLError_FunctionNotFound = _pynvml.NVMLError_FunctionNotFound  # pylint: disable=no-member
+NVMLError_NotSupported = _pynvml.NVMLError_NotSupported         # pylint: disable=no-member
+NVMLError_NotFound = _pynvml.NVMLError_NotFound                  # pylint: disable=no-member
+NVMLError_GpuIsLost = _pynvml.NVMLError_GpuIsLost                # pylint: disable=no-member
 
 # New members in `libnvml` #############################################################################################
 
@@ -149,7 +149,7 @@ def _lazy_init() -> None:
     nvmlInit()
 
 
-def nvmlInit() -> None:
+def nvmlInit() -> None:  # pylint: disable=function-redefined
     """Initializes the NVML context with default flag (0).
 
     Raises:
@@ -168,7 +168,7 @@ def nvmlInit() -> None:
     nvmlInitWithFlags(0)
 
 
-def nvmlInitWithFlags(flags: int) -> None:
+def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
     """Initializes the NVML context with the given flags.
 
     Raises:
@@ -232,7 +232,7 @@ def nvmlInitWithFlags(flags: int) -> None:
             __initialized = True
 
 
-def nvmlShutdown() -> None:
+def nvmlShutdown() -> None:  # pylint: disable=function-redefined
     """Shutdowns the NVML context.
 
     Raises:
