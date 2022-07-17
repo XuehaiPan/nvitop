@@ -406,7 +406,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 if index_or_uuid.isdigit():
                     index_or_uuid = int(index_or_uuid)
                 elif Device.UUID_PATTERN.match(index_or_uuid) is None:
-                    raise libnvml.NVMLError_NotFound  # pylint: disable=no-member
+                    raise libnvml.NVMLError_NotFound
 
             if use_integer_identifiers is None:
                 use_integer_identifiers = isinstance(index_or_uuid, int)
@@ -534,7 +534,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._nvml_index = index
             try:
                 self._handle = libnvml.nvmlQuery('nvmlDeviceGetHandleByIndex', index, ignore_errors=False)
-            except libnvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
+            except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
         else:
             try:
@@ -542,7 +542,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     self._handle = libnvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
                 else:
                     self._handle = libnvml.nvmlQuery('nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False)
-            except libnvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
+            except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
                 self._nvml_index = NA
             else:
@@ -626,7 +626,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             def attribute(*args, **kwargs):
                 try:
                     return libnvml.nvmlQuery(func, self._handle, *args, **kwargs, ignore_errors=False)
-                except libnvml.NVMLError_NotSupported:  # pylint: disable=no-member
+                except libnvml.NVMLError_NotSupported:
                     return NA
 
             attribute.__name__ = name
@@ -1759,7 +1759,12 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
     def __init__(self, index: Optional[Union[Tuple[int, int], str]] = None, *,  # pylint: disable=super-init-not-called
                  uuid: Optional[str] = None) -> None:
-        """Initializes the instance created by ``__new__()``."""
+        """Initializes the instance created by ``__new__()``.
+
+        Raises:
+            libnvml.NVMLError_NotFound:
+                If the device is not found for the given NVML identifier.
+        """
 
         if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
             index, uuid = None, index
@@ -1789,7 +1794,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
                 try:
                     self._handle = libnvml.nvmlQuery('nvmlDeviceGetMigDeviceHandleByIndex',
                                                      self.parent.handle, self.mig_index, ignore_errors=False)
-                except libnvml.NVMLError_GpuIsLost:  # pylint: disable=no-member
+                except libnvml.NVMLError_GpuIsLost:
                     pass
         else:
             self._handle = libnvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
@@ -1802,7 +1807,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
                     self._nvml_index = mig_device.index
                     break
             else:
-                raise libnvml.NVMLError_NotFound()  # pylint: disable=no-member
+                raise libnvml.NVMLError_NotFound
 
         self._max_clock_infos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
         self._timestamp = 0
