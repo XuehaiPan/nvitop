@@ -3,14 +3,30 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.gui.library.device import Device, NA
-from nvitop.gui.library.process import host, HostProcess, GpuProcess, Snapshot, bytes2human
-from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
+from nvitop.gui.library.device import NA, Device
 from nvitop.gui.library.displayable import Displayable, DisplayableContainer
-from nvitop.gui.library.keybinding import (ALT_KEY, ANYKEY, PASSIVE_ACTION, QUANT_KEY,
-                                           SPECIAL_KEYS, KeyBuffer, KeyMaps)
+from nvitop.gui.library.history import BufferedHistoryGraph, HistoryGraph
+from nvitop.gui.library.keybinding import (
+    ALT_KEY,
+    ANYKEY,
+    PASSIVE_ACTION,
+    QUANT_KEY,
+    SPECIAL_KEYS,
+    KeyBuffer,
+    KeyMaps,
+)
+from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
 from nvitop.gui.library.mouse import MouseEvent
-from nvitop.gui.library.history import HistoryGraph, BufferedHistoryGraph
+from nvitop.gui.library.process import GpuProcess, HostProcess, Snapshot, bytes2human, host
+from nvitop.gui.library.utils import (
+    HOSTNAME,
+    LARGE_INTEGER,
+    SUPERUSER,
+    USERCONTEXT,
+    USERNAME,
+    colored,
+    cut_string,
+    make_bar,
+    set_color,
+)
 from nvitop.gui.library.widestring import WideString, wcslen
-from nvitop.gui.library.utils import (colored, set_color, cut_string, make_bar, LARGE_INTEGER,
-                                      USERNAME, SUPERUSER, HOSTNAME, USERCONTEXT)

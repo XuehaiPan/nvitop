@@ -8,10 +8,12 @@ import re
 import time
 from typing import Dict, List, Tuple, Union
 
-from tensorflow.python.keras.callbacks import Callback  # pylint: disable=import-error,no-name-in-module
+from tensorflow.python.keras.callbacks import (  # pylint: disable=import-error,no-name-in-module
+    Callback,
+)
 
-from nvitop.core import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
+from nvitop.core import libnvml
 
 
 # Ported version of .pytorch_lightning.GpuStatsLogger for Keras
@@ -84,7 +86,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         intra_step_time: bool = False,
         inter_step_time: bool = False,
         fan_speed: bool = False,
-        temperature: bool = False
+        temperature: bool = False,
     ) -> None:
         super().__init__()
 
@@ -133,7 +135,9 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
         if self._inter_step_time and self._snap_inter_step_time:
             # First log at beginning of second step
-            logs['batch_time/inter_step (ms)'] = (time.monotonic() - self._snap_inter_step_time) * 1000.0
+            logs['batch_time/inter_step (ms)'] = 1000.0 * (
+                time.monotonic() - self._snap_inter_step_time
+            )
 
     def on_train_batch_end(self, batch, logs=None) -> None:
         logs = logs or {}
@@ -144,13 +148,17 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         logs.update(self._get_gpu_stats())
 
         if self._intra_step_time and self._snap_intra_step_time:
-            logs['batch_time/intra_step (ms)'] = (time.monotonic() - self._snap_intra_step_time) * 1000.0
+            logs['batch_time/intra_step (ms)'] = 1000.0 * (
+                time.monotonic() - self._snap_intra_step_time
+            )
 
     def _get_gpu_stats(self) -> Dict[str, float]:
         """Get the gpu status from NVML queries"""
 
-        return get_gpu_stats(devices=self._devices,
-                             memory_utilization=self._memory_utilization,
-                             gpu_utilization=self._gpu_utilization,
-                             fan_speed=self._fan_speed,
-                             temperature=self._temperature)
+        return get_gpu_stats(
+            devices=self._devices,
+            memory_utilization=self._memory_utilization,
+            gpu_utilization=self._gpu_utilization,
+            fan_speed=self._fan_speed,
+            temperature=self._temperature,
+        )

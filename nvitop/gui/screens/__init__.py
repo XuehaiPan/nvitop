@@ -3,7 +3,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.gui.screens.main import MainScreen, BreakLoop
 from nvitop.gui.screens.environ import EnvironScreen
-from nvitop.gui.screens.treeview import TreeViewScreen
 from nvitop.gui.screens.help import HelpScreen
+from nvitop.gui.screens.main import BreakLoop, MainScreen
+from nvitop.gui.screens.treeview import TreeViewScreen

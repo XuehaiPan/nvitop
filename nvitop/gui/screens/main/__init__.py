@@ -6,7 +6,7 @@
 import threading
 from functools import partial
 
-from nvitop.gui.library import DisplayableContainer, MouseEvent, LARGE_INTEGER
+from nvitop.gui.library import LARGE_INTEGER, DisplayableContainer, MouseEvent
 from nvitop.gui.screens.main.device import DevicePanel
 from nvitop.gui.screens.main.host import HostPanel
 from nvitop.gui.screens.main.process import ProcessPanel
@@ -19,13 +19,14 @@ class BreakLoop(Exception):
 class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
     NAME = 'main'
 
-    def __init__(self, devices, filters, ascii, mode, win, root):  # pylint: disable=redefined-builtin,too-many-arguments,too-many-locals,too-many-statements
+    # pylint: disable=redefined-builtin,too-many-arguments,too-many-locals,too-many-statements
+    def __init__(self, devices, filters, ascii, mode, win, root):
         super().__init__(win, root)
 
         self.width = root.width
 
         assert mode in ('auto', 'full', 'compact')
-        compact = (mode == 'compact')
+        compact = mode == 'compact'
         self.mode = mode
         self._compact = compact
 
@@ -42,7 +43,9 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.host_panel.focused = False
         self.add_child(self.host_panel)
 
-        self.process_panel = ProcessPanel(self.device_panel.leaf_devices, compact, filters, win=win, root=root)
+        self.process_panel = ProcessPanel(
+            self.device_panel.leaf_devices, compact, filters, win=win, root=root
+        )
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
@@ -83,16 +86,22 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.y = min(self.y, self.root.y)
         height = n_term_lines - self.y
         heights = [
-            self.device_panel.full_height + self.host_panel.full_height + self.process_panel.full_height,
-            self.device_panel.compact_height + self.host_panel.full_height + self.process_panel.full_height,
-            self.device_panel.compact_height + self.host_panel.compact_height + self.process_panel.full_height,
+            self.device_panel.full_height
+            + self.host_panel.full_height
+            + self.process_panel.full_height,
+            self.device_panel.compact_height
+            + self.host_panel.full_height
+            + self.process_panel.full_height,
+            self.device_panel.compact_height
+            + self.host_panel.compact_height
+            + self.process_panel.full_height,
         ]
         if self.mode == 'auto':
-            self.compact = (height < heights[0])
-            self.host_panel.compact = (height < heights[1])
-            self.process_panel.compact = (height < heights[-1])
+            self.compact = height < heights[0]
+            self.host_panel.compact = height < heights[1]
+            self.process_panel.compact = height < heights[-1]
         else:
-            self.compact = (self.mode == 'compact')
+            self.compact = self.mode == 'compact'
             self.host_panel.compact = self.compact
             self.process_panel.compact = self.compact
         self.device_panel.compact = self.compact
@@ -148,9 +157,10 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         return super().__contains__(item)
 
     def init_keybindings(self):
-        # pylint: disable=too-many-locals,too-many-statements,multiple-statements
+        # pylint: disable=too-many-locals,too-many-statements
 
-        def quit(): raise BreakLoop  # pylint: disable=redefined-builtin
+        def quit():  # pylint: disable=redefined-builtin
+            raise BreakLoop
 
         def change_mode(mode):
             self.mode = mode
@@ -163,20 +173,35 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.root.update_size()
             self.root.need_redraw = True
 
-        def host_left(): self.process_panel.host_offset -= 2
-        def host_right(): self.process_panel.host_offset += 2
-        def host_begin(): self.process_panel.host_offset = -1
-        def host_end(): self.process_panel.host_offset = LARGE_INTEGER
+        def host_left():
+            self.process_panel.host_offset -= 2
 
-        def select_move(direction): self.selected.move(direction=direction)
-        def select_clear(): self.selected.clear()
+        def host_right():
+            self.process_panel.host_offset += 2
+
+        def host_begin():
+            self.process_panel.host_offset = -1
+
+        def host_end():
+            self.process_panel.host_offset = LARGE_INTEGER
+
+        def select_move(direction):
+            self.selected.move(direction=direction)
+
+        def select_clear():
+            self.selected.clear()
 
         def screen_move(direction):
             self.move(direction)
 
-        def terminate(): self.selected.terminate()
-        def kill(): self.selected.kill()
-        def interrupt(): self.selected.interrupt()
+        def terminate():
+            self.selected.terminate()
+
+        def kill():
+            self.selected.kill()
+
+        def interrupt():
+            self.selected.interrupt()
 
         def sort_by(order, reverse):
             self.process_panel.order = order
@@ -184,16 +209,13 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.root.update_size()
 
         def order_previous():
-            sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].previous,
-                    reverse=False)
+            sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].previous, reverse=False)
 
         def order_next():
-            sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].next,
-                    reverse=False)
+            sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].next, reverse=False)
 
         def order_reverse():
-            sort_by(order=self.process_panel.order,
-                    reverse=(not self.process_panel.reverse))
+            sort_by(order=self.process_panel.order, reverse=(not self.process_panel.reverse))
 
         self.root.keymaps.bind('main', 'q', quit)
         self.root.keymaps.copy('main', 'q', 'Q')
@@ -241,5 +263,9 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.root.keymaps.copy('main', '.', '>')
         self.root.keymaps.bind('main', '/', order_reverse)
         for order in ProcessPanel.ORDERS:
-            self.root.keymaps.bind('main', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False))
-            self.root.keymaps.bind('main', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True))
+            self.root.keymaps.bind(
+                'main', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False)
+            )
+            self.root.keymaps.bind(
+                'main', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True)
+            )

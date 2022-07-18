@@ -15,6 +15,7 @@ from nvitop.core import NA
 
 BOUND_UPDATE_INTERVAL = 1.0
 
+# fmt: off
 VALUE2SYMBOL_UP = {
     (0, 0): ' ', (0, 1): '⢀', (0, 2): '⢠', (0, 3): '⢰', (0, 4): '⢸',
     (1, 0): '⡀', (1, 1): '⣀', (1, 2): '⣠', (1, 3): '⣰', (1, 4): '⣸',
@@ -29,6 +30,7 @@ VALUE2SYMBOL_DOWN = {
     (3, 0): "⠇", (3, 1): "⠏", (3, 2): "⠟", (3, 3): "⠿", (3, 4): "⢿",
     (4, 0): "⡇", (4, 1): "⡏", (4, 2): "⡟", (4, 3): "⡿", (4, 4): "⣿"
 }
+# fmt: on
 SYMBOL2VALUE_UP = {v: k for k, v in VALUE2SYMBOL_UP.items()}
 SYMBOL2VALUE_DOWN = {v: k for k, v in VALUE2SYMBOL_DOWN.items()}
 PAIR2SYMBOL_UP = {
@@ -48,8 +50,17 @@ def grouped(iterable, size, fillvalue=None):
 class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     MAX_WIDTH = 1024
 
-    def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin,too-many-arguments
-                 baseline=0.0, dynamic_bound=False, upsidedown=False):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        upperbound,
+        width,
+        height,
+        format='{:.1f}'.format,  # pylint: disable=redefined-builtin
+        baseline=0.0,
+        dynamic_bound=False,
+        upsidedown=False,
+    ):
         assert baseline < upperbound
 
         self.format = format
@@ -67,7 +78,9 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         self._height = height
 
         self.maxlen = 2 * self.width + 1
-        self.history = deque([self.baseline - 0.1] * (2 * self.MAX_WIDTH + 1), maxlen=(2 * self.MAX_WIDTH + 1))
+        self.history = deque(
+            [self.baseline - 0.1] * (2 * self.MAX_WIDTH + 1), maxlen=(2 * self.MAX_WIDTH + 1)
+        )
         self.reversed_history = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
         self._max_value_maintainer = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
 
@@ -96,14 +109,21 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             self._width = value
             with self.write_lock:
                 self.maxlen = 2 * self.width + 1
-                self.reversed_history = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
-                self._max_value_maintainer = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
-                for history in itertools.islice(self.history,
-                                                max(0, self.history.maxlen - self.maxlen),
-                                                self.history.maxlen):
+                self.reversed_history = deque(
+                    (self.baseline - 0.1,) * self.maxlen, maxlen=self.maxlen
+                )
+                self._max_value_maintainer = deque(
+                    (self.baseline - 0.1,) * self.maxlen, maxlen=self.maxlen
+                )
+                for history in itertools.islice(
+                    self.history, max(0, self.history.maxlen - self.maxlen), self.history.maxlen
+                ):
                     if self.reversed_history[-1] == self._max_value_maintainer[0]:
                         self._max_value_maintainer.popleft()
-                    while len(self._max_value_maintainer) > 0 and self._max_value_maintainer[-1] < history:
+                    while (
+                        len(self._max_value_maintainer) > 0
+                        and self._max_value_maintainer[-1] < history
+                    ):
                         self._max_value_maintainer.pop()
                     self.reversed_history.appendleft(history)
                     self._max_value_maintainer.append(history)
@@ -171,19 +191,21 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             self.graph, self.last_graph = self.last_graph, self.graph
             bar = self.make_bar(self.reversed_history[1], value)  # pylint: disable=disallowed-name
             for i, (line, char) in enumerate(zip(self.graph, bar)):
-                self.graph[i] = (line + char)[-self.width:]
+                self.graph[i] = (line + char)[-self.width :]
 
     def remake_graph(self):
         with self.remake_lock:
             if self.max_value >= self.baseline:
                 reversed_bars = []
-                for _, (value2, value1) in zip(range(self.width), grouped(self.reversed_history,
-                                                                          size=2, fillvalue=self.baseline)):
+                for _, (value2, value1) in zip(
+                    range(self.width),
+                    grouped(self.reversed_history, size=2, fillvalue=self.baseline),
+                ):
                     reversed_bars.append(self.make_bar(value1, value2))
                 graph = list(map(''.join, zip(*reversed(reversed_bars))))
 
                 for i, line in enumerate(graph):
-                    graph[i] = line.rjust(self.width)[-self.width:]
+                    graph[i] = line.rjust(self.width)[-self.width :]
 
                 self.graph = graph
                 self.last_graph = list(map(self.shift_line, self.graph))
@@ -232,14 +254,28 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
 
 
 class BufferedHistoryGraph(HistoryGraph):
-    def __init__(self, upperbound, width, height, format='{:.1f}'.format,  # pylint: disable=redefined-builtin,too-many-arguments
-                 baseline=0.0, dynamic_bound=False, upsidedown=False, interval=1.0):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        upperbound,
+        width,
+        height,
+        format='{:.1f}'.format,  # pylint: disable=redefined-builtin
+        baseline=0.0,
+        dynamic_bound=False,
+        upsidedown=False,
+        interval=1.0,
+    ):
         assert interval > 0.0
-        super().__init__(upperbound, width, height,
-                         format=format,
-                         baseline=baseline,
-                         dynamic_bound=dynamic_bound,
-                         upsidedown=upsidedown)
+        super().__init__(
+            upperbound,
+            width,
+            height,
+            format=format,
+            baseline=baseline,
+            dynamic_bound=dynamic_bound,
+            upsidedown=upsidedown,
+        )
 
         self.interval = interval
         self.start_time = time.monotonic()

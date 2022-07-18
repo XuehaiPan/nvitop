@@ -7,8 +7,15 @@
 import threading
 import time
 
-from nvitop.gui.library import (host, Device, NA,
-                                Displayable, BufferedHistoryGraph, colored, make_bar)
+from nvitop.gui.library import (
+    NA,
+    BufferedHistoryGraph,
+    Device,
+    Displayable,
+    colored,
+    host,
+    make_bar,
+)
 
 
 class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -31,14 +38,15 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.width = max(79, root.width)
         self.full_height = 12
         self.compact_height = 2
-        self.height = (self.compact_height if compact else self.full_height)
+        self.height = self.compact_height if compact else self.full_height
 
         self.cpu_percent = None
         self.load_average = None
         self.memory_percent = None
         self.swap_percent = None
-        self._snapshot_daemon = threading.Thread(name='host-snapshot-daemon',
-                                                 target=self._snapshot_target, daemon=True)
+        self._snapshot_daemon = threading.Thread(
+            name='host-snapshot-daemon', target=self._snapshot_target, daemon=True
+        )
         self._daemon_running = threading.Event()
 
     @property
@@ -70,23 +78,38 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
-            self.height = (self.compact_height if self.compact else self.full_height)
+            self.height = self.compact_height if self.compact else self.full_height
 
     def enable_history(self):
         host.cpu_percent = BufferedHistoryGraph(
-            interval=1.0, width=77, height=5, upsidedown=False,
-            baseline=0.0, upperbound=100.0, dynamic_bound=False,
-            format='CPU: {:.1f}%'.format
+            interval=1.0,
+            width=77,
+            height=5,
+            upsidedown=False,
+            baseline=0.0,
+            upperbound=100.0,
+            dynamic_bound=False,
+            format='CPU: {:.1f}%'.format,
         )(host.cpu_percent)
         host.memory_percent = BufferedHistoryGraph(
-            interval=1.0, width=77, height=4, upsidedown=True,
-            baseline=0.0, upperbound=100.0, dynamic_bound=False,
-            format='MEM: {:.1f}%'.format
+            interval=1.0,
+            width=77,
+            height=4,
+            upsidedown=True,
+            baseline=0.0,
+            upperbound=100.0,
+            dynamic_bound=False,
+            format='MEM: {:.1f}%'.format,
         )(host.memory_percent)
         host.swap_percent = BufferedHistoryGraph(
-            interval=1.0, width=77, height=1, upsidedown=False,
-            baseline=0.0, upperbound=100.0, dynamic_bound=False,
-            format='SWP: {:.1f}%'.format
+            interval=1.0,
+            width=77,
+            height=1,
+            upsidedown=False,
+            baseline=0.0,
+            upperbound=100.0,
+            dynamic_bound=False,
+            format='SWP: {:.1f}%'.format,
         )(host.swap_percent)
 
         def percentage(x):
@@ -96,29 +119,49 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         def enable_history(device):
             device.memory_percent = BufferedHistoryGraph(
-                interval=1.0, width=20, height=5, upsidedown=False,
-                baseline=0.0, upperbound=100.0, dynamic_bound=False,
-                format=lambda x: ('GPU {} MEM: {}').format(device.display_index, percentage(x))
+                interval=1.0,
+                width=20,
+                height=5,
+                upsidedown=False,
+                baseline=0.0,
+                upperbound=100.0,
+                dynamic_bound=False,
+                format=lambda x: ('GPU {} MEM: {}').format(device.display_index, percentage(x)),
             )(device.memory_percent)
             device.gpu_utilization = BufferedHistoryGraph(
-                interval=1.0, width=20, height=5, upsidedown=True,
-                baseline=0.0, upperbound=100.0, dynamic_bound=False,
-                format=lambda x: ('GPU {} UTL: {}').format(device.display_index, percentage(x))
+                interval=1.0,
+                width=20,
+                height=5,
+                upsidedown=True,
+                baseline=0.0,
+                upperbound=100.0,
+                dynamic_bound=False,
+                format=lambda x: ('GPU {} UTL: {}').format(device.display_index, percentage(x)),
             )(device.gpu_utilization)
 
         for device in self.devices:
             enable_history(device)
 
-        prefix = ('AVG ' if self.device_count > 1 else '')
+        prefix = 'AVG ' if self.device_count > 1 else ''
         self.average_memory_percent = BufferedHistoryGraph(
-            interval=1.0, width=20, height=5, upsidedown=False,
-            baseline=0.0, upperbound=100.0, dynamic_bound=False,
-            format=lambda x: ('{}GPU MEM: {}').format(prefix, percentage(x))
+            interval=1.0,
+            width=20,
+            height=5,
+            upsidedown=False,
+            baseline=0.0,
+            upperbound=100.0,
+            dynamic_bound=False,
+            format=lambda x: ('{}GPU MEM: {}').format(prefix, percentage(x)),
         )
         self.average_gpu_utilization = BufferedHistoryGraph(
-            interval=1.0, width=32, height=5, upsidedown=True,
-            baseline=0.0, upperbound=100.0, dynamic_bound=False,
-            format=lambda x: ('{}GPU UTL: {}').format(prefix, percentage(x))
+            interval=1.0,
+            width=32,
+            height=5,
+            upsidedown=True,
+            baseline=0.0,
+            upperbound=100.0,
+            dynamic_bound=False,
+            format=lambda x: ('{}GPU UTL: {}').format(prefix, percentage(x)),
         )
 
     def take_snapshots(self):
@@ -161,18 +204,30 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             return []
 
         remaining_width = self.width - 79
-        data_line = '│                                                                             │'
-        separator_line = '├────────────╴120s├─────────────────────────╴60s├──────────╴30s├──────────────┤'
+        data_line = (
+            '│                                                                             │'
+        )
+        separator_line = (
+            '├────────────╴120s├─────────────────────────╴60s├──────────╴30s├──────────────┤'
+        )
         if self.width >= 100:
             data_line += ' ' * (remaining_width - 1) + '│'
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
         frame = [
             '╞═══════════════════════════════╧══════════════════════╧══════════════════════╡',
-            data_line, data_line, data_line, data_line, data_line,
+            data_line,
+            data_line,
+            data_line,
+            data_line,
+            data_line,
             separator_line,
-            data_line, data_line, data_line, data_line, data_line,
-            '╘═════════════════════════════════════════════════════════════════════════════╛'
+            data_line,
+            data_line,
+            data_line,
+            data_line,
+            data_line,
+            '╘═════════════════════════════════════════════════════════════════════════════╛',
         ]
         if self.width >= 100:
             frame[0] = frame[0][:-1] + '╪' + '═' * (remaining_width - 1) + '╡'
@@ -192,8 +247,10 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.color_reset()
 
         if self.load_average is not None:
-            load_average = tuple('{:5.2f}'.format(value)[:5] if value < 10000.0 else '9999+'
-                                 for value in self.load_average)
+            load_average = tuple(
+                '{:5.2f}'.format(value)[:5] if value < 10000.0 else '9999+'
+                for value in self.load_average
+            )
         else:
             load_average = (NA,) * 3
         load_average = 'Load Average: {} {} {}'.format(*load_average)
@@ -209,7 +266,9 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.color_at(self.y, self.x, width=len(cpu_bar), fg='cyan', attr='bold')
             self.color_at(self.y + 1, self.x, width=width_left, fg='magenta', attr='bold')
             self.color_at(self.y, self.x + width_left + 2, width=width_right, attr='bold')
-            self.color_at(self.y + 1, self.x + width_left + 2, width=width_right, fg='blue', attr='bold')
+            self.color_at(
+                self.y + 1, self.x + width_left + 2, width=width_right, fg='blue', attr='bold'
+            )
             return
 
         remaining_width = self.width - 79
@@ -222,26 +281,42 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.color_at(self.y + 5, self.x + 60, width=3, attr='dim')
 
             if self.width >= 100:
-                for offset, string in ((20, '╴30s├'), (35, '╴60s├'), (66, '╴120s├'), (126, '╴240s├')):
+                for offset, string in (
+                    (20, '╴30s├'),
+                    (35, '╴60s├'),
+                    (66, '╴120s├'),
+                    (126, '╴240s├'),
+                ):
                     if offset > remaining_width:
                         break
                     self.addstr(self.y + 5, self.x + self.width - offset, string)
-                    self.color_at(self.y + 5, self.x + self.width - offset + 1, width=len(string) - 2, attr='dim')
+                    self.color_at(
+                        self.y + 5,
+                        self.x + self.width - offset + 1,
+                        width=len(string) - 2,
+                        attr='dim',
+                    )
 
         for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
             self.addstr(y, self.x + 1, line)
             self.color_at(y, self.x + 1, width=77, fg='cyan')
         self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
-        self.addstr(self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history.last_value_string()))
+        self.addstr(
+            self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history.last_value_string())
+        )
 
         for y, line in enumerate(host.memory_percent.history.graph, start=self.y + 6):
             self.addstr(y, self.x + 1, line)
             self.color_at(y, self.x + 1, width=77, fg='magenta')
-        self.addstr(self.y + 9, self.x + 1, ' {} '.format(host.memory_percent.history.last_value_string()))
+        self.addstr(
+            self.y + 9, self.x + 1, ' {} '.format(host.memory_percent.history.last_value_string())
+        )
         for y, line in enumerate(host.swap_percent.history.graph, start=self.y + 10):
             self.addstr(y, self.x + 1, line)
             self.color_at(y, self.x + 1, width=77, fg='blue')
-        self.addstr(self.y + 10, self.x + 1, ' {} '.format(host.swap_percent.history.last_value_string()))
+        self.addstr(
+            self.y + 10, self.x + 1, ' {} '.format(host.swap_percent.history.last_value_string())
+        )
 
         if self.width >= 100:
             if self.device_count > 1 and self.parent.selected.is_set():
@@ -263,7 +338,9 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
                 self.addstr(y, self.x + 79, line)
                 self.color_at(y, self.x + 79, width=remaining_width - 1, fg=gpu_display_color)
-            self.addstr(self.y + 10, self.x + 79, ' {} '.format(gpu_utilization.last_value_string()))
+            self.addstr(
+                self.y + 10, self.x + 79, ' {} '.format(gpu_utilization.last_value_string())
+            )
 
     def destroy(self):
         super().destroy()
@@ -281,8 +358,10 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.load_average = host.load_average()
 
         if self.load_average is not None:
-            load_average = tuple('{:5.2f}'.format(value)[:5] if value < 10000.0 else '9999+'
-                                 for value in self.load_average)
+            load_average = tuple(
+                '{:5.2f}'.format(value)[:5] if value < 10000.0 else '9999+'
+                for value in self.load_average
+            )
         else:
             load_average = (NA,) * 3
         load_average = 'Load Average: {} {} {}'.format(*load_average)
@@ -294,10 +373,14 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_percent, width_right - 4))
 
         lines = [
-            '{}  {}'.format(colored(cpu_bar, color='cyan', attrs=('bold',)),
-                            colored('( {} )'.format(load_average), attrs=('bold',))),
-            '{}  {}'.format(colored(memory_bar, color='magenta', attrs=('bold',)),
-                            colored(swap_bar, color='blue', attrs=('bold',))),
+            '{}  {}'.format(
+                colored(cpu_bar, color='cyan', attrs=('bold',)),
+                colored('( {} )'.format(load_average), attrs=('bold',)),
+            ),
+            '{}  {}'.format(
+                colored(memory_bar, color='magenta', attrs=('bold',)),
+                colored(swap_bar, color='blue', attrs=('bold',)),
+            ),
         ]
 
         lines = '\n'.join(lines)

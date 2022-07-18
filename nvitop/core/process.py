@@ -12,13 +12,18 @@ import os
 import threading
 from abc import ABCMeta
 from types import FunctionType
-from typing import List, Tuple, Dict, Iterable, Callable, Union, Optional, Type, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 from weakref import WeakValueDictionary
 
 from nvitop.core import host, libnvml
-from nvitop.core.utils import (NA, NaType, Snapshot,
-                               bytes2human, timedelta2human,
-                               memoize_when_activated)
+from nvitop.core.utils import (
+    NA,
+    NaType,
+    Snapshot,
+    bytes2human,
+    memoize_when_activated,
+    timedelta2human,
+)
 
 
 if TYPE_CHECKING:
@@ -29,6 +34,7 @@ __all__ = ['HostProcess', 'GpuProcess', 'command_join']
 
 
 if host.POSIX:
+
     def add_quotes(s: str) -> str:
         """Returns a shell-escaped version of the string."""
 
@@ -41,9 +47,12 @@ if host.POSIX:
                 return '"{}"'.format(s)
         if "'" not in s and '\n' not in s:
             return "'{}'".format(s)
-        return '"{}"'.format(s.replace('\\', r'\\').replace('"', r'\"')
-                              .replace('$', r'\$').replace('\n', r'\n'))
+        return '"{}"'.format(
+            s.replace('\\', r'\\').replace('"', r'\"').replace('$', r'\$').replace('\n', r'\n')
+        )
+
 elif host.WINDOWS:
+
     def add_quotes(s: str) -> str:
         """Returns a shell-escaped version of the string."""
 
@@ -54,9 +63,12 @@ elif host.WINDOWS:
                 return s
             if '"' not in s:
                 return '"{}"'.format(s)
-        return '"{}"'.format(s.replace('^', '^^').replace('"', '^"')
-                              .replace('%', '^%').replace('\n', r'\n'))
+        return '"{}"'.format(
+            s.replace('^', '^^').replace('"', '^"').replace('%', '^%').replace('\n', r'\n')
+        )
+
 else:
+
     def add_quotes(s: str) -> str:
         """Returns a shell-escaped version of the string."""
 
@@ -66,9 +78,10 @@ else:
 def command_join(cmdline: List[str]) -> str:
     """Returns a shell-escaped string from command line arguments."""
 
-    if (
-        len(cmdline) == 1 and
-        not (os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0]))  # may be modified by `setproctitle`
+    if len(cmdline) == 1 and not (
+        # May be modified by `setproctitle`
+        os.path.isfile(cmdline[0])
+        and os.path.isabs(cmdline[0])
     ):
         return cmdline[0]
     return ' '.join(map(add_quotes, cmdline))
@@ -101,9 +114,8 @@ def auto_garbage_clean(fallback=_RAISE):
                         del HostProcess.INSTANCES[self.pid]
                 except KeyError:
                     pass
-                if (
-                    fallback is _RAISE
-                    or not getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False)  # see also `GpuProcess.failsafe`
+                if fallback is _RAISE or not getattr(
+                    _USE_FALLBACK_WHEN_RAISE, 'value', False  # see also `GpuProcess.failsafe`
                 ):
                     raise e
                 if isinstance(fallback, tuple):
@@ -188,7 +200,8 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
             return instance
 
-    def __init__(self, pid: Optional[int] = None) -> None:  # pylint: disable=unused-argument,super-init-not-called
+    # pylint: disable=unused-argument,super-init-not-called
+    def __init__(self, pid: Optional[int] = None) -> None:
         pass
 
     @property
@@ -214,6 +227,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return self.__class__, (self.pid,)
 
     if host.WINDOWS:
+
         def username(self) -> str:
             """The name of the user that owns the process.
             On Windows, the domain name will be removed if it is present.
@@ -225,10 +239,14 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                     If the user do not have read privilege to the process' status file.
             """
 
-            if self._username is None:
-                self._username = super().username().split('\\')[-1]  # pylint: disable=attribute-defined-outside-init
+            if self._username is None:  # pylint: disable=access-member-before-definition
+                self._username = (  # pylint: disable=attribute-defined-outside-init
+                    super().username().split('\\')[-1]
+                )
             return self._username
+
     else:
+
         def username(self) -> str:
             """The name of the user that owns the process.
             On UNIX this is calculated by using *real* process uid.
@@ -240,8 +258,10 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                     If the user do not have read privilege to the process' status file.
             """
 
-            if self._username is None:
-                self._username = super().username()  # pylint: disable=attribute-defined-outside-init
+            if self._username is None:  # pylint: disable=access-member-before-definition
+                self._username = (  # pylint: disable=attribute-defined-outside-init
+                    super().username()
+                )
             return self._username
 
     @memoize_when_activated
@@ -391,7 +411,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                         self.cmdline.cache_deactivate(self)
                         self.running_time.cache_deactivate(self)
 
-    def as_snapshot(self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None) -> Snapshot:
+    def as_snapshot(
+        self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None
+    ) -> Snapshot:
         """Returns a onetime snapshot of the process."""
 
         with self.oneshot():
@@ -419,12 +441,16 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = WeakValueDictionary()
 
-    # pylint: disable=unused-argument
-    def __new__(cls, pid: int, device: 'Device',                             # pylint: disable=too-many-arguments
-                gpu_memory: Optional[Union[int, NaType]] = None,
-                gpu_instance_id: Optional[Union[int, NaType]] = None,
-                compute_instance_id: Optional[Union[int, NaType]] = None,
-                type: Optional[Union[str, NaType]] = None) -> 'GpuProcess':  # pylint: disable=redefined-builtin
+    # pylint: disable=too-many-arguments,unused-argument
+    def __new__(
+        cls,
+        pid: int,
+        device: 'Device',
+        gpu_memory: Optional[Union[int, NaType]] = None,
+        gpu_instance_id: Optional[Union[int, NaType]] = None,
+        compute_instance_id: Optional[Union[int, NaType]] = None,
+        type: Optional[Union[str, NaType]] = None,  # pylint: disable=redefined-builtin
+    ) -> 'GpuProcess':
         """Returns the cached instance of :class:`GpuProcess`."""
 
         if pid is None:
@@ -452,11 +478,16 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             return instance
 
-    def __init__(self, pid: int, device: 'Device',                          # pylint: disable=too-many-arguments,unused-argument
-                 gpu_memory: Optional[Union[int, NaType]] = None,
-                 gpu_instance_id: Optional[Union[int, NaType]] = None,
-                 compute_instance_id: Optional[Union[int, NaType]] = None,
-                 type: Optional[Union[str, NaType]] = None) -> None:        # pylint: disable=redefined-builtin
+    # pylint: disable=too-many-arguments,unused-argument
+    def __init__(
+        self,
+        pid: int,
+        device: 'Device',
+        gpu_memory: Optional[Union[int, NaType]] = None,
+        gpu_instance_id: Optional[Union[int, NaType]] = None,
+        compute_instance_id: Optional[Union[int, NaType]] = None,
+        type: Optional[Union[str, NaType]] = None,  # pylint: disable=redefined-builtin
+    ) -> None:
         """Initializes the instance returned by ``__new__()``."""
 
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
@@ -470,8 +501,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self.type = type
 
         if gpu_instance_id is not None and compute_instance_id is not None:
-            self._gpu_instance_id = (gpu_instance_id if gpu_instance_id != 0xFFFFFFFF else NA)
-            self._compute_instance_id = (compute_instance_id if compute_instance_id != 0xFFFFFFFF else NA)
+            self._gpu_instance_id = gpu_instance_id if gpu_instance_id != 0xFFFFFFFF else NA
+            self._compute_instance_id = (
+                compute_instance_id if compute_instance_id != 0xFFFFFFFF else NA
+            )
         elif device.is_mig_device():
             self._gpu_instance_id = device.gpu_instance_id()
             self._compute_instance_id = device.compute_instance_id()
@@ -485,22 +518,25 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
             self.__class__.__name__,
-            self.pid, self.gpu_memory_human(), self.type,
-            self.device, self.host
+            self.pid,
+            self.gpu_memory_human(),
+            self.type,
+            self.device,
+            self.host,
         )
 
     __repr__ = __str__
 
-    def __eq__(self, other: Union[host.Process, 'GpuProcess']) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, (GpuProcess, host.Process)):
             return NotImplemented
         return self._ident == other._ident
 
-    def __ne__(self, other: Union[host.Process, 'GpuProcess']) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self == other
 
     def __hash__(self) -> int:
-        if self._hash is None:              # pylint: disable=access-member-before-definition
+        if self._hash is None:  # pylint: disable=access-member-before-definition
             self._hash = hash(self._ident)  # pylint: disable=attribute-defined-outside-init
         return self._hash
 
@@ -594,31 +630,36 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
         return self._gpu_decoder_utilization
 
+    # pylint: disable=attribute-defined-outside-init
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
         """Sets the used GPU memory in bytes."""
 
-        self._gpu_memory = memory_used = value                   # pylint: disable=attribute-defined-outside-init
-        self._gpu_memory_human = bytes2human(self.gpu_memory())  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory = memory_used = value
+        self._gpu_memory_human = bytes2human(self.gpu_memory())
         memory_total = self.device.memory_total()
         gpu_memory_percent = NA
         if libnvml.nvmlCheckReturn(memory_used, int) and libnvml.nvmlCheckReturn(memory_total, int):
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
-        self._gpu_memory_percent = gpu_memory_percent  # pylint: disable=attribute-defined-outside-init
+        self._gpu_memory_percent = gpu_memory_percent
 
-    def set_gpu_utilization(self, gpu_sm_utilization: Optional[int] = None,
-                            gpu_memory_utilization: Optional[int] = None,
-                            gpu_encoder_utilization: Optional[int] = None,
-                            gpu_decoder_utilization: Optional[int] = None) -> None:
+    # pylint: disable=attribute-defined-outside-init
+    def set_gpu_utilization(
+        self,
+        gpu_sm_utilization: Optional[int] = None,
+        gpu_memory_utilization: Optional[int] = None,
+        gpu_encoder_utilization: Optional[int] = None,
+        gpu_decoder_utilization: Optional[int] = None,
+    ) -> None:
         """Sets the GPU utilization rates."""
 
         if gpu_sm_utilization is not None:
-            self._gpu_sm_utilization = gpu_sm_utilization            # pylint: disable=attribute-defined-outside-init
+            self._gpu_sm_utilization = gpu_sm_utilization
         if gpu_memory_utilization is not None:
-            self._gpu_memory_utilization = gpu_memory_utilization    # pylint: disable=attribute-defined-outside-init
+            self._gpu_memory_utilization = gpu_memory_utilization
         if gpu_encoder_utilization is not None:
-            self._gpu_encoder_utilization = gpu_encoder_utilization  # pylint: disable=attribute-defined-outside-init
+            self._gpu_encoder_utilization = gpu_encoder_utilization
         if gpu_decoder_utilization is not None:
-            self._gpu_decoder_utilization = gpu_decoder_utilization  # pylint: disable=attribute-defined-outside-init
+            self._gpu_decoder_utilization = gpu_decoder_utilization
 
     def update_gpu_status(self) -> Union[int, NaType]:
         """Updates the GPU consumption status from a new NVML query."""
@@ -762,7 +803,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             manager :meth:`GpuProcess.failsafe`. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
-        if self._username is None:                 # pylint: disable=access-member-before-definition
+        if self._username is None:  # pylint: disable=access-member-before-definition
             self._username = self.host.username()  # pylint: disable=attribute-defined-outside-init
         return self._username
 
@@ -855,7 +896,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     rss_memory = host_memory  # in bytes
 
-    @auto_garbage_clean(fallback=('No Such Process',))  # `fallback=['No Permissions']` for `AccessDenied` error
+    # For `AccessDenied` error the fallback value is `['No Permissions']`
+    @auto_garbage_clean(fallback=('No Such Process',))
     def cmdline(self) -> List[str]:
         """The command line this process has been called with.
 
@@ -917,8 +959,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=_RAISE)
     def as_snapshot(
-        self, *,
-        host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
+        self, *, host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
     ) -> Snapshot:
         """Returns a onetime snapshot of the process on the GPU device.
         See also :meth:`take_snapshots` and :meth:`failsafe`.
@@ -933,7 +974,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return Snapshot(
             real=self,
             pid=self.pid,
-
+            # host
             host=host_snapshot,
             is_running=host_snapshot.is_running,
             status=host_snapshot.status,
@@ -948,7 +989,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             running_time=host_snapshot.running_time,
             running_time_human=host_snapshot.running_time_human,
             running_time_in_seconds=host_snapshot.running_time_in_seconds,
-
+            # device
             device=self.device,
             type=self.type,
             gpu_instance_id=self.gpu_instance_id(),
@@ -963,8 +1004,9 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         )
 
     @classmethod
-    def take_snapshots(cls, gpu_processes: Iterable['GpuProcess'], *,  # batched version of `as_snapshot`
-                       failsafe=False) -> List[Snapshot]:
+    def take_snapshots(  # batched version of `as_snapshot`
+        cls, gpu_processes: Iterable['GpuProcess'], *, failsafe=False
+    ) -> List[Snapshot]:
         """Takes snapshots for a list of :class:`GpuProcess` instances.
 
         If *failsafe* is :data:`True`, then if any method fails, the fallback value in
@@ -972,10 +1014,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """
 
         cache = {}
-        context = (cls.failsafe if failsafe else contextlib.nullcontext)
+        context = cls.failsafe if failsafe else contextlib.nullcontext
         with context():
-            snapshots = [process.as_snapshot(host_process_snapshot_cache=cache)
-                         for process in gpu_processes]
+            snapshots = [
+                process.as_snapshot(host_process_snapshot_cache=cache) for process in gpu_processes
+            ]
 
         return snapshots
 

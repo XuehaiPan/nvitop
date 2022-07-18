@@ -3,8 +3,10 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.core import (libnvml, PhysicalDevice as DeviceBase, MigDevice as MigDeviceBase,
-                         NA, Snapshot, utilization2string)
+from nvitop.core import NA
+from nvitop.core import MigDevice as MigDeviceBase
+from nvitop.core import PhysicalDevice as DeviceBase
+from nvitop.core import Snapshot, libnvml, utilization2string
 from nvitop.gui.library.process import GpuProcess
 
 
@@ -19,36 +21,49 @@ class Device(DeviceBase):
     INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
 
     SNAPSHOT_KEYS = [
-        'name', 'bus_id',
-
-        'memory_used', 'memory_free', 'memory_total',
-        'memory_used_human', 'memory_free_human', 'memory_total_human',
-        'memory_percent', 'memory_usage',
-
-        'gpu_utilization', 'memory_utilization',
-
-        'fan_speed', 'temperature',
-
-        'power_usage', 'power_limit', 'power_status',
-
-        'display_active', 'current_driver_model',
-        'persistence_mode', 'performance_state',
+        'name',
+        'bus_id',
+        'memory_used',
+        'memory_free',
+        'memory_total',
+        'memory_used_human',
+        'memory_free_human',
+        'memory_total_human',
+        'memory_percent',
+        'memory_usage',
+        'gpu_utilization',
+        'memory_utilization',
+        'fan_speed',
+        'temperature',
+        'power_usage',
+        'power_limit',
+        'power_status',
+        'display_active',
+        'current_driver_model',
+        'persistence_mode',
+        'performance_state',
         'total_volatile_uncorrected_ecc_errors',
-        'compute_mode', 'mig_mode', 'is_mig_device',
-
-        'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
-        'fan_speed_string', 'temperature_string',
-
-        'memory_loading_intensity', 'memory_display_color',
-        'gpu_loading_intensity', 'gpu_display_color',
-        'loading_intensity', 'display_color'
+        'compute_mode',
+        'mig_mode',
+        'is_mig_device',
+        'memory_percent_string',
+        'memory_utilization_string',
+        'gpu_utilization_string',
+        'fan_speed_string',
+        'temperature_string',
+        'memory_loading_intensity',
+        'memory_display_color',
+        'gpu_loading_intensity',
+        'gpu_display_color',
+        'loading_intensity',
+        'display_color',
     ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._snapshot = None
-        self.tuple_index = ((self.index,) if isinstance(self.index, int) else self.index)
+        self.tuple_index = (self.index,) if isinstance(self.index, int) else self.index
         self.display_index = ':'.join(map(str, self.tuple_index))
 
     def as_snapshot(self):
@@ -120,8 +135,10 @@ class Device(DeviceBase):
 
     @staticmethod
     def loading_intensity_of(utilization, type='memory'):  # pylint: disable=redefined-builtin
-        thresholds = {'memory': Device.MEMORY_UTILIZATION_THRESHOLDS,
-                      'gpu': Device.GPU_UTILIZATION_THRESHOLDS}.get(type)
+        thresholds = {
+            'memory': Device.MEMORY_UTILIZATION_THRESHOLDS,
+            'gpu': Device.GPU_UTILIZATION_THRESHOLDS,
+        }.get(type)
         if utilization is NA:
             return 'moderate'
         if isinstance(utilization, str):
@@ -139,33 +156,41 @@ class Device(DeviceBase):
 
 
 class MigDevice(MigDeviceBase, Device):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._snapshot = None
-        self.tuple_index = ((self.index,) if isinstance(self.index, int) else self.index)
+        self.tuple_index = (self.index,) if isinstance(self.index, int) else self.index
         self.display_index = ':'.join(map(str, self.tuple_index))
 
     loading_intensity = Device.memory_loading_intensity
 
     SNAPSHOT_KEYS = [
         'name',
-
-        'memory_used', 'memory_free', 'memory_total',
-        'memory_used_human', 'memory_free_human', 'memory_total_human',
-        'memory_percent', 'memory_usage',
-        'bar1_memory_used_human', 'bar1_memory_percent',
-
-        'gpu_utilization', 'memory_utilization',
-
+        'memory_used',
+        'memory_free',
+        'memory_total',
+        'memory_used_human',
+        'memory_free_human',
+        'memory_total_human',
+        'memory_percent',
+        'memory_usage',
+        'bar1_memory_used_human',
+        'bar1_memory_percent',
+        'gpu_utilization',
+        'memory_utilization',
         'total_volatile_uncorrected_ecc_errors',
-        'mig_mode', 'is_mig_device',
-        'gpu_instance_id', 'compute_instance_id',
-
-        'memory_percent_string', 'memory_utilization_string', 'gpu_utilization_string',
-
-        'memory_loading_intensity', 'memory_display_color',
-        'gpu_loading_intensity', 'gpu_display_color',
-        'loading_intensity', 'display_color'
+        'mig_mode',
+        'is_mig_device',
+        'gpu_instance_id',
+        'compute_instance_id',
+        'memory_percent_string',
+        'memory_utilization_string',
+        'gpu_utilization_string',
+        'memory_loading_intensity',
+        'memory_display_color',
+        'gpu_loading_intensity',
+        'gpu_display_color',
+        'loading_intensity',
+        'display_color',
     ]

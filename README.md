@@ -232,7 +232,7 @@ $ nvitop -U  # useful for terminals without Unicode support
 $ nvitop --light
 ```
 
-You can configure the default monitor mode with the environment variable `NVITOP_MONITOR_MODE` (default `auto` if not set). See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
+You can configure the default monitor mode with the `NVITOP_MONITOR_MODE` environment variable (default `auto` if not set). See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
 
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
@@ -310,7 +310,7 @@ coloring:
 device filtering:
   --only idx [idx ...], -o idx [idx ...]
                         Only show the specified devices, suppress option `--only-visible`.
-  --only-visible, -ov   Only show devices in environment variable `CUDA_VISIBLE_DEVICES`.
+  --only-visible, -ov   Only show devices in the `CUDA_VISIBLE_DEVICES` environment variable.
 
 process filtering:
   --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
@@ -772,8 +772,8 @@ Out[6]: [
     PhysicalDevice(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
-In [7]: # NOTE: The function results might be different between calls when environment variable `CUDA_VISIBLE_DEVICES` has been modified
-   ...: cuda_visible_devices = Device.from_cuda_visible_devices()  # from environment variable `CUDA_VISIBLE_DEVICES`
+In [7]: # NOTE: The function results might be different between calls when the `CUDA_VISIBLE_DEVICES` environment variable has been modified
+   ...: cuda_visible_devices = Device.from_cuda_visible_devices()  # from the `CUDA_VISIBLE_DEVICES` environment variable
    ...: cuda0, cuda1         = Device.from_cuda_indices([0, 1])    # from CUDA device indices (might be different from physical device indices if `CUDA_VISIBLE_DEVICES` is set)
    ...: cuda_visible_devices = CudaDevice.all()                    # shortcut to `Device.from_cuda_visible_devices()`
    ...: cuda_visible_devices = Device.cuda.all()                   # `Device.cuda` is aliased to `CudaDevice`

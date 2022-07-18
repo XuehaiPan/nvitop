@@ -9,7 +9,7 @@ import math
 import os
 import platform
 
-from nvitop.core import host, NA, colored, set_color  # pylint: disable=unused-import
+from nvitop.core import NA, colored, host, set_color  # pylint: disable=unused-import
 from nvitop.gui.library.widestring import WideString
 
 
@@ -26,8 +26,8 @@ def cut_string(s, maxlen, padstr='...', align='left'):
     if len(s) <= maxlen:
         return str(s)
     if align == 'left':
-        return str(s[:maxlen - len(padstr)] + padstr)
-    return str(padstr + s[-(maxlen - len(padstr)):])
+        return str(s[: maxlen - len(padstr)] + padstr)
+    return str(padstr + s[-(maxlen - len(padstr)) :])
 
 
 def make_bar(prefix, percent, width):
@@ -57,13 +57,14 @@ except ModuleNotFoundError:
 
 if host.WINDOWS:
     import ctypes
+
     SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
 else:
     try:
-        SUPERUSER = (os.geteuid() == 0)
+        SUPERUSER = os.geteuid() == 0
     except AttributeError:
         try:
-            SUPERUSER = (os.getuid() == 0)
+            SUPERUSER = os.getuid() == 0
         except AttributeError:
             SUPERUSER = False
 

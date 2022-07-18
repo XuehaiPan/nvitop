@@ -7,7 +7,7 @@ import signal
 import time
 from collections import namedtuple
 
-from nvitop.gui.library import host, NA, Snapshot, LARGE_INTEGER, USERNAME, SUPERUSER
+from nvitop.gui.library import LARGE_INTEGER, NA, SUPERUSER, USERNAME, Snapshot, host
 
 
 class Selected:
@@ -62,9 +62,9 @@ class Selected:
         if len(processes) > 0:
             if not self.is_set():
                 if abs(direction) < LARGE_INTEGER:
-                    self.index = (0 if direction > 0 else len(processes) - 1)
+                    self.index = 0 if direction > 0 else len(processes) - 1
                 else:
-                    self.index = (len(processes) - 1 if direction > 0 else 0)
+                    self.index = len(processes) - 1 if direction > 0 else 0
             else:
                 self.index = min(max(0, self.index + direction), len(processes) - 1)
             self.process = processes[self.index]
@@ -99,7 +99,11 @@ class Selected:
 
     def interrupt(self):
         try:
-            self.send_signal(signal.SIGINT if not host.WINDOWS else signal.CTRL_C_EVENT)  # pylint: disable=no-member
+            self.send_signal(
+                signal.SIGINT
+                if not host.WINDOWS
+                else signal.CTRL_C_EVENT  # pylint: disable=no-member
+            )
         except SystemError:
             pass
 

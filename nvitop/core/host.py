@@ -16,11 +16,17 @@ from psutil import *  # pylint: disable=wildcard-import,unused-wildcard-import,r
 
 
 __all__ = _psutil.__all__.copy()
-__all__.extend([
-    'load_average', 'memory_percent', 'swap_percent',
-    'ppid_map', 'reverse_ppid_map',
-    'WSL', 'WINDOWS_SUBSYSTEM_FOR_LINUX'
-])
+__all__.extend(
+    (
+        'load_average',
+        'memory_percent',
+        'swap_percent',
+        'ppid_map',
+        'reverse_ppid_map',
+        'WSL',
+        'WINDOWS_SUBSYSTEM_FOR_LINUX',
+    )
+)
 __all__[__all__.index('Error')] = 'PsutilError'
 
 
@@ -36,6 +42,7 @@ swap_memory = _ttl_cache(ttl=0.25)(_psutil.swap_memory)
 try:
     load_average = _ttl_cache(ttl=2.0)(_psutil.getloadavg)
 except AttributeError:
+
     def load_average():  # pylint: disable=missing-function-docstring
         return None
 

@@ -4,15 +4,27 @@
 """The core APIs of nvitop."""
 
 from nvitop.core import host, libnvml, utils
-from nvitop.core.libnvml import nvmlCheckReturn, NVMLError
-from nvitop.core.device import Device, PhysicalDevice, MigDevice, CudaDevice, CudaMigDevice
-from nvitop.core.process import HostProcess, GpuProcess, command_join
-from nvitop.core.collector import take_snapshots, ResourceMetricCollector
+from nvitop.core.collector import ResourceMetricCollector, take_snapshots
+from nvitop.core.device import CudaDevice, CudaMigDevice, Device, MigDevice, PhysicalDevice
+from nvitop.core.libnvml import NVMLError, nvmlCheckReturn
+from nvitop.core.process import GpuProcess, HostProcess, command_join
 from nvitop.core.utils import *
 
 
-__all__ = ['take_snapshots', 'ResourceMetricCollector',
-           'libnvml', 'nvmlCheckReturn', 'NVMLError',
-           'Device', 'PhysicalDevice', 'MigDevice', 'CudaDevice', 'CudaMigDevice',
-           'host', 'HostProcess', 'GpuProcess', 'command_join']
+__all__ = [
+    'take_snapshots',
+    'ResourceMetricCollector',
+    'libnvml',
+    'nvmlCheckReturn',
+    'NVMLError',
+    'Device',
+    'PhysicalDevice',
+    'MigDevice',
+    'CudaDevice',
+    'CudaMigDevice',
+    'host',
+    'HostProcess',
+    'GpuProcess',
+    'command_join',
+]
 __all__.extend(utils.__all__)

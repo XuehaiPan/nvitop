@@ -16,32 +16,34 @@ DIGITS = set(map(ord, '0123456789'))
 # Arbitrary numbers which are not used with curses.KEY_XYZ
 ANYKEY, PASSIVE_ACTION, ALT_KEY, QUANT_KEY = range(9001, 9005)
 
-SPECIAL_KEYS = OrderedDict([
-    ('BS', curses.KEY_BACKSPACE),
-    ('Backspace', curses.KEY_BACKSPACE),  # overrides <BS> in REVERSED_SPECIAL_KEYS
-    ('Backspace2', curses.ascii.DEL),
-    ('Delete', curses.KEY_DC),
-    ('S-Delete', curses.KEY_SDC),
-    ('Insert', curses.KEY_IC),
-    ('CR', ord('\n')),
-    ('Return', ord('\n')),
-    ('Enter', ord('\n')),  # overrides <CR> and <Return> in REVERSED_SPECIAL_KEYS
-    ('Space', ord(' ')),
-    ('Escape', curses.ascii.ESC),
-    ('Esc', curses.ascii.ESC),  # overrides <Escape> in REVERSED_SPECIAL_KEYS
-    ('Down', curses.KEY_DOWN),
-    ('Up', curses.KEY_UP),
-    ('Left', curses.KEY_LEFT),
-    ('Right', curses.KEY_RIGHT),
-    ('PageDown', curses.KEY_NPAGE),
-    ('PageUp', curses.KEY_PPAGE),
-    ('Home', curses.KEY_HOME),
-    ('End', curses.KEY_END),
-    ('Tab', ord('\t')),
-    ('S-Tab', curses.KEY_BTAB),
-    ('lt', ord('<')),
-    ('gt', ord('>')),
-])
+SPECIAL_KEYS = OrderedDict(
+    [
+        ('BS', curses.KEY_BACKSPACE),
+        ('Backspace', curses.KEY_BACKSPACE),  # overrides <BS> in REVERSED_SPECIAL_KEYS
+        ('Backspace2', curses.ascii.DEL),
+        ('Delete', curses.KEY_DC),
+        ('S-Delete', curses.KEY_SDC),
+        ('Insert', curses.KEY_IC),
+        ('CR', ord('\n')),
+        ('Return', ord('\n')),
+        ('Enter', ord('\n')),  # overrides <CR> and <Return> in REVERSED_SPECIAL_KEYS
+        ('Space', ord(' ')),
+        ('Escape', curses.ascii.ESC),
+        ('Esc', curses.ascii.ESC),  # overrides <Escape> in REVERSED_SPECIAL_KEYS
+        ('Down', curses.KEY_DOWN),
+        ('Up', curses.KEY_UP),
+        ('Left', curses.KEY_LEFT),
+        ('Right', curses.KEY_RIGHT),
+        ('PageDown', curses.KEY_NPAGE),
+        ('PageUp', curses.KEY_PPAGE),
+        ('Home', curses.KEY_HOME),
+        ('End', curses.KEY_END),
+        ('Tab', ord('\t')),
+        ('S-Tab', curses.KEY_BTAB),
+        ('lt', ord('<')),
+        ('gt', ord('>')),
+    ]
+)
 
 NAMED_SPECIAL_KEYS = tuple(SPECIAL_KEYS.keys())
 SPECIAL_KEYS_UNCASED = {}
@@ -132,7 +134,7 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
             yield char
     elif isinstance(obj, int):  # pylint: disable=too-many-nested-blocks
         yield obj
-    else:                       # pylint: disable=too-many-nested-blocks
+    else:  # pylint: disable=too-many-nested-blocks
         in_brackets = False
         bracket_content = []
         for char in obj:
@@ -254,8 +256,9 @@ class KeyMaps(dict):
             try:
                 pointer = pointer[key]
             except KeyError as e:
-                raise KeyError("Tried to copy the keybinding `%s',"
-                               " but it was not found." % source) from e
+                raise KeyError(
+                    "Tried to copy the keybinding `%s'," " but it was not found." % source
+                ) from e
         self.bind(context, target, copy.deepcopy(pointer))
 
     def unbind(self, context, keys):
@@ -320,8 +323,7 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
             moved = True
             if key in self.pointer:
                 self.pointer = self.pointer[key]
-            elif self.any_key in self.pointer and \
-                    key not in self.excluded_from_anykey:
+            elif self.any_key in self.pointer and key not in self.excluded_from_anykey:
                 self.wildcards.append(key)
                 self.pointer = self.pointer[self.any_key]
             else:
