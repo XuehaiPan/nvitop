@@ -11,6 +11,7 @@ import string as _string
 import sys as _sys
 import threading as _threading
 from typing import Any as _Any
+from typing import Tuple as _Tuple
 from typing import Type as _Type
 
 
@@ -244,6 +245,9 @@ class CUDAError(Exception):
         if not isinstance(other, CUDAError):
             return NotImplemented
         return self.value == other.value  # pylint: disable=no-member
+
+    def __reduce__(self) -> _Tuple[_Type['CUDAError'], _Tuple[int]]:
+        return CUDAError, (self.value,)  # pylint: disable=no-member
 
 
 def cudaExceptionClass(cudaErrorCode: int) -> _Type[CUDAError]:

@@ -97,7 +97,7 @@ from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tu
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import libnvml
+from nvitop.core import libcuda, libnvml
 from nvitop.core.process import GpuProcess
 from nvitop.core.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
 
@@ -151,6 +151,58 @@ def is_mig_device_uuid(uuid: Optional[str]) -> bool:
         if match is not None and match.group('MigMode') is not None:
             return True
     return False
+
+
+def parse_cuda_visible_devices_to_uuids(cuda_visible_devices: Optional[str] = None) -> List[str]:
+    """Parses the given environment variable ``CUDA_VISIBLE_DEVICES`` in a separate process and
+    returns a list of device UUIDs. The UUIDs do not have a prefix ``GPU-`` or ``MIG-``.
+
+    Raises:
+        libcuda.CUDAError_NotInitialized:
+            If cannot found the CUDA driver libraries.
+        libcuda.CUDAError:
+            If failed to parse the environment variable ``CUDA_VISIBLE_DEVICES``.
+    """
+
+    import multiprocessing as mp  # pylint: disable=import-outside-toplevel
+
+    def parse(cuda_visible_devices: str, queue: mp.SimpleQueue) -> None:
+        try:
+            if cuda_visible_devices is not None:
+                os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
+            else:
+                os.environ.pop('CUDA_VISIBLE_DEVICES', None)
+
+            # pylint: disable=no-member
+            try:
+                libcuda.cuInit()
+            except (libcuda.CUDAError_NoDevice, libcuda.CUDAError_InvalidDevice):
+                queue.put([])
+                return
+
+            count = libcuda.cuDeviceGetCount()
+            uuids = list(map(libcuda.cuDeviceGetUuid, map(libcuda.cuDeviceGet, range(count))))
+            queue.put(uuids)
+            return
+        except Exception as ex:
+            queue.put(ex)
+            raise ex
+        finally:
+            # Ensure non-empty queue
+            queue.put(libcuda.CUDAError_NotInitialized())  # pylint: disable=no-member
+
+    queue = mp.SimpleQueue()
+    try:
+        parser = mp.Process(target=parse, args=(cuda_visible_devices, queue), daemon=True)
+        parser.start()
+        parser.join()
+    finally:
+        parser.kill()
+    result = queue.get()
+
+    if isinstance(result, Exception):
+        raise result
+    return result
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -719,12 +771,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             visible_device_indices = self.parse_cuda_visible_devices()
             try:
                 cuda_index = visible_device_indices.index(self.index)
-            except ValueError as e:  # pylint: disable=invalid-name
+            except ValueError as ex:
                 raise RuntimeError(
                     'CUDA Error: Device(index={}) is not visible to CUDA applications'.format(
                         self.index
                     )
-                ) from e
+                ) from ex
             else:
                 self._cuda_index = cuda_index
 
