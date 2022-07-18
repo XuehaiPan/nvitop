@@ -39,9 +39,6 @@ if not version.__release__:
 setup(
     name='nvitop',
     version=version.__version__,
-    description=version.__doc__,
-    author=version.__author__,
-    author_email=version.__email__,
     extras_require={
         'cuda10': ['nvidia-ml-py == 11.450.51'],
         **{
