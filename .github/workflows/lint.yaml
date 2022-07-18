@@ -1,0 +1,58 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Cancel previous run
+        uses: styfle/cancel-workflow-action@0.10.0
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          update-environment: true
+
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip setuptools
+
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade black isort pylint
+
+      - name: isort
+        run: |
+          python -m isort --version
+          python -m isort --check nvitop
+
+      - name: black
+        run: |
+          python -m black --version
+          python -m black --check nvitop
+
+      - name: pylint
+        run: |
+          python -m pylint --version
+          python -m pylint nvitop
