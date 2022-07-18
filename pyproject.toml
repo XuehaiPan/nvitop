@@ -1,0 +1,64 @@
+[project]
+name = "nvitop"
+description = "An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."
+readme = "README.md"
+requires-python = ">= 3.5"
+authors = [
+    {name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn"}
+]
+homepage = "https://github.com/XuehaiPan/nvitop"
+repository = "https://github.com/XuehaiPan/nvitop"
+documentation = "https://nvitop.readthedocs.io"
+license = {file = "LICENSE"}
+keywords = ["nvidia", "nvidia-smi", "NVIDIA", "NVML", "CUDA", "GPU", "top", "monitoring"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Environment :: GPU",
+    "Environment :: GPU :: NVIDIA CUDA",
+    "Environment :: Console",
+    "Environment :: Console :: Curses",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "Topic :: System :: Hardware",
+    "Topic :: System :: Monitoring",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "nvidia-ml-py >= 11.450.51, < 11.500.00",
+    "psutil >= 5.6.6",
+    "cachetools >= 1.0.1",
+    "termcolor >= 1.0.0",
+    "colorama >= 0.4.0; platform_system == 'Windows'",
+    "windows-curses >= 2.2.0; platform_system == 'Windows'",
+]
+dynamic = [
+    "version",
+    "optional-dependencies",
+]
+
+[project.scripts]
+nvitop = "nvitop.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/XuehaiPan/nvitop"
+Repository = "https://github.com/XuehaiPan/nvitop"
+Documentation = "https://nvitop.readthedocs.io"
+"Bug Report" = "https://github.com/XuehaiPan/nvitop/issues"
+
+[build-system]
+requires = ["setuptools"]
+
+[tool.setuptools.packages.find]
+include = ["nvitop", "nvitop.*"]
