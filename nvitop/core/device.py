@@ -2033,6 +2033,15 @@ class CudaDevice(Device):
     """  # pylint: disable=line-too-long
 
     @classmethod
+    def is_available(cls) -> bool:
+        """Returns whether there are any CUDA-capable devices available."""
+
+        try:
+            return cls.count() > 0
+        except (libnvml.NVMLError, RuntimeError):
+            return False
+
+    @classmethod
     def count(cls) -> int:
         """The number of GPUs visible to CUDA applications.
 
