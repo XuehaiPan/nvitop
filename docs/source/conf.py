@@ -14,6 +14,8 @@
 #
 import os
 import sys
+
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
@@ -90,9 +92,7 @@ html_theme = 'sphinx_rtd_theme'
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-html_css_files = [
-    'style.css',
-]
+html_css_files = ['style.css']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -106,7 +106,7 @@ html_css_files = [
 
 extlinks = {
     'gitcode': ('https://github.com/XuehaiPan/nvitop/blob/HEAD/%s', '%s'),
-    'issue': ('https://github.com/XuehaiPan/nvitop/issues/%s', 'issue %s')
+    'issue': ('https://github.com/XuehaiPan/nvitop/issues/%s', 'issue %s'),
 }
 
 
@@ -114,10 +114,7 @@ extlinks = {
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'nvitop', 'An interactive NVIDIA-GPU process viewer.',
-     [author], 1)
-]
+man_pages = [(master_doc, 'nvitop', 'An interactive NVIDIA-GPU process viewer.', [author], 1)]
 
 
 # -- Extension configuration -------------------------------------------------

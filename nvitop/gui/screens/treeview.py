@@ -12,8 +12,16 @@ from itertools import islice
 
 from cachetools.func import ttl_cache
 
-from nvitop.gui.library import (host, HostProcess, NA, Snapshot,
-                                Displayable, WideString, USERNAME, SUPERUSER)
+from nvitop.gui.library import (
+    NA,
+    SUPERUSER,
+    USERNAME,
+    Displayable,
+    HostProcess,
+    Snapshot,
+    WideString,
+    host,
+)
 from nvitop.gui.screens.main.utils import Selected
 
 
@@ -104,15 +112,19 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                 cpu_percent_string=cpu_percent_string,
                 memory_percent=memory_percent,
                 memory_percent_string=memory_percent_string,
-                num_threads=num_threads
+                num_threads=num_threads,
             )
 
         if len(self.children) > 0:
             for child in self.children:
                 child.as_snapshot()
-            self.children.sort(key=lambda node: (node._gone,  # pylint: disable=protected-access
-                                                 node.username,
-                                                 node.pid))
+            self.children.sort(
+                key=lambda node: (
+                    node._gone,  # pylint: disable=protected-access
+                    node.username,
+                    node.pid,
+                )
+            )
             for child in self.children:
                 child.is_last = False
             self.children[-1].is_last = True
@@ -122,7 +134,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
             self.prefix = ''
         else:
             self.prefix = prefix + ('└─ ' if self.is_last else '├─ ')
-            prefix += ('   ' if self.is_last else '│  ')
+            prefix += '   ' if self.is_last else '│  '
         for child in self.children:
             child.set_prefix(prefix)
 
@@ -212,8 +224,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self._snapshot_buffer = []
         self._snapshots = []
         self.snapshot_lock = threading.Lock()
-        self._snapshot_daemon = threading.Thread(name='treeview-snapshot-daemon',
-                                                 target=self._snapshot_target, daemon=True)
+        self._snapshot_daemon = threading.Thread(
+            name='treeview-snapshot-daemon', target=self._snapshot_target, daemon=True
+        )
         self._daemon_running = threading.Event()
 
         self.x, self.y = root.x, root.y
@@ -251,7 +264,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
     @snapshots.setter
     def snapshots(self, snapshots):
         with self.snapshot_lock:
-            self.need_redraw = (self.need_redraw or len(self._snapshots) > len(snapshots))
+            self.need_redraw = self.need_redraw or len(self._snapshots) > len(snapshots)
             self._snapshots = snapshots
 
         if self.selected.is_set():
@@ -269,12 +282,16 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
-        cls.take_snapshots = ttl_cache(ttl=interval)(cls.take_snapshots.__wrapped__)  # pylint: disable=no-member
+        cls.take_snapshots = ttl_cache(ttl=interval)(
+            cls.take_snapshots.__wrapped__  # pylint: disable=no-member
+        )
 
     @ttl_cache(ttl=2.0)
     def take_snapshots(self):
         self.root.main_screen.process_panel.ensure_snapshots()
-        snapshots = self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
+        snapshots = (
+            self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
+        )
 
         roots = TreeNode.merge(snapshots)
         roots = TreeNode.freeze(roots)
@@ -286,8 +303,12 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             snapshot.username = WideString(snapshot.username)
             snapshot.prefix = node.prefix
             if len(node.devices) > 0:
-                snapshot.devices = 'GPU ' + ','.join(map(lambda device: device.display_index,
-                                                         sorted(node.devices, key=lambda device: device.tuple_index)))
+                snapshot.devices = 'GPU ' + ','.join(
+                    map(
+                        lambda device: device.display_index,
+                        sorted(node.devices, key=lambda device: device.tuple_index),
+                    )
+                )
             else:
                 snapshot.devices = 'Host'
             snapshots.append(snapshot)
@@ -318,13 +339,15 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             for i, process in enumerate(self.snapshots):
                 y = self.y + 1 - self.scroll_offset + i
                 if self.selected.is_same_on_host(process):
-                    self.selected.within_window = (1 <= y - self.y < self.height and self.width >= 79)
+                    self.selected.within_window = 1 <= y - self.y < self.height and self.width >= 79
                     if not self.selected.within_window:
                         if y < self.y + 1:
                             self.scroll_offset -= self.y + 1 - y
                         elif y >= self.y + self.height:
                             self.scroll_offset += y - self.y - self.height + 1
-                    self.scroll_offset = max(min(len(self.snapshots) - self.display_height, self.scroll_offset), 0)
+                    self.scroll_offset = max(
+                        min(len(self.snapshots) - self.display_height, self.scroll_offset), 0
+                    )
                     break
         else:
             self.scroll_offset = 0
@@ -335,52 +358,81 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self.color_reset()
 
         pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
-        username_width = max(4, max((len(process.username) for process in self.snapshots), default=4))
+        username_width = max(
+            4, max((len(process.username) for process in self.snapshots), default=4)
+        )
         device_width = max(6, max((len(process.devices) for process in self.snapshots), default=6))
-        num_threads_width = max(4, max((len(str(process.num_threads)) for process in self.snapshots), default=4))
+        num_threads_width = max(
+            4, max((len(str(process.num_threads)) for process in self.snapshots), default=4)
+        )
         command_offset = pid_width + username_width + device_width + num_threads_width + 20
 
-        header = '  '.join(['PID'.rjust(pid_width), 'USER'.ljust(username_width), 'DEVICE'.rjust(device_width),
-                            'NLWP'.rjust(num_threads_width), '%CPU', '%MEM', 'COMMAND'])
+        header = '  '.join(
+            [
+                'PID'.rjust(pid_width),
+                'USER'.ljust(username_width),
+                'DEVICE'.rjust(device_width),
+                'NLWP'.rjust(num_threads_width),
+                '%CPU',
+                '%MEM',
+                'COMMAND',
+            ]
+        )
         if self.x_offset < command_offset:
-            self.addstr(self.y, self.x, header[self.x_offset:self.x_offset + self.width].ljust(self.width))
+            self.addstr(
+                self.y, self.x, header[self.x_offset : self.x_offset + self.width].ljust(self.width)
+            )
         else:
             self.addstr(self.y, self.x, 'COMMAND'.ljust(self.width))
         self.color_at(self.y, self.x, width=self.width, fg='cyan', attr='bold | reverse')
 
         if len(self.snapshots) == 0:
-            self.addstr(self.y + 1, self.x, 'No running GPU processes found{}.'.format(' (in WSL)' if host.WSL else ''))
+            self.addstr(
+                self.y + 1,
+                self.x,
+                'No running GPU processes found{}.'.format(' (in WSL)' if host.WSL else ''),
+            )
             return
 
         if self.y_mouse is not None:
             self.selected.clear()
 
         self.selected.within_window = False
-        processes = islice(self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height)
+        processes = islice(
+            self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height
+        )
         for y, process in enumerate(processes, start=self.y + 1):
             prefix_length = len(process.prefix)
-            line = '{}  {}  {}  {} {:>5} {:>5}  {}{}'.format(str(process.pid).rjust(pid_width),
-                                                             process.username.ljust(username_width),
-                                                             process.devices.rjust(device_width),
-                                                             str(process.num_threads).rjust(num_threads_width),
-                                                             process.cpu_percent_string.replace('%', ''),
-                                                             process.memory_percent_string.replace('%', ''),
-                                                             process.prefix, process.command)
+            line = '{}  {}  {}  {} {:>5} {:>5}  {}{}'.format(
+                str(process.pid).rjust(pid_width),
+                process.username.ljust(username_width),
+                process.devices.rjust(device_width),
+                str(process.num_threads).rjust(num_threads_width),
+                process.cpu_percent_string.replace('%', ''),
+                process.memory_percent_string.replace('%', ''),
+                process.prefix,
+                process.command,
+            )
 
-            line = str(WideString(line)[self.x_offset:].ljust(self.width)[:self.width])
+            line = str(WideString(line)[self.x_offset :].ljust(self.width)[: self.width])
             self.addstr(y, self.x, line)
 
             prefix_length -= max(0, self.x_offset - command_offset)
             if prefix_length > 0:
-                self.color_at(y, self.x + max(0, command_offset - self.x_offset),
-                              width=prefix_length, fg='green', attr='bold')
+                self.color_at(
+                    y,
+                    self.x + max(0, command_offset - self.x_offset),
+                    width=prefix_length,
+                    fg='green',
+                    attr='bold',
+                )
 
             if y == self.y_mouse:
                 self.selected.process = process
 
             if self.selected.is_same_on_host(process):
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
-                self.selected.within_window = (1 <= y - self.y < self.height and self.width >= 79)
+                self.selected.within_window = 1 <= y - self.y < self.height and self.width >= 79
             elif str(process.username) != USERNAME and not SUPERUSER:
                 self.color_at(y, self.x, width=self.width, attr='dim')
 
@@ -388,12 +440,39 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         text_offset = self.x + self.width - 47
         if self.selected.owned() and self.selected.within_window:
             self.addstr(self.y, text_offset - 1, ' (Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
-            self.color_at(self.y, text_offset + 7, width=2, fg='cyan', bg='yellow', attr='bold | italic | reverse')
-            self.color_at(self.y, text_offset + 10, width=3, fg='cyan', bg='red', attr='bold | reverse')
-            self.color_at(self.y, text_offset + 15, width=1, fg='cyan', bg='yellow', attr='bold | italic | reverse')
-            self.color_at(self.y, text_offset + 17, width=4, fg='cyan', bg='red', attr='bold | reverse')
-            self.color_at(self.y, text_offset + 23, width=1, fg='cyan', bg='yellow', attr='bold | italic | reverse')
-            self.color_at(self.y, text_offset + 25, width=4, fg='cyan', bg='red', attr='bold | reverse')
+            self.color_at(
+                self.y,
+                text_offset + 7,
+                width=2,
+                fg='cyan',
+                bg='yellow',
+                attr='bold | italic | reverse',
+            )
+            self.color_at(
+                self.y, text_offset + 10, width=3, fg='cyan', bg='red', attr='bold | reverse'
+            )
+            self.color_at(
+                self.y,
+                text_offset + 15,
+                width=1,
+                fg='cyan',
+                bg='yellow',
+                attr='bold | italic | reverse',
+            )
+            self.color_at(
+                self.y, text_offset + 17, width=4, fg='cyan', bg='red', attr='bold | reverse'
+            )
+            self.color_at(
+                self.y,
+                text_offset + 23,
+                width=1,
+                fg='cyan',
+                bg='yellow',
+                attr='bold | italic | reverse',
+            )
+            self.color_at(
+                self.y, text_offset + 25, width=4, fg='cyan', bg='red', attr='bold | reverse'
+            )
 
     def finalize(self):
         self.y_mouse = None
@@ -420,18 +499,29 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         return True
 
     def init_keybindings(self):
-        # pylint: disable=multiple-statements
+        def tree_left():
+            self.x_offset = max(0, self.x_offset - 5)
 
-        def tree_left(): self.x_offset = max(0, self.x_offset - 5)
-        def tree_right(): self.x_offset += 5
-        def tree_begin(): self.x_offset = 0
+        def tree_right():
+            self.x_offset += 5
 
-        def select_move(direction): self.selected.move(direction=direction)
-        def select_clear(): self.selected.clear()
+        def tree_begin():
+            self.x_offset = 0
 
-        def terminate(): self.selected.terminate()
-        def kill(): self.selected.kill()
-        def interrupt(): self.selected.interrupt()
+        def select_move(direction):
+            self.selected.move(direction=direction)
+
+        def select_clear():
+            self.selected.clear()
+
+        def terminate():
+            self.selected.terminate()
+
+        def kill():
+            self.selected.kill()
+
+        def interrupt():
+            self.selected.interrupt()
 
         self.root.keymaps.bind('treeview', '<Left>', tree_left)
         self.root.keymaps.copy('treeview', '<Left>', '<A-h>')

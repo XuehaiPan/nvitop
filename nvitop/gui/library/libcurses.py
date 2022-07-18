@@ -121,7 +121,8 @@ def libcurses(light_theme=False):
         pass
 
     # Push a Ctrl+C (ascii value 3) to the curses getch stack
-    def interrupt_handler(signalnum, frame): curses.ungetch(3)  # pylint: disable=multiple-statements,unused-argument
+    def interrupt_handler(signalnum, frame):  # pylint: disable=unused-argument
+        curses.ungetch(3)
 
     # Simulate a ^C press in curses when an interrupt is caught
     signal.signal(signal.SIGINT, interrupt_handler)
@@ -142,8 +143,10 @@ class CursesShortcuts:
     addstr(*args) -- failsafe version of self.win.addstr(*args)
     """
 
-    ASCII_TRANSTABLE = str.maketrans('═' + '─╴' + '╒╤╕╪╘╧╛┌┬┐┼└┴┘' + '│╞╡├┤▏▎▍▌▋▊▉█░' + '▲▼' + '␤',
-                                     '=' + '--' + '++++++++++++++' + '||||||||||||||' + '^v' + '?')
+    ASCII_TRANSTABLE = str.maketrans(
+        '═' + '─╴' + '╒╤╕╪╘╧╛┌┬┐┼└┴┘' + '│╞╡├┤▏▎▍▌▋▊▉█░' + '▲▼' + '␤',
+        '=' + '--' + '++++++++++++++' + '||||||||||||||' + '^v' + '?',
+    )
 
     def __init__(self):
         self.win = None
@@ -151,8 +154,10 @@ class CursesShortcuts:
 
     def addstr(self, *args, **kwargs):
         if self.ascii:
-            args = [arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
-                    for arg in args]
+            args = [
+                arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
+                for arg in args
+            ]
 
         try:
             self.win.addstr(*args, **kwargs)
@@ -161,8 +166,10 @@ class CursesShortcuts:
 
     def addnstr(self, *args, **kwargs):
         if self.ascii:
-            args = [arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
-                    for arg in args]
+            args = [
+                arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
+                for arg in args
+            ]
 
         try:
             self.win.addnstr(*args, **kwargs)
@@ -171,8 +178,10 @@ class CursesShortcuts:
 
     def addch(self, *args, **kwargs):
         if self.ascii:
-            args = [arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
-                    for arg in args]
+            args = [
+                arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
+                for arg in args
+            ]
 
         try:
             self.win.addch(*args, **kwargs)

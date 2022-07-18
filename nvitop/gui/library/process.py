@@ -4,8 +4,9 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 
-from nvitop.core import (host, HostProcess, GpuProcess as GpuProcessBase,
-                         NA, Snapshot, bytes2human, utilization2string)
+from nvitop.core import NA
+from nvitop.core import GpuProcess as GpuProcessBase
+from nvitop.core import HostProcess, Snapshot, bytes2human, host, utilization2string
 
 
 __all__ = ['host', 'HostProcess', 'GpuProcess', 'NA', 'Snapshot', 'bytes2human']

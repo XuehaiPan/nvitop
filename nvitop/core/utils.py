@@ -15,12 +15,22 @@ from psutil import WINDOWS
 
 
 __all__ = [
-    'NA', 'NaType',
-    'NotApplicable', 'NotApplicableType',
-    'KiB', 'MiB', 'GiB', 'TiB', 'PiB',
-    'bytes2human', 'timedelta2human', 'utilization2string',
-    'colored', 'set_color', 'boolify',
-    'Snapshot'
+    'NA',
+    'NaType',
+    'NotApplicable',
+    'NotApplicableType',
+    'KiB',
+    'MiB',
+    'GiB',
+    'TiB',
+    'PiB',
+    'bytes2human',
+    'timedelta2human',
+    'utilization2string',
+    'colored',
+    'set_color',
+    'boolify',
+    'Snapshot',
 ]
 
 
@@ -35,6 +45,7 @@ if WINDOWS:
 try:
     from termcolor import colored as _colored
 except ImportError:
+
     def _colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
         return text
 
@@ -138,7 +149,7 @@ NotApplicableType = NaType
 # NA == 'N/A'         -> True
 # NA is NaType()      -> True (`NaType` is a singleton class)
 NA = NaType()
-NA.__doc__ = """The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""   # pylint: disable=attribute-defined-outside-init
+NA.__doc__ = """The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""  # pylint: disable=attribute-defined-outside-init
 
 NotApplicable = NA
 
@@ -254,8 +265,7 @@ class Snapshot:
                 keyval = keyval.replace('\n', '\n    ')  # extra indentation for nested snapshots
             keyvals.append(keyval)
         return '{}{}(\n    {}\n)'.format(
-            self.real.__class__.__name__, self.__class__.__name__,
-            ',\n    '.join(keyvals)
+            self.real.__class__.__name__, self.__class__.__name__, ',\n    '.join(keyvals)
         )
 
     __repr__ = __str__

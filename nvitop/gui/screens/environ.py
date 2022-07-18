@@ -8,7 +8,7 @@ from collections import OrderedDict
 from functools import partial
 from itertools import islice
 
-from nvitop.gui.library import host, HostProcess, GpuProcess, Displayable, WideString
+from nvitop.gui.library import Displayable, GpuProcess, HostProcess, WideString, host
 
 
 class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -70,12 +70,16 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
 
     @environ.setter
     def environ(self, value):
-        newline = ('␤' if not self.root.ascii else '?')
-        def normalize(s): return s.replace('\n', newline)  # pylint: disable=multiple-statements
+        newline = '␤' if not self.root.ascii else '?'
+
+        def normalize(s):
+            return s.replace('\n', newline)
 
         if value is not None:
-            self.items = [(WideString(key), WideString('{}={}'.format(key, normalize(value[key]))))
-                          for key in sorted(value.keys())]
+            self.items = [
+                (WideString(key), WideString('{}={}'.format(key, normalize(value[key]))))
+                for key in sorted(value.keys())
+            ]
             value = OrderedDict(self.items)
         else:
             self.items = None
@@ -123,7 +127,9 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         if self.environ is not None and wheel:
             n_items = len(self.environ)
             old_scroll_offset = self.scroll_offset
-            self.scroll_offset = max(0, min(self.scroll_offset + direction, n_items - self.display_height))
+            self.scroll_offset = max(
+                0, min(self.scroll_offset + direction, n_items - self.display_height)
+            )
             direction -= self.scroll_offset - old_scroll_offset
             self._y_offset += self.scroll_offset - old_scroll_offset
         self.y_offset = self.y_offset + direction
@@ -138,13 +144,18 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         self.color_reset()
 
         if isinstance(self.process, GpuProcess):
-            process_type = 'GPU: {}'.format(self.process.type.replace('C', 'Compute').replace('G', 'Graphics'))
+            process_type = 'GPU: {}'.format(
+                self.process.type.replace('C', 'Compute').replace('G', 'Graphics')
+            )
         else:
             process_type = 'Host'
-        header_prefix = WideString('Environment of process {} ({}@{}): '.format(self.process.pid,
-                                                                                self.username, process_type))
+        header_prefix = WideString(
+            'Environment of process {} ({}@{}): '.format(
+                self.process.pid, self.username, process_type
+            )
+        )
         offset = max(0, min(self.x_offset, len(self.command) + len(header_prefix) - self.width))
-        header = str((header_prefix + self.command[offset:]).ljust(self.width)[:self.width])
+        header = str((header_prefix + self.command[offset:]).ljust(self.width)[: self.width])
 
         self.addstr(self.y, self.x, header)
         self.addstr(self.y + 1, self.x, '#' * self.width)
@@ -159,7 +170,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         items = islice(self.items, self.scroll_offset, self.scroll_offset + self.display_height)
         for y, (key, line) in enumerate(items, start=self.y + 2):
             key_length = len(key)
-            line = str(line[self.x_offset:].ljust(self.width)[:self.width])
+            line = str(line[self.x_offset :].ljust(self.width)[: self.width])
             self.addstr(y, self.x, line)
             if self.x_offset < key_length:
                 self.color_at(y, self.x, width=key_length - self.x_offset, fg='blue', attr='bold')
@@ -193,16 +204,21 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         return True
 
     def init_keybindings(self):
-        # pylint: disable=multiple-statements
-
         def refresh_environ():
             self.process = self.root.previous_screen.selected.process
             self.need_redraw = True
 
-        def environ_left(): self.x_offset = max(0, self.x_offset - 5)
-        def environ_right(): self.x_offset += 5
-        def environ_begin(): self.x_offset = 0
-        def environ_move(direction): self.move(direction=direction)
+        def environ_left():
+            self.x_offset = max(0, self.x_offset - 5)
+
+        def environ_right():
+            self.x_offset += 5
+
+        def environ_begin():
+            self.x_offset = 0
+
+        def environ_move(direction):
+            self.move(direction=direction)
 
         self.root.keymaps.bind('environ', 'r', refresh_environ)
         self.root.keymaps.copy('environ', 'r', 'R')

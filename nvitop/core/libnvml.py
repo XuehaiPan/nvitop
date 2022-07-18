@@ -11,22 +11,32 @@ import re as _re
 import sys as _sys
 import threading as _threading
 from collections import OrderedDict as _OrderedDict
-from types import FunctionType as _FunctionType, ModuleType as _ModuleType
-from typing import (Tuple as _Tuple, Callable as _Callable, Type as _Type,
-                    Union as _Union, Optional as _Optional, Any as _Any)
+from types import FunctionType as _FunctionType
+from types import ModuleType as _ModuleType
+from typing import Any as _Any
+from typing import Callable as _Callable
+from typing import Optional as _Optional
+from typing import Tuple as _Tuple
+from typing import Type as _Type
+from typing import Union as _Union
 
 # Python Bindings for the NVIDIA Management Library (NVML)
 # https://pypi.org/project/nvidia-ml-py
 import pynvml as _pynvml
 from pynvml import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-from nvitop.core.utils import NA, colored as __colored
+from nvitop.core.utils import NA
+from nvitop.core.utils import colored as __colored
 
 
 __all__ = [  # will be updated in below
-    'NA', 'nvmlCheckReturn', 'nvmlQuery',
-    'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown',
-    'NVMLError'
+    'NA',
+    'nvmlCheckReturn',
+    'nvmlQuery',
+    'nvmlInit',
+    'nvmlInitWithFlags',
+    'nvmlShutdown',
+    'NVMLError',
 ]
 
 # Members from `pynvml` ################################################################################################
@@ -59,9 +69,7 @@ for _name, _attr in _vars_pynvml.items():
 for _name, _attr in _vars_pynvml.items():
     if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
         continue
-    if (
-        _name.startswith('NVML_') and not _name.startswith('NVML_ERROR_')
-    ) or (
+    if (_name.startswith('NVML_') and not _name.startswith('NVML_ERROR_')) or (
         _name.startswith('nvml') and isinstance(_attr, _FunctionType)
     ):
         __all__.append(_name)
@@ -72,9 +80,9 @@ for _name, _attr in _vars_pynvml.items():
 _errcode = _reason = _subclass = None
 for _errcode, _reason in _errcode_to_string.items():
     _subclass = _pynvml.nvmlExceptionClass(_errcode)
-    _subclass.__doc__ = '{}. Code: :data:`{}` ({})'.format(_reason.rstrip('.'),
-                                                           _errcode_to_name[_errcode],
-                                                           _errcode)
+    _subclass.__doc__ = '{}. Code: :data:`{}` ({})'.format(
+        _reason.rstrip('.'), _errcode_to_name[_errcode], _errcode
+    )
 
 # 4. Add undocumented constants into module docstring
 _data_docs = []
@@ -85,13 +93,12 @@ for _name in _const_names:
 .. data:: {}
     :type: {}
     :value: {!r}
-""".format(_name, _attr.__class__.__name__, _attr)
+""".format(_name, _attr.__class__.__name__, _attr)  # fmt: skip
     if _name.startswith('NVML_ERROR_') and _attr in _errcode_to_string:
         _sphinx_doc += """
 See also class :class:`NVMLError` and :class:`{}`.
-""".format(_pynvml.nvmlExceptionClass(_attr).__name__)
+""".format(_pynvml.nvmlExceptionClass(_attr).__name__)  # fmt: skip
     _data_docs.append(_sphinx_doc.strip())
-
 __doc__ += """
 
 ---------
@@ -114,19 +121,29 @@ Functions and Exceptions
 
     Shutdowns the NVML context in the context manager for ``with`` statement.
 
-""".format('\n\n'.join(_data_docs))
+""".format('\n\n'.join(_data_docs))  # fmt: skip
 
-del (_name, _attr, _vars_pynvml,
-     _errcode, _reason, _subclass, _errcode_to_name, _errcode_to_string,
-     _const_names, _data_docs, _sphinx_doc)
+del (
+    _name,
+    _attr,
+    _vars_pynvml,
+    _errcode,
+    _reason,
+    _subclass,
+    _errcode_to_name,
+    _errcode_to_string,
+    _const_names,
+    _data_docs,
+    _sphinx_doc,
+)
 
 # 5. Add explicit references to appease linters
 c_nvmlDevice_t = _pynvml.c_nvmlDevice_t
-NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound    # pylint: disable=no-member
+NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
 NVMLError_FunctionNotFound = _pynvml.NVMLError_FunctionNotFound  # pylint: disable=no-member
-NVMLError_NotSupported = _pynvml.NVMLError_NotSupported         # pylint: disable=no-member
-NVMLError_NotFound = _pynvml.NVMLError_NotFound                  # pylint: disable=no-member
-NVMLError_GpuIsLost = _pynvml.NVMLError_GpuIsLost                # pylint: disable=no-member
+NVMLError_NotSupported = _pynvml.NVMLError_NotSupported  # pylint: disable=no-member
+NVMLError_NotFound = _pynvml.NVMLError_NotFound  # pylint: disable=no-member
+NVMLError_GpuIsLost = _pynvml.NVMLError_GpuIsLost  # pylint: disable=no-member
 
 # New members in `libnvml` #############################################################################################
 
@@ -194,34 +211,38 @@ def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
     try:
         _pynvml.nvmlInitWithFlags(flags)
     except NVMLError_LibraryNotFound:
-        message = '\n'.join((
-            'FATAL ERROR: NVIDIA Management Library (NVML) not found.',
-            'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at',
-            '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the',
-            '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).',
-            '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be',
-            '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.',
-        ))
-        for text, color, attrs in (('FATAL ERROR:', 'red', ('bold',)),
-                                   ('HINT:', 'yellow', ('bold',)),
-                                   ('https://www.nvidia.com/Download/index.aspx', None, ('underline',)),
-                                   ('https://developer.nvidia.com/cuda-downloads', None, ('underline',)),
-                                   ('https://docs.nvidia.com/deploy/nvml-api', None, ('underline',))):
+        message = (
+            'FATAL ERROR: NVIDIA Management Library (NVML) not found.\n'
+            'HINT: The NVIDIA Management Library ships with the NVIDIA display driver (available at\n'
+            '      https://www.nvidia.com/Download/index.aspx), or can be downloaded as part of the\n'
+            '      NVIDIA CUDA Toolkit (available at https://developer.nvidia.com/cuda-downloads).\n'
+            '      The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be\n'
+            '      found in the NVML API Reference at https://docs.nvidia.com/deploy/nvml-api.'
+        )
+        for text, color, attrs in (
+            ('FATAL ERROR:', 'red', ('bold',)),
+            ('HINT:', 'yellow', ('bold',)),
+            ('https://www.nvidia.com/Download/index.aspx', None, ('underline',)),
+            ('https://developer.nvidia.com/cuda-downloads', None, ('underline',)),
+            ('https://docs.nvidia.com/deploy/nvml-api', None, ('underline',)),
+        ):
             message = message.replace(text, __colored(text, color=color, attrs=attrs))
 
         LOGGER.critical(message)
         raise
     except AttributeError:
-        message = '\n'.join((
-            'FATAL ERROR: The dependency package `nvidia-ml-py` is corrupted. You may have installed',
-            '             other packages overriding the module `pynvml`.',
-            'Please reinstall `nvitop` with command:',
-            '    python3 -m pip install --force-reinstall nvitop',
-        ))
-        for text, color, attrs in (('FATAL ERROR:', 'red', ('bold',)),
-                                   ('nvidia-ml-py', None, ('bold',)),
-                                   ('pynvml', None, ('bold',)),
-                                   ('nvitop', None, ('bold',))):
+        message = (
+            'FATAL ERROR: The dependency package `nvidia-ml-py` is corrupted. You may have installed\n'
+            '             other packages overriding the module `pynvml`.\n'
+            'Please reinstall `nvitop` with command:\n'
+            '    python3 -m pip install --force-reinstall nvitop'
+        )
+        for text, color, attrs in (
+            ('FATAL ERROR:', 'red', ('bold',)),
+            ('nvidia-ml-py', None, ('bold',)),
+            ('pynvml', None, ('bold',)),
+            ('nvitop', None, ('bold',)),
+        ):
             message = message.replace(text, __colored(text, color=color, attrs=attrs), 1)
 
         LOGGER.critical(message)
@@ -255,15 +276,17 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
             __flags.pop()
         except IndexError:
             pass
-        __initialized = (len(__flags) > 0)
+        __initialized = len(__flags) > 0
 
 
-def nvmlQuery(func: _Union[_Callable[..., _Any], str],
-              *args,
-              default: _Any = NA,
-              ignore_errors: bool = True,
-              ignore_function_not_found: bool = False,
-              **kwargs) -> _Any:
+def nvmlQuery(
+    func: _Union[_Callable[..., _Any], str],
+    *args,
+    default: _Any = NA,
+    ignore_errors: bool = True,
+    ignore_function_not_found: bool = False,
+    **kwargs
+) -> _Any:
     """Calls a function with the given arguments from NVML. The NVML context will be automatically
     initialized.
 
@@ -309,10 +332,12 @@ def nvmlQuery(func: _Union[_Callable[..., _Any], str],
                 ):
                     UNKNOWN_FUNCTIONS[identifier] = (func, e2)
                     LOGGER.error(
-                        'ERROR: A FunctionNotFound error occurred while calling %s.\n'
-                        'Please verify whether the `nvidia-ml-py` package is '
-                        'compatible with your NVIDIA driver version.',
-                        'nvmlQuery({!r}, *args, **kwargs)'.format(func)
+                        (
+                            'ERROR: A FunctionNotFound error occurred while calling %s.\n'
+                            'Please verify whether the `nvidia-ml-py` package is '
+                            'compatible with your NVIDIA driver version.'
+                        ),
+                        'nvmlQuery({!r}, *args, **kwargs)'.format(func),
                     )
         if ignore_errors or ignore_function_not_found:
             return default
@@ -327,7 +352,9 @@ def nvmlQuery(func: _Union[_Callable[..., _Any], str],
         return retval
 
 
-def nvmlCheckReturn(retval: _Any, types: _Optional[_Union[_Type, _Tuple[_Type, ...]]] = None) -> bool:
+def nvmlCheckReturn(
+    retval: _Any, types: _Optional[_Union[_Type, _Tuple[_Type, ...]]] = None
+) -> bool:
     """Checks the return value is not :const:`nvitop.NA` and is one of the given types."""
 
     if types is None:

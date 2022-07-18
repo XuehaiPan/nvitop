@@ -7,14 +7,21 @@ import curses
 import shutil
 import time
 
-from nvitop.gui.library import DisplayableContainer, ALT_KEY, KeyBuffer, KeyMaps, MouseEvent
-from nvitop.gui.screens import MainScreen, EnvironScreen, TreeViewScreen, HelpScreen, BreakLoop
+from nvitop.gui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent
+from nvitop.gui.screens import BreakLoop, EnvironScreen, HelpScreen, MainScreen, TreeViewScreen
 
 
 class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
-    def __init__(self, devices, filters=(),                # pylint: disable=too-many-arguments
-                 ascii=False, mode='auto', interval=None,  # pylint: disable=redefined-builtin
-                 win=None):
+    # pylint: disable=too-many-arguments
+    def __init__(
+        self,
+        devices,
+        filters=(),
+        ascii=False,  # pylint: disable=redefined-builtin
+        mode='auto',
+        interval=None,
+        win=None,
+    ):
         super().__init__(win, root=self)
 
         self.x = self.y = 0
@@ -26,7 +33,9 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.devices = devices
         self.device_count = len(self.devices)
 
-        self.main_screen = MainScreen(self.devices, filters, ascii=ascii, mode=mode, win=win, root=self)
+        self.main_screen = MainScreen(
+            self.devices, filters, ascii=ascii, mode=mode, win=win, root=self
+        )
         self.main_screen.visible = True
         self.main_screen.focused = False
         self.add_child(self.main_screen)
@@ -90,7 +99,9 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             return
 
         n_term_lines, n_term_cols = self.termsize
-        message = 'nvitop needs at least a width of 79 to render, the current width is {}.'.format(self.width)
+        message = 'nvitop needs at least a width of 79 to render, the current width is {}.'.format(
+            self.width
+        )
         width = min(max(n_term_cols, 40), n_term_cols, 60) - 10
         lines = ['nvitop']
         for word in message.split()[1:]:

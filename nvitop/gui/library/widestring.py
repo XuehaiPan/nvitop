@@ -6,6 +6,7 @@
 
 from unicodedata import east_asian_width
 
+
 ASCIIONLY = set(map(chr, range(1, 128)))
 NARROW = 1
 WIDE = 2
@@ -133,10 +134,10 @@ class WideString:  # pylint: disable=too-few-public-methods
             return WideString('')
         if stop < length and self.chars[stop] == '':
             if self.chars[start] == '':
-                return WideString(' ' + ''.join(self.chars[start:stop - 1]) + ' ')
-            return WideString(''.join(self.chars[start:stop - 1]) + ' ')
+                return WideString(' ' + ''.join(self.chars[start : stop - 1]) + ' ')
+            return WideString(''.join(self.chars[start : stop - 1]) + ' ')
         if self.chars[start] == '':
-            return WideString(' ' + ''.join(self.chars[start:stop - 1]))
+            return WideString(' ' + ''.join(self.chars[start : stop - 1]))
         return WideString(''.join(self.chars[start:stop]))
 
     def __getitem__(self, item):

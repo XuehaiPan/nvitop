@@ -64,3 +64,16 @@ requires = ["setuptools"]
 
 [tool.setuptools.packages.find]
 include = ["nvitop", "nvitop.*"]
+
+[tool.black]
+line-length = 100
+skip-string-normalization = true
+target_version = ["py35"]
+
+[tool.isort]
+profile = "black"
+src_paths = ["nvitop"]
+indent = 4
+line_length = 100
+lines_after_imports = 2
+multi_line_output = 3

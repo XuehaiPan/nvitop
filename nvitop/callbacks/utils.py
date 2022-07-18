@@ -3,9 +3,9 @@
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
-from typing import List, Dict
+from typing import Dict, List
 
-from nvitop.core import Device, CudaDevice, MiB
+from nvitop.core import CudaDevice, Device, MiB
 
 
 def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> List[CudaDevice]:
@@ -22,11 +22,13 @@ def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> Li
     return devices
 
 
-def get_gpu_stats(devices: List[Device],
-                  memory_utilization: bool = True,
-                  gpu_utilization: bool = True,
-                  fan_speed: bool = False,
-                  temperature: bool = False) -> Dict[str, float]:
+def get_gpu_stats(
+    devices: List[Device],
+    memory_utilization: bool = True,
+    gpu_utilization: bool = True,
+    fan_speed: bool = False,
+    temperature: bool = False,
+) -> Dict[str, float]:
     """Get the GPU status from NVML queries"""
 
     stats = {}

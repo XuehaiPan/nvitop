@@ -14,12 +14,18 @@ if not __release__:
     import subprocess
 
     try:
-        __version__ = subprocess.check_output(
-            ['git', 'describe', '--abbrev=7'],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
-            stderr=subprocess.DEVNULL,
-            universal_newlines=True,
-        ).strip().lstrip('v').replace('-', '+', 1).replace('-', '.')
+        __version__ = (
+            subprocess.check_output(
+                ['git', 'describe', '--abbrev=7'],
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                stderr=subprocess.DEVNULL,
+                universal_newlines=True,
+            )
+            .strip()
+            .lstrip('v')
+            .replace('-', '+', 1)
+            .replace('-', '.')
+        )
     except (OSError, subprocess.CalledProcessError):
         pass
 
@@ -28,7 +34,7 @@ if not __release__:
 # cause problems with Old versions of NVIDIA drivers.
 # The ideal solution is to let the user install the best-fit version of `nvidia-ml-py`.
 PYNVML_VERSION_CANDIDATES = [
-    '11.450.51',   # the last version supports the R430 driver (CUDA 10.x)
+    '11.450.51',  # the last version supports the R430 driver (CUDA 10.x)
     '11.450.129',  # requires at last the R450 driver
     '11.460.79',
     '11.470.66',
