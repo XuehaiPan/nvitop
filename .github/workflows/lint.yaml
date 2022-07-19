@@ -40,7 +40,7 @@ jobs:
 
       - name: Install linters
         run: |
-          python -m pip install --upgrade black isort pylint
+          python -m pip install --upgrade black isort pylint pre-commit
 
       - name: isort
         run: |
@@ -56,3 +56,9 @@ jobs:
         run: |
           python -m pylint --version
           python -m pylint nvitop
+
+      - name: pre-commit
+        run: |
+          python -m pre_commit --version
+          python -m pre_commit install --install-hooks
+          python -m pre_commit run --all-files
