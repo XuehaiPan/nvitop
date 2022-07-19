@@ -13,17 +13,28 @@ repos:
       - id: check-ast
       - id: check-added-large-files
       - id: check-merge-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
       - id: detect-private-key
+      - id: debug-statements
       - id: double-quote-string-fixer
   - repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:
       - id: isort
+        stages: [commit, push, manual]
   - repo: https://github.com/psf/black
     rev: 22.6.0
     hooks:
       - id: black
-  - repo: https://github.com/PyCQA/pylint
-    rev: v2.14.5
+        args: [--safe]
+        stages: [commit, push, manual]
+  - repo: local
     hooks:
       - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        require_serial: true
+        stages: [commit, push, manual]
