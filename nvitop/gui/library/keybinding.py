@@ -257,7 +257,7 @@ class KeyMaps(dict):
                 pointer = pointer[key]
             except KeyError as e:
                 raise KeyError(
-                    "Tried to copy the keybinding `%s'," " but it was not found." % source
+                    "Tried to copy the keybinding `%s', but it was not found." % source
                 ) from e
         self.bind(context, target, copy.deepcopy(pointer))
 
