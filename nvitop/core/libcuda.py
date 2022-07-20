@@ -582,10 +582,11 @@ def cuDeviceGetUuid(device: c_CUdevice_t) -> str:
     except AttributeError:
         fn = __cudaGetFunctionPointer('cuDeviceGetUuid')
 
-    uuid = _ctypes.create_string_buffer(128)
+    ubyte_array = _ctypes.c_ubyte * 16
+    uuid = ubyte_array()
     ret = fn(uuid, device)
     _cudaCheckReturn(ret)
-    uuid = ''.join(map('{:0x}'.format, uuid.value))
+    uuid = ''.join(map('{:02x}'.format, uuid))
     return '-'.join((uuid[:8], uuid[8:12], uuid[12:16], uuid[16:20], uuid[20:32]))
 
 
@@ -606,7 +607,8 @@ def cuDeviceGetUuid_v2(device: c_CUdevice_t) -> str:
 
     fn = __cudaGetFunctionPointer('cuDeviceGetUuid_v2')
 
-    uuid = _ctypes.create_string_buffer(128)
+    ubyte_array = _ctypes.c_ubyte * 16
+    uuid = ubyte_array()
     ret = fn(uuid, device)
     _cudaCheckReturn(ret)
     uuid = ''.join(map('{:0x}'.format, uuid.value))
