@@ -435,10 +435,11 @@ def cuGetErrorName(error: int) -> str:
 
     fn = __cudaGetFunctionPointer('cuGetErrorName')
 
-    name = _ctypes.create_string_buffer(1024)
-    ret = fn(_CUresult_t(error), _ctypes.byref(name))
+    p_name = _ctypes.POINTER(_ctypes.c_char_p)()
+    ret = fn(_CUresult_t(error), _ctypes.byref(p_name))
     _cudaCheckReturn(ret)
-    return name.value.decode('UTF-8', errors='replace')
+    name = _ctypes.string_at(p_name)
+    return name.decode('UTF-8', errors='replace')
 
 
 def cuGetErrorString(error: int) -> str:
@@ -453,10 +454,11 @@ def cuGetErrorString(error: int) -> str:
 
     fn = __cudaGetFunctionPointer('cuGetErrorString')
 
-    name = _ctypes.create_string_buffer(1024)
-    ret = fn(_CUresult_t(error), _ctypes.byref(name))
+    p_name = _ctypes.POINTER(_ctypes.c_char_p)()
+    ret = fn(_CUresult_t(error), _ctypes.byref(p_name))
     _cudaCheckReturn(ret)
-    return name.value.decode('UTF-8', errors='replace')
+    name = _ctypes.string_at(p_name)
+    return name.decode('UTF-8', errors='replace')
 
 
 def cuDriverGetVersion() -> str:
