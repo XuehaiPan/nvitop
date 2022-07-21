@@ -2325,7 +2325,10 @@ def parse_cuda_visible_devices_to_uuids(
         parser.start()
         parser.join()
     finally:
-        parser.kill()
+        try:
+            parser.kill()  # requires Python 3.7+
+        except AttributeError:
+            pass
     result = queue.get()
 
     if isinstance(result, Exception):
