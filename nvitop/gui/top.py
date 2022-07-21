@@ -121,7 +121,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         ]
 
         y_start, x_start = (n_term_lines - height) // 2, (n_term_cols - width) // 2
-        for y, line in enumerate(lines, start=y_start):  # pylint: disable=invalid-name
+        for y, line in enumerate(lines, start=y_start):
             self.addstr(y, x_start, line)
 
     def finalize(self):
@@ -226,7 +226,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
                 screen.init_keybindings()
 
         def show_screen(screen, focused=None):
-            for s in self.container:  # pylint: disable=invalid-name
+            for s in self.container:
                 if s is screen:
                     s.visible = True
                     if focused is not None:

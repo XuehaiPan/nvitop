@@ -3,7 +3,6 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
-# pylint: disable=invalid-name
 
 from nvitop.gui.library.libcurses import CursesShortcuts
 

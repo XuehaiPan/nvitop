@@ -3,7 +3,6 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name
 
 import copy
 import curses
@@ -255,10 +254,10 @@ class KeyMaps(dict):
         for key in clean_source:
             try:
                 pointer = pointer[key]
-            except KeyError as e:
+            except KeyError as ex:
                 raise KeyError(
                     "Tried to copy the keybinding `%s', but it was not found." % source
-                ) from e
+                ) from ex
         self.bind(context, target, copy.deepcopy(pointer))
 
     def unbind(self, context, keys):

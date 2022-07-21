@@ -3,7 +3,7 @@
 
 """The live classes for process running on the host and the GPU devices."""
 
-# pylint: disable=invalid-name,too-many-lines
+# pylint: disable=too-many-lines
 
 import contextlib
 import datetime
@@ -103,7 +103,7 @@ def auto_garbage_clean(fallback=_RAISE):
         def wrapped(self: 'GpuProcess', *args, **kwargs):
             try:
                 return func(self, *args, **kwargs)
-            except host.PsutilError as e:
+            except host.PsutilError as ex:
                 try:
                     with GpuProcess.INSTANCE_LOCK:
                         del GpuProcess.INSTANCES[(self.pid, self.device)]
@@ -117,9 +117,9 @@ def auto_garbage_clean(fallback=_RAISE):
                 if fallback is _RAISE or not getattr(
                     _USE_FALLBACK_WHEN_RAISE, 'value', False  # see also `GpuProcess.failsafe`
                 ):
-                    raise e
+                    raise ex
                 if isinstance(fallback, tuple):
-                    if isinstance(e, host.AccessDenied) and fallback == ('No Such Process',):
+                    if isinstance(ex, host.AccessDenied) and fallback == ('No Such Process',):
                         return ['No Permissions']
                     return list(fallback)
                 return fallback

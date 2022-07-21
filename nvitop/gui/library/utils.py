@@ -2,7 +2,6 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
-# pylint: disable=disallowed-name,invalid-name
 
 import getpass
 import math
@@ -30,6 +29,7 @@ def cut_string(s, maxlen, padstr='...', align='left'):
     return str(padstr + s[-(maxlen - len(padstr)) :])
 
 
+# pylint: disable=disallowed-name
 def make_bar(prefix, percent, width):
     bar = '{}: '.format(prefix)
     if percent != NA and not (isinstance(percent, float) and not math.isfinite(percent)):

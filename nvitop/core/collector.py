@@ -496,7 +496,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 positive = True
                 if process.host not in self._positive_processes:
                     positive = False
-                    p = process.host  # pylint: disable=invalid-name
+                    p = process.host
                     parents = []
                     while p is not None:
                         parents.append(p)
@@ -504,7 +504,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                             positive = True
                             break
                         try:
-                            p = p.parent()  # pylint: disable=invalid-name
+                            p = p.parent()
                         except host.PsutilError:
                             break
                     if positive:

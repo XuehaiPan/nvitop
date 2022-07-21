@@ -23,10 +23,10 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     )
 
     def posint(argstring):
-        x = int(argstring)  # pylint: disable=invalid-name
-        if x <= 0:
+        num = int(argstring)
+        if num <= 0:
             raise ValueError
-        return x
+        return num
 
     posint.__name__ = 'positive integer'
 
@@ -254,9 +254,10 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         device_count = Device.count()
     except libnvml.NVMLError_LibraryNotFound:
         return 1
-    except libnvml.NVMLError as e:  # pylint: disable=invalid-name
+    except libnvml.NVMLError as ex:
         print(
-            '{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), e), file=sys.stderr
+            '{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), ex),
+            file=sys.stderr,
         )
         return 1
 
@@ -307,10 +308,10 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
                     win=win,
                 )
                 top.loop()
-        except curses.error as e:  # pylint: disable=invalid-name
+        except curses.error as ex:
             if top is not None:
                 raise
-            messages.append('ERROR: Failed to initialize `curses` ({})'.format(e))
+            messages.append('ERROR: Failed to initialize `curses` ({})'.format(ex))
 
     if top is None:
         top = Top(devices, filters, ascii=args.ascii)

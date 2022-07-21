@@ -2,7 +2,6 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name
 
 import functools
 import itertools
@@ -223,7 +222,8 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             value1 = max(value1, 0.2)
         if value2 >= 0.0:
             value2 = max(value2, 0.2)
-        bar = []  # pylint: disable=disallowed-name
+        # pylint: disable=disallowed-name,invalid-name
+        bar = []
         for h in range(self.height):
             s1 = min(max(round(5 * (value1 - h)), 0), 4)
             s2 = min(max(round(5 * (value2 - h)), 0), 4)

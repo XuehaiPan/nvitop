@@ -2,7 +2,6 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=invalid-name
 
 from nvitop.gui.library import Device, Displayable, MouseEvent
 from nvitop.version import __version__
@@ -47,14 +46,16 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     def __init__(self, win, root):
         super().__init__(win, root)
 
-        HELP = HELP_TEMPLATE.format(
-            __version__,
-            *Device.GPU_UTILIZATION_THRESHOLDS,
-            *Device.MEMORY_UTILIZATION_THRESHOLDS,
-            MouseEvent.CTRL_SCROLLWHEEL_MULTIPLIER,
+        self.infos = (
+            HELP_TEMPLATE.format(
+                __version__,
+                *Device.GPU_UTILIZATION_THRESHOLDS,
+                *Device.MEMORY_UTILIZATION_THRESHOLDS,
+                MouseEvent.CTRL_SCROLLWHEEL_MULTIPLIER,
+            )
+            .strip()
+            .splitlines()
         )
-
-        self.infos = HELP.strip().splitlines()
         self.color_matrix = {
             **{dy: ('cyan', 'cyan') for dy in range(12, 22)},
             9: ('green', 'green'),

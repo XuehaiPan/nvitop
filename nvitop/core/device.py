@@ -1591,9 +1591,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             ('C', 'nvmlDeviceGetComputeRunningProcesses'),
             ('G', 'nvmlDeviceGetGraphicsRunningProcesses'),
         ):
-            for p in libnvml.nvmlQuery(  # pylint: disable=invalid-name
-                func, self.handle, default=()
-            ):
+            for p in libnvml.nvmlQuery(func, self.handle, default=()):
                 proc = processes[p.pid] = self.GPU_PROCESS_CLASS(
                     pid=p.pid,
                     device=self,
@@ -1612,7 +1610,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 'nvmlDeviceGetProcessUtilization', self.handle, self._timestamp, default=()
             )
             self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 500000, 0)
-            for s in samples:  # pylint: disable=invalid-name
+            for s in samples:
                 try:
                     processes[s.pid].set_gpu_utilization(s.smUtil, s.memUtil, s.encUtil, s.decUtil)
                 except KeyError:

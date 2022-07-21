@@ -2,7 +2,6 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
-# pylint: disable=disallowed-name,invalid-name
 
 import threading
 import time
@@ -360,7 +359,9 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 elif device.is_mig_device:
                     matrix.pop()
                 for x_offset, y, width, prefix, utilization, color in matrix:
-                    bar = make_bar(prefix, utilization, width=width)
+                    bar = make_bar(  # pylint: disable=disallowed-name
+                        prefix, utilization, width=width
+                    )
                     self.addstr(y, self.x + 80 + x_offset, bar)
                     self.color_at(y, self.x + 80 + x_offset, width=width, fg=color, attr=attr)
 
@@ -440,7 +441,9 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     if device.is_mig_device:
                         matrix.pop()
                     for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
-                        bar = make_bar(prefix, utilization, width=remaining_width - 3)
+                        bar = make_bar(  # pylint: disable=disallowed-name
+                            prefix, utilization, width=remaining_width - 3
+                        )
                         lines[y] += ' {} │'.format(colored(bar, color))
 
                     if index == len(self.snapshots) - 1:

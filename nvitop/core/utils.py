@@ -290,8 +290,8 @@ class Snapshot:
 
         try:
             return self.__getattr__(name)
-        except AttributeError as e:
-            raise KeyError from e
+        except AttributeError as ex:
+            raise KeyError from ex
 
     def __setitem__(self, name, value):
         """Supports ``dict['name'] = value`` syntax."""
