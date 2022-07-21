@@ -90,9 +90,11 @@ Examples:
 # pylint: disable=too-many-lines
 
 import contextlib
+import multiprocessing as mp
 import os
 import re
 import threading
+from collections import OrderedDict
 from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Type, Union
 
 from cachetools.func import ttl_cache
@@ -129,80 +131,7 @@ UtilizationRates = NamedTuple(
     ],
 )
 
-
-_ANY_DEVICE_SUPPORTS_MIG_MODE = None
-
-
-def _does_any_device_support_mig_mode() -> bool:
-    global _ANY_DEVICE_SUPPORTS_MIG_MODE  # pylint: disable=global-statement
-
-    if _ANY_DEVICE_SUPPORTS_MIG_MODE is None:
-        _ANY_DEVICE_SUPPORTS_MIG_MODE = any(
-            libnvml.nvmlCheckReturn(device.mig_mode()) for device in PhysicalDevice.all()
-        )
-    return _ANY_DEVICE_SUPPORTS_MIG_MODE
-
-
-def is_mig_device_uuid(uuid: Optional[str]) -> bool:
-    """Returns :data:`True` if the argument is a MIG device UUID, otherwise, returns :data:`False`."""
-
-    if isinstance(uuid, str):
-        match = Device.UUID_PATTERN.match(uuid)
-        if match is not None and match.group('MigMode') is not None:
-            return True
-    return False
-
-
-def parse_cuda_visible_devices_to_uuids(cuda_visible_devices: Optional[str] = None) -> List[str]:
-    """Parses the given ``CUDA_VISIBLE_DEVICES`` environment variable in a separate process and
-    returns a list of device UUIDs. The UUIDs do not have a prefix ``GPU-`` or ``MIG-``.
-
-    Raises:
-        libcuda.CUDAError_NotInitialized:
-            If cannot found the CUDA driver libraries.
-        libcuda.CUDAError:
-            If failed to parse the ``CUDA_VISIBLE_DEVICES`` environment variable.
-    """
-
-    import multiprocessing as mp  # pylint: disable=import-outside-toplevel
-
-    def parse(cuda_visible_devices: str, queue: mp.SimpleQueue) -> None:
-        try:
-            if cuda_visible_devices is not None:
-                os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
-            else:
-                os.environ.pop('CUDA_VISIBLE_DEVICES', None)
-
-            # pylint: disable=no-member
-            try:
-                libcuda.cuInit()
-            except (libcuda.CUDAError_NoDevice, libcuda.CUDAError_InvalidDevice):
-                queue.put([])
-                return
-
-            count = libcuda.cuDeviceGetCount()
-            uuids = list(map(libcuda.cuDeviceGetUuid, map(libcuda.cuDeviceGet, range(count))))
-            queue.put(uuids)
-            return
-        except Exception as ex:
-            queue.put(ex)
-            raise ex
-        finally:
-            # Ensure non-empty queue
-            queue.put(libcuda.CUDAError_NotInitialized())  # pylint: disable=no-member
-
-    queue = mp.SimpleQueue()
-    try:
-        parser = mp.Process(target=parse, args=(cuda_visible_devices, queue), daemon=True)
-        parser.start()
-        parser.join()
-    finally:
-        parser.kill()
-    result = queue.get()
-
-    if isinstance(result, Exception):
-        raise result
-    return result
+_SENTINEL = object()
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -421,7 +350,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     def parse_cuda_visible_devices(
-        cuda_visible_devices: Optional[str] = None,
+        cuda_visible_devices: Optional[str] = _SENTINEL,
     ) -> Union[List[int], List[Tuple[int, int]]]:
         """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
 
@@ -432,7 +361,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Args:
             cuda_visible_devices (Optional[str]):
                 The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
-                environment will be used.
+                environment will be used. If explicitly given by :data:`None`, the ``CUDA_VISIBLE_DEVICES``
+                environment variable will be unset before parsing.
 
         Returns: Union[List[int], List[Tuple[int, int]]]
             A list of int (physical device) or a list of tuple of two ints (MIG device) for the
@@ -443,23 +373,37 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """  # pylint: disable=line-too-long
 
-        if cuda_visible_devices is None:
+        if cuda_visible_devices is _SENTINEL:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
-            if cuda_visible_devices is None:
-                if _does_any_device_support_mig_mode():
-                    for device in map(PhysicalDevice, range(PhysicalDevice.count())):
-                        if device.is_mig_mode_enabled():
-                            return [(device.physical_index, 0)]  # at most one MIG device
-                return list(range(Device.count()))  # all devices if no MIG mode enabled
 
         return Device._parse_cuda_visible_devices(cuda_visible_devices)
 
+    # pylint: disable=too-many-branches
     @staticmethod
     @ttl_cache(ttl=300.0)
     def _parse_cuda_visible_devices(
-        cuda_visible_devices: str,
-    ) -> Union[List[int], List[Tuple[int, int]]]:
+        cuda_visible_devices: Optional[str] = None,
+    ) -> Union[List['PhysicalDevice'], List['MigDevice']]:
         """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
+
+        physical_device_attrs = _get_all_physical_device_attrs()
+        gpu_uuids = set(physical_device_attrs)
+
+        try:
+            raw_uuids = parse_cuda_visible_devices_to_uuids(cuda_visible_devices, verbose=False)
+        except libcuda.CUDAError:
+            pass
+        else:
+            uuids = [
+                uuid if uuid in gpu_uuids else uuid.replace('GPU', 'MIG', 1)
+                for uuid in map('GPU-{}'.format, raw_uuids)
+            ]
+            if gpu_uuids.issuperset(uuids) and not _does_any_device_support_mig_mode(uuids):
+                return [physical_device_attrs[uuid].index for uuid in uuids]
+            cuda_visible_devices = ','.join(uuids)
+
+        if cuda_visible_devices is None:
+            cuda_visible_devices = ','.join(physical_device_attrs.keys())
 
         def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
             nonlocal use_integer_identifiers
@@ -501,11 +445,21 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         else:
             # All devices in `CUDA_VISIBLE_DEVICES` are physical devices
             # Check if any GPU that enables MIG mode
-            for device in tuple(devices):
+            devices_backup = devices.copy()
+            devices = []
+            for device in devices_backup:
                 if device.is_mig_mode_enabled():
                     # Got available MIG devices, use the first MIG device and ignore all non-MIG GPUs
-                    devices = [device.mig_device(mig_index=0)]  # at most one MIG device is visible
-                    break
+                    try:
+                        devices = [
+                            device.mig_device(mig_index=0)  # at most one MIG device is visible
+                        ]
+                    except libnvml.NVMLError:
+                        continue  # no MIG device available on the GPU
+                    else:
+                        break  # got one MIG device
+                else:
+                    devices.append(device)  # non-MIG device
 
         return [device.index for device in devices]
 
@@ -1843,27 +1797,6 @@ class PhysicalDevice(Device):
         return mig_devices
 
 
-_GLOBAL_PHYSICAL_DEVICE = None
-_GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
-
-
-@contextlib.contextmanager
-def _global_physical_device(device: PhysicalDevice) -> PhysicalDevice:
-    global _GLOBAL_PHYSICAL_DEVICE  # pylint: disable=global-statement
-
-    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
-        try:
-            _GLOBAL_PHYSICAL_DEVICE = device
-            yield _GLOBAL_PHYSICAL_DEVICE
-        finally:
-            _GLOBAL_PHYSICAL_DEVICE = None
-
-
-def _get_global_physical_device() -> PhysicalDevice:
-    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
-        return _GLOBAL_PHYSICAL_DEVICE
-
-
 class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
     """Class for MIG devices."""
 
@@ -2246,3 +2179,160 @@ Device.cuda = CudaDevice
 
 class CudaMigDevice(CudaDevice, MigDevice):
     """Class for CUDA devices that are MIG devices."""
+
+
+## Helper functions ##
+_PhysicalDeviceAttrs = NamedTuple(
+    'PhysicalDeviceAttrs',
+    [
+        ('index', int),
+        ('name', str),
+        ('uuid', str),
+        ('support_mig_mode', bool),
+    ],
+)
+_PHYSICAL_DEVICE_ATTRS = None
+_GLOBAL_PHYSICAL_DEVICE = None
+_GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
+
+
+def _get_all_physical_device_attrs() -> Dict[str, _PhysicalDeviceAttrs]:
+    global _PHYSICAL_DEVICE_ATTRS  # pylint: disable=global-statement
+
+    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
+        if _PHYSICAL_DEVICE_ATTRS is None:
+            _PHYSICAL_DEVICE_ATTRS = OrderedDict(
+                [
+                    (
+                        device.uuid(),
+                        _PhysicalDeviceAttrs(
+                            device.index,
+                            device.name(),
+                            device.uuid(),
+                            libnvml.nvmlCheckReturn(device.mig_mode()),
+                        ),
+                    )
+                    for device in PhysicalDevice.all()
+                ]
+            )
+        return _PHYSICAL_DEVICE_ATTRS
+
+
+def _does_any_device_support_mig_mode(uuids: Optional[Iterable[str]] = None) -> bool:
+    physical_device_attrs = _get_all_physical_device_attrs()
+    uuids = uuids or physical_device_attrs.keys()
+    return any(physical_device_attrs[uuid].support_mig_mode for uuid in uuids)
+
+
+@contextlib.contextmanager
+def _global_physical_device(device: 'PhysicalDevice') -> 'PhysicalDevice':
+    global _GLOBAL_PHYSICAL_DEVICE  # pylint: disable=global-statement
+
+    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
+        try:
+            _GLOBAL_PHYSICAL_DEVICE = device
+            yield _GLOBAL_PHYSICAL_DEVICE
+        finally:
+            _GLOBAL_PHYSICAL_DEVICE = None
+
+
+def _get_global_physical_device() -> 'PhysicalDevice':
+    with _GLOBAL_PHYSICAL_DEVICE_LOCK:
+        return _GLOBAL_PHYSICAL_DEVICE
+
+
+def is_mig_device_uuid(uuid: Optional[str]) -> bool:
+    """Returns :data:`True` if the argument is a MIG device UUID, otherwise, returns :data:`False`."""
+
+    if isinstance(uuid, str):
+        match = Device.UUID_PATTERN.match(uuid)
+        if match is not None and match.group('MigMode') is not None:
+            return True
+    return False
+
+
+def _cuda_visible_devices_parser(
+    cuda_visible_devices: str, queue: mp.SimpleQueue, verbose: bool = True
+) -> None:
+    try:
+        if cuda_visible_devices is not None:
+            os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
+        else:
+            os.environ.pop('CUDA_VISIBLE_DEVICES', None)
+
+        # pylint: disable=no-member
+        try:
+            libcuda.cuInit()
+        except (
+            libcuda.CUDAError_NoDevice,
+            libcuda.CUDAError_InvalidDevice,
+            libcuda.CUDAError_SystemDriverMismatch,
+            libcuda.CUDAError_CompatNotSupportedOnDevice,
+        ):
+            queue.put([])
+            raise
+
+        count = libcuda.cuDeviceGetCount()
+        uuids = list(map(libcuda.cuDeviceGetUuid, map(libcuda.cuDeviceGet, range(count))))
+        queue.put(uuids)
+        return
+    except Exception as ex:  # pylint: disable=broad-except
+        queue.put(ex)
+        if verbose:
+            raise ex
+    finally:
+        # Ensure non-empty queue
+        queue.put(libcuda.CUDAError_NotInitialized())  # pylint: disable=no-member
+
+
+def parse_cuda_visible_devices_to_uuids(
+    cuda_visible_devices: Optional[str] = _SENTINEL,
+    verbose=True,
+) -> List[str]:
+    """Parses the given ``CUDA_VISIBLE_DEVICES`` environment variable in a separate process and
+    returns a list of device UUIDs. The UUIDs do not have a prefix ``GPU-`` or ``MIG-``.
+
+    Args:
+        cuda_visible_devices (Optional[str]):
+            The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
+            environment will be used. If explicitly given by :data:`None`, the ``CUDA_VISIBLE_DEVICES``
+            environment variable will be unset before parsing.
+
+    Returns: List[str]
+        A list of device UUIDs without ``GPU-`` or ``MIG-`` prefixes.
+
+    Raises:
+        libcuda.CUDAError_NotInitialized:
+            If cannot found the CUDA driver libraries.
+        libcuda.CUDAError:
+            If failed to parse the ``CUDA_VISIBLE_DEVICES`` environment variable.
+    """
+
+    if cuda_visible_devices is _SENTINEL:
+        cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
+
+    # Do not inherit file descriptors and handles from the parent process
+    # The `fork` start method should be considered unsafe as it can lead to crashes of the subprocess
+    ctx = mp.get_context('spawn')
+    queue = ctx.SimpleQueue()
+    try:
+        parser = ctx.Process(
+            target=_cuda_visible_devices_parser,
+            args=(cuda_visible_devices, queue, verbose),
+            name='`CUDA_VISIBLE_DEVICES` parser',
+            daemon=True,
+        )
+        parser.start()
+        parser.join()
+    finally:
+        parser.kill()
+    result = queue.get()
+
+    if isinstance(result, Exception):
+        raise result
+    return result
+
+
+if __name__ == '__main__':
+    for cuda_device in CudaDevice.all():
+        print(cuda_device.uuid())
