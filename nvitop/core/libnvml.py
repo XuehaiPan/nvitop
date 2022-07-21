@@ -79,7 +79,7 @@ for _name, _attr in _vars_pynvml.items():
 # 3. Add docstring to exception classes
 _errcode = _reason = _subclass = None
 for _errcode, _reason in _errcode_to_string.items():
-    _subclass = _pynvml.nvmlExceptionClass(_errcode)
+    _subclass = nvmlExceptionClass(_errcode)
     _subclass.__doc__ = '{}. Code: :data:`{}` ({})'.format(
         _reason.rstrip('.'), _errcode_to_name[_errcode], _errcode
     )
@@ -95,9 +95,10 @@ for _name in _const_names:
     :value: {!r}
 """.format(_name, _attr.__class__.__name__, _attr)  # fmt: skip
     if _name.startswith('NVML_ERROR_') and _attr in _errcode_to_string:
+        _reason = _errcode_to_string[_attr]
         _sphinx_doc += """
-See also class :class:`NVMLError` and :class:`{}`.
-""".format(_pynvml.nvmlExceptionClass(_attr).__name__)  # fmt: skip
+    {}. See also class :class:`NVMLError` and :class:`{}`.
+""".format(_reason.rstrip('.'), nvmlExceptionClass(_attr).__name__)  # fmt: skip
     _data_docs.append(_sphinx_doc.strip())
 __doc__ += """
 
