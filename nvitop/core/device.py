@@ -154,14 +154,14 @@ def is_mig_device_uuid(uuid: Optional[str]) -> bool:
 
 
 def parse_cuda_visible_devices_to_uuids(cuda_visible_devices: Optional[str] = None) -> List[str]:
-    """Parses the given environment variable ``CUDA_VISIBLE_DEVICES`` in a separate process and
+    """Parses the given ``CUDA_VISIBLE_DEVICES`` environment variable in a separate process and
     returns a list of device UUIDs. The UUIDs do not have a prefix ``GPU-`` or ``MIG-``.
 
     Raises:
         libcuda.CUDAError_NotInitialized:
             If cannot found the CUDA driver libraries.
         libcuda.CUDAError:
-            If failed to parse the environment variable ``CUDA_VISIBLE_DEVICES``.
+            If failed to parse the ``CUDA_VISIBLE_DEVICES`` environment variable.
     """
 
     import multiprocessing as mp  # pylint: disable=import-outside-toplevel
@@ -351,7 +351,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     @staticmethod
     def from_cuda_visible_devices() -> List['CudaDevice']:
         """Returns a list of all CUDA visible devices.
-        The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
+        The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
 
         See also for CUDA Device Enumeration:
             - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
@@ -362,7 +362,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """  # pylint: disable=line-too-long
 
         visible_device_indices = Device.parse_cuda_visible_devices()
@@ -380,7 +380,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         cuda_indices: Optional[Union[int, Iterable[int]]] = None
     ) -> List['CudaDevice']:
         """Returns a list of CUDA devices of the given CUDA indices.
-        The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
+        The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
 
         See also for CUDA Device Enumeration:
             - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
@@ -395,9 +395,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
             RuntimeError:
-                If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
+                If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """  # pylint: disable=line-too-long
 
         cuda_devices = Device.from_cuda_visible_devices()
@@ -440,7 +440,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """  # pylint: disable=line-too-long
 
         if cuda_visible_devices is None:
@@ -762,7 +762,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
             RuntimeError:
                 If the current device is not visible to CUDA applications (i.e. not listed in ``CUDA_VISIBLE_DEVICES``).
         """
@@ -2036,7 +2036,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
 class CudaDevice(Device):
     """Class for devices enumerated over the CUDA ordinal. The order can be vary for different
-    environment variable ``CUDA_VISIBLE_DEVICES``.
+    ``CUDA_VISIBLE_DEVICES`` environment variable.
 
     See also for CUDA Device Enumeration:
         - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
@@ -2099,7 +2099,7 @@ class CudaDevice(Device):
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """
 
         return len(super().parse_cuda_visible_devices())
@@ -2110,7 +2110,7 @@ class CudaDevice(Device):
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """
 
         return cls.from_indices()
@@ -2120,7 +2120,7 @@ class CudaDevice(Device):
         cls, indices: Optional[Union[int, Iterable[int]]] = None
     ) -> List['CudaDevice']:
         """Returns a list of CUDA devices of the given CUDA indices.
-        The CUDA ordinal will be enumerate from the environment variable ``CUDA_VISIBLE_DEVICES``.
+        The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
 
         See also for CUDA Device Enumeration:
             - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
@@ -2135,9 +2135,9 @@ class CudaDevice(Device):
 
         Raises:
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
             RuntimeError:
-                If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
+                If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """
 
         return super().from_cuda_indices(indices)
@@ -2169,9 +2169,9 @@ class CudaDevice(Device):
             TypeError:
                 If the given index is a tuple but is not consist of two integers.
             RuntimeError:
-                If the environment variable ``CUDA_VISIBLE_DEVICES`` is invalid (e.g. duplicate entries).
+                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
             RuntimeError:
-                If the index is out of range for the given environment variable ``CUDA_VISIBLE_DEVICES``.
+                If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """
 
         if cuda_index is not None and nvml_index is None and uuid is None:
