@@ -8,8 +8,10 @@
 import datetime
 import functools
 import math
+import re
 import sys
 import time
+from typing import Any, Callable, Iterable, Optional, Union
 
 from psutil import WINDOWS
 
@@ -24,7 +26,9 @@ __all__ = [
     'GiB',
     'TiB',
     'PiB',
+    'SIZE_UNITS',
     'bytes2human',
+    'human2bytes',
     'timedelta2human',
     'utilization2string',
     'colored',
@@ -46,21 +50,31 @@ try:
     from termcolor import colored as _colored
 except ImportError:
 
-    def _colored(text, color=None, on_color=None, attrs=None):  # pylint: disable=unused-argument
+    def _colored(  # pylint: disable=unused-argument
+        text: str,
+        color: Optional[str] = None,
+        on_color: Optional[str] = None,
+        attrs: Iterable[str] = None,
+    ) -> str:
         return text
 
 
 COLOR = sys.stdout.isatty()
 
 
-def set_color(value):
+def set_color(value: bool) -> None:
     """Force enables text coloring."""
 
     global COLOR  # pylint: disable=global-statement
     COLOR = bool(value)
 
 
-def colored(text, color=None, on_color=None, attrs=None):
+def colored(
+    text: str,
+    color: Optional[str] = None,
+    on_color: Optional[str] = None,
+    attrs: Iterable[str] = None,
+) -> str:
     """Colorizes text.
 
     Available text colors:
@@ -86,57 +100,71 @@ def colored(text, color=None, on_color=None, attrs=None):
 class NaType(str):
     """A singleton (:const:`str: 'N/A'`) class represents a not applicable value."""
 
-    def __new__(cls):
+    def __new__(cls) -> 'NaType':
         """Gets the singleton instance (:const:`nvitop.NA`)."""
 
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
         return cls._instance
 
-    def __bool__(self):
-        """``bool(NA)`` -> :data:`False`"""
+    def __bool__(self) -> bool:
+        """Converts :const:`NA` to :class:`bool`.
+
+        >>> bool(NA)
+        False
+        """
 
         return False
 
-    def __int__(self):
-        """``int(NA)`` -> :data:`0`"""
+    def __int__(self) -> int:
+        """Converts :const:`NA` to :class:`int`.
+
+        >>> int(NA)
+        0
+        """
 
         return 0
 
-    def __float__(self):
-        """``float(NA)`` -> :data:`math.nan`"""
+    def __float__(self) -> float:
+        """Converts :const:`NA` to :class:`float`.
+
+        >>> float(NA)
+        nan
+        >>> float(NA) is math.nan
+        True
+        """
 
         return math.nan
 
-    def __lt__(self, x):
+    def __lt__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return False
         return super().__lt__(x)
 
-    def __le__(self, x):
+    def __le__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return False
         return super().__le__(x)
 
-    def __gt__(self, x):
+    def __gt__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return True
         return super().__gt__(x)
 
-    def __ge__(self, x):
+    def __ge__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
 
         if isinstance(x, (int, float)):
             return True
         return super().__ge__(x)
 
-    def __format__(self, format_spec):
+    def __format__(self, format_spec: str) -> str:
         try:
             return super().__format__(format_spec)
         except ValueError:
@@ -168,40 +196,97 @@ TiB = 1 << 40
 PiB = 1 << 50
 """Pebibyte (1024 * 1024 * 1024 * 1024 * 1024)"""
 
+SIZE_UNITS = {
+    None: 1,
+    '': 1,
+    'B': 1,
+    'KiB': KiB,
+    'MiB': MiB,
+    'GiB': GiB,
+    'TiB': TiB,
+    'PiB': PiB,
+    'KB': 1000,
+    'MB': 1000**2,
+    'GB': 1000**3,
+    'TB': 1000**4,
+    'PB': 1000**4,
+}
+"""Units of storage and memory measurements."""
+SIZE_PATTERN = re.compile(
+    r'^\s*\+?\s*(?P<size>\d+(?:\.\d+)?)\s*(?P<unit>[KMGTP]i?B?|B?)\s*$', flags=re.IGNORECASE
+)
+"""The regex pattern for human readable size."""
 
-def bytes2human(x):  # pylint: disable=too-many-return-statements
+
+def bytes2human(b: Union[int, float, NaType]) -> str:  # pylint: disable=too-many-return-statements
     """Converts bytes to a human readable string."""
 
-    if x is None or x == NA:
+    if b == NA:
         return NA
 
-    if not isinstance(x, int):
+    if not isinstance(b, int):
         try:
-            x = round(float(x))
+            b = round(float(b))
         except ValueError:
             return NA
 
-    if x < KiB:
-        return '{}B'.format(x)
-    if x < MiB:
-        return '{}KiB'.format(round(x / KiB))
-    if x <= 20 * GiB:
-        return '{}MiB'.format(round(x / MiB))
-    if x < 100 * GiB:
-        return '{:.2f}GiB'.format(round(x / GiB, 2))
-    if x < 1000 * GiB:
-        return '{:.1f}GiB'.format(round(x / GiB, 1))
-    if x < 100 * TiB:
-        return '{:.2f}TiB'.format(round(x / TiB, 2))
-    if x < 1000 * TiB:
-        return '{:.1f}TiB'.format(round(x / TiB, 1))
-    if x < 100 * PiB:
-        return '{:.2f}PiB'.format(round(x / PiB, 2))
-    return '{:.1f}PiB'.format(round(x / PiB, 1))
+    if b < KiB:
+        return '{}B'.format(b)
+    if b < MiB:
+        return '{}KiB'.format(round(b / KiB))
+    if b <= 20 * GiB:
+        return '{}MiB'.format(round(b / MiB))
+    if b < 100 * GiB:
+        return '{:.2f}GiB'.format(round(b / GiB, 2))
+    if b < 1000 * GiB:
+        return '{:.1f}GiB'.format(round(b / GiB, 1))
+    if b < 100 * TiB:
+        return '{:.2f}TiB'.format(round(b / TiB, 2))
+    if b < 1000 * TiB:
+        return '{:.1f}TiB'.format(round(b / TiB, 1))
+    if b < 100 * PiB:
+        return '{:.2f}PiB'.format(round(b / PiB, 2))
+    return '{:.1f}PiB'.format(round(b / PiB, 1))
 
 
-def timedelta2human(dt):
-    """Converts :class:`datetime.timedelta` instance to a human readable string."""
+def human2bytes(s: Union[int, str]) -> int:
+    """Converts a human readable size string (*case insensitive*) to bytes.
+
+    Raises:
+        ValueError:
+            If cannot convert the given size string.
+
+    Examples:
+
+        >>> human2bytes('500B')
+        500
+        >>> human2bytes('10k')
+        10000
+        >>> human2bytes('10ki')
+        10240
+        >>> human2bytes('1M')
+        1000000
+        >>> human2bytes('1MiB')
+        1048576
+        >>> human2bytes('1.5GiB')
+        1610612736
+    """
+
+    if isinstance(s, int):
+        if s >= 0:
+            return s
+        raise ValueError('Cannot convert {!r} to bytes.'.format(s))
+
+    match = SIZE_PATTERN.match(s)
+    if match is None:
+        raise ValueError('Cannot convert {!r} to bytes.'.format(s))
+    size, unit = match.groups()
+    unit = unit.upper().replace('I', 'i').replace('B', '') + 'B'
+    return int(float(size) * SIZE_UNITS[unit])
+
+
+def timedelta2human(dt: Union[int, float, datetime.timedelta, NaType]) -> str:
+    """Converts a number in seconds or a :class:`datetime.timedelta` instance to a human readable string."""
 
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
@@ -218,7 +303,7 @@ def timedelta2human(dt):
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
-def utilization2string(utilization):
+def utilization2string(utilization: Union[int, float, NaType]) -> str:
     """Converts a utilization rate to string."""
 
     if utilization != NA:
@@ -229,7 +314,7 @@ def utilization2string(utilization):
     return NA
 
 
-def boolify(string, default=None):
+def boolify(string: str, default: Any = None) -> bool:
     """Converts the given value, usually a string, to boolean."""
 
     if string.lower() in ('true', 'yes', 'on', 'enabled', '1'):
@@ -248,13 +333,13 @@ class Snapshot:
     Missing attributes will be automatically fetched from the original object.
     """
 
-    def __init__(self, real, **items):
+    def __init__(self, real: Any, **items) -> None:
         self.real = real
         self.timestamp = time.time()
         for key, value in items.items():
             setattr(self, key, value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         keys = set(self.__dict__.keys()).difference({'real', 'timestamp'})
         keys = ['real', *sorted(keys)]
         keyvals = []
@@ -270,7 +355,7 @@ class Snapshot:
 
     __repr__ = __str__
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Gets a member from the instance.
         If the attribute is not defined, fetches from the original object and makes a function call.
         """
@@ -285,7 +370,7 @@ class Snapshot:
             setattr(self, name, attribute)
             return attribute
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Any:
         """Supports ``dict['name']`` syntax."""
 
         try:
@@ -293,33 +378,33 @@ class Snapshot:
         except AttributeError as ex:
             raise KeyError from ex
 
-    def __setitem__(self, name, value):
+    def __setitem__(self, name: str, value: Any) -> None:
         """Supports ``dict['name'] = value`` syntax."""
 
         self.__setattr__(name, value)
 
 
 # Modified from psutil (https://github.com/giampaolo/psutil)
-def memoize_when_activated(func):
+def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]:
     """A memoize decorator which is disabled by default. It can be activated and
     deactivated on request. For efficiency reasons it can be used only against
     class methods accepting no arguments.
     """
 
-    @functools.wraps(func)
+    @functools.wraps(method)
     def wrapped(self):
         try:
             # case 1: we previously entered oneshot() ctx
-            ret = self._cache[func]  # pylint: disable=protected-access
+            ret = self._cache[method]  # pylint: disable=protected-access
         except AttributeError:
             # case 2: we never entered oneshot() ctx
-            return func(self)
+            return method(self)
         except KeyError:
             # case 3: we entered oneshot() ctx but there's no cache
             # for this entry yet
-            ret = func(self)
+            ret = method(self)
             try:
-                self._cache[func] = ret  # pylint: disable=protected-access
+                self._cache[method] = ret  # pylint: disable=protected-access
             except AttributeError:
                 # multi-threading race condition, see:
                 # https://github.com/giampaolo/psutil/issues/1948
