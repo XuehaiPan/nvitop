@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "nvitop"
 description = "An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."
@@ -6,9 +10,6 @@ requires-python = ">= 3.5"
 authors = [
     {name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn"}
 ]
-homepage = "https://github.com/XuehaiPan/nvitop"
-repository = "https://github.com/XuehaiPan/nvitop"
-documentation = "https://nvitop.readthedocs.io"
 license = {file = "LICENSE"}
 keywords = ["nvidia", "nvidia-smi", "NVIDIA", "NVML", "CUDA", "GPU", "top", "monitoring"]
 classifiers = [
@@ -57,16 +58,13 @@ Repository = "https://github.com/XuehaiPan/nvitop"
 Documentation = "https://nvitop.readthedocs.io"
 "Bug Report" = "https://github.com/XuehaiPan/nvitop/issues"
 
-[build-system]
-requires = ["setuptools"]
-
 [tool.setuptools.packages.find]
 include = ["nvitop", "nvitop.*"]
 
 [tool.black]
 line-length = 100
 skip-string-normalization = true
-target_version = ["py35"]
+target-version = ["py35", "py36", "py37", "py38", "py39", "py310"]
 
 [tool.isort]
 profile = "black"

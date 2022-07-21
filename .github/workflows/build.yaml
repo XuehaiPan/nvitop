@@ -1,0 +1,99 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - setup.py
+      - setup.cfg
+      - pyproject.toml
+      - MANIFEST.in
+      - nvitop/version.py
+      - .github/workflows/build.yaml
+  release:
+    types:
+      - published
+
+concurrency:
+  group: "${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.repository == 'XuehaiPan/nvitop'
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+          fetch-depth: 1
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          update-environment: true
+
+      - name: Upgrade build dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel build twine
+
+      - name: Quick test
+        run: |
+          python -m pip install --upgrade pre-commit pylint
+          python -m pre_commit install --install-hooks
+          python -m pre_commit run --all-files
+
+      - name: Set __release__
+        run: |
+          sed -i -E 's/^__release__\s*=.*$/__release__ = True/' nvitop/version.py
+
+      - name: Build sdist and wheels
+        run: |
+          echo "Building wheel with Python: $(type -P python) ($(python --version))"
+          python -m build
+
+      - name: List built sdist and wheels
+        run: |
+          if [[ -n "$(find dist -maxdepth 0 -not -empty -print 2>/dev/null)" ]]; then
+            echo "Built sdist and wheels:"
+            find dist -mindepth 1 | sort -V
+          else
+            echo "No sdist and wheels are built."
+            exit 1
+          fi
+
+      - name: Check consistency between the package version and release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          PACKAGE_VER="v$(python setup.py --version)"
+          RELEASE_TAG="${GITHUB_REF#refs/*/}"
+          if [[ "${PACKAGE_VER}" != "${RELEASE_TAG}" ]]; then
+            echo "package ver. (${PACKAGE_VER}) != release tag. (${RELEASE_TAG})"
+            exit 1
+          fi
+
+      - name: Publish to PyPI Test
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_UPLOAD_TOKEN }}
+        run: |
+          [[ -n "${TWINE_PASSWORD}" ]] || exit 1
+          python -m twine upload --repository testpypi dist/*
+
+      - name: Publish to PyPI
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TWINE_USERNAME: "__token__"
+          TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_TOKEN }}
+        run: |
+          [[ -n "${TWINE_PASSWORD}" ]] || exit 1
+          python -m twine upload --repository pypi dist/*
