@@ -12,6 +12,7 @@ Subpackages
     core/host
     core/collector
     core/libnvml
+    core/libcuda
     core/utils
     callbacks
 
