@@ -8,7 +8,6 @@ and system utilization (CPU, memory, disks, network, sensors) in Python.
 """
 
 import os as _os
-from collections import defaultdict as _defaultdict
 
 import psutil as _psutil
 from cachetools.func import ttl_cache as _ttl_cache
@@ -66,7 +65,9 @@ ppid_map = _psutil._ppid_map  # pylint: disable=protected-access
 def reverse_ppid_map():  # pylint: disable=function-redefined
     """Obtains a ``{ppid: [pid, ...], ...}`` dict for all running processes in one shot."""
 
-    tree = _defaultdict(list)
+    from collections import defaultdict  # pylint: disable=import-outside-toplevel
+
+    tree = defaultdict(list)
     for pid, ppid in ppid_map().items():
         tree[ppid].append(pid)
 
@@ -83,4 +84,4 @@ WINDOWS_SUBSYSTEM_FOR_LINUX = WSL
 """The Linux distribution name of the Windows Subsystem for Linux."""
 
 
-del _os, _defaultdict, _ttl_cache
+del _os, _ttl_cache
