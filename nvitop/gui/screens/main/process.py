@@ -525,6 +525,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )
 
     def print(self):
+        self.ensure_snapshots()
+
         lines = ['', *self.header_lines()]
         lines[2] = ''.join(
             (
@@ -536,7 +538,6 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             )
         )
 
-        self.ensure_snapshots()
         if len(self.snapshots) > 0:
             key, reverse, *_ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)
