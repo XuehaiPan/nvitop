@@ -288,11 +288,20 @@ def _extract_cuda_errors_as_classes() -> None:
 
             return new
 
+        # pylint: disable=protected-access
         new_error_class = type(class_name, (CUDAError,), {'__new__': gen_new(err_val)})
         new_error_class.__module__ = __name__
-        new_error_class.__doc__ = 'CUDA Error with code :data:`{}` ({})'.format(err_name, err_val)
+        if err_val in CUDAError._errcode_to_string:
+            new_error_class.__doc__ = 'CUDA Error: {} Code: :data:`{}` ({}).'.format(
+                CUDAError._errcode_to_string[err_val],
+                err_name,
+                err_val,
+            )
+        else:
+            new_error_class.__doc__ = 'CUDA Error with code :data:`{}` ({})'.format(
+                err_name, err_val
+            )
         setattr(this_module, class_name, new_error_class)
-        # pylint: disable=protected-access
         CUDAError._value_class_mapping[err_val] = new_error_class
         CUDAError._errcode_to_name[err_val] = err_name
 
