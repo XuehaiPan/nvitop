@@ -5,7 +5,8 @@
 
 from nvitop import core
 from nvitop.core import *
+from nvitop.select import select_devices
 from nvitop.version import __version__
 
 
-__all__ = core.__all__.copy()
+__all__ = ['select_devices'] + core.__all__

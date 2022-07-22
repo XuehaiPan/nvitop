@@ -33,6 +33,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
     - [For SSH Users](#for-ssh-users)
     - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
+  - [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool)
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
@@ -396,6 +397,117 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
 **HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).
+
+------
+
+### CUDA Visible Devices Selection Tool
+
+Automatically select `CUDA_VISIBLE_DEVICES` from the given criteria. Example usage of the CLI tool:
+
+```console
+# All devices but sorted
+$ nvisel       # or use `python3 -m nvitop.select`
+6,5,4,3,2,1,0,7,8
+
+# A simple example to select 4 devices
+$ nvisel -n 4  # or use `python3 -m nvitop.select -n 4`
+6,5,4,3
+
+# Select available devices that satisfy the given constraints
+$ nvisel --min-count 2 --max-count 3 --min-free-memory 5GiB --max-gpu-utilization 60
+6,5,4
+
+# Set `CUDA_VISIBLE_DEVICES` environment variable using `nvisel`
+$ export CUDA_DEVICE_ORDER="PCI_BUS_ID" CUDA_VISIBLE_DEVICES="$(nvisel -c 1 -f 10GiB)"
+CUDA_VISIBLE_DEVICES="6,5,4,3,2,1,0"
+
+# Use UUID strings in `CUDA_VISIBLE_DEVICES` environment variable
+$ export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 5000M)"
+CUDA_VISIBLE_DEVICES="GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1,GPU-96de99c9-d68f-84c8-424c-7c75e59cc0a0,GPU-2428d171-8684-5b64-830c-435cd972ec4a,GPU-6d2a57c9-7783-44bb-9f53-13f36282830a,GPU-f8e5a624-2c7e-417c-e647-b764d26d4733,GPU-f9ca790e-683e-3d56-00ba-8f654e977e02"
+
+# Pipe output to other shell utilities
+$ nvisel -0 -O uuid -c 2 -f 4GiB | xargs -0 -I {} nvidia-smi --id={} --query-gpu=index,memory.free --format=csv
+CUDA_VISIBLE_DEVICES="GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1,GPU-96de99c9-d68f-84c8-424c-7c75e59cc0a0,GPU-2428d171-8684-5b64-830c-435cd972ec4a,GPU-6d2a57c9-7783-44bb-9f53-13f36282830a,GPU-f8e5a624-2c7e-417c-e647-b764d26d4733,GPU-f9ca790e-683e-3d56-00ba-8f654e977e02"
+index, memory.free [MiB]
+6, 11018 MiB
+index, memory.free [MiB]
+5, 11018 MiB
+index, memory.free [MiB]
+4, 11018 MiB
+index, memory.free [MiB]
+3, 11018 MiB
+index, memory.free [MiB]
+2, 11018 MiB
+index, memory.free [MiB]
+1, 11018 MiB
+index, memory.free [MiB]
+0, 11018 MiB
+```
+
+You can also integrate `nvisel` into your training script like this:
+
+```python
+# Put this at the top of the Python script
+import os
+from nvitop import select_devices
+
+os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
+    select_devices(format='uuid', min_count=4, min_free_memory='8GiB')
+)
+```
+
+Type `nvisel --help` for more command options:
+
+```text
+usage: nvisel [--help] [--version] [--inherit] [--account-as-free [USERNAME ...]]
+              [--min-count N] [--max-count N] [--count N]
+              [--min-free-memory SIZE] [--min-total-memory SIZE]
+              [--max-gpu-utilization RATE] [--max-memory-utilization RATE]
+              [--tolerance TOL] [--format FORMAT] [--sep SEP | --newline | --null]
+
+CUDA visible devices selection tool.
+
+optional arguments:
+  --help, -h            Show this help message and exit.
+  --version, -V         Show nvisel's version number and exit.
+
+constraints:
+  --inherit             Inherit the current `CUDA_VISIBLE_DEVICES` environment variable.
+                        This means selecting a subset of the currently CUDA-visible devices.
+  --account-as-free [USERNAME ...]
+                        Account the used GPU memory of the given users as free memory.
+                        If this option is specified but without argument, `$USER` will be used.
+  --min-count N, -c N   Minimum number of devices to select. (default: 0)
+                        The tool will fail (exit non-zero) if the requested resource is not available.
+  --max-count N, -C N   Maximum number of devices to select. (default: all devices)
+  --count N, -n N       Overriding both `--min-count N` and `--max-count N`.
+  --min-free-memory SIZE, -f SIZE
+                        Minimum free memory of devices to select. (example value: 4GiB)
+                        If this constraint is given, check against all devices.
+  --min-total-memory SIZE, -t SIZE
+                        Minimum total memory of devices to select. (example value: 10GiB)
+                        If this constraint is given, check against all devices.
+  --max-gpu-utilization RATE, -G RATE
+                        Maximum GPU utilization rate of devices to select. (example value: 30)
+                        If this constraint is given, check against all devices.
+  --max-memory-utilization RATE, -M RATE
+                        Maximum memory bandwidth utilization rate of devices to select. (example value: 50)
+                        If this constraint is given, check against all devices.
+  --tolerance TOL, --tol TOL
+                        The constraints tolerance (in percentage). (default: 0, i.e., strict)
+                        This option can loose the constraints if the requested resource is not available.
+                        For example, set `--tolerance=20` will accept a device with only 4GiB of free
+                        memory when set `--min-free-memory=5GiB`.
+
+formatting:
+  --format FORMAT, -O FORMAT
+                        The output format of the selected device identifiers. (default: index)
+                        If any MIG device found, the output format will be fallback to `uuid`.
+  --sep SEP, --separator SEP, -s SEP
+                        Separator for the output. (default: ',')
+  --newline             Use newline character as separator for the output, equivalent to `--sep=$'\n'`.
+  --null, -0            Use null character ('\x00') as separator for the output, equivalent to `--sep=$'\0'`.
+```
 
 ------
 

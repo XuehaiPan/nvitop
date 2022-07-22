@@ -51,6 +51,7 @@ dynamic = [
 
 [project.scripts]
 nvitop = "nvitop.cli:main"
+nvisel = "nvitop.select:main"
 
 [project.urls]
 Homepage = "https://github.com/XuehaiPan/nvitop"
