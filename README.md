@@ -506,7 +506,8 @@ formatting:
   --sep SEP, --separator SEP, -s SEP
                         Separator for the output. (default: ',')
   --newline             Use newline character as separator for the output, equivalent to `--sep=$'\n'`.
-  --null, -0            Use null character ('\x00') as separator for the output, equivalent to `--sep=$'\0'`.
+  --null, -0            Use null character ('\x00') as separator for the output. This option corresponds
+                        to the `-0` option of `xargs`.
 ```
 
 ------

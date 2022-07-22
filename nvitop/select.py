@@ -431,7 +431,10 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         '-0',
         dest='null',
         action='store_true',
-        help=r"Use null character ('\x00') as separator for the output, equivalent to `--sep=$'\0'`.",
+        help=(
+            "Use null character ('\\x00') as separator for the output. This option corresponds\n"
+            'to the `-0` option of `xargs`.'
+        ),
     )
 
     args = parser.parse_args()
