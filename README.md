@@ -139,7 +139,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.7.0)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.7.1)):
 
 ```bash
 pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
