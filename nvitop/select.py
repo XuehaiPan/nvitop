@@ -7,10 +7,13 @@ Command line usage:
 
 .. code-block:: bash
 
-    # A simple example
+    # All devices but sorted
+    nvisel       # or use `python3 -m nvitop.select`
+
+    # A simple example to select 4 devices
     nvisel -n 4  # or use `python3 -m nvitop.select -n 4`
 
-    # Select available devices satisfy the given constraints
+    # Select available devices that satisfy the given constraints
     nvisel --min-count 2 --max-count 3 --min-free-memory 5GiB --max-gpu-utilization 60
 
     # Set `CUDA_VISIBLE_DEVICES` environment variable using `nvisel`

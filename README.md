@@ -402,23 +402,46 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 
 ### CUDA Visible Devices Selection Tool
 
-Automatically select `CUDA_VISIBLE_DEVICES` from the given criteria. Example usage of CLI tool:
+Automatically select `CUDA_VISIBLE_DEVICES` from the given criteria. Example usage of the CLI tool:
 
 ```console
-# A simple example
-$ nvisel -n 4  # or use `python3 -m nvitop.select -n 4`
+# All devices but sorted
+$ nvisel       # or use `python3 -m nvitop.select`
+6,5,4,3,2,1,0,7,8
 
-# Select available devices satisfy the given constraints
+# A simple example to select 4 devices
+$ nvisel -n 4  # or use `python3 -m nvitop.select -n 4`
+6,5,4,3
+
+# Select available devices that satisfy the given constraints
 $ nvisel --min-count 2 --max-count 3 --min-free-memory 5GiB --max-gpu-utilization 60
+6,5,4
 
 # Set `CUDA_VISIBLE_DEVICES` environment variable using `nvisel`
 $ export CUDA_DEVICE_ORDER="PCI_BUS_ID" CUDA_VISIBLE_DEVICES="$(nvisel -c 1 -f 10GiB)"
+CUDA_VISIBLE_DEVICES="6,5,4,3,2,1,0"
 
 # Use UUID strings in `CUDA_VISIBLE_DEVICES` environment variable
-export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 5000M)"
+$ export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 5000M)"
+CUDA_VISIBLE_DEVICES="GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1,GPU-96de99c9-d68f-84c8-424c-7c75e59cc0a0,GPU-2428d171-8684-5b64-830c-435cd972ec4a,GPU-6d2a57c9-7783-44bb-9f53-13f36282830a,GPU-f8e5a624-2c7e-417c-e647-b764d26d4733,GPU-f9ca790e-683e-3d56-00ba-8f654e977e02"
 
 # Pipe output to other shell utilities
 $ nvisel -0 -O uuid -c 2 -f 4GiB | xargs -0 -I {} nvidia-smi --id={} --query-gpu=index,memory.free --format=csv
+CUDA_VISIBLE_DEVICES="GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1,GPU-96de99c9-d68f-84c8-424c-7c75e59cc0a0,GPU-2428d171-8684-5b64-830c-435cd972ec4a,GPU-6d2a57c9-7783-44bb-9f53-13f36282830a,GPU-f8e5a624-2c7e-417c-e647-b764d26d4733,GPU-f9ca790e-683e-3d56-00ba-8f654e977e02"
+index, memory.free [MiB]
+6, 11018 MiB
+index, memory.free [MiB]
+5, 11018 MiB
+index, memory.free [MiB]
+4, 11018 MiB
+index, memory.free [MiB]
+3, 11018 MiB
+index, memory.free [MiB]
+2, 11018 MiB
+index, memory.free [MiB]
+1, 11018 MiB
+index, memory.free [MiB]
+0, 11018 MiB
 ```
 
 You can also integrate `nvisel` into your training script like this:
