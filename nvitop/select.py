@@ -118,18 +118,19 @@ def select_devices(
             A list of accounts whose used GPU memory needs be considered as free memory.
     """
 
+    assert format in ('index', 'uuid', 'device')
     assert tolerance >= 0
     tolerance = tolerance / 100.0
+
+    if max_count is not None:
+        if max_count == 0:
+            return []
+        assert max_count >= min_count >= 0
 
     free_accounts = set(free_accounts or [])
 
     if devices is None:
         devices = Device.all()
-
-    if max_count is not None:
-        if max_count == 0:
-            return []
-        assert max_count > 0
 
     if isinstance(min_free_memory, str):
         min_free_memory = human2bytes(min_free_memory)
