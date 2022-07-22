@@ -225,12 +225,11 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
         if self.device_count > 0:
-            for device in self.devices:
+            for mig_device_count in self.mig_device_counts:
                 if compact:
                     frame.extend((data_line, separator_line))
                 else:
                     frame.extend((data_line, data_line, separator_line))
-                mig_device_count = self.mig_device_counts[device.physical_index]
                 if mig_device_count > 0:
                     frame.extend((data_line,) * mig_device_count + (separator_line,))
 
