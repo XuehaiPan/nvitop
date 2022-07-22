@@ -355,6 +355,9 @@ class Snapshot:
 
     __repr__ = __str__
 
+    def __hash__(self) -> int:
+        return hash((self.real, self.timestamp))
+
     def __getattr__(self, name: str) -> Any:
         """Gets a member from the instance.
         If the attribute is not defined, fetches from the original object and makes a function call.
@@ -374,14 +377,24 @@ class Snapshot:
         """Supports ``dict['name']`` syntax."""
 
         try:
-            return self.__getattr__(name)
+            return getattr(self, name)
         except AttributeError as ex:
-            raise KeyError from ex
+            raise KeyError(name) from ex
 
     def __setitem__(self, name: str, value: Any) -> None:
         """Supports ``dict['name'] = value`` syntax."""
 
-        self.__setattr__(name, value)
+        setattr(self, name, value)
+
+    def __iter__(self) -> Iterable[str]:
+        """Supports ``for name in dict`` syntax."""
+
+        def gen() -> str:
+            for name in self.__dict__:
+                if name not in ('real', 'timestamp'):
+                    yield name
+
+        return gen()
 
 
 # Modified from psutil (https://github.com/giampaolo/psutil)

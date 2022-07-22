@@ -2334,8 +2334,3 @@ def parse_cuda_visible_devices_to_uuids(
     if isinstance(result, Exception):
         raise result
     return result
-
-
-if __name__ == '__main__':
-    for cuda_device in CudaDevice.all():
-        print(cuda_device.uuid())
