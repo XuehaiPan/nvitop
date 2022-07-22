@@ -3,7 +3,7 @@
 
 """CUDA visible devices selection tool.
 
-Usage:
+Command line usage:
 
 .. code-block:: bash
 
@@ -11,9 +11,21 @@ Usage:
 
     export CUDA_DEVICE_ORDER="PCI_BUS_ID" CUDA_VISIBLE_DEVICES="$(nvisel -c 1 -f 10GiB)"
 
-    export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 10GiB)"
+    export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 5000M)"
 
     nvisel -0 -O uuid -c 2 -f 4GiB | xargs -0 -I {} nvidia-smi --id={} --query-gpu=index,memory.free --format=csv
+
+Python API:
+
+.. code-block:: python
+
+    # Put this at the top of the Python script
+    import os
+    from nvitop import select_devices
+
+    os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
+        select_devices(format='uuid', min_count=4, min_free_memory='8GiB')
+    )
 """
 
 # pylint: disable=missing-function-docstring

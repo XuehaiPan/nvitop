@@ -33,6 +33,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
     - [For SSH Users](#for-ssh-users)
     - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
+  - [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool)
   - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
@@ -396,6 +397,38 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
 
 **HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).
+
+------
+
+### CUDA Visible Devices Selection Tool
+
+Automatically select `CUDA_VISIBLE_DEVICES` from the given criteria. Example usage of CLI tool:
+
+```console
+# Select available devices satisfy the given constraints
+$ nvisel --min-count 2 --max-count 3 --min-free-memory 5GiB --max-gpu-utilization 60
+
+# Set `CUDA_VISIBLE_DEVICES` environment variable using `nvisel`
+$ export CUDA_DEVICE_ORDER="PCI_BUS_ID" CUDA_VISIBLE_DEVICES="$(nvisel -c 1 -f 10GiB)"
+
+# Use UUID strings in `CUDA_VISIBLE_DEVICES` environment variable
+export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 5000M)"
+
+# Pipe output to other shell utilities
+$ nvisel -0 -O uuid -c 2 -f 4GiB | xargs -0 -I {} nvidia-smi --id={} --query-gpu=index,memory.free --format=csv
+```
+
+You can also integrate `nvisel` into your training script like this:
+
+```python
+# Put this at the top of the Python script
+import os
+from nvitop import select_devices
+
+os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
+    select_devices(format='uuid', min_count=4, min_free_memory='8GiB')
+)
+```
 
 ------
 
