@@ -405,6 +405,9 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 Automatically select `CUDA_VISIBLE_DEVICES` from the given criteria. Example usage of CLI tool:
 
 ```console
+# A simple example
+$ nvisel -n 4  # or use `python3 -m nvitop.select -n 4`
+
 # Select available devices satisfy the given constraints
 $ nvisel --min-count 2 --max-count 3 --min-free-memory 5GiB --max-gpu-utilization 60
 
@@ -428,6 +431,59 @@ from nvitop import select_devices
 os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
     select_devices(format='uuid', min_count=4, min_free_memory='8GiB')
 )
+```
+
+Type `nvisel --help` for more command options:
+
+```text
+usage: nvisel [--help] [--version] [--inherit] [--account-as-free [USERNAME ...]]
+              [--min-count N] [--max-count N] [--count N]
+              [--min-free-memory SIZE] [--min-total-memory SIZE]
+              [--max-gpu-utilization RATE] [--max-memory-utilization RATE]
+              [--tolerance TOL] [--format FORMAT] [--sep SEP | --newline | --null]
+
+CUDA visible devices selection tool.
+
+optional arguments:
+  --help, -h            Show this help message and exit.
+  --version, -V         Show nvisel's version number and exit.
+
+constraints:
+  --inherit             Inherit the current `CUDA_VISIBLE_DEVICES` environment variable.
+                        This means selecting a subset of the currently CUDA-visible devices.
+  --account-as-free [USERNAME ...]
+                        Account the used GPU memory of the given users as free memory.
+                        If this option is specified but without argument, `$USER` will be used.
+  --min-count N, -c N   Minimum number of devices to select. (default: 0)
+                        The tool will fail (exit non-zero) if the requested resource is not available.
+  --max-count N, -C N   Maximum number of devices to select. (default: all devices)
+  --count N, -n N       Overriding both `--min-count N` and `--max-count N`.
+  --min-free-memory SIZE, -f SIZE
+                        Minimum free memory of devices to select. (example value: 4GiB)
+                        If this constraint is given, check against all devices.
+  --min-total-memory SIZE, -t SIZE
+                        Minimum total memory of devices to select. (example value: 10GiB)
+                        If this constraint is given, check against all devices.
+  --max-gpu-utilization RATE, -G RATE
+                        Maximum GPU utilization rate of devices to select. (example value: 30)
+                        If this constraint is given, check against all devices.
+  --max-memory-utilization RATE, -M RATE
+                        Maximum memory bandwidth utilization rate of devices to select. (example value: 50)
+                        If this constraint is given, check against all devices.
+  --tolerance TOL, --tol TOL
+                        The constraints tolerance (in percentage). (default: 0, i.e., strict)
+                        This option can loose the constraints if the requested resource is not available.
+                        For example, set `--tolerance=20` will accept a device with only 4GiB of free
+                        memory when set `--min-free-memory=5GiB`.
+
+formatting:
+  --format FORMAT, -O FORMAT
+                        The output format of the selected device identifiers. (default: index)
+                        If any MIG device found, the output format will be fallback to `uuid`.
+  --sep SEP, --separator SEP, -s SEP
+                        Separator for the output. (default: ',')
+  --newline             Use newline character as separator for the output, equivalent to `--sep=$'\n'`.
+  --null, -0            Use null character ('\x00') as separator for the output, equivalent to `--sep=$'\0'`.
 ```
 
 ------

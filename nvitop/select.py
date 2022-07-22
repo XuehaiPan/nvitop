@@ -7,12 +7,19 @@ Command line usage:
 
 .. code-block:: bash
 
+    # A simple example
+    nvisel -n 4  # or use `python3 -m nvitop.select -n 4`
+
+    # Select available devices satisfy the given constraints
     nvisel --min-count 2 --max-count 3 --min-free-memory 5GiB --max-gpu-utilization 60
 
+    # Set `CUDA_VISIBLE_DEVICES` environment variable using `nvisel`
     export CUDA_DEVICE_ORDER="PCI_BUS_ID" CUDA_VISIBLE_DEVICES="$(nvisel -c 1 -f 10GiB)"
 
+    # Use UUID strings in `CUDA_VISIBLE_DEVICES` environment variable
     export CUDA_VISIBLE_DEVICES="$(nvisel -O uuid -c 2 -f 5000M)"
 
+    # Pipe output to other shell utilities
     nvisel -0 -O uuid -c 2 -f 4GiB | xargs -0 -I {} nvidia-smi --id={} --query-gpu=index,memory.free --format=csv
 
 Python API:
@@ -311,7 +318,15 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         type=non_negint,
         default=None,
         metavar='N',
-        help=('Maximum number of devices to select. (default: all devices)'),
+        help='Maximum number of devices to select. (default: all devices)',
+    )
+    constraints.add_argument(
+        '--count',
+        '-n',
+        dest='count',
+        type=non_negint,
+        metavar='N',
+        help='Overriding both `--min-count N` and `--max-count N`.',
     )
     constraints.add_argument(
         '--min-free-memory',
@@ -418,6 +433,8 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     args = parser.parse_args()
 
+    if args.count is not None:
+        args.min_count = args.max_count = args.count
     if args.max_count is not None and args.max_count < args.min_count:
         raise RuntimeError('Max count must be no less than min count.')
 
