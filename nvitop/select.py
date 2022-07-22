@@ -417,7 +417,6 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         dest='sep',
         type=str,
         default=',',
-        nargs=1,
         metavar='SEP',
         help='Separator for the output. (default: %(default)r)',
     )
