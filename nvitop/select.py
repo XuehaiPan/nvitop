@@ -209,6 +209,7 @@ def select_devices(
             (not math.isnan(device.memory_used), -device.memory_used),  # descending
             (not math.isnan(device.gpu_utilization), device.gpu_utilization),  # ascending
             (not math.isnan(device.memory_utilization), device.memory_utilization),  # ascending
+            -device.physical_index,  # descending to keep <GPU 0> free
         ),
     )  # type: List[DeviceSnapshot]
 
