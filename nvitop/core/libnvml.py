@@ -322,7 +322,7 @@ def nvmlQuery(
         retval = func(*args, **kwargs)
     except NVMLError_FunctionNotFound as e2:
         if not ignore_function_not_found:
-            if identifier.__name__ == '<lambda>':
+            if func.__name__ == '<lambda>':
                 identifier = _inspect.getsource(func)
             else:
                 identifier = repr(func)
