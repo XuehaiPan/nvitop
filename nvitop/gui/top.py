@@ -12,7 +12,7 @@ from nvitop.gui.screens import BreakLoop, EnvironScreen, HelpScreen, MainScreen,
 
 
 class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
-    # pylint: disable=too-many-arguments
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         devices,

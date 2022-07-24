@@ -200,7 +200,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
             return instance
 
-    # pylint: disable=unused-argument,super-init-not-called
+    # pylint: disable-next=unused-argument,super-init-not-called
     def __init__(self, pid: Optional[int] = None) -> None:
         pass
 
@@ -441,7 +441,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = WeakValueDictionary()
 
-    # pylint: disable=too-many-arguments,unused-argument
+    # pylint: disable-next=too-many-arguments,unused-argument
     def __new__(
         cls,
         pid: int,
@@ -478,7 +478,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             return instance
 
-    # pylint: disable=too-many-arguments,unused-argument
+    # pylint: disable-next=too-many-arguments,unused-argument
     def __init__(
         self,
         pid: int,
@@ -630,10 +630,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
         return self._gpu_decoder_utilization
 
-    # pylint: disable=attribute-defined-outside-init
     def set_gpu_memory(self, value: Union[int, NaType]) -> None:
         """Sets the used GPU memory in bytes."""
 
+        # pylint: disable=attribute-defined-outside-init
         self._gpu_memory = memory_used = value
         self._gpu_memory_human = bytes2human(self.gpu_memory())
         memory_total = self.device.memory_total()
@@ -642,7 +642,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
         self._gpu_memory_percent = gpu_memory_percent
 
-    # pylint: disable=attribute-defined-outside-init
     def set_gpu_utilization(
         self,
         gpu_sm_utilization: Optional[int] = None,
@@ -652,6 +651,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     ) -> None:
         """Sets the GPU utilization rates."""
 
+        # pylint: disable=attribute-defined-outside-init
         if gpu_sm_utilization is not None:
             self._gpu_sm_utilization = gpu_sm_utilization
         if gpu_memory_utilization is not None:

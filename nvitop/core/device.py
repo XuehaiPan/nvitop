@@ -378,10 +378,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return Device._parse_cuda_visible_devices(cuda_visible_devices)
 
-    # pylint: disable=too-many-branches
     @staticmethod
     @ttl_cache(ttl=300.0)
-    def _parse_cuda_visible_devices(
+    def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches
         cuda_visible_devices: Optional[str] = None,
     ) -> Union[List['PhysicalDevice'], List['MigDevice']]:
         """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
@@ -1831,7 +1830,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
         return list(map(cls, indices))
 
-    # pylint: disable=super-init-not-called
+    # pylint: disable-next=super-init-not-called
     def __init__(
         self, index: Optional[Union[Tuple[int, int], str]] = None, *, uuid: Optional[str] = None
     ) -> None:

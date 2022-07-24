@@ -392,7 +392,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
                 def colorize(s):
                     if len(s) > 0:
-                        # pylint: disable=cell-var-from-loop
+                        # pylint: disable-next=cell-var-from-loop
                         return colored(s, device.display_color)
                     return ''
 

@@ -19,7 +19,7 @@ class BreakLoop(Exception):
 class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
     NAME = 'main'
 
-    # pylint: disable=redefined-builtin,too-many-arguments,too-many-locals,too-many-statements
+    # pylint: disable-next=redefined-builtin,too-many-arguments,too-many-locals,too-many-statements
     def __init__(self, devices, filters, ascii, mode, win, root):
         super().__init__(win, root)
 

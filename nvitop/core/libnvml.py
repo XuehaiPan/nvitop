@@ -139,12 +139,17 @@ del (
 )
 
 # 5. Add explicit references to appease linters
+# pylint: disable=no-member
 c_nvmlDevice_t = _pynvml.c_nvmlDevice_t
-NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound  # pylint: disable=no-member
-NVMLError_FunctionNotFound = _pynvml.NVMLError_FunctionNotFound  # pylint: disable=no-member
-NVMLError_NotSupported = _pynvml.NVMLError_NotSupported  # pylint: disable=no-member
-NVMLError_NotFound = _pynvml.NVMLError_NotFound  # pylint: disable=no-member
-NVMLError_GpuIsLost = _pynvml.NVMLError_GpuIsLost  # pylint: disable=no-member
+NVMLError_FunctionNotFound = _pynvml.NVMLError_FunctionNotFound
+NVMLError_GpuIsLost = _pynvml.NVMLError_GpuIsLost
+NVMLError_InvalidArgument = _pynvml.NVMLError_InvalidArgument
+NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound
+NVMLError_NoPermission = _pynvml.NVMLError_NoPermission
+NVMLError_NotFound = _pynvml.NVMLError_NotFound
+NVMLError_NotSupported = _pynvml.NVMLError_NotSupported
+NVMLError_Unknown = _pynvml.NVMLError_Unknown
+# pylint: enable=no-member
 
 # New members in `libnvml` #############################################################################################
 

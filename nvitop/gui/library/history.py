@@ -49,7 +49,7 @@ def grouped(iterable, size, fillvalue=None):
 class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     MAX_WIDTH = 1024
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         upperbound,
@@ -254,7 +254,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
 
 
 class BufferedHistoryGraph(HistoryGraph):
-    # pylint: disable=too-many-arguments
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
         upperbound,

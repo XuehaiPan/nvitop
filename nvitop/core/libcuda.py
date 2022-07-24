@@ -15,7 +15,7 @@ from typing import Tuple as _Tuple
 from typing import Type as _Type
 
 
-# pylint: disable=missing-class-docstring,too-few-public-methods
+# pylint: disable-next=missing-class-docstring,too-few-public-methods
 class struct_c_CUdevice_t(_ctypes.Structure):
     pass  # opaque handle
 
@@ -194,6 +194,7 @@ CUDA_ERROR_EXTERNAL_DEVICE = 911
 """This indicates that an async error has occurred in a device outside of CUDA. If CUDA was waiting for an external device's signal before consuming shared data, the external device signaled an error indicating that the data is not valid for consumption. This leaves the process in an inconsistent state and any further CUDA work will return the same error. To continue using CUDA, the process must be terminated and relaunched."""
 CUDA_ERROR_UNKNOWN = 999
 """This indicates that an unknown internal error has occurred."""
+# pylint: enable=line-too-long
 
 
 ## Error Checking ##
@@ -218,7 +219,7 @@ class CUDAError(Exception):
         """Maps value to a proper subclass of :class:`CUDAError`."""
 
         if cls is CUDAError:
-            # pylint: disable=self-cls-assignment
+            # pylint: disable-next=self-cls-assignment
             cls = CUDAError._value_class_mapping.get(value, cls)
         obj = Exception.__new__(cls)
         obj.value = value

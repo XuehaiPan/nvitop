@@ -54,7 +54,7 @@ from nvitop.version import __version__
 TTY = sys.stdout.isatty()
 
 
-# pylint: disable=too-many-branches,too-many-statements,too-many-locals
+# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
 def select_devices(
     devices: Iterable[Device] = None,
     *,
