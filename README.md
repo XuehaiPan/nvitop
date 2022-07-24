@@ -200,6 +200,8 @@ $ nvitop -1 -c
 
 When the `-1` switch is on, the result will be displayed **ONLY ONCE** (same as the default behavior of `nvidia-smi`). This is much faster and has lower resource usage. You can omit the `-1` option by setting the environment variable `NVITOP_MONITOR_ALWAYS=false` to have this behavior by default. See [Command Line Options](#command-line-options-and-environment-variables) for more command options.
 
+There is also a CLI tool called `nvisel` that ships with the `nvitop` PyPI package. See [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool) for more information.
+
 ### Resource Monitor
 
 Run as a resource monitor:
