@@ -131,7 +131,7 @@ UtilizationRates = NamedTuple(
     ],
 )
 
-_SENTINEL = object()
+_VALUE_OMITTED = object()
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -350,7 +350,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     def parse_cuda_visible_devices(
-        cuda_visible_devices: Optional[str] = _SENTINEL,
+        cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
     ) -> Union[List[int], List[Tuple[int, int]]]:
         """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
 
@@ -373,7 +373,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """  # pylint: disable=line-too-long
 
-        if cuda_visible_devices is _SENTINEL:
+        if cuda_visible_devices is _VALUE_OMITTED:
             cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
 
         return Device._parse_cuda_visible_devices(cuda_visible_devices)
@@ -2286,7 +2286,7 @@ def _cuda_visible_devices_parser(
 
 
 def parse_cuda_visible_devices_to_uuids(
-    cuda_visible_devices: Optional[str] = _SENTINEL,
+    cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
     verbose=True,
 ) -> List[str]:
     """Parses the given ``CUDA_VISIBLE_DEVICES`` environment variable in a separate process and
@@ -2308,7 +2308,7 @@ def parse_cuda_visible_devices_to_uuids(
             If failed to parse the ``CUDA_VISIBLE_DEVICES`` environment variable.
     """
 
-    if cuda_visible_devices is _SENTINEL:
+    if cuda_visible_devices is _VALUE_OMITTED:
         cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
 
     # Do not inherit file descriptors and handles from the parent process
