@@ -541,6 +541,61 @@ __patch_backward_compatibility_layers()
 del __patch_backward_compatibility_layers
 
 
+__memory_info_v2_available = None
+
+
+def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined
+    """Retrieves the amount of used, free, reserved and total memory available on the device, in bytes.
+
+    Note:
+        - The version 2 API adds additional memory information. The reserved amount is supported on
+          version 2 only.
+        - In MIG mode, if device handle is provided, the API returns aggregate information, only if
+          the caller has appropriate privileges. Per-instance information can be queried by using
+          specific MIG device handles.
+
+    Raises:
+        NVMLError_InvalidArgument:
+            If the library has not been successfully initialized.
+        NVMLError_NoPermission:
+            If the user doesn't have permission to perform this operation.
+        NVMLError_InvalidArgument:
+            If device is invalid or memory is NULL.
+        NVMLError_GpuIsLost:
+            If the target GPU has fallen off the bus or is otherwise inaccessible.
+        NVMLError_Unknown:
+            On any unexpected error.
+    """
+
+    global __memory_info_v2_available  # pylint: disable=global-statement
+
+    if __memory_info_v2_available is None:
+        try:
+            # pylint: disable-next=unexpected-keyword-arg
+            retval = _pynvml.nvmlDeviceGetMemoryInfo(handle, version=2)
+        except TypeError as ex:
+            if 'unexpected keyword argument' in str(ex).lower():
+                with __lock:
+                    __memory_info_v2_available = False
+                LOGGER.debug('NVML memory info version 2 is not available.')
+            else:
+                raise
+        except (NVMLError_FunctionNotFound, NVMLError_Unknown):
+            with __lock:
+                __memory_info_v2_available = False
+            LOGGER.debug('NVML memory info version 2 is not available.')
+        else:
+            with __lock:
+                __memory_info_v2_available = True
+            LOGGER.debug('NVML memory info version 2 is available.')
+            return retval
+    elif __memory_info_v2_available:
+        # pylint: disable-next=unexpected-keyword-arg
+        return _pynvml.nvmlDeviceGetMemoryInfo(handle, version=2)
+
+    return _pynvml.nvmlDeviceGetMemoryInfo(handle)
+
+
 # Add support for lookup fallback and context manager ##############################################
 class _CustomModule(_ModuleType):
     """Modified module type to support lookup fallback and context manager.
