@@ -215,7 +215,7 @@ class CUDAError(Exception):
     _errcode_to_name = {}
 
     def __new__(cls, value: int) -> 'CUDAError':
-        """Maps value to a proper subclass of :class:`CUError`."""
+        """Maps value to a proper subclass of :class:`CUDAError`."""
 
         if cls is CUDAError:
             # pylint: disable=self-cls-assignment
@@ -251,7 +251,7 @@ class CUDAError(Exception):
 
 
 def cudaExceptionClass(cudaErrorCode: int) -> _Type[CUDAError]:
-    """Maps value to a proper subclass of :class:`CUError`.
+    """Maps value to a proper subclass of :class:`CUDAError`.
 
     Raises:
         ValueError: If the error code is not valid.
@@ -273,8 +273,6 @@ def _extract_cuda_errors_as_classes() -> None:
     e.g. :data:`CUDA_ERROR_INVALID_VALUE` will be turned into :class:`CUDAError_InvalidValue`.
     """
 
-    import functools  # pylint: disable=import-outside-toplevel
-
     this_module = _sys.modules[__name__]
     cuda_error_names = [x for x in dir(this_module) if x.startswith('CUDA_ERROR_')]
     for err_name in cuda_error_names:
@@ -283,12 +281,15 @@ def _extract_cuda_errors_as_classes() -> None:
         class_name = 'CUDAError_{}'.format(pascal_case)
         err_val = getattr(this_module, err_name)
 
+        def gen_new(value):
+            def new(cls):
+                obj = CUDAError.__new__(cls, value)
+                return obj
+
+            return new
+
         # pylint: disable=protected-access
-        new_error_class = type(
-            class_name,
-            (CUDAError,),
-            {'__new__': functools.partial(CUDAError.__new__, value=err_val)},
-        )
+        new_error_class = type(class_name, (CUDAError,), {'__new__': gen_new(err_val)})
         new_error_class.__module__ = __name__
         if err_val in CUDAError._errcode_to_string:
             new_error_class.__doc__ = 'CUDA Error: {} Code: :data:`{}` ({}).'.format(
