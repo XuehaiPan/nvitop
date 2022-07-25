@@ -3,7 +3,7 @@ name: Build
 on:
   push:
     branches:
-      - main
+      - main # allow to trigger the workflow with tag push event
   pull_request:
     paths:
       - setup.py
@@ -15,19 +15,21 @@ on:
   release:
     types:
       - published
+  # Allow to trigger the workflow manually
+  workflow_dispatch:
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository == 'XuehaiPan/nvitop'
-    timeout-minutes: 30
+    if: github.repository == 'XuehaiPan/nvitop' && (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/'))
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -43,7 +45,7 @@ jobs:
 
       - name: Upgrade build dependencies
         run: |
-          python -m pip install --upgrade pip setuptools wheel build twine
+          python -m pip install --upgrade pip setuptools wheel build
 
       - name: Quick test
         run: |
@@ -69,7 +71,7 @@ jobs:
         run: |
           if [[ -n "$(find dist -maxdepth 0 -not -empty -print 2>/dev/null)" ]]; then
             echo "Built sdist and wheels:"
-            find dist -mindepth 1 | sort -V
+            ls -lh dist/
           else
             echo "No sdist and wheels are built."
             exit 1
@@ -85,20 +87,23 @@ jobs:
             exit 1
           fi
 
-      - name: Publish to PyPI Test
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.TESTPYPI_UPLOAD_TOKEN }}
-        run: |
-          [[ -n "${TWINE_PASSWORD}" ]] || exit 1
-          python -m twine upload --repository testpypi dist/*
+      - name: Publish to TestPyPI
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          user: __token__
+          password: ${{ secrets.TESTPYPI_UPLOAD_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+          verbose: true
+          print_hash: true
+          skip_existing: true
 
       - name: Publish to PyPI
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          TWINE_USERNAME: "__token__"
-          TWINE_PASSWORD: ${{ secrets.PYPI_UPLOAD_TOKEN }}
-        run: |
-          [[ -n "${TWINE_PASSWORD}" ]] || exit 1
-          python -m twine upload --repository pypi dist/*
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        uses: pypa/gh-action-pypi-publish@v1.5.0
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_UPLOAD_TOKEN }}
+          verbose: true
+          print_hash: true
+          skip_existing: true
