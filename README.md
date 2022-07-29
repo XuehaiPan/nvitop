@@ -1005,6 +1005,8 @@ devices_by_used_memory = sorted(Device.all(), key=Device.memory_used, reverse=Tr
 devices_by_free_memory = sorted(Device.all(), key=Device.memory_free, reverse=True)  # please add `memory_free != 'N/A'` checks if sort in descending order here
 ```
 
+See [`nvitop.NaType`](https://nvitop.readthedocs.io/en/latest/apis/index.html#nvitop.NaType) documentation for more details.
+
 ##### Process
 
 ```python

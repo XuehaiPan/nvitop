@@ -11,7 +11,7 @@ import math
 import re
 import sys
 import time
-from typing import Any, Callable, Iterable, Optional, Union
+from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
 from psutil import WINDOWS
 
@@ -98,7 +98,12 @@ def colored(
 
 
 class NaType(str):
-    """A singleton (:const:`str: 'N/A'`) class represents a not applicable value."""
+    """A singleton (:const:`str: 'N/A'`) class represents a not applicable value.
+
+    The :const:`NA` instance behaves like a :class:`str` instance (:const:`'N/A'`) when doing string
+    manipulation (e.g. concatenation). For arithmetic operations, for example :code:`NA / 1024 / 1024`,
+    it acts like the :data:`math.nan`.
+    """
 
     def __new__(cls) -> 'NaType':
         """Gets the singleton instance (:const:`nvitop.NA`)."""
@@ -108,7 +113,7 @@ class NaType(str):
         return cls._instance
 
     def __bool__(self) -> bool:
-        """Converts :const:`NA` to :class:`bool`.
+        """Converts :const:`NA` to :class:`bool`. Returns :data:`False`.
 
         >>> bool(NA)
         False
@@ -117,7 +122,7 @@ class NaType(str):
         return False
 
     def __int__(self) -> int:
-        """Converts :const:`NA` to :class:`int`.
+        """Converts :const:`NA` to :class:`int`. Returns :const:`0`.
 
         >>> int(NA)
         0
@@ -126,7 +131,7 @@ class NaType(str):
         return 0
 
     def __float__(self) -> float:
-        """Converts :const:`NA` to :class:`float`.
+        """Converts :const:`NA` to :class:`float`. Returns :data:`math.nan`.
 
         >>> float(NA)
         nan
@@ -135,6 +140,261 @@ class NaType(str):
         """
 
         return math.nan
+
+    def __add__(self, other: object) -> Union[str, float]:
+        """:const:`nvitop.NA` + other: Returns :data:`math.nan` if the operand is a number or uses
+        string concatenation if the operand is a string. A special case is when the operand is
+        :const:`nvitop.NA` itself, the result is :data:`math.nan` instead of :const:`'N/AN/A'`.
+
+        >>> NA + 'str'
+        'N/Astr'
+        >>> NA + NA
+        nan
+        >>> NA + 1
+        nan
+        >>> NA + 1.0
+        nan
+        """
+
+        if isinstance(other, (int, float)) or other is NA:
+            return float(self) + other
+        return super().__add__(other)
+
+    def __radd__(self, other: object) -> Union[str, float]:
+        """other + :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+
+        >>> 'str' + NA
+        'strN/A'
+        >>> 1 + NA
+        nan
+        >>> 1.0 + NA
+        nan
+        """
+
+        if isinstance(other, (int, float)):
+            return other + float(self)
+        return NotImplemented
+
+    def __sub__(self, other: object) -> float:
+        """:const:`nvitop.NA` - other: Returns :data:`math.nan` if the operand is a number.
+
+        >>> NA - 'str'
+        TypeError: unsupported operand type(s) for -: 'NaType' and 'str'
+        >>> NA - NA
+        'N/AN/A'
+        >>> NA + 1
+        nan
+        >>> NA + 1.0
+        nan
+        """
+
+        if isinstance(other, (int, float)) or other is NA:
+            return float(self) - other
+        return NotImplemented
+
+    def __rsub__(self, other: object) -> float:
+        """other - :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+
+        >>> 'str' - NA
+        TypeError: unsupported operand type(s) for -: 'str' and 'NaType'
+        >>> 1 - NA
+        nan
+        >>> 1.0 - NA
+        nan
+        """
+
+        if isinstance(other, (int, float)):
+            return other - float(self)
+        return NotImplemented
+
+    def __mul__(self, other: object) -> float:
+        """:const:`nvitop.NA` * other: Returns :data:`math.nan` if the operand is a number. A special
+        case is when the operand is :const:`nvitop.NA` itself, the result is also :data:`math.nan`.
+
+        >>> NA * 1024
+        nan
+        >>> NA * 1024.0
+        nan
+        >>> NA * NA
+        nan
+        """
+
+        if isinstance(other, (int, float)) or other is NA:
+            return float(self) * other
+        return NotImplemented
+
+    def __rmul__(self, other: object) -> float:
+        """other * :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+
+        >>> 1024 * NA
+        nan
+        >>> 1024.0 * NA
+        nan
+        """
+
+        if isinstance(other, (int, float)):
+            return other * float(self)
+        return NotImplemented
+
+    def __truediv__(self, other: object) -> float:
+        """:const:`nvitop.NA` / other: Returns :data:`math.nan` if the operand is a number.
+
+        >>> NA / 1024
+        nan
+        >>> NA / 1024.0
+        nan
+        >>> NA / 0
+        ZeroDivisionError: float division by zero
+        >>> NA / 0.0
+        ZeroDivisionError: float division by zero
+        """
+
+        if isinstance(other, (int, float)):
+            return float(self) / other
+        return NotImplemented
+
+    def __rtruediv__(self, other: object) -> float:
+        """other / :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+
+        >>> 1024 / NA
+        nan
+        >>> 1024.0 / NA
+        nan
+        """
+
+        if isinstance(other, (int, float)):
+            return other / float(self)
+        return NotImplemented
+
+    def __floordiv__(self, other: object) -> float:
+        """:const:`nvitop.NA` // other: Returns :data:`math.nan` if the operand is a number.
+
+        >>> NA // 1024
+        nan
+        >>> NA // 1024.0
+        nan
+        >>> NA / 0
+        ZeroDivisionError: float division by zero
+        >>> NA / 0.0
+        ZeroDivisionError: float division by zero
+        """
+
+        if isinstance(other, (int, float)):
+            return float(self) // other
+        return NotImplemented
+
+    def __rfloordiv__(self, other: object) -> float:
+        """other // :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+
+        >>> 1024 // NA
+        nan
+        >>> 1024.0 // NA
+        nan
+        """
+
+        if isinstance(other, (int, float)):
+            return other // float(self)
+        return NotImplemented
+
+    def __mod__(self, other: object) -> float:
+        """:const:`nvitop.NA` % other: Returns :data:`math.nan` if the operand is a number.
+
+        >>> NA % 1024
+        nan
+        >>> NA % 1024.0
+        nan
+        >>> NA % 0
+        ZeroDivisionError: float modulo
+        >>> NA % 0.0
+        ZeroDivisionError: float modulo
+        """
+
+        if isinstance(other, (int, float)):
+            return float(self) % other
+        return NotImplemented
+
+    def __rmod__(self, other: object) -> float:
+        """other % :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+
+        >>> 1024 % NA
+        nan
+        >>> 1024.0 % NA
+        nan
+        """
+
+        if isinstance(other, (int, float)):
+            return other % float(self)
+        return NotImplemented
+
+    def __divmod__(self, other: object) -> Tuple[float, float]:
+        """divmod(:const:`nvitop.NA`, other): The pair (:const:`nvitop.NA` // other, :const:`nvitop.NA` % other).
+
+        >>> divmod(NA, 1024)
+        (nan, nan)
+        >>> divmod(NA, 1024.0)
+        (nan, nan)
+        >>> divmod(NA, 0)
+        ZeroDivisionError: float floor division by zero
+        >>> divmod(NA, 0.0)
+        ZeroDivisionError: float floor division by zero
+        """
+
+        return (self // other, self % other)
+
+    def __rdivmod__(self, other: object) -> Tuple[float, float]:
+        """divmod(other, :const:`nvitop.NA): The pair (other // :const:`nvitop.NA`, other % :const:`nvitop.NA`).
+
+        >>> divmod(1024, NA)
+        (nan, nan)
+        >>> divmod(1024.0, NA)
+        (nan, nan)
+        """
+
+        return (other // self, other % self)
+
+    def __pos__(self) -> float:
+        """+:const:`nvitop.NA`: Returns :data:`math.nan`.
+
+        >>> +NA
+        nan
+        """
+
+        return +float(self)
+
+    def __neg__(self) -> float:
+        """+:const:`nvitop.NA`: Returns :data:`math.nan`.
+
+        >>> -NA
+        nan
+        """
+
+        return -float(self)
+
+    def __abs__(self) -> float:
+        """abs(NA): Returns :data:`math.nan`.
+
+        >>> abs(NA)
+        nan
+        """
+
+        return abs(float(self))
+
+    def __round__(self, ndigits: Optional[int] = None) -> Union[int, float]:
+        """Rounds :const:`nvitop.NA` to ``ndigits`` decimal places, defaulting to :const:`0`.
+
+        If ``ndigits`` is omitted or :data:`None` or :const:`0`, returns :const:`0`, otherwise returns :data:`math.nan`.
+
+        >>> round(NA)
+        0
+        >>> round(NA, 0)
+        0
+        >>> round(NA, 1)
+        nan
+        """
+
+        if ndigits is None or ndigits == 0:
+            return int(self)
+        return round(float(self), ndigits)
 
     def __lt__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
