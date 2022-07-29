@@ -451,6 +451,13 @@ index, memory.free [MiB]
 1, 11018 MiB
 index, memory.free [MiB]
 0, 11018 MiB
+
+# Normalize the `CUDA_VISIBLE_DEVICES` environment variable (e.g. convert UUIDs to indices or get full UUIDs for an abbreviated form)
+$ nvisel -i "GPU-18ef14e9,GPU-849d5a8d" -S
+5,6
+$ nvisel -i "GPU-18ef14e9,GPU-849d5a8d" -S -O uuid --newline
+GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1
+GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794
 ```
 
 You can also integrate `nvisel` into your training script like this:
@@ -468,11 +475,13 @@ os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
 Type `nvisel --help` for more command options:
 
 ```text
-usage: nvisel [--help] [--version] [--inherit] [--account-as-free [USERNAME ...]]
+usage: nvisel [--help] [--version]
+              [--inherit [CUDA_VISIBLE_DEVICES]] [--account-as-free [USERNAME ...]]
               [--min-count N] [--max-count N] [--count N]
               [--min-free-memory SIZE] [--min-total-memory SIZE]
               [--max-gpu-utilization RATE] [--max-memory-utilization RATE]
-              [--tolerance TOL] [--format FORMAT] [--sep SEP | --newline | --null]
+              [--tolerance TOL]
+              [--format FORMAT] [--sep SEP | --newline | --null] [--no-sort]
 
 CUDA visible devices selection tool.
 
@@ -481,8 +490,10 @@ optional arguments:
   --version, -V         Show nvisel's version number and exit.
 
 constraints:
-  --inherit             Inherit the current `CUDA_VISIBLE_DEVICES` environment variable.
-                        This means selecting a subset of the currently CUDA-visible devices.
+  --inherit [CUDA_VISIBLE_DEVICES], -i [CUDA_VISIBLE_DEVICES]
+                        Inherit the given `CUDA_VISIBLE_DEVICES`. If the argument is omitted, use the
+                        value from the environment. This means selecting a subset of the currently
+                        CUDA-visible devices.
   --account-as-free [USERNAME ...]
                         Account the used GPU memory of the given users as free memory.
                         If this option is specified but without argument, `$USER` will be used.
@@ -517,6 +528,7 @@ formatting:
   --newline             Use newline character as separator for the output, equivalent to `--sep=$'\n'`.
   --null, -0            Use null character ('\x00') as separator for the output. This option corresponds
                         to the `-0` option of `xargs`.
+  --no-sort, -S         Do not sort the device by memory usage and GPU utilization.
 ```
 
 ------

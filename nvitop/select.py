@@ -25,6 +25,9 @@ Command line usage:
     # Pipe output to other shell utilities
     nvisel -0 -O uuid -c 2 -f 4GiB | xargs -0 -I {} nvidia-smi --id={} --query-gpu=index,memory.free --format=csv
 
+    # Normalize the `CUDA_VISIBLE_DEVICES` environment variable (e.g. convert UUIDs to indices or get full UUIDs for an abbreviated form)
+    nvisel -i -S
+
 Python API:
 
 .. code-block:: python
@@ -36,12 +39,13 @@ Python API:
     os.environ['CUDA_VISIBLE_DEVICES'] = ','.join(
         select_devices(format='uuid', min_count=4, min_free_memory='8GiB')
     )
-"""
+"""  # pylint: disable=line-too-long
 
 # pylint: disable=missing-function-docstring
 
 import argparse
 import math
+import os
 import sys
 import warnings
 from typing import Iterable, List, Optional, Tuple, Union
@@ -68,6 +72,7 @@ def select_devices(
     max_memory_utilization: Optional[int] = None,  # in percentage
     tolerance: int = 0,  # in percentage
     free_accounts: List[str] = None,
+    sort: bool = True,
     **kwargs,  # pylint: disable=unused-argument
 ) -> Union[List[int], List[Tuple[int, int]], List[str]]:
     """Selected a subset of devices satisfying the specified criteria. Returns a list of the device
@@ -116,6 +121,8 @@ def select_devices(
             The tolerance rate (*in percentage*) to loose the constraints.
         free_accounts (List[str]):
             A list of accounts whose used GPU memory needs be considered as free memory.
+        sort (bool):
+            If :data:`True`, sort the selected devices by memory usage and GPU utilization.
     """
 
     assert format in ('index', 'uuid', 'device')
@@ -142,10 +149,6 @@ def select_devices(
         available_devices.extend(map(lambda device: device.as_snapshot(), device.to_leaf_devices()))
     for device in available_devices:
         device.loosen_constraints = 0
-        for key in device:
-            value = device[key]
-            if not libnvml.nvmlCheckReturn(value):
-                device[key] = float(value)  # convert `NA`` to `math.nan`
 
     if len(free_accounts) > 0:
         with GpuProcess.failsafe():
@@ -212,17 +215,18 @@ def select_devices(
             available_devices,
         )
 
-    available_devices = sorted(
-        available_devices,
-        key=lambda device: (
-            device.loosen_constraints,
-            (not math.isnan(device.memory_free), -device.memory_free),  # descending
-            (not math.isnan(device.memory_used), -device.memory_used),  # descending
-            (not math.isnan(device.gpu_utilization), device.gpu_utilization),  # ascending
-            (not math.isnan(device.memory_utilization), device.memory_utilization),  # ascending
-            -device.physical_index,  # descending to keep <GPU 0> free
-        ),
-    )  # type: List[DeviceSnapshot]
+    available_devices = list(available_devices)
+    if sort:
+        available_devices.sort(
+            key=lambda device: (
+                device.loosen_constraints,
+                (not math.isnan(device.memory_free), -device.memory_free),  # descending
+                (not math.isnan(device.memory_used), -device.memory_used),  # descending
+                (not math.isnan(device.gpu_utilization), device.gpu_utilization),  # ascending
+                (not math.isnan(device.memory_utilization), device.memory_utilization),  # ascending
+                -device.physical_index,  # descending to keep <GPU 0> free
+            )
+        )
 
     if any(device.is_mig_device for device in available_devices):  # found MIG devices!
         if min_count >= 2:
@@ -286,11 +290,16 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     constraints = parser.add_argument_group('constraints')
     constraints.add_argument(
         '--inherit',
+        '-i',
         dest='inherit',
-        action='store_true',
+        type=str,
+        default=argparse.SUPPRESS,
+        nargs='?',
+        metavar='CUDA_VISIBLE_DEVICES',
         help=(
-            'Inherit the current `CUDA_VISIBLE_DEVICES` environment variable.\n'
-            'This means selecting a subset of the currently CUDA-visible devices.'
+            'Inherit the given `CUDA_VISIBLE_DEVICES`. If the argument is omitted, use the\n'
+            'value from the environment. This means selecting a subset of the currently\n'
+            'CUDA-visible devices.'
         ),
     )
     constraints.add_argument(
@@ -436,6 +445,13 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
             'to the `-0` option of `xargs`.'
         ),
     )
+    formatter.add_argument(
+        '--no-sort',
+        '-S',
+        dest='sort',
+        action='store_false',
+        help='Do not sort the device by memory usage and GPU utilization.',
+    )
 
     args = parser.parse_args()
 
@@ -459,7 +475,10 @@ def main():
     args = parse_arguments()
 
     try:
-        if args.inherit:
+        if hasattr(args, 'inherit'):
+            if args.inherit is not None:
+                os.environ['CUDA_VISIBLE_DEVICES'] = args.inherit
+
             devices = Device.from_cuda_visible_devices()
         else:
             devices = Device.all()
