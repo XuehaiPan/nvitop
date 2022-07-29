@@ -17,6 +17,14 @@ on:
       - published
   # Allow to trigger the workflow manually
   workflow_dispatch:
+    inputs:
+      task:
+        description: "Task type"
+        type: choice
+        options:
+          - build-only
+          - build-and-publish
+        required: true
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -28,24 +36,23 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository == 'XuehaiPan/nvitop' && (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/'))
-    timeout-minutes: 45
+    if: github.repository == 'XuehaiPan/nvitop'
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           submodules: "recursive"
-          fetch-depth: 1
+          fetch-depth: 0
 
-      - name: Set up Python 3.9
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.5 - 3.10"
           update-environment: true
 
       - name: Upgrade build dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel build
+        run: python -m pip install --upgrade pip setuptools wheel build
 
       - name: Quick test
         run: |
@@ -59,23 +66,41 @@ jobs:
           )
 
       - name: Set __release__
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
           sed -i -E 's/^__release__\s*=.*$/__release__ = True/' nvitop/version.py
 
+      - name: Print version
+        run: python setup.py --version
+
       - name: Build sdist and wheels
-        run: |
-          echo "Building wheel with Python: $(type -P python) ($(python --version))"
-          python -m build
+        run: python -m build
 
       - name: List built sdist and wheels
-        run: |
-          if [[ -n "$(find dist -maxdepth 0 -not -empty -print 2>/dev/null)" ]]; then
-            echo "Built sdist and wheels:"
-            ls -lh dist/
-          else
-            echo "No sdist and wheels are built."
-            exit 1
-          fi
+        run: ls -lh dist/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: |
+      github.repository == 'XuehaiPan/nvitop' &&
+      (github.event_name != 'workflow_dispatch' || github.event.inputs.task == 'build-and-publish') &&
+      (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/'))
+    timeout-minutes: 15
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          python-version: "3.5 - 3.10"
+          update-environment: true
 
       - name: Check consistency between the package version and release tag
         if: startsWith(github.ref, 'refs/tags/')
@@ -86,6 +111,14 @@ jobs:
             echo "package ver. (${PACKAGE_VER}) != release tag. (${RELEASE_TAG})"
             exit 1
           fi
+
+      - name: Download built sdist and wheels
+        uses: actions/download-artifact@v3
+        with:
+          # unpacks default artifact into dist/
+          # if `name: artifact` is omitted, the action will create extra parent dir
+          name: artifact
+          path: dist
 
       - name: Publish to TestPyPI
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'

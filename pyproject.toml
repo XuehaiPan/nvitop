@@ -7,11 +7,18 @@ name = "nvitop"
 description = "An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."
 readme = "README.md"
 requires-python = ">= 3.5"
-authors = [
-    {name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn"}
+authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
+license = { text = "GNU General Public License, version 3 (GPLv3)" }
+keywords = [
+    "nvidia",
+    "nvidia-smi",
+    "NVIDIA",
+    "NVML",
+    "CUDA",
+    "GPU",
+    "top",
+    "monitoring",
 ]
-license = {file = "LICENSE"}
-keywords = ["nvidia", "nvidia-smi", "NVIDIA", "NVML", "CUDA", "GPU", "top", "monitoring"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -44,10 +51,7 @@ dependencies = [
     "colorama >= 0.4.0; platform_system == 'Windows'",
     "windows-curses >= 2.2.0; platform_system == 'Windows'",
 ]
-dynamic = [
-    "version",
-    "optional-dependencies",
-]
+dynamic = ["version", "optional-dependencies"]
 
 [project.scripts]
 nvitop = "nvitop.cli:main"
