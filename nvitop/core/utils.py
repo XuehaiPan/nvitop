@@ -108,17 +108,23 @@ class NaType(str):
 
         >>> NA
         'N/A'
+
         >>> 'memory usage: {}'.format(NA)  # NA is an instance of `str`
         'memory usage: N/A'
-        >>> NA + 'str'
+        >>> NA.lower()                     # NA is an instance of `str`
+        'n/a'
+        >>> NA.ljust(5)                    # NA is an instance of `str`
+        'N/A  '
+        >>> NA + 'str'                     # string contamination if the operand is a string
         'N/Astr'
-        >>> float(NA)           # explicit conversion to float (`math.nan`)
+
+        >>> float(NA)                      # explicit conversion to float (`math.nan`)
         nan
-        >>> NA + 1              # auto-casting to float
+        >>> NA + 1                         # auto-casting to float if the operand is a number
         nan
-        >>> NA * 1024           # auto-casting to float
+        >>> NA * 1024                      # auto-casting to float if the operand is a number
         nan
-        >>> NA / (1024 * 1024)  # auto-casting to float
+        >>> NA / (1024 * 1024)             # auto-casting to float if the operand is a number
         nan
     """
 
