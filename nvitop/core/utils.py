@@ -103,6 +103,23 @@ class NaType(str):
     The :const:`NA` instance behaves like a :class:`str` instance (:const:`'N/A'`) when doing string
     manipulation (e.g. concatenation). For arithmetic operations, for example :code:`NA / 1024 / 1024`,
     it acts like the :data:`math.nan`.
+
+    Examples:
+
+        >>> NA
+        'N/A'
+        >>> 'memory usage: {}'.format(NA)  # NA is an instance of `str`
+        'memory usage: N/A'
+        >>> NA + 'str'
+        'N/Astr'
+        >>> float(NA)           # explicit conversion to float (`math.nan`)
+        nan
+        >>> NA + 1              # auto-casting to float
+        nan
+        >>> NA * 1024           # auto-casting to float
+        nan
+        >>> NA / (1024 * 1024)  # auto-casting to float
+        nan
     """
 
     def __new__(cls) -> 'NaType':
@@ -382,17 +399,17 @@ class NaType(str):
     def __round__(self, ndigits: Optional[int] = None) -> Union[int, float]:
         """Rounds :const:`nvitop.NA` to ``ndigits`` decimal places, defaulting to :const:`0`.
 
-        If ``ndigits`` is omitted or :data:`None` or :const:`0`, returns :const:`0`, otherwise returns :data:`math.nan`.
+        If ``ndigits`` is omitted or :data:`None`, returns :const:`0`, otherwise returns :data:`math.nan`.
 
         >>> round(NA)
         0
         >>> round(NA, 0)
-        0
+        nan
         >>> round(NA, 1)
         nan
         """
 
-        if ndigits is None or ndigits == 0:
+        if ndigits is None:
             return int(self)
         return round(float(self), ndigits)
 

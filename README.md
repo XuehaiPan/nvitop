@@ -991,7 +991,27 @@ In [18]: nvidia1_snapshot.bar1_memory_info  # snapshot will automatically retrie
 Out[18]: MemoryInfo(total=268435456, free=257622016, used=10813440)
 ```
 
-**NOTE:** Some entry values may be `'N/A'` (type: `NaType`, subclass of `str`) when the corresponding resources are not applicable. You can use `entry != 'N/A'` conditions to avoid exceptions. It's safe to use `float(entry)` for numbers while `NaType` will be converted to `math.nan`. For example:
+**NOTE:** Some entry values may be `'N/A'` (type: `NaType`, subclass of `str`) when the corresponding resources are not applicable. The `NA` value supports arithmetic operations. It acts like `math.nan: float`.
+
+```python
+>>> from nvitop import NA
+>>> NA
+'N/A'
+>>> 'memory usage: {}'.format(NA)  # NA is an instance of `str`
+'memory usage: N/A'
+>>> NA + 'str'
+'N/Astr'
+>>> float(NA)           # explicit conversion to float (`math.nan`)
+nan
+>>> NA + 1              # auto-casting to float
+nan
+>>> NA * 1024           # auto-casting to float
+nan
+>>> NA / (1024 * 1024)  # auto-casting to float
+nan
+```
+
+You can use `entry != 'N/A'` conditions to avoid exceptions. It's safe to use `float(entry)` for numbers while `NaType` will be converted to `math.nan`. For example:
 
 ```python
 memory_used: Union[int, NaType] = device.memory_used()            # memory usage in bytes or `'N/A'`
