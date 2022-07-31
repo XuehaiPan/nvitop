@@ -23,11 +23,23 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Set up Python 3.9
+      - name: Set up Python
+        id: py
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.5 - 3.10"
           update-environment: true
+
+      - name: Set up Python 3.5
+        id: py35
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.5"
+          update-environment: false
+
+      - name: Check syntax (Python 3.5)
+        run: |
+          "${{ steps.py35.outputs.python-path }}" -m compileall nvitop
 
       - name: Upgrade pip
         run: |

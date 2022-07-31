@@ -73,7 +73,8 @@ def select_devices(
     tolerance: int = 0,  # in percentage
     free_accounts: List[str] = None,
     sort: bool = True,
-    **kwargs,  # pylint: disable=unused-argument
+    # pylint: disable-next=unused-argument
+    **kwargs  # fmt: skip
 ) -> Union[List[int], List[Tuple[int, int]], List[str]]:
     """Selected a subset of devices satisfying the specified criteria. Returns a list of the device
     identifiers.
