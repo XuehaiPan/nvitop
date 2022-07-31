@@ -69,7 +69,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 - **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
 - **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop), limited support with command `watch -c`)
-  - bar plots and history graphs
+  - bar charts and history graphs
   - process sorting
   - process filtering
   - send signals to processes with a keystroke
@@ -278,7 +278,7 @@ Type `nvitop --help` for more command options:
 
 ```text
 usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
-              [--interval SEC] [--ascii] [--force-color] [--light]
+              [--interval SEC] [--ascii] [--colorful] [--force-color] [--light]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
               [--user [USERNAME ...]] [--pid PID [PID ...]]
@@ -298,6 +298,10 @@ optional arguments:
                         Use ASCII characters only, which is useful for terminals without Unicode support.
 
 coloring:
+  --colorful            Use gradient colors to get spectrum-like bar charts. This option is only available
+                        when the terminal supports 256 colors. You may need to set environment variable
+                        `TERM="xterm-256color"`. Note that the terminal multiplexer, such as `tmux`, may
+                        override the `TREM` variable.
   --force-color         Force colorize even when `stdout` is not a TTY terminal.
   --light               Tweak visual results for light theme terminals in monitor mode.
                         Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.

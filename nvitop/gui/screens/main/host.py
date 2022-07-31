@@ -296,26 +296,17 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         attr='dim',
                     )
 
+        self.color(fg='cyan')
         for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
             self.addstr(y, self.x + 1, line)
-            self.color_at(y, self.x + 1, width=77, fg='cyan')
-        self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
-        self.addstr(
-            self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history.last_value_string())
-        )
 
+        self.color(fg='magenta')
         for y, line in enumerate(host.memory_percent.history.graph, start=self.y + 6):
             self.addstr(y, self.x + 1, line)
-            self.color_at(y, self.x + 1, width=77, fg='magenta')
-        self.addstr(
-            self.y + 9, self.x + 1, ' {} '.format(host.memory_percent.history.last_value_string())
-        )
+
+        self.color(fg='blue')
         for y, line in enumerate(host.swap_percent.history.graph, start=self.y + 10):
             self.addstr(y, self.x + 1, line)
-            self.color_at(y, self.x + 1, width=77, fg='blue')
-        self.addstr(
-            self.y + 10, self.x + 1, ' {} '.format(host.swap_percent.history.last_value_string())
-        )
 
         if self.width >= 100:
             if self.device_count > 1 and self.parent.selected.is_set():
@@ -326,20 +317,36 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 memory_percent = self.average_memory_percent
                 gpu_utilization = self.average_gpu_utilization
 
-            memory_display_color = Device.color_of(memory_percent.last_value, type='memory')
-            gpu_display_color = Device.color_of(gpu_utilization.last_value, type='gpu')
+            if self.TERM_256COLOR:
+                for i, (y, line) in enumerate(enumerate(memory_percent.graph, start=self.y)):
+                    self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
 
-            for y, line in enumerate(memory_percent.graph, start=self.y):
-                self.addstr(y, self.x + 79, line)
-                self.color_at(y, self.x + 79, width=remaining_width - 1, fg=memory_display_color)
-            self.addstr(self.y, self.x + 79, ' {} '.format(memory_percent.last_value_string()))
+                for i, (y, line) in enumerate(enumerate(gpu_utilization.graph, start=self.y + 6)):
+                    self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=i / 4.0))
+            else:
+                self.color(fg=Device.color_of(memory_percent.last_value, type='memory'))
+                for y, line in enumerate(memory_percent.graph, start=self.y):
+                    self.addstr(y, self.x + 79, line)
 
-            for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
-                self.addstr(y, self.x + 79, line)
-                self.color_at(y, self.x + 79, width=remaining_width - 1, fg=gpu_display_color)
+                self.color(fg=Device.color_of(gpu_utilization.last_value, type='gpu'))
+                for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
+                    self.addstr(y, self.x + 79, line)
+
+            self.color_reset()
+            self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
+            self.addstr(self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history))
             self.addstr(
-                self.y + 10, self.x + 79, ' {} '.format(gpu_utilization.last_value_string())
+                self.y + 9,
+                self.x + 1,
+                ' {} '.format(host.memory_percent.history),
             )
+            self.addstr(
+                self.y + 10,
+                self.x + 1,
+                ' {} '.format(host.swap_percent.history),
+            )
+            self.addstr(self.y, self.x + 79, ' {} '.format(memory_percent))
+            self.addstr(self.y + 10, self.x + 79, ' {} '.format(gpu_utilization))
 
     def destroy(self):
         super().destroy()

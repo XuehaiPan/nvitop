@@ -88,6 +88,17 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     coloring = parser.add_argument_group('coloring')
     coloring.add_argument(
+        '--colorful',
+        dest='colorful',
+        action='store_true',
+        help=(
+            'Use gradient colors to get spectrum-like bar charts. This option is only available\n'
+            'when the terminal supports 256 colors. You may need to set environment variable\n'
+            '`TERM="xterm-256color"`. Note that the terminal multiplexer, such as `tmux`, may\n'
+            'override the `TREM` variable.'
+        ),
+    )
+    coloring.add_argument(
         '--force-color',
         dest='force_color',
         action='store_true',
@@ -298,7 +309,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
     top = None
     if hasattr(args, 'monitor') and len(devices) > 0:
         try:
-            with libcurses(light_theme=args.light) as win:
+            with libcurses(colorful=args.colorful, light_theme=args.light) as win:
                 top = Top(
                     devices,
                     filters,

@@ -3,6 +3,7 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+import colorsys
 import contextlib
 import curses
 import locale
@@ -14,6 +15,27 @@ LIGHT_THEME = False
 DEFAULT_FOREGROUND = curses.COLOR_WHITE
 DEFAULT_BACKGROUND = curses.COLOR_BLACK
 COLOR_PAIRS = {None: 0}
+TRUE_COLORS = dict(
+    [
+        ('black', 0),
+        ('red', 1),
+        ('green', 2),
+        ('yellow', 3),
+        ('blue', 4),
+        ('magenta', 5),
+        ('cyan', 6),
+        ('white', 7),
+        ('bright black', 8),
+        ('bright red', 9),
+        ('bright green', 10),
+        ('bright yellow', 11),
+        ('bright blue', 12),
+        ('bright magenta', 13),
+        ('bright cyan', 14),
+        ('bright white', 15),
+    ]
+    + [('preserved {:02d}'.format(i), i) for i in range(16, 48)]
+)
 
 
 def _init_color_theme(light_theme=False):
@@ -30,6 +52,24 @@ def _init_color_theme(light_theme=False):
         DEFAULT_BACKGROUND = curses.COLOR_BLACK
 
 
+def _colormap(x, levels=200):
+    # pylint: disable=invalid-name
+    h = 0.5 * (1.0 - x) - 0.15
+    h = (round(h * levels) / levels) % 1.0
+    r, g, b = colorsys.hsv_to_rgb(h, 0.7, 0.8)
+    return (round(1000.0 * r), round(1000.0 * g), round(1000.0 * b))
+
+
+def _get_true_color(rgb):
+    if rgb not in TRUE_COLORS:
+        try:
+            curses.init_color(len(TRUE_COLORS), *rgb)
+        except curses.error:
+            return -1
+        TRUE_COLORS[rgb] = len(TRUE_COLORS)
+    return TRUE_COLORS[rgb]
+
+
 def _get_color(fg, bg):
     """Returns the curses color pair for the given fg/bg combination."""
 
@@ -37,8 +77,16 @@ def _get_color(fg, bg):
 
     if isinstance(fg, str):
         fg = getattr(curses, 'COLOR_{}'.format(fg.upper()), -1)
+    elif isinstance(fg, tuple):
+        fg = _get_true_color(fg)
+    elif isinstance(fg, float):
+        fg = _get_true_color(_colormap(fg))
     if isinstance(bg, str):
         bg = getattr(curses, 'COLOR_{}'.format(bg.upper()), -1)
+    elif isinstance(bg, tuple):
+        bg = _get_true_color(bg)
+    elif isinstance(bg, float):
+        bg = _get_true_color(_colormap(bg))
 
     key = (fg, bg)
     if key not in COLOR_PAIRS:
@@ -64,23 +112,6 @@ def _get_color(fg, bg):
     return COLOR_PAIRS[key]
 
 
-def _get_color_attr(fg=-1, bg=-1, attr=0):
-    """Returns the curses attribute for the given fg/bg/attr combination."""
-    if isinstance(attr, str):
-        attr_strings = map(str.strip, attr.split('|'))
-        attr = 0
-        for s in attr_strings:
-            attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
-
-    if LIGHT_THEME:  # tweak for light themes
-        if attr & curses.A_REVERSE != 0 and bg == -1 and fg not in (DEFAULT_FOREGROUND, -1):
-            bg = DEFAULT_FOREGROUND
-
-    if fg == -1 and bg == -1:
-        return attr
-    return curses.color_pair(_get_color(fg, bg)) | attr
-
-
 def setlocale_utf8():
     for code in ('C.UTF-8', 'en_US.UTF-8', '', 'C'):
         try:
@@ -95,7 +126,7 @@ def setlocale_utf8():
 
 
 @contextlib.contextmanager
-def libcurses(light_theme=False):
+def libcurses(colorful=False, light_theme=False):
     os.environ.setdefault('ESCDELAY', '25')
     setlocale_utf8()
 
@@ -118,6 +149,12 @@ def libcurses(light_theme=False):
         curses.use_default_colors()
     except curses.error:
         pass
+
+    if colorful:
+        try:
+            CursesShortcuts.TERM_256COLOR = curses.COLORS >= 256
+        except AttributeError:
+            pass
 
     # Push a Ctrl+C (ascii value 3) to the curses getch stack
     def interrupt_handler(signalnum, frame):  # pylint: disable=unused-argument
@@ -146,9 +183,10 @@ class CursesShortcuts:
         '═' + '─╴' + '╒╤╕╪╘╧╛┌┬┐┼└┴┘' + '│╞╡├┤▏▎▍▌▋▊▉█░' + '▲▼' + '␤',
         '=' + '--' + '++++++++++++++' + '||||||||||||||' + '^v' + '?',
     )
+    TERM_256COLOR = False
 
     def __init__(self):
-        self.win = None
+        self.win = None  # type: curses._CursesWindow
         self.ascii = False
 
     def addstr(self, *args, **kwargs):
@@ -189,24 +227,51 @@ class CursesShortcuts:
 
     def color(self, fg=-1, bg=-1, attr=0):
         """Change the colors from now on."""
-        self.set_fg_bg_attr(fg, bg, attr)
 
-    def color_at(self, y, x, width, *args, **kwargs):
-        """Change the colors at the specified position"""
-        try:
-            self.win.chgat(y, x, width, _get_color_attr(*args, **kwargs))
-        except curses.error:
-            pass
-
-    def set_fg_bg_attr(self, fg=-1, bg=-1, attr=0):
-        try:
-            self.win.attrset(_get_color_attr(fg, bg, attr))
-        except curses.error:
-            pass
+        return self.set_fg_bg_attr(fg, bg, attr)
 
     def color_reset(self):
         """Change the colors to the default colors"""
-        self.color()
+
+        return self.color()
+
+    def color_at(self, y, x, width, *args, **kwargs):
+        """Change the colors at the specified position"""
+
+        try:
+            self.win.chgat(y, x, width, self.get_fg_bg_attr(*args, **kwargs))
+        except curses.error:
+            pass
+
+    @staticmethod
+    def get_fg_bg_attr(fg=-1, bg=-1, attr=0):
+        """Returns the curses attribute for the given fg/bg/attr combination."""
+
+        if fg == -1 and bg == -1 and attr == 0:
+            return 0
+
+        if isinstance(attr, str):
+            attr_strings = map(str.strip, attr.split('|'))
+            attr = 0
+            for s in attr_strings:
+                attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
+
+        if LIGHT_THEME:  # tweak for light themes
+            if attr & curses.A_REVERSE != 0 and bg == -1 and fg not in (DEFAULT_FOREGROUND, -1):
+                bg = DEFAULT_FOREGROUND
+
+        if fg == -1 and bg == -1:
+            return attr
+        return curses.color_pair(_get_color(fg, bg)) | attr
+
+    def set_fg_bg_attr(self, fg=-1, bg=-1, attr=0):
+        try:
+            attr = self.get_fg_bg_attr(fg, bg, attr)
+            self.win.attrset(attr)
+        except curses.error:
+            return 0
+        else:
+            return attr
 
     def update_size(self, termsize=None):
         if termsize is None:

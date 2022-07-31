@@ -254,7 +254,8 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
+    def draw(self):
         self.color_reset()
 
         if self.need_redraw:
@@ -280,7 +281,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         y_start = self.y + len(formats) + 5
         prev_device_index = self.snapshots[0].tuple_index
-        for index, device in enumerate(self.snapshots):
+        for index, device in enumerate(self.snapshots):  # pylint: disable=too-many-nested-blocks
             if (
                 len(prev_device_index) != len(device.tuple_index)
                 or prev_device_index[0] != device.tuple_index[0]
@@ -306,7 +307,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             if draw_bars:
                 matrix = [
                     (
-                        0,
+                        self.x + 80,
                         y_start,
                         remaining_width - 3,
                         'MEM',
@@ -314,7 +315,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         device.memory_display_color,
                     ),
                     (
-                        0,
+                        self.x + 80,
                         y_start + 1,
                         remaining_width - 3,
                         'UTL',
@@ -328,7 +329,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         right_width = (remaining_width - 6) // 2 + 1
                         matrix = [
                             (
-                                0,
+                                self.x + 80,
                                 y_start,
                                 left_width,
                                 'MEM',
@@ -336,7 +337,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                                 device.memory_display_color,
                             ),
                             (
-                                left_width + 3,
+                                self.x + 80 + left_width + 3,
                                 y_start,
                                 right_width,
                                 'UTL',
@@ -358,11 +359,21 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 elif device.is_mig_device:
                     matrix.pop()
                 for x_offset, y, width, prefix, utilization, color in matrix:
-                    bar = make_bar(  # pylint: disable=disallowed-name
-                        prefix, utilization, width=width
-                    )
-                    self.addstr(y, self.x + 80 + x_offset, bar)
-                    self.color_at(y, self.x + 80 + x_offset, width=width, fg=color, attr=attr)
+                    # pylint: disable-next=disallowed-name
+                    bar = make_bar(prefix, utilization, width=width)
+                    self.addstr(y, x_offset, bar)
+                    if self.TERM_256COLOR:
+                        parts = bar.rstrip().split(' ')
+                        prefix_len = len(parts[0])
+                        bar_len = len(parts[1])
+                        full_bar_len = width - prefix_len - 5
+                        self.color_at(y, x_offset, width=width, fg=float(bar_len / full_bar_len))
+                        for i, x in enumerate(
+                            range(x_offset + prefix_len + 1, x_offset + prefix_len + 1 + bar_len)
+                        ):
+                            self.color_at(y, x, width=1, fg=float(i / full_bar_len))
+                    else:
+                        self.color_at(y, x_offset, width=width, fg=color, attr=attr)
 
             y_start += len(fmts)
             prev_device_index = device.tuple_index
