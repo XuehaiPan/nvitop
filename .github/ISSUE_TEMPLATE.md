@@ -4,7 +4,8 @@
 
   1. Was this issue already reported? Please do a quick search.
   2. Maybe the problem is solved in the current master branch already?
-     Simply clone nvitop's git repository and run ./nvitop.py to find out.
+     Simply clone nvitop's git repository and run `LOGLEVEL=DEBUG ./nvitop.py`
+     to find out.
   3. Provide all the relevant information, as outlined in this template.
      Feel free to remove any sections you don't need.
 -->

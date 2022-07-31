@@ -345,6 +345,7 @@ process filtering:
 | `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light` | `auto,plain,dark` |
 | `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                   | `10,75`           |
 | `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                   | `10,80`           |
+| `LOGLEVEL`                             | Log level for log messages                          | `DEBUG` , `INFO`, `WARNING`, ...                                        | `WARNING`         |
 
 For example:
 
