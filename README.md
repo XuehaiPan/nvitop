@@ -158,7 +158,7 @@ pip3 install .
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/178963038-a5cd4eb5-02a8-4456-966f-d5ff04eb44d8.png" alt="MIG Device Support">
   </br>
-  MIG Device Support
+  MIG Device Support.
   </br>
 </p>
 
@@ -233,6 +233,9 @@ $ nvitop -U  # useful for terminals without Unicode support
 
 # For light terminals
 $ nvitop --light
+
+# For spectrum-like bar charts (requires the terminal supports 256-color)
+$ nvitop --colorful
 ```
 
 You can configure the default monitor mode with the `NVITOP_MONITOR_MODE` environment variable (default `auto` if not set). See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
@@ -330,6 +333,12 @@ process filtering:
   --pid PID [PID ...], -p PID [PID ...]
                         Only show processes of the given PIDs.
 ```
+
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/182555606-8388e5a5-43a9-4990-90d4-46e45ac448a0.png" alt="Spectrum-like Bar Charts">
+  </br>
+  Spectrum-like bar charts (with option <code>--colorful</code>).
+</p>
 
 `nvitop` can accept the following environment variables for monitor mode:
 
