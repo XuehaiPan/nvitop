@@ -156,6 +156,8 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         except ValueError:
             return NA
 
+    __str__ = last_value_string
+
     def max_value_string(self):
         max_value = self.max_value
         if max_value >= self.baseline:

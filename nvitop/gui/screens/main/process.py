@@ -483,8 +483,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     )
                 else:
                     if self.selected.is_same_on_host(process):
-                        self.addstr(y, self.x + 1, '=')
-                        self.color_at(y, self.x + 1, width=1, attr='bold | blink')
+                        self.addstr(y, self.x + 1, '=', self.get_fg_bg_attr(attr='bold | blink'))
                     self.color_at(y, self.x + 2, width=3, fg=color)
                     if str(process.username) != USERNAME and not SUPERUSER:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')

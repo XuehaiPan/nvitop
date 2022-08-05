@@ -69,7 +69,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 - **Informative and fancy output**: show more information than `nvidia-smi` with colorized fancy box drawing.
 - **Monitor mode**: can run as a resource monitor, rather than print the results only once. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop), limited support with command `watch -c`)
-  - bar plots and history graphs
+  - bar charts and history graphs
   - process sorting
   - process filtering
   - send signals to processes with a keystroke
@@ -158,7 +158,7 @@ pip3 install .
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/178963038-a5cd4eb5-02a8-4456-966f-d5ff04eb44d8.png" alt="MIG Device Support">
   </br>
-  MIG Device Support
+  MIG Device Support.
   </br>
 </p>
 
@@ -233,6 +233,9 @@ $ nvitop -U  # useful for terminals without Unicode support
 
 # For light terminals
 $ nvitop --light
+
+# For spectrum-like bar charts (requires the terminal supports 256-color)
+$ nvitop --colorful
 ```
 
 You can configure the default monitor mode with the `NVITOP_MONITOR_MODE` environment variable (default `auto` if not set). See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
@@ -278,9 +281,10 @@ Type `nvitop --help` for more command options:
 
 ```text
 usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
-              [--interval SEC] [--ascii] [--force-color] [--light]
+              [--interval SEC] [--ascii] [--colorful] [--force-color] [--light]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--only idx [idx ...]] [--only-visible] [--compute] [--graphics]
+              [--only idx [idx ...]] [--only-visible]
+              [--compute] [--no-compute] [--graphics] [--no-graphics]
               [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
@@ -298,6 +302,10 @@ optional arguments:
                         Use ASCII characters only, which is useful for terminals without Unicode support.
 
 coloring:
+  --colorful            Use gradient colors to get spectrum-like bar charts. This option is only available
+                        when the terminal supports 256 colors. You may need to set environment variable
+                        `TERM="xterm-256color"`. Note that the terminal multiplexer, such as `tmux`, may
+                        override the `TREM` variable.
   --force-color         Force colorize even when `stdout` is not a TTY terminal.
   --light               Tweak visual results for light theme terminals in monitor mode.
                         Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.
@@ -317,12 +325,20 @@ device filtering:
 
 process filtering:
   --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
+  --no-compute, -C      Exclude GPU processes with the compute context. (type: 'G' only)
   --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
+  --no-graphics, -G     Exclude GPU processes with the graphics context. (type: 'C' only)
   --user [USERNAME ...], -u [USERNAME ...]
                         Only show processes of the given users (or `$USER` for no argument).
   --pid PID [PID ...], -p PID [PID ...]
                         Only show processes of the given PIDs.
 ```
+
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/182555606-8388e5a5-43a9-4990-90d4-46e45ac448a0.png" alt="Spectrum-like Bar Charts">
+  </br>
+  Spectrum-like bar charts (with option <code>--colorful</code>).
+</p>
 
 `nvitop` can accept the following environment variables for monitor mode:
 
