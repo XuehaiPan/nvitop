@@ -230,15 +230,12 @@ def select_devices(
         )
 
     if any(device.is_mig_device for device in available_devices):  # found MIG devices!
-        if min_count >= 2:
-            non_mig_devices = [device for device in available_devices if not device.is_mig_device]
-            mig_devices = [device for device in available_devices if device.is_mig_device]
-            if len(non_mig_devices) >= min_count or not available_devices[0].is_mig_device:
-                available_devices = non_mig_devices
-            else:
-                available_devices = mig_devices[:1]  # at most one MIG device is visible
-        # Check again
-        if any(device.is_mig_device for device in available_devices):  # found MIG devices!
+        non_mig_devices = [device for device in available_devices if not device.is_mig_device]
+        mig_devices = [device for device in available_devices if device.is_mig_device]
+        if len(non_mig_devices) >= min_count > 0 or not available_devices[0].is_mig_device:
+            available_devices = non_mig_devices
+        else:
+            available_devices = mig_devices[:1]  # at most one MIG device is visible
             if format == 'index' and not force_index:
                 format = 'uuid'
 
