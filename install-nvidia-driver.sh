@@ -411,11 +411,13 @@ else
 fi
 
 DM_SERVICES=()
-for dm in gdm3 lightdm; do
-	if service "${dm}" status &>/dev/null; then
-		DM_SERVICES+=("${dm}")
-	fi
-done
+if [[ -n "$(sudo lsof -t /dev/nvidia* 2>/dev/null || true)" ]]; then
+	for dm in gdm3 lightdm; do
+		if service "${dm}" status &>/dev/null; then
+			DM_SERVICES+=("${dm}")
+		fi
+	done
+fi
 
 if [[ "${#DM_SERVICES[@]}" -gt 0 ]]; then
 	if [[ "${#DM_SERVICES[@]}" -gt 1 ]]; then
