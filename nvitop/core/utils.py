@@ -612,6 +612,7 @@ def boolify(string: str, default: Any = None) -> bool:
 class Snapshot:
     """A dict-like object holds the snapshot values.
     The value can be accessed by ``snapshot.name`` or ``snapshot['name']`` syntax.
+    The Snapshot can also be converted to a dictionary by ``dict(snapshot)`` or ``{**snapshot}``.
 
     Missing attributes will be automatically fetched from the original object.
     """
@@ -657,7 +658,7 @@ class Snapshot:
             return attribute
 
     def __getitem__(self, name: str) -> Any:
-        """Supports ``dict['name']`` syntax."""
+        """Supports ``snapshot['name']`` syntax."""
 
         try:
             return getattr(self, name)
@@ -665,12 +666,12 @@ class Snapshot:
             raise KeyError(name) from ex
 
     def __setitem__(self, name: str, value: Any) -> None:
-        """Supports ``dict['name'] = value`` syntax."""
+        """Supports ``snapshot['name'] = value`` syntax."""
 
         setattr(self, name, value)
 
     def __iter__(self) -> Iterable[str]:
-        """Supports ``for name in dict`` syntax."""
+        """Supports ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
 
         def gen() -> str:
             for name in self.__dict__:
@@ -678,6 +679,13 @@ class Snapshot:
                     yield name
 
         return gen()
+
+    def keys(self) -> Iterable[str]:
+        """Supports `**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and
+        ``dict(snapshot)`` dictionary conversion.
+        """
+
+        return iter(self)
 
 
 # Modified from psutil (https://github.com/giampaolo/psutil)
