@@ -308,7 +308,7 @@ coloring:
                         override the `TREM` variable.
   --force-color         Force colorize even when `stdout` is not a TTY terminal.
   --light               Tweak visual results for light theme terminals in monitor mode.
-                        Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.
+                        Set variable `NVITOP_MONITOR_MODE="light"` on light terminals for convenience.
   --gpu-util-thresh th1 th2
                         Thresholds of GPU utilization to determine the load intensity.
                         Coloring rules: light < th1 % <= moderate < th2 % <= heavy.
@@ -342,21 +342,19 @@ process filtering:
 
 `nvitop` can accept the following environment variables for monitor mode:
 
-| Name                                   | Description                      | Valid Values                                                | Fallback Value |
-| -------------------------------------- | -------------------------------- | ----------------------------------------------------------- | -------------- |
-| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode   | `true` / `yes` / `on` / `1`<br>`false` / `no` / `off` / `0` | `true`         |
-| `NVITOP_MONITOR_MODE`                  | The default display mode         | `auto` / `full` / `compact`                                 | `auto`         |
-| `NVITOP_MONITOR_THEME`                 | The default color theme          | `dark` / `light`                                            | `dark`         |
-| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization    | `10,75` , `1,99`, ...                                       | `10,75`        |
-| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent | `10,80` , `1,99`, ...                                       | `10,80`        |
+| Name                                   | Description                                         | Valid Values                                                            | Default Value     |
+| -------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------------- |
+| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode                      | `true` / `yes` / `on` / `1`<br>`false` / `no` / `off` / `0`             | `true`            |
+| `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light` | `auto,plain,dark` |
+| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                   | `10,75`           |
+| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                   | `10,80`           |
 
 For example:
 
 ```bash
 # Replace the following export statements if you are not using Bash / Zsh
 export NVITOP_MONITOR_ALWAYS="true"
-export NVITOP_MONITOR_MODE="full"
-export NVITOP_MONITOR_THEME="light"
+export NVITOP_MONITOR_MODE="full,light"
 
 # Full monitor mode with light terminal tweaks
 nvitop

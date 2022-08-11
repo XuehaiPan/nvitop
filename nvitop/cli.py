@@ -14,6 +14,9 @@ from nvitop.version import __version__
 
 
 TTY = sys.stdin.isatty() and sys.stdout.isatty()
+NVITOP_MONITOR_MODE = set(
+    map(str.strip, os.environ.get('NVITOP_MONITOR_MODE', '').lower().split(','))
+)
 
 
 def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
@@ -112,7 +115,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         action='store_true',
         help=(
             'Tweak visual results for light theme terminals in monitor mode.\n'
-            'Set variable `NVITOP_MONITOR_THEME="light"` on light terminals for convenience.'
+            'Set variable `NVITOP_MONITOR_MODE="light"` on light terminals for convenience.'
         ),
     )
     gpu_thresholds = Device.GPU_UTILIZATION_THRESHOLDS
@@ -210,8 +213,10 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
     args = parser.parse_args()
 
+    if not args.colorful:
+        args.colorful = 'colorful' in NVITOP_MONITOR_MODE and 'plain' not in NVITOP_MONITOR_MODE
     if not args.light:
-        args.light = os.getenv('NVITOP_MONITOR_THEME', 'dark').lower() == 'light'
+        args.light = 'light' in NVITOP_MONITOR_MODE and 'dark' not in NVITOP_MONITOR_MODE
     if args.user is not None and len(args.user) == 0:
         args.user.append(USERNAME)
     if args.gpu_util_thresh is None:
@@ -270,9 +275,11 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         del args.monitor
 
     if hasattr(args, 'monitor') and args.monitor is None:
-        mode = os.getenv('NVITOP_MONITOR_MODE', 'auto').lower()
-        if mode not in ('auto', 'full', 'compact'):
+        mode = NVITOP_MONITOR_MODE.intersection({'auto', 'full', 'compact'})
+        if len(mode) != 1:
             mode = 'auto'
+        else:
+            mode = mode.pop()
         args.monitor = mode
 
     if not setlocale_utf8():
