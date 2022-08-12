@@ -198,7 +198,7 @@ $ nvitop -1 -ov
 $ nvitop -1 -c
 ```
 
-When the `-1` switch is on, the result will be displayed **ONLY ONCE** (same as the default behavior of `nvidia-smi`). This is much faster and has lower resource usage. You can omit the `-1` option by setting the environment variable `NVITOP_MONITOR_ALWAYS=false` to have this behavior by default. See [Command Line Options](#command-line-options-and-environment-variables) for more command options.
+When the `-1` switch is on, the result will be displayed **ONLY ONCE** (same as the default behavior of `nvidia-smi`). This is much faster and has lower resource usage. See [Command Line Options](#command-line-options-and-environment-variables) for more command options.
 
 There is also a CLI tool called `nvisel` that ships with the `nvitop` PyPI package. See [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool) for more information.
 
@@ -344,7 +344,6 @@ process filtering:
 
 | Name                                   | Description                                         | Valid Values                                                            | Default Value     |
 | -------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------------- |
-| `NVITOP_MONITOR_ALWAYS`                | Always invoke the monitor mode                      | `true` / `yes` / `on` / `1`<br>`false` / `no` / `off` / `0`             | `true`            |
 | `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light` | `auto,plain,dark` |
 | `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                   | `10,75`           |
 | `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                   | `10,80`           |
@@ -353,7 +352,6 @@ For example:
 
 ```bash
 # Replace the following export statements if you are not using Bash / Zsh
-export NVITOP_MONITOR_ALWAYS="true"
 export NVITOP_MONITOR_MODE="full,light"
 
 # Full monitor mode with light terminal tweaks

@@ -8,7 +8,7 @@ import curses
 import os
 import sys
 
-from nvitop.core import HostProcess, boolify, libnvml
+from nvitop.core import HostProcess, libnvml
 from nvitop.gui import USERNAME, Device, Top, colored, libcurses, set_color, setlocale_utf8
 from nvitop.version import __version__
 
@@ -262,12 +262,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         messages.append('ERROR: Both `--once` and `--monitor` switches are on.')
         del args.monitor
 
-    if (
-        not args.once
-        and not hasattr(args, 'monitor')
-        and TTY
-        and boolify(os.getenv('NVITOP_MONITOR_ALWAYS', 'true'), default=True)
-    ):
+    if not args.once and not hasattr(args, 'monitor') and TTY:
         args.monitor = None
 
     if hasattr(args, 'monitor') and not TTY:
