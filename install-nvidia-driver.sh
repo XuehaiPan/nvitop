@@ -431,7 +431,7 @@ fi
 
 if [[ -z "${YES}" ]]; then
 	ring_bell
-	wait_for_user
+	CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:" wait_for_user
 fi
 
 ### Do install/upgrade the requested driver package ################################################
@@ -449,14 +449,20 @@ sleep 1 # ensure the processes are stopped
 # shellcheck disable=SC2207
 PIDS=($(sudo lsof -t /dev/nvidia* 2>/dev/null || true))
 if [[ "${#PIDS[@]}" -gt 0 ]]; then
-	abort "$(
-		cat <<EOABORT
+	cat >&2 <<EOS
 
 ${tty_red}FATAL:${tty_white} Some processes are still using the NVIDIA devices.${tty_reset}
 
 $(ps --format=pid,user,command --pid="${PIDS[*]}")
-EOABORT
-	)"
+EOS
+
+	if [[ -z "${YES}" ]]; then
+		ring_bell
+		CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to kill (\`kill -9\`) and continue or any other key to abort:" wait_for_user
+	fi
+
+	exec_cmd "sudo kill -9 ${PIDS[*]}"
+	sleep 3 # ensure the processes are stopped
 fi
 
 # Offload the NVIDIA kernel modules
