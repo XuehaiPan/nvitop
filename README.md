@@ -115,6 +115,10 @@ This repository contains a Bash script to install/upgrade the NVIDIA drivers for
 ```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop
 
+# Change to tty3 console (required for desktop users with GUI (tty2))
+# Optional for SSH users
+sudo chvt 3  # or use keyboard shortcut: Ctrl-LeftAlt-F3
+
 bash install-nvidia-driver.sh --package=nvidia-driver-470  # install the R470 driver from ppa:graphics-drivers
 bash install-nvidia-driver.sh --latest                     # install the latest driver from ppa:graphics-drivers
 ```
