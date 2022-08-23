@@ -365,7 +365,7 @@ class NaType(str):
         return (self // other, self % other)
 
     def __rdivmod__(self, other: object) -> Tuple[float, float]:
-        """divmod(other, :const:`nvitop.NA): The pair (other // :const:`nvitop.NA`, other % :const:`nvitop.NA`).
+        """divmod(other, :const:`nvitop.NA`): The pair (other // :const:`nvitop.NA`, other % :const:`nvitop.NA`).
 
         >>> divmod(1024, NA)
         (nan, nan)
