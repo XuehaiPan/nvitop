@@ -9,6 +9,7 @@ import time
 from cachetools.func import ttl_cache
 
 from nvitop.gui.library import NA, Device, Displayable, colored, cut_string, host, make_bar
+from nvitop.version import __version__
 
 
 class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -52,7 +53,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.height = self.full_height = self.compact_height = 6
 
         self.driver_version = Device.driver_version()
-        self.cuda_version = Device.cuda_version()
+        self.cuda_driver_version = Device.cuda_driver_version()
 
         self._snapshot_buffer = []
         self._snapshots = []
@@ -171,8 +172,8 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         header = [
             '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ NVIDIA-SMI {0:<12} Driver Version: {0:<12} CUDA Version: {1:<8} │'.format(
-                self.driver_version, self.cuda_version
+            '│ NVITOP {:<9} Driver Version: {:<12} CUDA Driver Version: {:<8} │'.format(
+                __version__.partition('+')[0], self.driver_version, self.cuda_driver_version
             ),
         ]
         if self.device_count > 0:

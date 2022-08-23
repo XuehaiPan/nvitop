@@ -1,7 +1,7 @@
-nvitop.core.host module
------------------------
+nvitop.libnvml module
+---------------------
 
-.. automodule:: nvitop.core.host
+.. automodule:: nvitop.libnvml
     :members:
     :undoc-members:
     :show-inheritance:

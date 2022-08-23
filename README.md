@@ -897,7 +897,7 @@ In [1]: from nvitop import host, Device, PhysicalDevice, CudaDevice, HostProcess
 In [2]: Device.driver_version()
 Out[2]: '430.64'
 
-In [3]: Device.cuda_version()  # the maximum CUDA version supported by the driver (can be different from the CUDA runtime version)
+In [3]: Device.cuda_driver_version()  # the maximum CUDA version supported by the driver (can be different from the CUDA runtime version)
 Out[3]: '10.1'
 
 In [4]: Device.count()

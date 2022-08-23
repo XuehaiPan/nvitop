@@ -1,5 +1,5 @@
-nvitop.core.utils module
-------------------------
+nvitop.utils module
+-------------------
 
 .. automodule:: nvitop.core.utils
     :members:

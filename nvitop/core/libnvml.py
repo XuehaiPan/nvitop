@@ -164,7 +164,20 @@ VERSIONED_PATTERN = _re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
 
 
 def _lazy_init() -> None:
-    """Lazily initializes the NVML context."""
+    """Lazily initializes the NVML context.
+
+    Raises:
+        NVMLError_LibraryNotFound:
+            If cannot find the NVML library, usually the NVIDIA driver is not installed.
+        NVMLError_DriverNotLoaded:
+            If NVIDIA driver is not loaded.
+        NVMLError_LibRmVersionMismatch:
+            If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+            driver without reloading the kernel module.
+        AttributeError:
+            If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
+            is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
+    """
 
     with __lock:
         if __initialized:
@@ -311,6 +324,22 @@ def nvmlQuery(
             Positional arguments to pass to the query function.
         **kwargs:
             Keyword arguments to pass to the query function.
+
+    Raises:
+        NVMLError_LibraryNotFound:
+            If cannot find the NVML library, usually the NVIDIA driver is not installed.
+        NVMLError_DriverNotLoaded:
+            If NVIDIA driver is not loaded.
+        NVMLError_LibRmVersionMismatch:
+            If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+            driver without reloading the kernel module.
+        NVMLError_FunctionNotFound:
+            If the function is not found, usually the installed ``nvidia-ml-py`` is not compatible
+            with the installed NVIDIA driver.
+        NVMLError_NotSupported:
+            If the function is not supported by the driver or the device.
+        NVMLError_InvalidArgument:
+            If passed with an invalid argument.
     """
 
     global UNKNOWN_FUNCTIONS  # pylint: disable=global-statement,global-variable-not-assigned

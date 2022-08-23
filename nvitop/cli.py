@@ -385,7 +385,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         if (
             'nvmlDeviceGetComputeRunningProcesses' in message
             or 'nvmlDeviceGetGraphicsRunningProcesses' in message
-        ) and Device.cuda_version().startswith('10.'):
+        ) and Device.cuda_driver_version().startswith('10.'):
             message = '\n'.join(
                 (
                     message,

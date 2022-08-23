@@ -176,6 +176,23 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             real=PhysicalDevice(index=2, ...),
             ...
         )
+
+    Raises:
+        libnvml.NVMLError_LibraryNotFound:
+            If cannot find the NVML library, usually the NVIDIA driver is not installed.
+        libnvml.NVMLError_DriverNotLoaded:
+            If NVIDIA driver is not loaded.
+        libnvml.NVMLError_LibRmVersionMismatch:
+            If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+            driver without reloading the kernel module.
+        libnvml.NVMLError_NotFound:
+            If the device is not found for the given NVML identifier.
+        libnvml.NVMLError_InvalidArgument:
+            If the device index is out of range.
+        TypeError:
+            If the number of non-None arguments is not exactly 1.
+        TypeError:
+            If the given index is a tuple but is not consist of two integers.
     """
 
     # https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars
@@ -204,6 +221,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     cuda = None  # defined in below
     """Shortcut for class :class:`CudaDevice`."""
 
+    @classmethod
+    def is_available(cls) -> bool:
+        """Returns whether there are any devices and the NVML library is successfully loaded."""
+
+        try:
+            return cls.count() > 0
+        except libnvml.NVMLError:
+            return False
+
     @staticmethod
     def driver_version() -> Union[str, NaType]:
         """The version of the installed NVIDIA display driver. This is an alphanumeric string.
@@ -213,25 +239,45 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         .. code:: bash
 
             nvidia-smi --id=0 --format=csv,noheader,nounits --query-gpu=driver_version
+
+        Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
         """
 
         return libnvml.nvmlQuery('nvmlSystemGetDriverVersion')
 
     @staticmethod
-    def cuda_version() -> Union[str, NaType]:
+    def cuda_driver_version() -> Union[str, NaType]:
         """The maximum CUDA version supported by the NVIDIA display driver.
         This can be different from the version of the CUDA runtime.
+
+        Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
         """
 
-        cuda_version = libnvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
-        if libnvml.nvmlCheckReturn(cuda_version, int):
-            major = cuda_version // 1000
-            minor = (cuda_version % 1000) // 10
-            revision = cuda_version % 10
+        cuda_driver_version = libnvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
+        if libnvml.nvmlCheckReturn(cuda_driver_version, int):
+            major = cuda_driver_version // 1000
+            minor = (cuda_driver_version % 1000) // 10
+            revision = cuda_driver_version % 10
             if revision == 0:
                 return '{}.{}'.format(major, minor)
             return '{}.{}.{}'.format(major, minor, revision)
         return NA
+
+    max_cuda_version = cuda_version = cuda_driver_version  # alias for backward compatibility
 
     @classmethod
     def count(cls) -> int:
@@ -242,6 +288,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         .. code:: bash
 
             nvidia-smi --id=0 --format=csv,noheader,nounits --query-gpu=count
+
+        Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
         """
 
         return libnvml.nvmlQuery('nvmlDeviceGetCount', default=0)
@@ -267,10 +322,26 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Returns: List[Union[PhysicalDevice, MigDevice]]
             A list of :class:`PhysicalDevice` and/or :class:`MigDevice` instances of the given indices.
+
+        Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
+            libnvml.NVMLError_NotFound:
+                If the device is not found for the given NVML identifier.
+            libnvml.NVMLError_InvalidArgument:
+                If the device index is out of range.
         """
 
         if indices is None:
-            indices = range(cls.count())
+            try:
+                indices = range(cls.count())
+            except libnvml.NVMLError:
+                return []
 
         if isinstance(indices, int):
             indices = [indices]
@@ -282,16 +353,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Returns a list of all CUDA visible devices.
         The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
 
+        Note:
+            The result could be empty if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
+
         See also for CUDA Device Enumeration:
             - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
             - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
         Returns: List[CudaDevice]
             A list of :class:`CudaDevice` instances.
-
-        Raises:
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """  # pylint: disable=line-too-long
 
         visible_device_indices = Device.parse_cuda_visible_devices()
@@ -323,8 +393,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             A list of :class:`CudaDevice` of the given CUDA indices.
 
         Raises:
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
             RuntimeError:
                 If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """  # pylint: disable=line-too-long
@@ -354,6 +429,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     ) -> Union[List[int], List[Tuple[int, int]]]:
         """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
 
+        Note:
+            The result could be empty if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
+
         See also for CUDA Device Enumeration:
             - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
             - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
@@ -367,10 +445,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[List[int], List[Tuple[int, int]]]
             A list of int (physical device) or a list of tuple of two ints (MIG device) for the
             corresponding real device indices.
-
-        Raises:
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
         """  # pylint: disable=line-too-long
 
         if cuda_visible_devices is _VALUE_OMITTED:
@@ -380,12 +454,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     @ttl_cache(ttl=300.0)
-    def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches
+    def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
         cuda_visible_devices: Optional[str] = None,
     ) -> Union[List['PhysicalDevice'], List['MigDevice']]:
         """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
 
-        physical_device_attrs = _get_all_physical_device_attrs()
+        try:
+            physical_device_attrs = _get_all_physical_device_attrs()
+        except libnvml.NVMLError:
+            return []
         gpu_uuids = set(physical_device_attrs)
 
         try:
@@ -427,7 +504,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         use_integer_identifiers = None
         for identifier in map(str.strip, cuda_visible_devices.split(',')):
             if identifier in presented:
-                raise RuntimeError('CUDA Error: duplicate device ordinal: {!r}.'.format(identifier))
+                return []  # duplicate identifiers found
 
             try:
                 device = from_index_or_uuid(identifier)
@@ -535,6 +612,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Initializes the instance created by ``__new__()``.
 
         Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
             libnvml.NVMLError_NotFound:
                 If the device is not found for the given NVML identifier.
             libnvml.NVMLError_InvalidArgument:
@@ -715,9 +799,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         Raises:
             RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
-            RuntimeError:
-                If the current device is not visible to CUDA applications (i.e. not listed in ``CUDA_VISIBLE_DEVICES``).
+                If the current device is not visible to CUDA applications (i.e. not listed in the
+                ``CUDA_VISIBLE_DEVICES`` environment variable or the environment variable is invalid).
         """
 
         if self._cuda_index is None:
@@ -1826,6 +1909,17 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
         Returns: List[MigDevice]
             A list of :class:`MigDevice` instances of the given indices.
+
+        Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
+            libnvml.NVMLError_NotFound:
+                If the device is not found for the given NVML identifier.
         """
 
         return list(map(cls, indices))
@@ -1837,6 +1931,13 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """Initializes the instance created by ``__new__()``.
 
         Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
             libnvml.NVMLError_NotFound:
                 If the device is not found for the given NVML identifier.
         """
@@ -2014,35 +2115,48 @@ class CudaDevice(Device):
             real=CudaDevice(cuda_index=1, nvml_index=2, ...),
             ...
         )
+
+    Raises:
+        libnvml.NVMLError_LibraryNotFound:
+            If cannot find the NVML library, usually the NVIDIA driver is not installed.
+        libnvml.NVMLError_DriverNotLoaded:
+            If NVIDIA driver is not loaded.
+        libnvml.NVMLError_LibRmVersionMismatch:
+            If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+            driver without reloading the kernel module.
+        libnvml.NVMLError_NotFound:
+            If the device is not found for the given NVML identifier.
+        libnvml.NVMLError_InvalidArgument:
+            If the NVML index is out of range.
+        TypeError:
+            If the number of non-None arguments is not exactly 1.
+        TypeError:
+            If the given NVML index is a tuple but is not consist of two integers.
+        RuntimeError:
+            If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
     """  # pylint: disable=line-too-long
 
     @classmethod
     def is_available(cls) -> bool:
         """Returns whether there are any CUDA-capable devices available."""
 
-        try:
-            return cls.count() > 0
-        except (libnvml.NVMLError, RuntimeError):
-            return False
+        return cls.count() > 0
 
     @classmethod
     def count(cls) -> int:
-        """The number of GPUs visible to CUDA applications.
+        """The number of GPUs visible to CUDA applications."""
 
-        Raises:
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
-        """
-
-        return len(super().parse_cuda_visible_devices())
+        try:
+            return len(super().parse_cuda_visible_devices())
+        except libnvml.NVMLError:
+            return 0
 
     @classmethod
     def all(cls) -> List['CudaDevice']:
         """All CUDA visible devices.
 
-        Raises:
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
+        Note:
+            The result could be empty if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
         """
 
         return cls.from_indices()
@@ -2066,8 +2180,13 @@ class CudaDevice(Device):
             A list of :class:`CudaDevice` of the given CUDA indices.
 
         Raises:
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
             RuntimeError:
                 If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """
@@ -2099,9 +2218,7 @@ class CudaDevice(Device):
             TypeError:
                 If the number of non-None arguments is not exactly 1.
             TypeError:
-                If the given index is a tuple but is not consist of two integers.
-            RuntimeError:
-                If the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid (e.g. duplicate entries).
+                If the given NVML index is a tuple but is not consist of two integers.
             RuntimeError:
                 If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """
@@ -2127,12 +2244,20 @@ class CudaDevice(Device):
         """Initializes the instance created by ``__new__()``.
 
         Raises:
+            libnvml.NVMLError_LibraryNotFound:
+                If cannot find the NVML library, usually the NVIDIA driver is not installed.
+            libnvml.NVMLError_DriverNotLoaded:
+                If NVIDIA driver is not loaded.
+            libnvml.NVMLError_LibRmVersionMismatch:
+                If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
+                driver without reloading the kernel module.
             libnvml.NVMLError_NotFound:
                 If the device is not found for the given NVML identifier.
             libnvml.NVMLError_InvalidArgument:
                 If the NVML index is out of range.
             RuntimeError:
-                The given device is not visible to CUDA applications.
+                If the given device is not visible to CUDA applications (i.e. not listed in the
+                ``CUDA_VISIBLE_DEVICES`` environment variable or the environment variable is invalid).
         """
 
         if cuda_index is not None and nvml_index is None and uuid is None:

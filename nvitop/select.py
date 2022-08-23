@@ -55,6 +55,9 @@ from nvitop.gui import USERNAME, colored
 from nvitop.version import __version__
 
 
+__all__ = ['select_devices']
+
+
 TTY = sys.stdout.isatty()
 
 
@@ -100,8 +103,9 @@ def select_devices(
         devices (Iterable[Device]):
             The device superset to select from. If not specified, use all devices as the superset.
         format (str):
-            The format of the output. One of 'index', 'uuid', or 'device'. If gets any MIG device
-            with format 'index' set, falls back to the 'uuid' format.
+            The format of the output. One of :const:`'index'`, :const:`'uuid'`, or :const:`'device'`.
+            If gets any MIG device with format :const:`'index'` set, falls back to the :const:`'uuid'`
+            format.
         force_index (bool):
             If :data:`True`, always use the device index as the output format when gets any MIG device.
         min_count (int):

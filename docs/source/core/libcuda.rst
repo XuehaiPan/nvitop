@@ -1,5 +1,5 @@
-nvitop.core.libcuda module
---------------------------
+nvitop.libcuda module
+---------------------
 
 .. automodule:: nvitop.core.libcuda
     :members:

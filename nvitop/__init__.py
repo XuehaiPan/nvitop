@@ -5,6 +5,7 @@
 
 from nvitop import core
 from nvitop.core import *
+from nvitop.core import collector, device, host, libcuda, libnvml, process, utils
 from nvitop.select import select_devices
 from nvitop.version import __version__
 
