@@ -14,18 +14,15 @@ from cachetools.func import ttl_cache as _ttl_cache
 from psutil import *  # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
 
 
-__all__ = _psutil.__all__.copy()
-__all__.extend(
-    (
-        'load_average',
-        'memory_percent',
-        'swap_percent',
-        'ppid_map',
-        'reverse_ppid_map',
-        'WSL',
-        'WINDOWS_SUBSYSTEM_FOR_LINUX',
-    )
-)
+__all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [
+    'load_average',
+    'memory_percent',
+    'swap_percent',
+    'ppid_map',
+    'reverse_ppid_map',
+    'WSL',
+    'WINDOWS_SUBSYSTEM_FOR_LINUX',
+]
 __all__[__all__.index('Error')] = 'PsutilError'
 
 
