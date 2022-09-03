@@ -240,9 +240,9 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         def show_main():
             show_screen(self.main_screen, focused=False)
 
-            if self.treeview_screen.selected.is_set():
-                self.main_screen.selected.process = self.treeview_screen.selected.process
-            self.treeview_screen.selected.clear()
+            if self.treeview_screen.selection.is_set():
+                self.main_screen.selection.process = self.treeview_screen.selection.process
+            self.treeview_screen.selection.clear()
 
         def show_treeview():
             if not self.main_screen.process_panel.has_snapshots:
@@ -250,14 +250,14 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
 
             show_screen(self.treeview_screen, focused=True)
 
-            if not self.treeview_screen.selected.is_set():
-                self.treeview_screen.selected.process = self.main_screen.selected.process
-            self.main_screen.selected.clear()
+            if not self.treeview_screen.selection.is_set():
+                self.treeview_screen.selection.process = self.main_screen.selection.process
+            self.main_screen.selection.clear()
 
         def show_environ():
             show_screen(self.environ_screen, focused=True)
 
-            self.environ_screen.process = self.previous_screen.selected.process
+            self.environ_screen.process = self.previous_screen.selection.process
 
         def environ_return():
             if self.previous_screen is self.treeview_screen:

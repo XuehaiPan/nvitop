@@ -276,7 +276,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         remaining_width = self.width - 79
         draw_bars = self.width >= 100
         try:
-            selected_device = self.parent.selected.process.device
+            selected_device = self.parent.selection.process.device
         except AttributeError:
             selected_device = None
 

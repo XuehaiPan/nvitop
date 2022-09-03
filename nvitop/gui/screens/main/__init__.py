@@ -49,7 +49,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
-        self.selected = self.process_panel.selected
+        self.selection = self.process_panel.selection
 
         self.ascii = ascii
         self.device_panel.ascii = self.ascii
@@ -189,23 +189,23 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.process_panel.host_offset = LARGE_INTEGER
 
         def select_move(direction):
-            self.selected.move(direction=direction)
+            self.selection.move(direction=direction)
 
         def select_clear():
-            self.selected.clear()
+            self.selection.clear()
 
         def tag():
-            self.selected.tag()
+            self.selection.tag()
             select_move(direction=+1)
 
         def terminate():
-            self.selected.terminate()
+            self.selection.terminate()
 
         def kill():
-            self.selected.kill()
+            self.selection.kill()
 
         def interrupt():
-            self.selected.interrupt()
+            self.selection.interrupt()
 
         def sort_by(order, reverse):
             self.process_panel.order = order

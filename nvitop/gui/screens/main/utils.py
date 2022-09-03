@@ -6,13 +6,15 @@
 import signal
 import time
 from collections import namedtuple
-from operator import xor
 from weakref import WeakValueDictionary
 
 from nvitop.gui.library import LARGE_INTEGER, NA, SUPERUSER, USERNAME, Snapshot, host
 
 
-class Selected:
+Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
+
+
+class Selection:
     def __init__(self, panel):
         self.tagged = WeakValueDictionary()
         self.panel = panel
@@ -171,6 +173,3 @@ class Selected:
 
     def is_tagged(self, process):
         return process.pid in self.tagged
-
-
-Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])

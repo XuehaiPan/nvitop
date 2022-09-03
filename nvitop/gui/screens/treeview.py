@@ -21,7 +21,7 @@ from nvitop.gui.library import (
     WideString,
     host,
 )
-from nvitop.gui.screens.main.utils import Selected
+from nvitop.gui.screens.main.utils import Selection
 
 
 class TreeNode:  # pylint: disable=too-many-instance-attributes
@@ -216,7 +216,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
     def __init__(self, win, root):
         super().__init__(win, root)
 
-        self.selected = Selected(panel=self)
+        self.selection = Selection(panel=self)
         self.x_offset = 0
         self.y_mouse = None
 
@@ -266,13 +266,13 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.need_redraw = self.need_redraw or len(self._snapshots) > len(snapshots)
             self._snapshots = snapshots
 
-        if self.selected.is_set():
-            identity = self.selected.identity
-            self.selected.clear()
+        if self.selection.is_set():
+            identity = self.selection.identity
+            self.selection.clear()
             for i, process in enumerate(snapshots):
                 if process._ident[:2] == identity[:2]:  # pylint: disable=protected-access
-                    self.selected.index = i
-                    self.selected.process = process
+                    self.selection.index = i
+                    self.selection.process = process
                     break
 
     @classmethod
@@ -333,13 +333,15 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         if self._daemon_running.is_set():
             self.snapshots = self._snapshot_buffer
 
-        self.selected.within_window = False
-        if len(self.snapshots) > 0 and self.selected.is_set():
+        self.selection.within_window = False
+        if len(self.snapshots) > 0 and self.selection.is_set():
             for i, process in enumerate(self.snapshots):
                 y = self.y + 1 - self.scroll_offset + i
-                if self.selected.is_same_on_host(process):
-                    self.selected.within_window = 1 <= y - self.y < self.height and self.width >= 79
-                    if not self.selected.within_window:
+                if self.selection.is_same_on_host(process):
+                    self.selection.within_window = (
+                        1 <= y - self.y < self.height and self.width >= 79
+                    )
+                    if not self.selection.within_window:
                         if y < self.y + 1:
                             self.scroll_offset -= self.y + 1 - y
                         elif y >= self.y + self.height:
@@ -394,9 +396,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             return
 
         if self.y_mouse is not None:
-            self.selected.clear()
+            self.selection.clear()
 
-        self.selected.within_window = False
+        self.selection.within_window = False
         processes = islice(
             self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height
         )
@@ -427,17 +429,17 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 )
 
             if y == self.y_mouse:
-                self.selected.process = process
+                self.selection.process = process
 
-            if self.selected.is_same_on_host(process):
+            if self.selection.is_same_on_host(process):
                 self.color_at(y, self.x, width=self.width, fg='green', attr='bold | reverse')
-                self.selected.within_window = 1 <= y - self.y < self.height and self.width >= 79
+                self.selection.within_window = 1 <= y - self.y < self.height and self.width >= 79
             elif str(process.username) != USERNAME and not SUPERUSER:
                 self.color_at(y, self.x, width=self.width, attr='dim')
 
         self.color(fg='cyan', attr='bold | reverse')
         text_offset = self.x + self.width - 47
-        if self.selected.owned() and self.selected.within_window:
+        if self.selection.owned() and self.selection.within_window:
             self.addstr(self.y, text_offset - 1, ' (Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
             self.color_at(
                 self.y,
@@ -494,7 +496,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         if event.shift():
             self.x_offset = max(0, self.x_offset + 2 * direction)
         else:
-            self.selected.move(direction=direction)
+            self.selection.move(direction=direction)
         return True
 
     def init_keybindings(self):
@@ -508,19 +510,19 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.x_offset = 0
 
         def select_move(direction):
-            self.selected.move(direction=direction)
+            self.selection.move(direction=direction)
 
         def select_clear():
-            self.selected.clear()
+            self.selection.clear()
 
         def terminate():
-            self.selected.terminate()
+            self.selection.terminate()
 
         def kill():
-            self.selected.kill()
+            self.selection.kill()
 
         def interrupt():
-            self.selected.interrupt()
+            self.selection.interrupt()
 
         self.root.keymaps.bind('treeview', '<Left>', tree_left)
         self.root.keymaps.copy('treeview', '<Left>', '<A-h>')
