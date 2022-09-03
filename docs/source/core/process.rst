@@ -12,18 +12,18 @@ nvitop.process module
 .. automodule:: nvitop.process
     :no-members:
 
-.. autoclass:: HostProcess
+.. autoclass:: nvitop.HostProcess
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
 
-.. autoclass:: GpuProcess
+.. autoclass:: nvitop.GpuProcess
     :members:
     :inherited-members:
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
 
-.. autofunction:: command_join
+.. autofunction:: nvitop.command_join
