@@ -5,7 +5,14 @@
 
 from nvitop.core import host, libcuda, libnvml, utils
 from nvitop.core.collector import ResourceMetricCollector, take_snapshots
-from nvitop.core.device import CudaDevice, CudaMigDevice, Device, MigDevice, PhysicalDevice
+from nvitop.core.device import (
+    CudaDevice,
+    CudaMigDevice,
+    Device,
+    MigDevice,
+    PhysicalDevice,
+    parse_cuda_visible_devices,
+)
 from nvitop.core.libnvml import NVMLError, nvmlCheckReturn
 from nvitop.core.process import GpuProcess, HostProcess, command_join
 from nvitop.core.utils import *
@@ -23,6 +30,7 @@ __all__ = [
     'MigDevice',
     'CudaDevice',
     'CudaMigDevice',
+    'parse_cuda_visible_devices',
     'host',
     'HostProcess',
     'GpuProcess',

@@ -10,6 +10,7 @@ nvitop.device module
     MigDevice
     CudaDevice
     CudaMigDevice
+    parse_cuda_visible_devices
 
 .. automodule:: nvitop.device
     :no-members:
@@ -43,3 +44,5 @@ nvitop.device module
     :undoc-members:
     :show-inheritance:
     :member-order: bysource
+
+.. autofunction:: nvitop.parse_cuda_visible_devices

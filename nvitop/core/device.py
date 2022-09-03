@@ -104,7 +104,14 @@ from nvitop.core.process import GpuProcess
 from nvitop.core.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
 
 
-__all__ = ['Device', 'PhysicalDevice', 'MigDevice', 'CudaDevice', 'CudaMigDevice']
+__all__ = [
+    'Device',
+    'PhysicalDevice',
+    'MigDevice',
+    'CudaDevice',
+    'CudaMigDevice',
+    'parse_cuda_visible_devices',
+]
 
 
 MemoryInfo = NamedTuple(
@@ -428,6 +435,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
     ) -> Union[List[int], List[Tuple[int, int]]]:
         """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
+        Alias of :func:`parse_cuda_visible_devices`.
 
         Note:
             The result could be empty if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
@@ -447,97 +455,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             corresponding real device indices.
         """  # pylint: disable=line-too-long
 
-        if cuda_visible_devices is _VALUE_OMITTED:
-            cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
-
-        return Device._parse_cuda_visible_devices(cuda_visible_devices)
-
-    @staticmethod
-    @ttl_cache(ttl=300.0)
-    def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
-        cuda_visible_devices: Optional[str] = None,
-    ) -> Union[List['PhysicalDevice'], List['MigDevice']]:
-        """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
-
-        try:
-            physical_device_attrs = _get_all_physical_device_attrs()
-        except libnvml.NVMLError:
-            return []
-        gpu_uuids = set(physical_device_attrs)
-
-        try:
-            raw_uuids = parse_cuda_visible_devices_to_uuids(cuda_visible_devices, verbose=False)
-        except libcuda.CUDAError:
-            pass
-        else:
-            uuids = [
-                uuid if uuid in gpu_uuids else uuid.replace('GPU', 'MIG', 1)
-                for uuid in map('GPU-{}'.format, raw_uuids)
-            ]
-            if gpu_uuids.issuperset(uuids) and not _does_any_device_support_mig_mode(uuids):
-                return [physical_device_attrs[uuid].index for uuid in uuids]
-            cuda_visible_devices = ','.join(uuids)
-
-        if cuda_visible_devices is None:
-            cuda_visible_devices = ','.join(physical_device_attrs.keys())
-
-        def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
-            nonlocal use_integer_identifiers
-
-            if isinstance(index_or_uuid, str):
-                if index_or_uuid.isdigit():
-                    index_or_uuid = int(index_or_uuid)
-                elif Device.UUID_PATTERN.match(index_or_uuid) is None:
-                    raise libnvml.NVMLError_NotFound
-
-            if use_integer_identifiers is None:
-                use_integer_identifiers = isinstance(index_or_uuid, int)
-
-            if isinstance(index_or_uuid, int) and use_integer_identifiers:
-                return Device(index=index_or_uuid)
-            if isinstance(index_or_uuid, str) and not use_integer_identifiers:
-                return Device(uuid=index_or_uuid)
-            raise ValueError('invalid identifier')
-
-        devices = []
-        presented = set()
-        use_integer_identifiers = None
-        for identifier in map(str.strip, cuda_visible_devices.split(',')):
-            if identifier in presented:
-                return []  # duplicate identifiers found
-
-            try:
-                device = from_index_or_uuid(identifier)
-            except (ValueError, libnvml.NVMLError):
-                break
-
-            devices.append(device)
-            presented.add(identifier)
-
-        mig_devices = [device for device in devices if device.is_mig_device()]
-        if len(mig_devices) > 0:
-            # Got MIG devices enumerated, use the first one
-            devices = mig_devices[:1]  # at most one MIG device is visible
-        else:
-            # All devices in `CUDA_VISIBLE_DEVICES` are physical devices
-            # Check if any GPU that enables MIG mode
-            devices_backup = devices.copy()
-            devices = []
-            for device in devices_backup:
-                if device.is_mig_mode_enabled():
-                    # Got available MIG devices, use the first MIG device and ignore all non-MIG GPUs
-                    try:
-                        devices = [
-                            device.mig_device(mig_index=0)  # at most one MIG device is visible
-                        ]
-                    except libnvml.NVMLError:
-                        continue  # no MIG device available on the GPU
-                    else:
-                        break  # got one MIG device
-                else:
-                    devices.append(device)  # non-MIG device
-
-        return [device.index for device in devices]
+        return parse_cuda_visible_devices(cuda_visible_devices)
 
     def __new__(
         cls,
@@ -2305,6 +2223,46 @@ class CudaMigDevice(CudaDevice, MigDevice):
     """Class for CUDA devices that are MIG devices."""
 
 
+def is_mig_device_uuid(uuid: Optional[str]) -> bool:
+    """Returns :data:`True` if the argument is a MIG device UUID, otherwise, returns :data:`False`."""
+
+    if isinstance(uuid, str):
+        match = Device.UUID_PATTERN.match(uuid)
+        if match is not None and match.group('MigMode') is not None:
+            return True
+    return False
+
+
+def parse_cuda_visible_devices(
+    cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
+) -> Union[List[int], List[Tuple[int, int]]]:
+    """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
+    Aliased by :meth:`Device.parse_cuda_visible_devices`.
+
+    Note:
+        The result could be empty if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
+
+    See also for CUDA Device Enumeration:
+        - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+        - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
+
+    Args:
+        cuda_visible_devices (Optional[str]):
+            The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
+            environment will be used. If explicitly given by :data:`None`, the ``CUDA_VISIBLE_DEVICES``
+            environment variable will be unset before parsing.
+
+    Returns: Union[List[int], List[Tuple[int, int]]]
+        A list of int (physical device) or a list of tuple of two ints (MIG device) for the
+        corresponding real device indices.
+    """  # pylint: disable=line-too-long
+
+    if cuda_visible_devices is _VALUE_OMITTED:
+        cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
+
+    return _parse_cuda_visible_devices(cuda_visible_devices)
+
+
 ## Helper functions ##
 _PhysicalDeviceAttrs = NamedTuple(
     'PhysicalDeviceAttrs',
@@ -2365,51 +2323,92 @@ def _get_global_physical_device() -> 'PhysicalDevice':
         return _GLOBAL_PHYSICAL_DEVICE
 
 
-def is_mig_device_uuid(uuid: Optional[str]) -> bool:
-    """Returns :data:`True` if the argument is a MIG device UUID, otherwise, returns :data:`False`."""
+@ttl_cache(ttl=300.0)
+def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
+    cuda_visible_devices: Optional[str] = None,
+) -> Union[List['PhysicalDevice'], List['MigDevice']]:
+    """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
 
-    if isinstance(uuid, str):
-        match = Device.UUID_PATTERN.match(uuid)
-        if match is not None and match.group('MigMode') is not None:
-            return True
-    return False
-
-
-def _cuda_visible_devices_parser(
-    cuda_visible_devices: str, queue: mp.SimpleQueue, verbose: bool = True
-) -> None:
     try:
-        if cuda_visible_devices is not None:
-            os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
-        else:
-            os.environ.pop('CUDA_VISIBLE_DEVICES', None)
+        physical_device_attrs = _get_all_physical_device_attrs()
+    except libnvml.NVMLError:
+        return []
+    gpu_uuids = set(physical_device_attrs)
 
-        # pylint: disable=no-member
+    try:
+        raw_uuids = _parse_cuda_visible_devices_to_uuids(cuda_visible_devices, verbose=False)
+    except libcuda.CUDAError:
+        pass
+    else:
+        uuids = [
+            uuid if uuid in gpu_uuids else uuid.replace('GPU', 'MIG', 1)
+            for uuid in map('GPU-{}'.format, raw_uuids)
+        ]
+        if gpu_uuids.issuperset(uuids) and not _does_any_device_support_mig_mode(uuids):
+            return [physical_device_attrs[uuid].index for uuid in uuids]
+        cuda_visible_devices = ','.join(uuids)
+
+    if cuda_visible_devices is None:
+        cuda_visible_devices = ','.join(physical_device_attrs.keys())
+
+    def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
+        nonlocal use_integer_identifiers
+
+        if isinstance(index_or_uuid, str):
+            if index_or_uuid.isdigit():
+                index_or_uuid = int(index_or_uuid)
+            elif Device.UUID_PATTERN.match(index_or_uuid) is None:
+                raise libnvml.NVMLError_NotFound
+
+        if use_integer_identifiers is None:
+            use_integer_identifiers = isinstance(index_or_uuid, int)
+
+        if isinstance(index_or_uuid, int) and use_integer_identifiers:
+            return Device(index=index_or_uuid)
+        if isinstance(index_or_uuid, str) and not use_integer_identifiers:
+            return Device(uuid=index_or_uuid)
+        raise ValueError('invalid identifier')
+
+    devices = []
+    presented = set()
+    use_integer_identifiers = None
+    for identifier in map(str.strip, cuda_visible_devices.split(',')):
+        if identifier in presented:
+            return []  # duplicate identifiers found
+
         try:
-            libcuda.cuInit()
-        except (
-            libcuda.CUDAError_NoDevice,
-            libcuda.CUDAError_InvalidDevice,
-            libcuda.CUDAError_SystemDriverMismatch,
-            libcuda.CUDAError_CompatNotSupportedOnDevice,
-        ):
-            queue.put([])
-            raise
+            device = from_index_or_uuid(identifier)
+        except (ValueError, libnvml.NVMLError):
+            break
 
-        count = libcuda.cuDeviceGetCount()
-        uuids = list(map(libcuda.cuDeviceGetUuid, map(libcuda.cuDeviceGet, range(count))))
-        queue.put(uuids)
-        return
-    except Exception as ex:  # pylint: disable=broad-except
-        queue.put(ex)
-        if verbose:
-            raise ex
-    finally:
-        # Ensure non-empty queue
-        queue.put(libcuda.CUDAError_NotInitialized())  # pylint: disable=no-member
+        devices.append(device)
+        presented.add(identifier)
+
+    mig_devices = [device for device in devices if device.is_mig_device()]
+    if len(mig_devices) > 0:
+        # Got MIG devices enumerated, use the first one
+        devices = mig_devices[:1]  # at most one MIG device is visible
+    else:
+        # All devices in `CUDA_VISIBLE_DEVICES` are physical devices
+        # Check if any GPU that enables MIG mode
+        devices_backup = devices.copy()
+        devices = []
+        for device in devices_backup:
+            if device.is_mig_mode_enabled():
+                # Got available MIG devices, use the first MIG device and ignore all non-MIG GPUs
+                try:
+                    devices = [device.mig_device(mig_index=0)]  # at most one MIG device is visible
+                except libnvml.NVMLError:
+                    continue  # no MIG device available on the GPU
+                else:
+                    break  # got one MIG device
+            else:
+                devices.append(device)  # non-MIG device
+
+    return [device.index for device in devices]
 
 
-def parse_cuda_visible_devices_to_uuids(
+def _parse_cuda_visible_devices_to_uuids(
     cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
     verbose=True,
 ) -> List[str]:
@@ -2458,3 +2457,37 @@ def parse_cuda_visible_devices_to_uuids(
     if isinstance(result, Exception):
         raise result
     return result
+
+
+def _cuda_visible_devices_parser(
+    cuda_visible_devices: str, queue: mp.SimpleQueue, verbose: bool = True
+) -> None:
+    try:
+        if cuda_visible_devices is not None:
+            os.environ['CUDA_VISIBLE_DEVICES'] = cuda_visible_devices
+        else:
+            os.environ.pop('CUDA_VISIBLE_DEVICES', None)
+
+        # pylint: disable=no-member
+        try:
+            libcuda.cuInit()
+        except (
+            libcuda.CUDAError_NoDevice,
+            libcuda.CUDAError_InvalidDevice,
+            libcuda.CUDAError_SystemDriverMismatch,
+            libcuda.CUDAError_CompatNotSupportedOnDevice,
+        ):
+            queue.put([])
+            raise
+
+        count = libcuda.cuDeviceGetCount()
+        uuids = list(map(libcuda.cuDeviceGetUuid, map(libcuda.cuDeviceGet, range(count))))
+        queue.put(uuids)
+        return
+    except Exception as ex:  # pylint: disable=broad-except
+        queue.put(ex)
+        if verbose:
+            raise ex
+    finally:
+        # Ensure non-empty queue
+        queue.put(libcuda.CUDAError_NotInitialized())  # pylint: disable=no-member
