@@ -19,11 +19,11 @@ Device coloring rules by loading intensity:
       a f c: change display mode                h ?: show this help screen
        F5 r: force refresh window                 q: quit
 
-     Arrows: scroll process list                Esc: clear process selection
-       Home: select the first process      Ctrl-C I: interrupt selected process
-        End: select the last process              K: kill selected process
-   Ctrl-A ^: scroll to left most                  T: terminate selected process
-   Ctrl-E $: scroll to right most
+     Arrows: scroll process list              Space: tag/untag current process
+       Home: select the first process           Esc: clear process selection
+        End: select the last process       Ctrl-C I: interrupt selected process
+   Ctrl-A ^: scroll to left most                  K: kill selected process
+   Ctrl-E $: scroll to right most                 T: terminate selected process
    PageUp [: scroll entire screen up              e: show process environment
  PageDown ]: scroll entire screen down            t: toggle tree-view screen
 
@@ -61,8 +61,8 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
             9: ('green', 'green'),
             10: ('green', 'green'),
             12: ('cyan', 'yellow'),
-            **{dy: ('cyan', 'red') for dy in (13, 14, 15)},
-            16: ('cyan', None),
+            13: ('cyan', 'yellow'),
+            **{dy: ('cyan', 'red') for dy in (14, 15, 16)},
             19: (None, None),
             22: (None, None),
             **{dy: ('blue', 'blue') for dy in range(23, 27)},
