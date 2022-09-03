@@ -6,12 +6,15 @@
 import signal
 import time
 from collections import namedtuple
+from operator import xor
+from weakref import WeakValueDictionary
 
 from nvitop.gui.library import LARGE_INTEGER, NA, SUPERUSER, USERNAME, Snapshot, host
 
 
 class Selected:
     def __init__(self, panel):
+        self.tagged = WeakValueDictionary()
         self.panel = panel
         self.index = None
         self.within_window = True
@@ -86,16 +89,35 @@ class Selected:
             return True
         return self.username == USERNAME
 
-    def send_signal(self, sig):
-        if self.owned() and self.within_window:
+    def tag(self):
+        if self.is_set():
             try:
-                self.process.send_signal(sig)
+                del self.tagged[self.pid]
+            except KeyError:
+                self.tagged[self.pid] = self.process
+
+    def foreach(self, func):
+        if len(self.tagged) > 0:
+            processes = tuple(self.tagged.values())
+        elif self.owned() and self.within_window:
+            processes = (self.process,)
+        else:
+            return
+
+        for process in processes:
+            try:
+                func(process)
             except host.PsutilError:
                 pass
             else:
-                time.sleep(0.5)
-                if not self.process.is_running():
-                    self.clear()
+                flag = True
+
+        if flag:
+            time.sleep(0.5)
+        self.clear()
+
+    def send_signal(self, sig):
+        self.foreach(lambda process: process.send_signal(sig))
 
     def interrupt(self):
         try:
@@ -108,29 +130,21 @@ class Selected:
             pass
 
     def terminate(self):
-        if self.owned() and self.within_window:
-            try:
-                self.process.terminate()
-            except host.PsutilError:
-                pass
-            else:
-                time.sleep(0.5)
-                self.clear()
+        self.foreach(lambda process: process.terminate())
 
     def kill(self):
-        if self.owned() and self.within_window:
-            try:
-                self.process.kill()
-            except host.PsutilError:
-                pass
-            else:
-                time.sleep(0.5)
-                self.clear()
+        self.foreach(lambda process: process.kill())
+
+    def reset(self):
+        self.index = None
+        self.within_window = True
+        self._process = None
+        self._username = None
+        self._ident = None
 
     def clear(self):
-        self.__init__(self.panel)  # pylint: disable=unnecessary-dunder-call
-
-    reset = clear
+        self.tagged.clear()
+        self.reset()
 
     def is_set(self):
         return self.process is not None
@@ -154,6 +168,9 @@ class Selected:
             pass
 
         return False
+
+    def is_tagged(self, process):
+        return process.pid in self.tagged
 
 
 Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])

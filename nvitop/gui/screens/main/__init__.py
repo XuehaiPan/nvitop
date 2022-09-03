@@ -173,6 +173,9 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.root.update_size()
             self.root.need_redraw = True
 
+        def screen_move(direction):
+            self.move(direction)
+
         def host_left():
             self.process_panel.host_offset -= 2
 
@@ -191,8 +194,9 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         def select_clear():
             self.selected.clear()
 
-        def screen_move(direction):
-            self.move(direction)
+        def tag():
+            self.selected.tag()
+            select_move(direction=+1)
 
         def terminate():
             self.selected.terminate()
@@ -227,6 +231,13 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.root.keymaps.copy('main', 'r', '<C-r>')
         self.root.keymaps.copy('main', 'r', '<F5>')
 
+        self.root.keymaps.bind('main', '<PageUp>', partial(screen_move, direction=-1))
+        self.root.keymaps.copy('main', '<PageUp>', '[')
+        self.root.keymaps.copy('main', '<PageUp>', '<A-K>')
+        self.root.keymaps.bind('main', '<PageDown>', partial(screen_move, direction=+1))
+        self.root.keymaps.copy('main', '<PageDown>', ']')
+        self.root.keymaps.copy('main', '<PageDown>', '<A-J>')
+
         self.root.keymaps.bind('main', '<Left>', host_left)
         self.root.keymaps.copy('main', '<Left>', '<A-h>')
         self.root.keymaps.bind('main', '<Right>', host_right)
@@ -244,13 +255,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.root.keymaps.bind('main', '<Home>', partial(select_move, direction=-(1 << 20)))
         self.root.keymaps.bind('main', '<End>', partial(select_move, direction=+(1 << 20)))
         self.root.keymaps.bind('main', '<Esc>', select_clear)
-
-        self.root.keymaps.bind('main', '<PageUp>', partial(screen_move, direction=-1))
-        self.root.keymaps.copy('main', '<PageUp>', '[')
-        self.root.keymaps.copy('main', '<PageUp>', '<A-K>')
-        self.root.keymaps.bind('main', '<PageDown>', partial(screen_move, direction=+1))
-        self.root.keymaps.copy('main', '<PageDown>', ']')
-        self.root.keymaps.copy('main', '<PageDown>', '<A-J>')
+        self.root.keymaps.bind('main', '<Space>', tag)
 
         self.root.keymaps.bind('main', 'T', terminate)
         self.root.keymaps.bind('main', 'K', kill)
