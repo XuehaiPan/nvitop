@@ -90,6 +90,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         if self.need_redraw:
             self.win.erase()
 
+        self.set_base_attr(attr=0)
         self.color_reset()
 
         if self.width >= 79:
