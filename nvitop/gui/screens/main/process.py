@@ -421,8 +421,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             )
             self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
 
+        hint = True
         if self.y_mouse is not None:
             self.selection.reset()
+            hint = False
 
         self.selection.within_window = False
         if len(self.snapshots) > 0:
@@ -473,6 +475,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
                 if y == self.y_mouse:
                     self.selection.process = process
+                    hint = True
 
                 if self.selection.is_same(process):
                     self.color_at(
@@ -505,7 +508,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     elif is_gone:
                         self.color_at(y, self.x + 38 + command_offset, width=15, fg='red')
                 y += 1
+
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛')
+            if not hint:
+                self.selection.clear()
+
         elif self.has_snapshots:
             message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
             self.addstr(self.y + 5, self.x, '│ {} │'.format(message.ljust(self.width - 4)))

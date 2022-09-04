@@ -395,8 +395,10 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             )
             return
 
+        hint = True
         if self.y_mouse is not None:
             self.selection.reset()
+            hint = False
 
         self.selection.within_window = False
         processes = islice(
@@ -430,6 +432,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
             if y == self.y_mouse:
                 self.selection.process = process
+                hint = True
 
             owned = str(process.username) == USERNAME or SUPERUSER
             if self.selection.is_same_on_host(process):
@@ -451,6 +454,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 )
             elif not owned:
                 self.color_at(y, self.x, width=self.width, attr='dim')
+
+        if not hint:
+            self.selection.clear()
 
         self.color(fg='cyan', attr='bold | reverse')
         text_offset = self.x + self.width - 47
