@@ -1593,19 +1593,23 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         processes = {}
 
+        found_na = False
         for type, func in (  # pylint: disable=redefined-builtin
             ('C', 'nvmlDeviceGetComputeRunningProcesses'),
             ('G', 'nvmlDeviceGetGraphicsRunningProcesses'),
         ):
             for p in libnvml.nvmlQuery(func, self.handle, default=()):
+                if isinstance(p.usedGpuMemory, int):
+                    gpu_memory = p.usedGpuMemory
+                else:
+                    # Used GPU memory is `N/A` on Windows Display Driver Model (WDDM)
+                    # or on MIG-enabled GPUs
+                    gpu_memory = NA
+                    found_na = True
                 proc = processes[p.pid] = self.GPU_PROCESS_CLASS(
                     pid=p.pid,
                     device=self,
-                    gpu_memory=(
-                        p.usedGpuMemory
-                        if isinstance(p.usedGpuMemory, int)
-                        else NA  # used GPU memory is `N/A` in Windows Display Driver Model (WDDM)
-                    ),
+                    gpu_memory=gpu_memory,
                     gpu_instance_id=getattr(p, 'gpuInstanceId', 0xFFFFFFFF),
                     compute_instance_id=getattr(p, 'computeInstanceId', 0xFFFFFFFF),
                 )
@@ -1615,12 +1619,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             samples = libnvml.nvmlQuery(
                 'nvmlDeviceGetProcessUtilization', self.handle, self._timestamp, default=()
             )
-            self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 500000, 0)
+            self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 2_000_000, 0)
             for s in samples:
                 try:
                     processes[s.pid].set_gpu_utilization(s.smUtil, s.memUtil, s.encUtil, s.decUtil)
                 except KeyError:
                     pass
+            if not found_na:
+                for pid in set(processes).difference(s.pid for s in samples):
+                    processes[pid].set_gpu_utilization(0, 0, 0, 0)
 
         return processes
 
