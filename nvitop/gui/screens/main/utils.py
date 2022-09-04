@@ -106,6 +106,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes
         else:
             return
 
+        flag = False
         for process in processes:
             try:
                 func(process)
