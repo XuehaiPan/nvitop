@@ -34,7 +34,7 @@ TRUE_COLORS = dict(
         ('bright cyan', 14),
         ('bright white', 15),
     ]
-    + [('preserved {:02d}'.format(i), i) for i in range(16, 48)]
+    + [('preserved {:02d}'.format(i), i) for i in range(16, 64)]
 )
 
 
@@ -55,7 +55,7 @@ def _init_color_theme(light_theme=False):
         DEFAULT_BACKGROUND = curses.COLOR_BLACK
 
 
-def _colormap(x, levels=200):
+def _colormap(x, levels=160):
     # pylint: disable=invalid-name
     h = 0.5 * (1.0 - x) - 0.15
     h = (round(h * levels) / levels) % 1.0
