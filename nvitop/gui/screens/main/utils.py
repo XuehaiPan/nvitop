@@ -14,7 +14,7 @@ from nvitop.gui.library import LARGE_INTEGER, NA, SUPERUSER, USERNAME, Snapshot,
 Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
 
 
-class Selection:
+class Selection:  # pylint: disable=too-many-instance-attributes
     def __init__(self, panel):
         self.tagged = WeakValueDictionary()
         self.panel = panel

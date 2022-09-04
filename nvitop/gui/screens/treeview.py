@@ -355,7 +355,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         super().poke()
 
-    def draw(self):
+    def draw(self):  # pylint: disable=too-many-statements
         self.color_reset()
 
         pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
