@@ -431,6 +431,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             if y == self.y_mouse:
                 self.selection.process = process
 
+            owned = str(process.username) == USERNAME or SUPERUSER
             if self.selection.is_same_on_host(process):
                 self.color_at(
                     y,
@@ -441,8 +442,14 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 )
                 self.selection.within_window = 1 <= y - self.y < self.height and self.width >= 79
             elif self.selection.is_tagged(process):
-                self.color_at(y, self.x, width=self.width, fg='yellow', attr='bold')
-            elif str(process.username) != USERNAME and not SUPERUSER:
+                self.color_at(
+                    y,
+                    self.x,
+                    width=self.width,
+                    fg='yellow',
+                    attr='bold' if owned else 'bold | dim',
+                )
+            elif not owned:
                 self.color_at(y, self.x, width=self.width, attr='dim')
 
         self.color(fg='cyan', attr='bold | reverse')

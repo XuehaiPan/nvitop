@@ -486,12 +486,19 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         self.root.y <= y < self.root.termsize[0] and self.width >= 79
                     )
                 else:
+                    owned = str(process.username) == USERNAME or SUPERUSER
                     if self.selection.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=', self.get_fg_bg_attr(attr='bold | blink'))
                     self.color_at(y, self.x + 2, width=3, fg=color)
                     if self.selection.is_tagged(process):
-                        self.color_at(y, self.x + 5, width=self.width - 6, fg='yellow', attr='bold')
-                    elif str(process.username) != USERNAME and not SUPERUSER:
+                        self.color_at(
+                            y,
+                            self.x + 5,
+                            width=self.width - 6,
+                            fg='yellow',
+                            attr='bold' if owned else 'bold | dim',
+                        )
+                    elif not owned:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
                     if is_zombie or no_permissions:
                         self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
