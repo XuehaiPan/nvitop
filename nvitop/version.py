@@ -14,7 +14,7 @@ if not __release__:
     import subprocess
 
     try:
-        __version__ = (
+        prefix, _, suffix = (
             subprocess.check_output(
                 ['git', 'describe', '--abbrev=7'],
                 cwd=os.path.dirname(os.path.abspath(__file__)),
@@ -23,9 +23,13 @@ if not __release__:
             )
             .strip()
             .lstrip('v')
-            .replace('-', 'dev', 1)
-            .replace('-g', '+')
+            .replace('-', '.dev', 1)
+            .replace('-', '+')
+            .rpartition('.dev')
         )
+        version_prefix, _, version_tail = prefix.rpartition('.')
+        __version__ = '{}.{}.dev{}'.format(version_prefix, int(version_tail) + 1, suffix)
+        del prefix, suffix, version_prefix, version_tail
     except (OSError, subprocess.CalledProcessError):
         pass
 
