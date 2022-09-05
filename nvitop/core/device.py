@@ -113,6 +113,7 @@ __all__ = [
     'parse_cuda_visible_devices',
 ]
 
+### Class definitions ##############################################################################
 
 MemoryInfo = NamedTuple(
     'MemoryInfo',  # in bytes
@@ -2270,7 +2271,8 @@ def parse_cuda_visible_devices(
     return _parse_cuda_visible_devices(cuda_visible_devices)
 
 
-## Helper functions ##
+### Helper functions ###############################################################################
+
 _PhysicalDeviceAttrs = NamedTuple(
     'PhysicalDeviceAttrs',
     [
