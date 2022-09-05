@@ -228,7 +228,7 @@ class CursesShortcuts:
         except curses.error:
             pass
 
-    def color(self, fg=-1, bg=-1, attr=None):
+    def color(self, fg=-1, bg=-1, attr=0):
         """Change the colors from now on."""
 
         return self.set_fg_bg_attr(fg, bg, attr)
@@ -247,17 +247,15 @@ class CursesShortcuts:
             pass
 
     @staticmethod
-    def get_fg_bg_attr(fg=-1, bg=-1, attr=None):
+    def get_fg_bg_attr(fg=-1, bg=-1, attr=0):
         """Returns the curses attribute for the given fg/bg/attr combination."""
 
         if fg == -1 and bg == -1 and attr == 0:
-            return 0
+            return BASE_ATTR
 
-        if attr is None:
-            attr = int(BASE_ATTR)
-        elif isinstance(attr, str):
+        if isinstance(attr, str):
             attr_strings = map(str.strip, attr.split('|'))
-            attr = int(BASE_ATTR)
+            attr = 0
             for s in attr_strings:
                 attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
 
@@ -266,10 +264,10 @@ class CursesShortcuts:
                 bg = DEFAULT_FOREGROUND
 
         if fg == -1 and bg == -1:
-            return attr
-        return curses.color_pair(_get_color(fg, bg)) | attr
+            return attr | BASE_ATTR
+        return curses.color_pair(_get_color(fg, bg)) | attr | BASE_ATTR
 
-    def set_fg_bg_attr(self, fg=-1, bg=-1, attr=None):
+    def set_fg_bg_attr(self, fg=-1, bg=-1, attr=0):
         try:
             attr = self.get_fg_bg_attr(fg, bg, attr)
             self.win.attrset(attr)
