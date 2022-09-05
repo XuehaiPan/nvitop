@@ -23,8 +23,8 @@ if not __release__:
             )
             .strip()
             .lstrip('v')
-            .replace('-', '+', 1)
-            .replace('-', '.')
+            .replace('-', 'dev', 1)
+            .replace('-', '+')
         )
     except (OSError, subprocess.CalledProcessError):
         pass
