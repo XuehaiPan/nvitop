@@ -309,8 +309,8 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.addstr(y, self.x + 1, line)
 
         if self.width >= 100:
-            if self.device_count > 1 and self.parent.selected.is_set():
-                device = self.parent.selected.process.device
+            if self.device_count > 1 and self.parent.selection.is_set():
+                device = self.parent.selection.process.device
                 memory_percent = device.memory_percent.history
                 gpu_utilization = device.gpu_utilization.history
             else:

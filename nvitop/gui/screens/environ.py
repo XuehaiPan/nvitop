@@ -204,7 +204,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
 
     def init_keybindings(self):
         def refresh_environ():
-            self.process = self.root.previous_screen.selected.process
+            self.process = self.root.previous_screen.selection.process
             self.need_redraw = True
 
         def environ_left():

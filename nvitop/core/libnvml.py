@@ -39,7 +39,7 @@ __all__ = [  # will be updated in below
     'NVMLError',
 ]
 
-# Members from `pynvml` ################################################################################################
+### Members from `pynvml` ##########################################################################
 
 NVMLError = _pynvml.NVMLError
 NVMLError.__doc__ = """Base exception class for NVML query errors."""
@@ -151,7 +151,7 @@ NVMLError_NotSupported = _pynvml.NVMLError_NotSupported
 NVMLError_Unknown = _pynvml.NVMLError_Unknown
 # pylint: enable=no-member
 
-# New members in `libnvml` #############################################################################################
+### New members in `libnvml` #######################################################################
 
 __flags = []
 __initialized = False

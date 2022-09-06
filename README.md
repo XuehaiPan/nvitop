@@ -247,7 +247,7 @@ You can configure the default monitor mode with the `NVITOP_MONITOR_MODE` enviro
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/135861886-2c27c00e-ee9d-4c21-9918-5037afc2e177.png" alt="Help Screen">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/188309362-eb35bdef-f740-45ff-9906-84662f3417ac.png" alt="Help Screen">
   </br>
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
@@ -395,6 +395,7 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                     |
 |              `<PageUp>` / `<PageDown>`</br> `<A-K>` / `<A-J>`<br>`[` / `]` | scroll entire screen (for large amounts of processes).                               |
 |                                                                            |                                                                                      |
+|                                                                  `<Space>` | Tag/untag current process.                                                           |
 |                                                                    `<Esc>` | Clear process selection.                                                             |
 |                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt).                            |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |

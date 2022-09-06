@@ -26,7 +26,7 @@ from nvitop.gui.library import (
     host,
     wcslen,
 )
-from nvitop.gui.screens.main.utils import Order, Selected
+from nvitop.gui.screens.main.utils import Order, Selection
 
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -127,7 +127,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
-        self.selected = Selected(panel=self)
+        self.selection = Selection(panel=self)
         self.host_offset = -1
         self.y_mouse = None
 
@@ -225,13 +225,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if old_host_offset not in (self.host_offset, LARGE_INTEGER):
             self.beep()
 
-        if self.selected.is_set():
-            identity = self.selected.identity
-            self.selected.clear()
+        if self.selection.is_set():
+            identity = self.selection.identity
+            self.selection.reset()
             for i, process in enumerate(snapshots):
                 if process._ident == identity:  # pylint: disable=protected-access
-                    self.selected.index = i
-                    self.selected.process = process
+                    self.selection.index = i
+                    self.selection.process = process
                     break
 
     @classmethod
@@ -313,8 +313,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.snapshots = self._snapshot_buffer
 
-        self.selected.within_window = False
-        if len(self.snapshots) > 0 and self.selected.is_set():
+        self.selection.within_window = False
+        if len(self.snapshots) > 0 and self.selection.is_set():
             y = self.y + 5
             prev_device_index = None
             for process in self.snapshots:
@@ -324,11 +324,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         y += 1
                     prev_device_index = device_index
 
-                if self.selected.is_same(process):
-                    self.selected.within_window = (
+                if self.selection.is_same(process):
+                    self.selection.within_window = (
                         self.root.y <= y < self.root.termsize[0] and self.width >= 79
                     )
-                    if not self.selected.within_window:
+                    if not self.selection.within_window:
                         if y < self.root.y:
                             self.parent.y += self.root.y - y
                         elif y >= self.root.termsize[0]:
@@ -421,10 +421,12 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             )
             self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
 
+        hint = True
         if self.y_mouse is not None:
-            self.selected.clear()
+            self.selection.reset()
+            hint = False
 
-        self.selected.within_window = False
+        self.selection.within_window = False
         if len(self.snapshots) > 0:
             y = self.y + 5
             prev_device_index = None
@@ -472,33 +474,53 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     self.addstr(y, self.x + 38, process.command)
 
                 if y == self.y_mouse:
-                    self.selected.process = process
+                    self.selection.process = process
+                    hint = True
 
-                if self.selected.is_same(process):
+                if self.selection.is_same(process):
                     self.color_at(
-                        y, self.x + 1, width=self.width - 2, fg='cyan', attr='bold | reverse'
+                        y,
+                        self.x + 1,
+                        width=self.width - 2,
+                        fg='yellow' if self.selection.is_tagged(process) else 'cyan',
+                        attr='bold | reverse',
                     )
-                    self.selected.within_window = (
+                    self.selection.within_window = (
                         self.root.y <= y < self.root.termsize[0] and self.width >= 79
                     )
                 else:
-                    if self.selected.is_same_on_host(process):
+                    owned = str(process.username) == USERNAME or SUPERUSER
+                    if self.selection.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=', self.get_fg_bg_attr(attr='bold | blink'))
                     self.color_at(y, self.x + 2, width=3, fg=color)
-                    if str(process.username) != USERNAME and not SUPERUSER:
+                    if self.selection.is_tagged(process):
+                        self.color_at(
+                            y,
+                            self.x + 5,
+                            width=self.width - 6,
+                            fg='yellow',
+                            attr='bold' if owned else 'bold | dim',
+                        )
+                    elif not owned:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
                     if is_zombie or no_permissions:
                         self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
                     elif is_gone:
                         self.color_at(y, self.x + 38 + command_offset, width=15, fg='red')
                 y += 1
+
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛')
+            if not hint:
+                self.selection.clear()
+
         elif self.has_snapshots:
             message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
             self.addstr(self.y + 5, self.x, '│ {} │'.format(message.ljust(self.width - 4)))
 
         text_offset = self.x + self.width - 47
-        if self.selected.owned() and self.selected.within_window:
+        if len(self.selection.tagged) > 0 or (
+            self.selection.owned() and self.selection.within_window
+        ):
             self.addstr(self.y, text_offset, '(Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
             self.color_at(self.y, text_offset + 7, width=2, fg='magenta', attr='bold | italic')
             self.color_at(self.y, text_offset + 10, width=3, fg='red', attr='bold')
@@ -604,7 +626,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if event.shift():
             self.host_offset += 2 * direction
         else:
-            self.selected.move(direction=direction)
+            self.selection.move(direction=direction)
         return True
 
     def __contains__(self, item):

@@ -34,8 +34,11 @@ TRUE_COLORS = dict(
         ('bright cyan', 14),
         ('bright white', 15),
     ]
-    + [('preserved {:02d}'.format(i), i) for i in range(16, 48)]
+    + [('preserved {:02d}'.format(i), i) for i in range(16, 64)]
 )
+
+
+BASE_ATTR = 0
 
 
 def _init_color_theme(light_theme=False):
@@ -52,7 +55,7 @@ def _init_color_theme(light_theme=False):
         DEFAULT_BACKGROUND = curses.COLOR_BLACK
 
 
-def _colormap(x, levels=200):
+def _colormap(x, levels=160):
     # pylint: disable=invalid-name
     h = 0.5 * (1.0 - x) - 0.15
     h = (round(h * levels) / levels) % 1.0
@@ -248,7 +251,7 @@ class CursesShortcuts:
         """Returns the curses attribute for the given fg/bg/attr combination."""
 
         if fg == -1 and bg == -1 and attr == 0:
-            return 0
+            return BASE_ATTR
 
         if isinstance(attr, str):
             attr_strings = map(str.strip, attr.split('|'))
@@ -261,8 +264,8 @@ class CursesShortcuts:
                 bg = DEFAULT_FOREGROUND
 
         if fg == -1 and bg == -1:
-            return attr
-        return curses.color_pair(_get_color(fg, bg)) | attr
+            return attr | BASE_ATTR
+        return curses.color_pair(_get_color(fg, bg)) | attr | BASE_ATTR
 
     def set_fg_bg_attr(self, fg=-1, bg=-1, attr=0):
         try:
@@ -290,3 +293,15 @@ class CursesShortcuts:
     @staticmethod
     def flash():
         curses.flash()
+
+    @staticmethod
+    def set_base_attr(attr=0):
+        global BASE_ATTR  # pylint: disable=global-statement
+
+        if isinstance(attr, str):
+            attr_strings = map(str.strip, attr.split('|'))
+            attr = 0
+            for s in attr_strings:
+                attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
+
+        BASE_ATTR = attr

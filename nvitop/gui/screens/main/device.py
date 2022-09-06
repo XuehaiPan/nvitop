@@ -170,11 +170,16 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if compact is None:
             compact = self.compact
 
+        version_infos = (
+            'NVITOP {}'.format(__version__.partition('+')[0]),
+            'Driver Version: {}'.format(self.driver_version),
+            'CUDA Driver Version: {}'.format(self.cuda_driver_version),
+        )
+        version_seps = ' ' * max(2, (75 - sum(len(v) for v in version_infos)) // 2)
+
         header = [
             '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ NVITOP {:<9} Driver Version: {:<12} CUDA Driver Version: {:<8} │'.format(
-                __version__.partition('+')[0], self.driver_version, self.cuda_driver_version
-            ),
+            '│ {} │'.format(version_seps.join(version_infos).ljust(75, ' ')),
         ]
         if self.device_count > 0:
             header.append(
@@ -276,7 +281,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         remaining_width = self.width - 79
         draw_bars = self.width >= 100
         try:
-            selected_device = self.parent.selected.process.device
+            selected_device = self.parent.selection.process.device
         except AttributeError:
             selected_device = None
 

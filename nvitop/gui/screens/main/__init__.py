@@ -49,7 +49,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.process_panel.focused = False
         self.add_child(self.process_panel)
 
-        self.selected = self.process_panel.selected
+        self.selection = self.process_panel.selection
 
         self.ascii = ascii
         self.device_panel.ascii = self.ascii
@@ -173,6 +173,9 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.root.update_size()
             self.root.need_redraw = True
 
+        def screen_move(direction):
+            self.move(direction)
+
         def host_left():
             self.process_panel.host_offset -= 2
 
@@ -186,22 +189,23 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.process_panel.host_offset = LARGE_INTEGER
 
         def select_move(direction):
-            self.selected.move(direction=direction)
+            self.selection.move(direction=direction)
 
         def select_clear():
-            self.selected.clear()
+            self.selection.clear()
 
-        def screen_move(direction):
-            self.move(direction)
+        def tag():
+            self.selection.tag()
+            select_move(direction=+1)
 
         def terminate():
-            self.selected.terminate()
+            self.selection.terminate()
 
         def kill():
-            self.selected.kill()
+            self.selection.kill()
 
         def interrupt():
-            self.selected.interrupt()
+            self.selection.interrupt()
 
         def sort_by(order, reverse):
             self.process_panel.order = order
@@ -227,6 +231,13 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.root.keymaps.copy('main', 'r', '<C-r>')
         self.root.keymaps.copy('main', 'r', '<F5>')
 
+        self.root.keymaps.bind('main', '<PageUp>', partial(screen_move, direction=-1))
+        self.root.keymaps.copy('main', '<PageUp>', '[')
+        self.root.keymaps.copy('main', '<PageUp>', '<A-K>')
+        self.root.keymaps.bind('main', '<PageDown>', partial(screen_move, direction=+1))
+        self.root.keymaps.copy('main', '<PageDown>', ']')
+        self.root.keymaps.copy('main', '<PageDown>', '<A-J>')
+
         self.root.keymaps.bind('main', '<Left>', host_left)
         self.root.keymaps.copy('main', '<Left>', '<A-h>')
         self.root.keymaps.bind('main', '<Right>', host_right)
@@ -244,13 +255,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.root.keymaps.bind('main', '<Home>', partial(select_move, direction=-(1 << 20)))
         self.root.keymaps.bind('main', '<End>', partial(select_move, direction=+(1 << 20)))
         self.root.keymaps.bind('main', '<Esc>', select_clear)
-
-        self.root.keymaps.bind('main', '<PageUp>', partial(screen_move, direction=-1))
-        self.root.keymaps.copy('main', '<PageUp>', '[')
-        self.root.keymaps.copy('main', '<PageUp>', '<A-K>')
-        self.root.keymaps.bind('main', '<PageDown>', partial(screen_move, direction=+1))
-        self.root.keymaps.copy('main', '<PageDown>', ']')
-        self.root.keymaps.copy('main', '<PageDown>', '<A-J>')
+        self.root.keymaps.bind('main', '<Space>', tag)
 
         self.root.keymaps.bind('main', 'T', terminate)
         self.root.keymaps.bind('main', 'K', kill)
