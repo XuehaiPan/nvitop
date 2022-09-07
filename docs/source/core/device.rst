@@ -11,6 +11,7 @@ nvitop.device module
     CudaDevice
     CudaMigDevice
     parse_cuda_visible_devices
+    normalize_cuda_visible_devices
 
 .. automodule:: nvitop.device
     :no-members:
@@ -46,3 +47,5 @@ nvitop.device module
     :member-order: bysource
 
 .. autofunction:: nvitop.parse_cuda_visible_devices
+
+.. autofunction:: nvitop.normalize_cuda_visible_devices

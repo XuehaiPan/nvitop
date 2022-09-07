@@ -922,7 +922,11 @@ The [device module](https://nvitop.readthedocs.io/en/latest/core/device.html) pr
     </tr>
     <tr class="row-even">
       <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.parse_cuda_visible_devices" title="nvitop.parse_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_cuda_visible_devices</span></code></a>([...])</p></td>
-      <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value into NVML device indices.</p></td>
+      <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value into a list of NVML device indices.</p></td>
+    </tr>
+    <tr class="row-odd">
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.normalize_cuda_visible_devices" title="nvitop.normalize_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_cuda_visible_devices</span></code></a>([...])</p></td>
+      <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value and convert it into a comma-separated string of UUIDs.</p></td>
     </tr>
   </tbody>
 </table>
@@ -930,7 +934,7 @@ The [device module](https://nvitop.readthedocs.io/en/latest/core/device.html) pr
 ```python
 In [1]: from nvitop import (
    ...:     host,
-   ...:     Device, PhysicalDevice, CudaDevice, parse_cuda_visible_devices
+   ...:     Device, PhysicalDevice, CudaDevice, parse_cuda_visible_devices, normalize_cuda_visible_devices
    ...:     HostProcess, GpuProcess,
    ...:     NA,
    ...: )

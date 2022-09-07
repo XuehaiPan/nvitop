@@ -111,6 +111,7 @@ __all__ = [
     'CudaDevice',
     'CudaMigDevice',
     'parse_cuda_visible_devices',
+    'normalize_cuda_visible_devices',
 ]
 
 ### Class definitions ##############################################################################
@@ -435,7 +436,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def parse_cuda_visible_devices(
         cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
     ) -> Union[List[int], List[Tuple[int, int]]]:
-        """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
+        """Parses the given ``CUDA_VISIBLE_DEVICES`` value into a list of NVML device indices.
         Alias of :func:`parse_cuda_visible_devices`.
 
         Note:
@@ -457,6 +458,29 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
 
         return parse_cuda_visible_devices(cuda_visible_devices)
+
+    @staticmethod
+    def normalize_cuda_visible_devices(cuda_visible_devices: Optional[str] = _VALUE_OMITTED) -> str:
+        """Parses the given ``CUDA_VISIBLE_DEVICES`` value and convert it into a comma-separated string of UUIDs.
+        Alias of :func:`normalize_cuda_visible_devices`.
+
+        Note:
+            The result could be empty string if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
+
+        See also for CUDA Device Enumeration:
+            - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+            - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
+
+        Args:
+            cuda_visible_devices (Optional[str]):
+                The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
+                environment will be used. If explicitly given by :data:`None`, the ``CUDA_VISIBLE_DEVICES``
+                environment variable will be unset before parsing.
+
+        Returns: str
+            The comma-separated string (GPU UUIDs) of the ``CUDA_VISIBLE_DEVICES`` environment variable.
+        """  # pylint: disable=line-too-long
+        return normalize_cuda_visible_devices(cuda_visible_devices)
 
     def __new__(
         cls,
@@ -2244,7 +2268,7 @@ def is_mig_device_uuid(uuid: Optional[str]) -> bool:
 def parse_cuda_visible_devices(
     cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
 ) -> Union[List[int], List[Tuple[int, int]]]:
-    """Parses the given ``CUDA_VISIBLE_DEVICES`` value into NVML device indices.
+    """Parses the given ``CUDA_VISIBLE_DEVICES`` value into a list of NVML device indices.
     Aliased by :meth:`Device.parse_cuda_visible_devices`.
 
     Note:
@@ -2263,12 +2287,99 @@ def parse_cuda_visible_devices(
     Returns: Union[List[int], List[Tuple[int, int]]]
         A list of int (physical device) or a list of tuple of two ints (MIG device) for the
         corresponding real device indices.
+
+    Examples:
+
+        >>> import os
+        >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
+        >>> parse_cuda_visible_devices()        # parse the `CUDA_VISIBLE_DEVICES` environment variable to NVML indices
+        [6, 5]
+
+        >>> parse_cuda_visible_devices('0,4')     # pass the `CUDA_VISIBLE_DEVICES` value explicitly
+        [0, 4]
+
+        >>> parse_cuda_visible_devices('GPU-18ef14e9,GPU-849d5a8d')  # accept abbreviated UUIDs
+        [5, 6]
+
+        >>> parse_cuda_visible_devices(None)    # get all devices when the `CUDA_VISIBLE_DEVICES` environment variable unset
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+        >>> parse_cuda_visible_devices('MIG-d184f67c-c95f-5ef2-a935-195bd0094fbd')           # MIG device support (MIG UUID)
+        [(0, 0)]
+        >>> parse_cuda_visible_devices('MIG-GPU-3eb79704-1571-707c-aee8-f43ce747313d/13/0')  # MIG device support (GPU UUID)
+        [(0, 1)]
+        >>> parse_cuda_visible_devices('MIG-GPU-3eb79704/13/0')                              # MIG device support (abbreviated GPU UUID)
+        [(0, 1)]
+
+        >>> parse_cuda_visible_devices('')      # empty string
+        []
+        >>> parse_cuda_visible_devices('0,0')   # invalid `CUDA_VISIBLE_DEVICES` (duplicate device ordinal)
+        []
+        >>> parse_cuda_visible_devices('16')    # invalid `CUDA_VISIBLE_DEVICES` (device ordinal out of range)
+        []
     """  # pylint: disable=line-too-long
 
     if cuda_visible_devices is _VALUE_OMITTED:
         cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
 
-    return _parse_cuda_visible_devices(cuda_visible_devices)
+    return _parse_cuda_visible_devices(cuda_visible_devices, format='index')
+
+
+def normalize_cuda_visible_devices(cuda_visible_devices: Optional[str] = _VALUE_OMITTED) -> str:
+    """Parses the given ``CUDA_VISIBLE_DEVICES`` value and convert it into a comma-separated string of UUIDs.
+    Aliased by :meth:`Device.normalize_cuda_visible_devices`.
+
+    Note:
+        The result could be empty string if the ``CUDA_VISIBLE_DEVICES`` environment variable is invalid.
+
+    See also for CUDA Device Enumeration:
+        - `CUDA Environment Variables <https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#env-vars>`_
+        - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
+
+    Args:
+        cuda_visible_devices (Optional[str]):
+            The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
+            environment will be used. If explicitly given by :data:`None`, the ``CUDA_VISIBLE_DEVICES``
+            environment variable will be unset before parsing.
+
+    Returns: str
+        The comma-separated string (GPU UUIDs) of the ``CUDA_VISIBLE_DEVICES`` environment variable.
+
+    Examples:
+
+        >>> import os
+        >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
+        >>> normalize_cuda_visible_devices()        # normalize the `CUDA_VISIBLE_DEVICES` environment variable to UUID strings
+        'GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1'
+
+        >>> normalize_cuda_visible_devices('4')     # pass the `CUDA_VISIBLE_DEVICES` value explicitly
+        'GPU-96de99c9-d68f-84c8-424c-7c75e59cc0a0'
+
+        >>> normalize_cuda_visible_devices('GPU-18ef14e9,GPU-849d5a8d')  # normalize abbreviated UUIDs
+        'GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1,GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794'
+
+        >>> normalize_cuda_visible_devices(None)    # get all devices when the `CUDA_VISIBLE_DEVICES` environment variable unset
+        'GPU-<GPU0-UUID>,GPU-<GPU1-UUID>,...'  # all GPU UUIDs
+
+        >>> normalize_cuda_visible_devices('MIG-d184f67c-c95f-5ef2-a935-195bd0094fbd')           # MIG device support (MIG UUID)
+        'MIG-d184f67c-c95f-5ef2-a935-195bd0094fbd'
+        >>> normalize_cuda_visible_devices('MIG-GPU-3eb79704-1571-707c-aee8-f43ce747313d/13/0')  # MIG device support (GPU UUID)
+        'MIG-37b51284-1df4-5451-979d-3231ccb0822e'
+        >>> normalize_cuda_visible_devices('MIG-GPU-3eb79704/13/0')                              # MIG device support (abbreviated GPU UUID)
+        'MIG-37b51284-1df4-5451-979d-3231ccb0822e'
+
+        >>> normalize_cuda_visible_devices('')      # empty string
+        ''
+        >>> normalize_cuda_visible_devices('0,0')   # invalid `CUDA_VISIBLE_DEVICES` (duplicate device ordinal)
+        ''
+        >>> normalize_cuda_visible_devices('16')    # invalid `CUDA_VISIBLE_DEVICES` (device ordinal out of range)
+        ''
+    """  # pylint: disable=line-too-long
+
+    if cuda_visible_devices is _VALUE_OMITTED:
+        cuda_visible_devices = os.getenv('CUDA_VISIBLE_DEVICES', default=None)
+
+    return ','.join(_parse_cuda_visible_devices(cuda_visible_devices, format='uuid'))
 
 
 ### Helper functions ###############################################################################
@@ -2335,8 +2446,11 @@ def _get_global_physical_device() -> 'PhysicalDevice':
 @ttl_cache(ttl=300.0)
 def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
     cuda_visible_devices: Optional[str] = None,
-) -> Union[List['PhysicalDevice'], List['MigDevice']]:
+    format: str = 'index',  # pylint: disable=redefined-builtin
+) -> Union[List[int], List[Tuple[int, int]], List[str]]:
     """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
+
+    assert format in ('index', 'uuid')
 
     try:
         physical_device_attrs = _get_all_physical_device_attrs()
@@ -2354,6 +2468,8 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
             for uuid in map('GPU-{}'.format, raw_uuids)
         ]
         if gpu_uuids.issuperset(uuids) and not _does_any_device_support_mig_mode(uuids):
+            if format == 'uuid':
+                return uuids
             return [physical_device_attrs[uuid].index for uuid in uuids]
         cuda_visible_devices = ','.join(uuids)
 
@@ -2414,6 +2530,8 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
             else:
                 devices.append(device)  # non-MIG device
 
+    if format == 'uuid':
+        return [device.uuid() for device in devices]
     return [device.index for device in devices]
 
 

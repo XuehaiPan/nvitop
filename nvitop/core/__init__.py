@@ -11,6 +11,7 @@ from nvitop.core.device import (
     Device,
     MigDevice,
     PhysicalDevice,
+    normalize_cuda_visible_devices,
     parse_cuda_visible_devices,
 )
 from nvitop.core.libnvml import NVMLError, nvmlCheckReturn
@@ -31,6 +32,7 @@ __all__ = [
     'CudaDevice',
     'CudaMigDevice',
     'parse_cuda_visible_devices',
+    'normalize_cuda_visible_devices',
     'host',
     'HostProcess',
     'GpuProcess',
