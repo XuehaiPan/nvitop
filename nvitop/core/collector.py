@@ -30,10 +30,11 @@ SnapshotResult = NamedTuple(
 timer = time.monotonic
 
 
+# pylint: disable-next=too-many-branches
 def take_snapshots(
     devices: Optional[Union[Device, Iterable[Device]]] = None,
     *,
-    gpu_processes: Optional[Union[GpuProcess, Iterable[GpuProcess]]] = None
+    gpu_processes: Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]] = None
 ) -> SnapshotResult:
     """Retrieves status of demanded devices and GPU processes.
 
@@ -43,9 +44,10 @@ def take_snapshots(
             determined from GPU processes:
             - All devices (no GPU processes are given)
             - Devices that used by given GPU processes
-        gpu_processes (Optional[Union[GpuProcess, Iterable[GpuProcess]]]):
+        gpu_processes (Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]]):
             Requested GPU processes snapshots. If not given, all GPU processes
-            running on the requested device will be returned.
+            running on the requested device will be returned. The GPU process
+            snapshots can be suppressed by specifying ``gpu_processes=False``.
 
     Returns: SnapshotResult
         A named tuple containing two lists of snapshots.
@@ -79,6 +81,8 @@ def take_snapshots(
         )
 
         >>> device_snapshots, gpu_process_snapshots = take_snapshots(Device.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
+
+        >>> device_snapshots, _ = take_snapshots(gpu_processes=False)  # ignore process snapshots
 
         >>> take_snapshots(Device.cuda.all())  # use CUDA device enumeration
         SnapshotResult(
@@ -128,12 +132,17 @@ def take_snapshots(
         gpu_processes = [gpu_processes]
 
     if gpu_processes is not None:
-        gpu_processes = list(gpu_processes)
-        process_devices = unique(process.device for process in gpu_processes)
-        for device in process_devices:
-            device.processes()  # update GPU status for requested GPU processes
-        if devices is None:
-            devices = process_devices
+        if gpu_processes:  # is not False or is a non-empty list/tuple
+            gpu_processes = list(gpu_processes)
+            process_devices = unique(process.device for process in gpu_processes)
+            for device in process_devices:
+                device.processes()  # update GPU status for requested GPU processes
+            if devices is None:
+                devices = process_devices
+        else:
+            gpu_processes = []  # False or empty list/tuple
+            if devices is None:
+                devices = Device.all()
     else:
         if devices is None:
             physical_devices = Device.all()

@@ -675,7 +675,7 @@ for device in devices:
 
 #### Status Snapshot
 
-`nvitop` provides a helper [`take_snapshots`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.take_snapshots) function to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
+`nvitop` provides a helper function [`take_snapshots`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.take_snapshots) to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
 
 ```python
 In [1]: from nvitop import take_snapshots, Device
@@ -703,8 +703,10 @@ SnapshotResult(
 
 In [3]: device_snapshots, gpu_process_snapshots = take_snapshots(Device.all())  # type: Tuple[List[DeviceSnapshot], List[GpuProcessSnapshot]]
 
-In [4]: take_snapshots(Device.cuda.all())  # use CUDA device enumeration
-Out[4]:
+In [4]: device_snapshots, _ = take_snapshots(gpu_processes=False)  # ignore process snapshots
+
+In [5]: take_snapshots(Device.cuda.all())  # use CUDA device enumeration
+Out[5]:
 SnapshotResult(
     devices=[
         CudaDeviceSnapshot(
@@ -725,8 +727,8 @@ SnapshotResult(
     ]
 )
 
-In [5]: take_snapshots(Device.cuda(1))  # <CUDA 1> only
-Out[5]:
+In [6]: take_snapshots(Device.cuda(1))  # <CUDA 1> only
+Out[6]:
 SnapshotResult(
     devices=[
         CudaDeviceSnapshot(
