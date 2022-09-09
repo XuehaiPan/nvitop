@@ -355,7 +355,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-statements
+    def draw(self):  # pylint: disable=too-many-statements,too-many-locals
         self.color_reset()
 
         pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
@@ -366,7 +366,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         num_threads_width = max(
             4, max((len(str(process.num_threads)) for process in self.snapshots), default=4)
         )
-        command_offset = pid_width + username_width + device_width + num_threads_width + 20
+        time_width = max(
+            4, max((len(process.running_time_human) for process in self.snapshots), default=4)
+        )
 
         header = '  '.join(
             [
@@ -376,9 +378,11 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 'NLWP'.rjust(num_threads_width),
                 '%CPU',
                 '%MEM',
+                'TIME'.rjust(time_width),
                 'COMMAND',
             ]
         )
+        command_offset = len(header) - 7
         if self.x_offset < command_offset:
             self.addstr(
                 self.y, self.x, header[self.x_offset : self.x_offset + self.width].ljust(self.width)
@@ -406,13 +410,14 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         )
         for y, process in enumerate(processes, start=self.y + 1):
             prefix_length = len(process.prefix)
-            line = '{}  {}  {}  {} {:>5} {:>5}  {}{}'.format(
+            line = '{}  {}  {}  {} {:>5} {:>5}  {}  {}{}'.format(
                 str(process.pid).rjust(pid_width),
                 process.username.ljust(username_width),
                 process.devices.rjust(device_width),
                 str(process.num_threads).rjust(num_threads_width),
                 process.cpu_percent_string.replace('%', ''),
                 process.memory_percent_string.replace('%', ''),
+                process.running_time_human.rjust(time_width),
                 process.prefix,
                 process.command,
             )
