@@ -28,16 +28,17 @@ if not __release__:
             .partition('.dev')
         )
         if sep:
-            version_prefix, _, version_tail = prefix.rpartition('.')
-            prefix = '{}.{}'.format(version_prefix, int(version_tail) + 1)
+            version_prefix, dot, version_tail = prefix.rpartition('.')
+            prefix = '{}{}{}'.format(version_prefix, dot, int(version_tail) + 1)
             __version__ = sep.join((prefix, suffix))
-            del version_prefix, version_tail
+            del version_prefix, dot, version_tail
         else:
             __version__ = prefix
         del prefix, sep, suffix
     except (OSError, subprocess.CalledProcessError):
         pass
 
+    del os, subprocess
 
 # The package `nvidia-ml-py` is not backward compatible over releases. This may
 # cause problems with Old versions of NVIDIA drivers.
