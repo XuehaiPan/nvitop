@@ -152,7 +152,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 )
                 device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')
                 device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')
-                if device.fan_speed >= 100:
+                if device.fan_speed is not NA and device.fan_speed >= 100:
                     device.fan_speed_string = 'MAX'
 
         with self.snapshot_lock:

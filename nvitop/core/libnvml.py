@@ -284,7 +284,7 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
             If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
             driver without reloading the kernel module.
         NVMLError_Uninitialized:
-            If NVML was not first initialized with ``nvmlInit()``.
+            If NVML was not first initialized with :func:`nvmlInit`.
     """
 
     global __flags, __initialized  # pylint: disable=global-statement,global-variable-not-assigned

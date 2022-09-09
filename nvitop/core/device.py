@@ -552,7 +552,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         uuid: Optional[str] = None,
         bus_id: Optional[str] = None
     ) -> None:
-        """Initializes the instance created by ``__new__()``.
+        """Initializes the instance created by :meth:`__new__()`.
 
         Raises:
             libnvml.NVMLError_LibraryNotFound:
@@ -1878,7 +1878,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
     def __init__(
         self, index: Optional[Union[Tuple[int, int], str]] = None, *, uuid: Optional[str] = None
     ) -> None:
-        """Initializes the instance created by ``__new__()``.
+        """Initializes the instance created by :meth:`__new__()`.
 
         Raises:
             libnvml.NVMLError_LibraryNotFound:
@@ -2191,7 +2191,7 @@ class CudaDevice(Device):
         nvml_index: Optional[Union[int, Tuple[int, int]]] = None,
         uuid: Optional[str] = None
     ) -> None:
-        """Initializes the instance created by ``__new__()``.
+        """Initializes the instance created by :meth:`__new__()`.
 
         Raises:
             libnvml.NVMLError_LibraryNotFound:

@@ -490,7 +490,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         compute_instance_id: Optional[Union[int, NaType]] = None,
         type: Optional[Union[str, NaType]] = None,  # pylint: disable=redefined-builtin
     ) -> None:
-        """Initializes the instance returned by ``__new__()``."""
+        """Initializes the instance returned by :meth:`__new__()`."""
 
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
             gpu_memory = NA
