@@ -441,15 +441,17 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = WeakValueDictionary()
 
-    # pylint: disable-next=too-many-arguments,unused-argument
+    # pylint: disable-next=too-many-arguments
     def __new__(
         cls,
         pid: int,
         device: 'Device',
+        # pylint: disable=unused-argument
         gpu_memory: Optional[Union[int, NaType]] = None,
         gpu_instance_id: Optional[Union[int, NaType]] = None,
         compute_instance_id: Optional[Union[int, NaType]] = None,
         type: Optional[Union[str, NaType]] = None,  # pylint: disable=redefined-builtin
+        # pylint: enable=unused-argument
     ) -> 'GpuProcess':
         """Returns the cached instance of :class:`GpuProcess`."""
 
@@ -478,10 +480,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
             return instance
 
-    # pylint: disable-next=too-many-arguments,unused-argument
+    # pylint: disable-next=too-many-arguments
     def __init__(
         self,
-        pid: int,
+        pid: int,  # pylint: disable=unused-argument
         device: 'Device',
         gpu_memory: Optional[Union[int, NaType]] = None,
         gpu_instance_id: Optional[Union[int, NaType]] = None,
