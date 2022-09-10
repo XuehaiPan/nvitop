@@ -170,11 +170,13 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if compact is None:
             compact = self.compact
 
-        version_infos = (
+        version_infos = [
             'NVITOP {}'.format(__version__.partition('+')[0]),
             'Driver Version: {}'.format(self.driver_version),
             'CUDA Driver Version: {}'.format(self.cuda_driver_version),
-        )
+        ]
+        if sum(len(v) for v in version_infos) % 2 == 0:
+            version_infos[0] += ' '
         version_seps = ' ' * max(2, (75 - sum(len(v) for v in version_infos)) // 2)
 
         header = [
