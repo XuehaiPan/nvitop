@@ -44,19 +44,23 @@ Python API:
 # pylint: disable=missing-function-docstring
 
 import argparse
+import getpass
 import math
 import os
 import sys
 import warnings
 from typing import Iterable, List, Optional, Tuple, Union
 
-from nvitop.core import Device, GpuProcess, human2bytes, libnvml
-from nvitop.gui import USERNAME, colored
+from nvitop.core import Device, GpuProcess, colored, human2bytes, libnvml
 from nvitop.version import __version__
 
 
 __all__ = ['select_devices']
 
+try:
+    USERNAME = getpass.getuser()
+except ModuleNotFoundError:
+    USERNAME = os.getlogin()
 
 TTY = sys.stdout.isatty()
 
