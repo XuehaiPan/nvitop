@@ -28,7 +28,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.device_count = len(self.devices)
 
         if win is not None:
-            self.average_memory_percent = None
+            self.average_gpu_memory_percent = None
             self.average_gpu_utilization = None
             self.enable_history()
 
@@ -59,7 +59,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 self.need_redraw = True
             graph_width = max(width - 80, 20)
             if self.win is not None:
-                self.average_memory_percent.width = graph_width
+                self.average_gpu_memory_percent.width = graph_width
                 self.average_gpu_utilization.width = graph_width
                 for device in self.devices:
                     device.memory_percent.history.width = graph_width
@@ -141,7 +141,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             enable_history(device)
 
         prefix = 'AVG ' if self.device_count > 1 else ''
-        self.average_memory_percent = BufferedHistoryGraph(
+        self.average_gpu_memory_percent = BufferedHistoryGraph(
             interval=1.0,
             width=20,
             height=5,
@@ -185,7 +185,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             if gpu_utilization is not NA:
                 gpu_utilizations.append(float(gpu_utilization))
         if total_memory_total > 0:
-            self.average_memory_percent.add(100.0 * total_memory_used / total_memory_total)
+            self.average_gpu_memory_percent.add(100.0 * total_memory_used / total_memory_total)
         if len(gpu_utilizations) > 0:
             self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
 
@@ -310,41 +310,42 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if self.width >= 100:
             if self.device_count > 1 and self.parent.selection.is_set():
                 device = self.parent.selection.process.device
-                memory_percent = device.memory_percent.history
+                gpu_memory_percent = device.memory_percent.history
                 gpu_utilization = device.gpu_utilization.history
             else:
-                memory_percent = self.average_memory_percent
+                gpu_memory_percent = self.average_gpu_memory_percent
                 gpu_utilization = self.average_gpu_utilization
 
             if self.TERM_256COLOR:
-                for i, (y, line) in enumerate(enumerate(memory_percent.graph, start=self.y)):
+                for i, (y, line) in enumerate(enumerate(gpu_memory_percent.graph, start=self.y)):
                     self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
 
                 for i, (y, line) in enumerate(enumerate(gpu_utilization.graph, start=self.y + 6)):
                     self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=i / 4.0))
             else:
-                self.color(fg=Device.color_of(memory_percent.last_value, type='memory'))
-                for y, line in enumerate(memory_percent.graph, start=self.y):
+                self.color(fg=Device.color_of(gpu_memory_percent.last_value, type='memory'))
+                for y, line in enumerate(gpu_memory_percent.graph, start=self.y):
                     self.addstr(y, self.x + 79, line)
 
                 self.color(fg=Device.color_of(gpu_utilization.last_value, type='gpu'))
                 for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
                     self.addstr(y, self.x + 79, line)
 
-            self.color_reset()
-            self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
-            self.addstr(self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history))
-            self.addstr(
-                self.y + 9,
-                self.x + 1,
-                ' {} '.format(host.memory_percent.history),
-            )
-            self.addstr(
-                self.y + 10,
-                self.x + 1,
-                ' {} '.format(host.swap_percent.history),
-            )
-            self.addstr(self.y, self.x + 79, ' {} '.format(memory_percent))
+        self.color_reset()
+        self.addstr(self.y, self.x + 1, ' {} '.format(load_average))
+        self.addstr(self.y + 1, self.x + 1, ' {} '.format(host.cpu_percent.history))
+        self.addstr(
+            self.y + 9,
+            self.x + 1,
+            ' {} '.format(host.memory_percent.history),
+        )
+        self.addstr(
+            self.y + 10,
+            self.x + 1,
+            ' {} '.format(host.swap_percent.history),
+        )
+        if self.width >= 100:
+            self.addstr(self.y, self.x + 79, ' {} '.format(gpu_memory_percent))
             self.addstr(self.y + 10, self.x + 79, ' {} '.format(gpu_utilization))
 
     def destroy(self):
