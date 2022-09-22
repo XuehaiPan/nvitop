@@ -6,6 +6,7 @@
 import itertools
 import threading
 import time
+from collections import namedtuple
 from operator import attrgetter, xor
 
 from cachetools.func import ttl_cache
@@ -20,13 +21,16 @@ from nvitop.gui.library import (
     Displayable,
     GpuProcess,
     MouseEvent,
+    Selection,
     WideString,
     colored,
     cut_string,
     host,
     wcslen,
 )
-from nvitop.gui.screens.main.utils import Order, Selection
+
+
+Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
 
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -467,9 +471,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 if self.host_offset > 0:
                     self.addstr(y, self.x + 37, ' ')
 
-                is_zombie = process.is_running and process.cmdline == ['Zombie Process']
-                no_permissions = process.is_running and process.cmdline == ['No Permissions']
-                is_gone = not process.is_running and process.cmdline == ['No Such Process']
+                is_zombie = process.is_zombie
+                no_permissions = process.no_permissions
+                is_gone = process.is_gone
                 if (is_zombie or no_permissions or is_gone) and command_offset == 0:
                     self.addstr(y, self.x + 38, process.command)
 
@@ -586,16 +590,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     process.gpu_sm_utilization_string.replace('%', ''),
                     WideString(host_info).ljust(self.width - 39)[: self.width - 39],
                 )
-                is_zombie = process.is_running and process.cmdline == ['Zombie Process']
-                no_permissions = process.is_running and process.cmdline == ['No Permissions']
-                is_gone = not process.is_running and process.cmdline == ['No Such Process']
-                if is_zombie or no_permissions or is_gone:
+                if process.is_zombie or process.no_permissions or process.is_gone:
                     info = info.split(process.command)
                     if process.username != USERNAME and not SUPERUSER:
                         info = map(lambda item: colored(item, attrs=('dark',)), info)
-                    info = colored(process.command, color=('red' if is_gone else 'yellow')).join(
-                        info
-                    )
+                    info = colored(
+                        process.command, color=('red' if process.is_gone else 'yellow')
+                    ).join(info)
                 elif process.username != USERNAME and not SUPERUSER:
                     info = colored(info, attrs=('dark',))
                 lines.append(

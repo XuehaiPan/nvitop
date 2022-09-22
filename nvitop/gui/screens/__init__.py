@@ -6,4 +6,5 @@
 from nvitop.gui.screens.environ import EnvironScreen
 from nvitop.gui.screens.help import HelpScreen
 from nvitop.gui.screens.main import BreakLoop, MainScreen
+from nvitop.gui.screens.metrics import ProcessMetricsScreen
 from nvitop.gui.screens.treeview import TreeViewScreen

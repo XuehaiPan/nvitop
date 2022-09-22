@@ -111,9 +111,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )(host.swap_percent)
 
         def percentage(x):
-            if x is NA:
-                return NA
-            return '{:.1f}%'.format(x)
+            return '{:.1f}%'.format(x) if x is not NA else NA
 
         def enable_history(device):
             device.memory_percent = BufferedHistoryGraph(
@@ -153,7 +151,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )
         self.average_gpu_utilization = BufferedHistoryGraph(
             interval=1.0,
-            width=32,
+            width=20,
             height=5,
             upsidedown=True,
             baseline=0.0,

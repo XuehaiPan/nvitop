@@ -17,11 +17,11 @@ from nvitop.gui.library import (
     USERNAME,
     Displayable,
     HostProcess,
+    Selection,
     Snapshot,
     WideString,
     host,
 )
-from nvitop.gui.screens.main.utils import Selection
 
 
 class TreeNode:  # pylint: disable=too-many-instance-attributes
