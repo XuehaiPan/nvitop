@@ -332,15 +332,34 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         for y, line in enumerate(self.used_host_memory.graph, start=self.y + self.upper_height + 7):
             self.addstr(y, self.x + 1, line)
 
-        self.color(fg='blue')
-        for y, line in enumerate(self.used_gpu_memory.graph, start=self.y + 6):
-            self.addstr(y, self.x + self.left_width + 2, line)
+        if self.TERM_256COLOR:
+            for i, (y, line) in enumerate(enumerate(self.used_gpu_memory.graph, start=self.y + 6)):
+                self.addstr(
+                    y,
+                    self.x + self.left_width + 2,
+                    line,
+                    self.get_fg_bg_attr(fg=1.0 - i / (self.upper_height - 1)),
+                )
 
-        self.color(fg='red')
-        for y, line in enumerate(
-            self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7
-        ):
-            self.addstr(y, self.x + self.left_width + 2, line)
+            for i, (y, line) in enumerate(
+                enumerate(self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7)
+            ):
+                self.addstr(
+                    y,
+                    self.x + self.left_width + 2,
+                    line,
+                    self.get_fg_bg_attr(fg=i / (self.lower_height - 1)),
+                )
+        else:
+            self.color(fg=self.process.device.snapshot.memory_display_color)
+            for y, line in enumerate(self.used_gpu_memory.graph, start=self.y + 6):
+                self.addstr(y, self.x + self.left_width + 2, line)
+
+            self.color(fg=self.process.device.snapshot.gpu_display_color)
+            for y, line in enumerate(
+                self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7
+            ):
+                self.addstr(y, self.x + self.left_width + 2, line)
 
         self.color_reset()
         self.addstr(self.y + 6, self.x + 1, ' {} '.format(self.cpu_percent.max_value_string()))
