@@ -154,6 +154,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 height=self.lower_height,
                 baseline=0.0,
                 upsidedown=True,
+                dynamic_bound=True,
                 format=format_host_memory,
                 max_format=format_max_host_memory,
             )
@@ -175,6 +176,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 height=self.lower_height,
                 baseline=0.0,
                 upsidedown=True,
+                dynamic_bound=True,
                 format=format_sm,
                 max_format=format_max_sm,
             )
