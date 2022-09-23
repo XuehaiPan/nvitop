@@ -59,6 +59,8 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         max_format=None,
         baseline=0.0,
         dynamic_bound=False,
+        min_bound=None,
+        init_bound=None,
         upsidedown=False,
     ):
         assert baseline < upperbound
@@ -69,13 +71,18 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         self.max_format = max_format
 
         if dynamic_bound:
-            min_bound = baseline + 0.25 * (upperbound - baseline)
+            if min_bound is None:
+                min_bound = baseline + 0.1 * (upperbound - baseline)
+            if init_bound is None:
+                init_bound = upperbound
         else:
-            min_bound = upperbound
+            assert min_bound is None
+            assert init_bound is None
+            min_bound = init_bound = upperbound
         self.baseline = baseline
         self.min_bound = min_bound
         self.max_bound = upperbound
-        self.bound = upperbound
+        self.bound = init_bound
         self.next_bound_update_at = time.monotonic()
         self._width = width
         self._height = height
@@ -286,6 +293,8 @@ class BufferedHistoryGraph(HistoryGraph):
         baseline=0.0,
         dynamic_bound=False,
         upsidedown=False,
+        min_bound=None,
+        init_bound=None,
         interval=1.0,
     ):
         assert interval > 0.0
@@ -297,6 +306,8 @@ class BufferedHistoryGraph(HistoryGraph):
             max_format=max_format,
             baseline=baseline,
             dynamic_bound=dynamic_bound,
+            min_bound=min_bound,
+            init_bound=init_bound,
             upsidedown=upsidedown,
         )
 

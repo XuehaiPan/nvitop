@@ -283,9 +283,10 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.main_screen.selection.clear()
 
         def show_process_metrics():
-            if self.current_screen is self.main_screen and self.main_screen.selection.is_set():
-                show_screen(self.process_metrics_screen, focused=True)
-                self.process_metrics_screen.process = self.previous_screen.selection.process
+            if self.current_screen is self.main_screen:
+                if self.main_screen.selection.is_set():
+                    show_screen(self.process_metrics_screen, focused=True)
+                    self.process_metrics_screen.process = self.previous_screen.selection.process
             elif self.current_screen is not self.treeview_screen:
                 show_screen(self.process_metrics_screen, focused=True)
 

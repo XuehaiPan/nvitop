@@ -2,7 +2,9 @@
 # License: GNU GPL version 3.
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
+# pylint: disable=invalid-name
 
+import itertools
 import threading
 import time
 from collections import OrderedDict
@@ -23,6 +25,53 @@ from nvitop.gui.library import (
     host,
     wcslen,
 )
+
+
+def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many-locals
+    height = history.height
+    baseline = history.baseline
+    bound = history.bound
+    max_bound = history.max_bound
+    scale = history.scale
+    upsidedown = history.upsidedown
+
+    max_height = height - 2
+    percentages = (1, 2, 5, 10, 20, 25, 40, 50, 80, 100, 200, 250, 400, 500, 800, 1000)
+    h2p = {}
+    p2h = {}
+    h2e = {}
+    for p in percentages:
+        h = 0.01 * scale * p * (max_bound - baseline) * (height - 1) / (bound - baseline)
+        p2h[p] = h_f = int(h)
+        if h not in h2p:
+            if 0 <= h_f < max_height:
+                h2p[h_f] = p
+                h2e[h_f] = abs(h - h_f) / p
+        elif abs(h - h_f) / p < h2e[h_f]:
+            h2p[h_f] = p
+            h2e[h_f] = abs(h - h_f) / p
+    h2p = sorted(h2p.items())
+    ticks = []
+    if len(h2p) >= 2:
+        (h1, p1), (h2, p2) = h2p[-2:]
+        if height < 12:
+            if h2e[h1] < h2e[h2]:
+                ticks = [(h1, p1)]
+            else:
+                ticks = [(h2, p2)]
+        else:
+            ticks = [(h2, p2)]
+            if p2 % 2 == 0 and p2 // 2 in p2h:
+                ticks.append((p2h[p2 // 2], p2 // 2))
+            elif p2 == 250 and p2h[100] >= 4:
+                ticks.append((p2h[100], 100))
+            elif p2 == 25 and p2h[10] >= 4:
+                ticks.append((p2h[10], 10))
+    else:
+        ticks = list(h2p)
+    if not upsidedown:
+        ticks = [(height - 1 - h, p) for h, p in ticks]
+    return [(h + y_offset, p) for h, p in ticks]
 
 
 class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -138,12 +187,14 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         with self.snapshot_lock:
             self.cpu_percent = BufferedHistoryGraph(
                 interval=1.0,
-                upperbound=100.0,
+                upperbound=1000.0,
                 width=self.left_width,
                 height=self.upper_height,
                 baseline=0.0,
                 upsidedown=False,
                 dynamic_bound=True,
+                min_bound=10.0,
+                init_bound=100.0,
                 format=format_cpu_percent,
                 max_format=format_max_cpu_percent,
             )
@@ -180,6 +231,10 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 format=format_sm,
                 max_format=format_max_sm,
             )
+            self.cpu_percent.scale = 0.1
+            self.used_host_memory.scale = 1.0
+            self.used_gpu_memory.scale = 1.0
+            self.gpu_sm_utilization.scale = 1.0
 
             self._daemon_running.set()
             try:
@@ -309,6 +364,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 (19, '╴30s├'),
                 (34, '╴60s├'),
                 (65, '╴120s├'),
+                (95, '╴180s├'),
                 (125, '╴240s├'),
             ):
                 for x_offset, width in (
@@ -325,120 +381,159 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                         attr='dim',
                     )
 
-        self.color(fg='cyan')
-        for y, line in enumerate(self.cpu_percent.graph, start=self.y + 6):
-            self.addstr(y, self.x + 1, line)
+        with self.snapshot_lock:
+            process = self.process.snapshot
+            columns = OrderedDict(
+                [
+                    ('PID', str(process.pid).rjust(3)),
+                    ('USER', WideString('{} {}'.format(process.type, process.username).rjust(6))),
+                    (' GPU-MEM', process.gpu_memory_human.rjust(8)),
+                    (' %SM', str(process.gpu_sm_utilization).rjust(4)),
+                    ('%GMBW', str(process.gpu_memory_utilization).rjust(5)),
+                    ('%ENC', str(process.gpu_encoder_utilization).rjust(4)),
+                    ('%DEC', str(process.gpu_encoder_utilization).rjust(4)),
+                    ('  %CPU', process.cpu_percent_string.rjust(6)),
+                    (' %MEM', process.memory_percent_string.rjust(5)),
+                    (' TIME', (' ' + process.running_time_human).rjust(5)),
+                ]
+            )
 
-        self.color(fg='magenta')
-        for y, line in enumerate(self.used_host_memory.graph, start=self.y + self.upper_height + 7):
-            self.addstr(y, self.x + 1, line)
+            self.addstr(self.y + 4, self.x + 1, '{:>4} '.format(self.process.device.display_index))
+            self.color_at(
+                self.y + 4, self.x + 1, width=4, fg=self.process.device.snapshot.display_color
+            )
+            x = self.x + 7
+            for col, value in columns.items():
+                width = len(value)
+                self.addstr(self.y + 2, x, col.rjust(width))
+                self.addstr(self.y + 4, x, str(value + '  '))
+                x += width + 1
 
-        if self.TERM_256COLOR:
-            for i, (y, line) in enumerate(enumerate(self.used_gpu_memory.graph, start=self.y + 6)):
+            x += 1
+            if x + 4 < self.width - 2:
                 self.addstr(
-                    y,
-                    self.x + self.left_width + 2,
-                    line,
-                    self.get_fg_bg_attr(fg=1.0 - i / (self.upper_height - 1)),
+                    self.y + 2,
+                    x,
+                    cut_string('COMMAND', self.width - x - 2, padstr='..').ljust(
+                        self.width - x - 2
+                    ),
+                )
+                if process.is_zombie or process.no_permissions:
+                    self.color(fg='yellow')
+                elif process.is_gone:
+                    self.color(fg='red')
+                self.addstr(
+                    self.y + 4,
+                    x,
+                    cut_string(
+                        WideString(process.command).ljust(self.width - x - 2),
+                        self.width - x - 2,
+                        padstr='..',
+                    ),
                 )
 
-            for i, (y, line) in enumerate(
-                enumerate(self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7)
-            ):
-                self.addstr(
-                    y,
-                    self.x + self.left_width + 2,
-                    line,
-                    self.get_fg_bg_attr(fg=i / (self.lower_height - 1)),
-                )
-        else:
-            self.color(fg=self.process.device.snapshot.memory_display_color)
-            for y, line in enumerate(self.used_gpu_memory.graph, start=self.y + 6):
-                self.addstr(y, self.x + self.left_width + 2, line)
+            self.color(fg='cyan')
+            for y, line in enumerate(self.cpu_percent.graph, start=self.y + 6):
+                self.addstr(y, self.x + 1, line)
 
-            self.color(fg=self.process.device.snapshot.gpu_display_color)
+            self.color(fg='magenta')
             for y, line in enumerate(
-                self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7
+                self.used_host_memory.graph, start=self.y + self.upper_height + 7
             ):
-                self.addstr(y, self.x + self.left_width + 2, line)
+                self.addstr(y, self.x + 1, line)
 
-        self.color_reset()
-        self.addstr(self.y + 6, self.x + 1, ' {} '.format(self.cpu_percent.max_value_string()))
-        self.addstr(self.y + 7, self.x + 5, ' {} '.format(self.cpu_percent))
-        self.addstr(
-            self.y + self.upper_height + self.lower_height + 5,
-            self.x + 5,
-            ' {} '.format(self.used_host_memory),
-        )
-        self.addstr(
-            self.y + self.upper_height + self.lower_height + 6,
-            self.x + 1,
-            ' {} '.format(self.used_host_memory.max_value_string()),
-        )
-        self.addstr(
-            self.y + 6,
-            self.x + self.left_width + 2,
-            ' {} '.format(self.used_gpu_memory.max_value_string()),
-        )
-        self.addstr(self.y + 7, self.x + self.left_width + 6, ' {} '.format(self.used_gpu_memory))
-        self.addstr(
-            self.y + self.upper_height + self.lower_height + 5,
-            self.x + self.left_width + 6,
-            ' {} '.format(self.gpu_sm_utilization),
-        )
-        self.addstr(
-            self.y + self.upper_height + self.lower_height + 6,
-            self.x + self.left_width + 2,
-            ' {} '.format(self.gpu_sm_utilization.max_value_string()),
-        )
+            if self.TERM_256COLOR:
+                scale = (self.used_gpu_memory.bound / self.used_gpu_memory.max_bound) / (
+                    self.upper_height - 1
+                )
+                for i, (y, line) in enumerate(
+                    enumerate(self.used_gpu_memory.graph, start=self.y + 6)
+                ):
+                    self.addstr(
+                        y,
+                        self.x + self.left_width + 2,
+                        line,
+                        self.get_fg_bg_attr(fg=(self.upper_height - i - 1) * scale),
+                    )
 
-        process = self.process.snapshot
-        columns = OrderedDict(
-            [
-                ('PID', str(process.pid).rjust(3)),
-                ('USER', WideString('{} {}'.format(process.type, process.username).rjust(6))),
-                (' GPU-MEM', process.gpu_memory_human.rjust(8)),
-                (' %SM', str(process.gpu_sm_utilization).rjust(4)),
-                ('%GMBW', str(process.gpu_memory_utilization).rjust(5)),
-                ('%ENC', str(process.gpu_encoder_utilization).rjust(4)),
-                ('%DEC', str(process.gpu_encoder_utilization).rjust(4)),
-                ('  %CPU', process.cpu_percent_string.rjust(6)),
-                (' %MEM', process.memory_percent_string.rjust(5)),
-                (' TIME', (' ' + process.running_time_human).rjust(5)),
-            ]
-        )
+                scale = (self.gpu_sm_utilization.bound / self.gpu_sm_utilization.max_bound) / (
+                    self.lower_height - 1
+                )
+                for i, (y, line) in enumerate(
+                    enumerate(self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7)
+                ):
+                    self.addstr(
+                        y,
+                        self.x + self.left_width + 2,
+                        line,
+                        self.get_fg_bg_attr(fg=i * scale),
+                    )
+            else:
+                self.color(fg=self.process.device.snapshot.memory_display_color)
+                for y, line in enumerate(self.used_gpu_memory.graph, start=self.y + 6):
+                    self.addstr(y, self.x + self.left_width + 2, line)
 
-        self.addstr(self.y + 4, self.x + 1, '{:>4} '.format(self.process.device.display_index))
-        self.color_at(
-            self.y + 4, self.x + 1, width=4, fg=self.process.device.snapshot.display_color
-        )
-        x = self.x + 7
-        for col, value in columns.items():
-            width = len(value)
-            self.addstr(self.y + 2, x, col.rjust(width))
-            self.addstr(self.y + 4, x, str(value + '  '))
-            x += width + 1
+                self.color(fg=self.process.device.snapshot.gpu_display_color)
+                for y, line in enumerate(
+                    self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7
+                ):
+                    self.addstr(y, self.x + self.left_width + 2, line)
 
-        x += 1
-        if x + 4 < self.width - 2:
+            self.color_reset()
+            self.addstr(self.y + 6, self.x + 1, ' {} '.format(self.cpu_percent.max_value_string()))
+            self.addstr(self.y + 7, self.x + 5, ' {} '.format(self.cpu_percent))
             self.addstr(
-                self.y + 2,
-                x,
-                cut_string('COMMAND', self.width - x - 2, padstr='..').ljust(self.width - x - 2),
+                self.y + self.upper_height + self.lower_height + 5,
+                self.x + 5,
+                ' {} '.format(self.used_host_memory),
             )
-            if process.is_zombie or process.no_permissions:
-                self.color(fg='yellow')
-            elif process.is_gone:
-                self.color(fg='red')
             self.addstr(
-                self.y + 4,
-                x,
-                cut_string(
-                    WideString(process.command).ljust(self.width - x - 2),
-                    self.width - x - 2,
-                    padstr='..',
-                ),
+                self.y + self.upper_height + self.lower_height + 6,
+                self.x + 1,
+                ' {} '.format(self.used_host_memory.max_value_string()),
             )
+            self.addstr(
+                self.y + 6,
+                self.x + self.left_width + 2,
+                ' {} '.format(self.used_gpu_memory.max_value_string()),
+            )
+            self.addstr(
+                self.y + 7, self.x + self.left_width + 6, ' {} '.format(self.used_gpu_memory)
+            )
+            self.addstr(
+                self.y + self.upper_height + self.lower_height + 5,
+                self.x + self.left_width + 6,
+                ' {} '.format(self.gpu_sm_utilization),
+            )
+            self.addstr(
+                self.y + self.upper_height + self.lower_height + 6,
+                self.x + self.left_width + 2,
+                ' {} '.format(self.gpu_sm_utilization.max_value_string()),
+            )
+
+            for y in range(self.y + 6, self.y + 6 + self.upper_height):
+                self.addstr(y, self.x, '│')
+                self.addstr(y, self.x + self.left_width + 1, '│')
+            for y in range(
+                self.y + self.upper_height + 7, self.y + self.upper_height + self.lower_height + 7
+            ):
+                self.addstr(y, self.x, '│')
+                self.addstr(y, self.x + self.left_width + 1, '│')
+
+            self.color(attr='dim')
+            for y, p in itertools.chain(
+                get_yticks(self.cpu_percent, self.y + 6),
+                get_yticks(self.used_host_memory, self.y + self.upper_height + 7),
+            ):
+                self.addstr(y, self.x, '├╴{}% '.format(p))
+                self.color_at(y, self.x, width=2, attr=0)
+            x = self.x + self.left_width + 1
+            for y, p in itertools.chain(
+                get_yticks(self.used_gpu_memory, self.y + 6),
+                get_yticks(self.gpu_sm_utilization, self.y + self.upper_height + 7),
+            ):
+                self.addstr(y, x, '├╴{}% '.format(p))
+                self.color_at(y, x, width=2, attr=0)
 
     def destroy(self):
         super().destroy()

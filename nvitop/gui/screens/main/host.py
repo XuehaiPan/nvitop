@@ -281,6 +281,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     (20, '╴30s├'),
                     (35, '╴60s├'),
                     (66, '╴120s├'),
+                    (96, '╴180s├'),
                     (126, '╴240s├'),
                 ):
                     if offset > remaining_width:
