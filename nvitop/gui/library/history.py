@@ -40,6 +40,9 @@ PAIR2SYMBOL_DOWN = {
     (s1, s2): VALUE2SYMBOL_DOWN[(SYMBOL2VALUE_DOWN[s1][-1], SYMBOL2VALUE_DOWN[s2][0])]
     for s1, s2 in itertools.product(SYMBOL2VALUE_DOWN, repeat=2)
 }
+GRAPH_SYMBOLS = ''.join(
+    sorted(set(itertools.chain(VALUE2SYMBOL_UP.values(), VALUE2SYMBOL_DOWN.values())))
+).replace(' ', '')
 
 
 def grouped(iterable, size, fillvalue=None):

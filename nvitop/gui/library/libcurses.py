@@ -10,6 +10,8 @@ import locale
 import os
 import signal
 
+from nvitop.gui.library.history import GRAPH_SYMBOLS
+
 
 LIGHT_THEME = False
 DEFAULT_FOREGROUND = curses.COLOR_WHITE
@@ -183,8 +185,8 @@ class CursesShortcuts:
     """
 
     ASCII_TRANSTABLE = str.maketrans(
-        '═' + '─╴' + '╒╤╕╪╘╧╛┌┬┐┼└┴┘' + '│╞╡├┤▏▎▍▌▋▊▉█░' + '▲▼' + '␤',
-        '=' + '--' + '++++++++++++++' + '||||||||||||||' + '^v' + '?',
+        '═' + '─╴' + '╒╤╕╪╘╧╛┌┬┐┼└┴┘' + '│╞╡├┤▏▎▍▌▋▊▉█░' + '▲▼' + '␤' + GRAPH_SYMBOLS,
+        '=' + '--' + '++++++++++++++' + '||||||||||||||' + '^v' + '?' + '=' * len(GRAPH_SYMBOLS),
     )
     TERM_256COLOR = False
 
