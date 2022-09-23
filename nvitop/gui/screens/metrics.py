@@ -69,7 +69,6 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 pass
             self.take_snapshots()
         else:
-            self.disable()
             self.focused = False
 
     def enable(self, state=True):
