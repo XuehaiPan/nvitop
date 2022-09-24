@@ -369,6 +369,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 (65, '╴120s├'),
                 (95, '╴180s├'),
                 (125, '╴240s├'),
+                (155, '╴300s├'),
             ):
                 for x_offset, width in (
                     (self.x + 1 + self.left_width, self.left_width),
