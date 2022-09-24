@@ -486,6 +486,8 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     self.addstr(y, self.x + self.left_width + 2, line)
 
             self.color_reset()
+            self.addstr(self.y + 2, self.x + self.width - 2, ' │')  # handle overflow
+            self.addstr(self.y + 4, self.x + self.width - 2, ' │')  # handle overflow
             self.addstr(self.y + 6, self.x + 1, ' {} '.format(self.cpu_percent.max_value_string()))
             self.addstr(self.y + 7, self.x + 5, ' {} '.format(self.cpu_percent))
             self.addstr(

@@ -21,9 +21,12 @@ def cut_string(s, maxlen, padstr='...', align='left'):
     if not isinstance(s, str):
         s = str(s)
     s = WideString(s)
+    padstr = WideString(padstr)
 
     if len(s) <= maxlen:
         return str(s)
+    if len(padstr) >= maxlen:
+        return str(padstr[:maxlen])
     if align == 'left':
         return str(s[: maxlen - len(padstr)] + padstr)
     return str(padstr + s[-(maxlen - len(padstr)) :])
