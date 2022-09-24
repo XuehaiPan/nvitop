@@ -329,6 +329,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self.width = n_term_cols - self.x
         self.height = n_term_lines - self.y
 
+        return termsize
+
     def poke(self):
         if self._daemon_running.is_set():
             self.snapshots = self._snapshot_buffer

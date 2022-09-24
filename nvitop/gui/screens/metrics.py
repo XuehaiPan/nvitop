@@ -306,6 +306,8 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 self.used_gpu_memory.graph_size = (self.right_width, self.upper_height)
                 self.gpu_sm_utilization.graph_size = (self.right_width, self.lower_height)
 
+        return termsize
+
     def frame_lines(self):
         line = '│' + ' ' * self.left_width + '│' + ' ' * self.right_width + '│'
         frame = [

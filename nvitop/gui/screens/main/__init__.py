@@ -120,6 +120,8 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.height = height
             self.need_redraw = True
 
+        return termsize
+
     def move(self, direction=0):
         if direction == 0:
             return

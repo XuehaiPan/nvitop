@@ -139,6 +139,8 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         self.width = n_term_cols - self.x
         self.height = n_term_lines - self.y
 
+        return termsize
+
     def draw(self):
         self.color_reset()
 

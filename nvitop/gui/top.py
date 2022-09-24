@@ -92,6 +92,8 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.termsize = termsize
             self.need_redraw = True
 
+        return termsize
+
     def poke(self):
         super().poke()
 
