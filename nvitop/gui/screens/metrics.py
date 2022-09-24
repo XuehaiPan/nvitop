@@ -35,21 +35,24 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
     scale = history.scale
     upsidedown = history.upsidedown
 
+    def p2h_f(p):
+        return 0.01 * scale * p * (max_bound - baseline) * (height - 1) / (bound - baseline)
+
     max_height = height - 2
-    percentages = (1, 2, 5, 10, 20, 25, 40, 50, 80, 100, 200, 250, 400, 500, 800, 1000)
+    percentages = (1, 2, 5, 10, 20, 40, 50, 80, 100, 200, 400, 500, 800, 1000)
     h2p = {}
     p2h = {}
     h2e = {}
     for p in percentages:
-        h = 0.01 * scale * p * (max_bound - baseline) * (height - 1) / (bound - baseline)
-        p2h[p] = h_f = int(h)
+        h_f = p2h_f(p)
+        p2h[p] = h = int(h_f)
         if h not in h2p:
-            if 0 <= h_f < max_height:
-                h2p[h_f] = p
-                h2e[h_f] = abs(h - h_f) / p
-        elif abs(h - h_f) / p < h2e[h_f]:
-            h2p[h_f] = p
-            h2e[h_f] = abs(h - h_f) / p
+            if h < max_height:
+                h2p[h] = p
+                h2e[h] = abs(h_f - h) / p
+        elif abs(h_f - h) / p < h2e[h]:
+            h2p[h] = p
+            h2e[h] = abs(h_f - h) / p
     h2p = sorted(h2p.items())
     ticks = []
     if len(h2p) >= 2:
@@ -61,12 +64,12 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
                 ticks = [(h2, p2)]
         else:
             ticks = [(h2, p2)]
-            if p2 % 2 == 0 and p2 // 2 in p2h:
+            if p2 % 2 == 0 and p2 // 2 in p2h and p2h[p2 // 2] >= 3:
                 ticks.append((p2h[p2 // 2], p2 // 2))
-            elif p2 == 250 and p2h[100] >= 4:
-                ticks.append((p2h[100], 100))
-            elif p2 == 25 and p2h[10] >= 4:
-                ticks.append((p2h[10], 10))
+                p3 = 3 * p2 // 2
+                h3 = int(p2h_f(p3))
+                if h2 < h3 < max_height:
+                    ticks.append((h3, p3))
     else:
         ticks = list(h2p)
     if not upsidedown:
