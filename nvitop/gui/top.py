@@ -8,7 +8,14 @@ import shutil
 import time
 
 from nvitop.gui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent
-from nvitop.gui.screens import BreakLoop, EnvironScreen, HelpScreen, MainScreen, TreeViewScreen
+from nvitop.gui.screens import (
+    BreakLoop,
+    EnvironScreen,
+    HelpScreen,
+    MainScreen,
+    ProcessMetricsScreen,
+    TreeViewScreen,
+)
 
 
 class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
@@ -52,6 +59,11 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.treeview_screen.ascii = self.ascii
             self.add_child(self.treeview_screen)
 
+            self.process_metrics_screen = ProcessMetricsScreen(win=win, root=self)
+            self.process_metrics_screen.visible = False
+            self.process_metrics_screen.ascii = self.ascii
+            self.add_child(self.process_metrics_screen)
+
             self.help_screen = HelpScreen(win=win, root=self)
             self.help_screen.visible = False
             self.help_screen.ascii = False
@@ -79,6 +91,8 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         if self.termsize != termsize:
             self.termsize = termsize
             self.need_redraw = True
+
+        return termsize
 
     def poke(self):
         super().poke()
@@ -244,6 +258,21 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             if self.treeview_screen.selection.is_set():
                 self.main_screen.selection.process = self.treeview_screen.selection.process
             self.treeview_screen.selection.clear()
+            self.process_metrics_screen.disable()
+
+        def show_environ():
+            show_screen(self.environ_screen, focused=True)
+
+            if self.previous_screen is not self.help_screen:
+                self.environ_screen.process = self.previous_screen.selection.process
+
+        def environ_return():
+            if self.previous_screen is self.treeview_screen:
+                show_treeview()
+            elif self.previous_screen is self.process_metrics_screen:
+                show_process_metrics()
+            else:
+                show_main()
 
         def show_treeview():
             if not self.main_screen.process_panel.has_snapshots:
@@ -255,16 +284,13 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
                 self.treeview_screen.selection.process = self.main_screen.selection.process
             self.main_screen.selection.clear()
 
-        def show_environ():
-            show_screen(self.environ_screen, focused=True)
-
-            self.environ_screen.process = self.previous_screen.selection.process
-
-        def environ_return():
-            if self.previous_screen is self.treeview_screen:
-                show_treeview()
-            else:
-                show_main()
+        def show_process_metrics():
+            if self.current_screen is self.main_screen:
+                if self.main_screen.selection.is_set():
+                    show_screen(self.process_metrics_screen, focused=True)
+                    self.process_metrics_screen.process = self.previous_screen.selection.process
+            elif self.current_screen is not self.treeview_screen:
+                show_screen(self.process_metrics_screen, focused=True)
 
         def show_help():
             show_screen(self.help_screen, focused=True)
@@ -274,6 +300,8 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
                 show_treeview()
             elif self.previous_screen is self.environ_screen:
                 show_environ()
+            elif self.previous_screen is self.process_metrics_screen:
+                show_process_metrics()
             else:
                 show_main()
 
@@ -289,7 +317,13 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.keymaps.copy('treeview', 't', 'Q')
         self.keymaps.bind('treeview', 'e', show_environ)
 
-        for screen in ('main', 'treeview', 'environ'):
+        self.keymaps.bind('main', '<Enter>', show_process_metrics)
+        self.keymaps.bind('process-metrics', '<Enter>', show_main)
+        self.keymaps.copy('process-metrics', '<Enter>', 'q')
+        self.keymaps.copy('process-metrics', '<Enter>', 'Q')
+        self.keymaps.bind('process-metrics', 'e', show_environ)
+
+        for screen in ('main', 'treeview', 'environ', 'process-metrics'):
             self.keymaps.bind(screen, 'h', show_help)
             self.keymaps.copy(screen, 'h', '?')
         self.keymaps.bind('help', '<Esc>', help_return)

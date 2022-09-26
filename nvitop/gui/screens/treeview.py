@@ -17,11 +17,11 @@ from nvitop.gui.library import (
     USERNAME,
     Displayable,
     HostProcess,
+    Selection,
     Snapshot,
     WideString,
     host,
 )
-from nvitop.gui.screens.main.utils import Selection
 
 
 class TreeNode:  # pylint: disable=too-many-instance-attributes
@@ -328,6 +328,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         self.width = n_term_cols - self.x
         self.height = n_term_lines - self.y
+
+        return termsize
 
     def poke(self):
         if self._daemon_running.is_set():

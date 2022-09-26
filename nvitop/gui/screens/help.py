@@ -22,10 +22,11 @@ Device coloring rules by loading intensity:
      Arrows: scroll process list              Space: tag/untag current process
        Home: select the first process           Esc: clear process selection
         End: select the last process       Ctrl-C I: interrupt selected process
-   Ctrl-A ^: scroll to left most                  K: kill selected process
-   Ctrl-E $: scroll to right most                 T: terminate selected process
-   PageUp [: scroll entire screen up              e: show process environment
- PageDown ]: scroll entire screen down            t: toggle tree-view screen
+                                                  K: kill selected process
+   Ctrl-A ^: scroll to left most                  T: terminate selected process
+   Ctrl-E $: scroll to right most                 e: show process environment
+   PageUp [: scroll entire screen up              t: toggle tree-view screen
+ PageDown ]: scroll entire screen down        Enter: show process metrics
 
       Wheel: scroll process list        Shift-Wheel: scroll horizontally
         Tab: scroll process list         Ctrl-Wheel: fast scroll ({}x)
@@ -57,16 +58,17 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
             .splitlines()
         )
         self.color_matrix = {
-            **{dy: ('cyan', 'cyan') for dy in range(12, 22)},
             9: ('green', 'green'),
             10: ('green', 'green'),
             12: ('cyan', 'yellow'),
             13: ('cyan', 'yellow'),
-            **{dy: ('cyan', 'red') for dy in (14, 15, 16)},
-            19: (None, None),
-            22: (None, None),
-            **{dy: ('blue', 'blue') for dy in range(23, 27)},
-            27: ('magenta', 'magenta'),
+            14: ('cyan', 'red'),
+            15: (None, 'red'),
+            16: ('cyan', 'red'),
+            **{dy: ('cyan', 'green') for dy in range(17, 20)},
+            **{dy: ('blue', 'blue') for dy in range(21, 23)},
+            **{dy: ('blue', 'blue') for dy in range(24, 28)},
+            28: ('magenta', 'magenta'),
         }
 
         self.x, self.y = root.x, root.y

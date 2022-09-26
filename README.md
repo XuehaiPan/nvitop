@@ -143,7 +143,7 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 pip3 install --upgrade nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.8.0)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.8.1)):
 
 ```bash
 pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -244,15 +244,23 @@ $ nvitop --colorful
 
 You can configure the default monitor mode with the `NVITOP_MONITOR_MODE` environment variable (default `auto` if not set). See [Command Line Options and Environment Variables](#command-line-options-and-environment-variables) for more command options.
 
+In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop` to terminate other users' processes.
+
+Also, to enter the process metrics screen, select a process and then press the <kbd>Enter</kbd> / <kbd>Return</kbd> key . `nvitop` dynamically displays the process metrics with live graphs.
+
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/192108815-37c03705-be44-47d4-9908-6d05175db230.png" alt="Process Metrics Screen">
+  </br>
+  Watch metrics for a specific process (shortcut: <kbd>Enter</kbd> / <kbd>Return</kbd>).
+</p>
+
 Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keybindings for Monitor Mode](#keybindings-for-monitor-mode) for more shortcuts.
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/188309362-eb35bdef-f740-45ff-9906-84662f3417ac.png" alt="Help Screen">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/192108664-61f1983c-6f62-48e6-87c5-29633d9c409e.png" alt="Help Screen">
   </br>
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
-
-In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop` to terminate other users' processes.
 
 #### For Docker Users
 
@@ -403,6 +411,7 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                            |                                                                                      |
 |                                                                        `e` | Show process environment.                                                            |
 |                                                                        `t` | Toggle tree-view screen.                                                             |
+|                                                                  `<Enter>` | Toggle tree-view screen.                                                             |
 |                                                                            |                                                                                      |
 |                                                                  `,` / `.` | Select the sort column.                                                              |
 |                                                                        `/` | Reverse the sort order.                                                              |

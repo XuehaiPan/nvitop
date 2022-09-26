@@ -18,6 +18,7 @@ from nvitop.gui.library.keybinding import (
 from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
 from nvitop.gui.library.mouse import MouseEvent
 from nvitop.gui.library.process import GpuProcess, HostProcess, Snapshot, bytes2human, host
+from nvitop.gui.library.selection import Selection
 from nvitop.gui.library.utils import (
     HOSTNAME,
     LARGE_INTEGER,

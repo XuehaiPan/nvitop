@@ -5,13 +5,10 @@
 
 import signal
 import time
-from collections import namedtuple
 from weakref import WeakValueDictionary
 
-from nvitop.gui.library import LARGE_INTEGER, NA, SUPERUSER, USERNAME, Snapshot, host
-
-
-Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
+from nvitop.core import NA, Snapshot, host
+from nvitop.gui.library.utils import LARGE_INTEGER, SUPERUSER, USERNAME
 
 
 class Selection:  # pylint: disable=too-many-instance-attributes

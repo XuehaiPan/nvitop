@@ -40,6 +40,9 @@ PAIR2SYMBOL_DOWN = {
     (s1, s2): VALUE2SYMBOL_DOWN[(SYMBOL2VALUE_DOWN[s1][-1], SYMBOL2VALUE_DOWN[s2][0])]
     for s1, s2 in itertools.product(SYMBOL2VALUE_DOWN, repeat=2)
 }
+GRAPH_SYMBOLS = ''.join(
+    sorted(set(itertools.chain(VALUE2SYMBOL_UP.values(), VALUE2SYMBOL_DOWN.values())))
+).replace(' ', '')
 
 
 def grouped(iterable, size, fillvalue=None):
@@ -56,22 +59,33 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         width,
         height,
         format='{:.1f}'.format,  # pylint: disable=redefined-builtin
+        max_format=None,
         baseline=0.0,
         dynamic_bound=False,
+        min_bound=None,
+        init_bound=None,
         upsidedown=False,
     ):
         assert baseline < upperbound
 
         self.format = format
+        if max_format is None:
+            max_format = format
+        self.max_format = max_format
 
         if dynamic_bound:
-            min_bound = baseline + 0.25 * (upperbound - baseline)
+            if min_bound is None:
+                min_bound = baseline + 0.1 * (upperbound - baseline)
+            if init_bound is None:
+                init_bound = upperbound
         else:
-            min_bound = upperbound
+            assert min_bound is None
+            assert init_bound is None
+            min_bound = init_bound = upperbound
         self.baseline = baseline
         self.min_bound = min_bound
         self.max_bound = upperbound
-        self.bound = upperbound
+        self.bound = init_bound
         self.next_bound_update_at = time.monotonic()
         self._width = width
         self._height = height
@@ -140,6 +154,19 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             self.remake_graph()
 
     @property
+    def graph_size(self):
+        return (self.width, self.height)
+
+    @graph_size.setter
+    def graph_size(self, value):
+        width, height = value
+        assert isinstance(width, int) and width >= 1
+        assert isinstance(height, int) and height >= 1
+        self._height = height
+        self._width = width - 1  # trigger force remake
+        self.width = width
+
+    @property
     def last_value(self):
         return self.reversed_history[0]
 
@@ -161,13 +188,15 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     def max_value_string(self):
         max_value = self.max_value
         if max_value >= self.baseline:
-            return self.format(max_value)
+            return self.max_format(max_value)
         try:
-            return self.format(NA)
+            return self.max_format(NA)
         except ValueError:
             return NA
 
     def add(self, value):
+        if value is NA:
+            value = self.baseline - 0.1
         if not isinstance(value, (int, float)):
             return
 
@@ -263,9 +292,12 @@ class BufferedHistoryGraph(HistoryGraph):
         width,
         height,
         format='{:.1f}'.format,  # pylint: disable=redefined-builtin
+        max_format=None,
         baseline=0.0,
         dynamic_bound=False,
         upsidedown=False,
+        min_bound=None,
+        init_bound=None,
         interval=1.0,
     ):
         assert interval > 0.0
@@ -274,8 +306,11 @@ class BufferedHistoryGraph(HistoryGraph):
             width,
             height,
             format=format,
+            max_format=max_format,
             baseline=baseline,
             dynamic_bound=dynamic_bound,
+            min_bound=min_bound,
+            init_bound=init_bound,
             upsidedown=upsidedown,
         )
 
@@ -292,6 +327,8 @@ class BufferedHistoryGraph(HistoryGraph):
         return last_value
 
     def add(self, value):
+        if value is NA:
+            value = self.baseline - 0.1
         if not isinstance(value, (int, float)):
             return
 
