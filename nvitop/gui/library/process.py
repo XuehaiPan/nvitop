@@ -46,6 +46,10 @@ class GpuProcess(GpuProcessBase):
     def as_snapshot(self, *, host_process_snapshot_cache=None) -> Snapshot:
         snapshot = super().as_snapshot(host_process_snapshot_cache=host_process_snapshot_cache)
 
+        snapshot.type = snapshot.type.replace('C+G', 'X')
+        if snapshot.gpu_memory_human is NA and (host.WINDOWS or host.WSL):
+            snapshot.gpu_memory_human = 'WDDM:N/A'
+
         snapshot.cpu_percent_string = snapshot.host.cpu_percent_string
         snapshot.memory_percent_string = snapshot.host.memory_percent_string
 

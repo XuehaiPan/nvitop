@@ -14,7 +14,6 @@ from cachetools.func import ttl_cache
 from nvitop.gui.library import (
     HOSTNAME,
     LARGE_INTEGER,
-    NA,
     SUPERUSER,
     USERCONTEXT,
     USERNAME,
@@ -261,7 +260,6 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         for snapshot in snapshots:
-            snapshot.type = snapshot.type.replace('C+G', 'X')
             snapshot.host_info = WideString(
                 '{:>5} {:>5}  {}  {}'.format(
                     snapshot.cpu_percent_string.replace('%', ''),
@@ -271,8 +269,6 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     snapshot.command,
                 )
             )
-            if snapshot.gpu_memory_human is NA and (host.WINDOWS or host.WSL):
-                snapshot.gpu_memory_human = 'WDDM:N/A'
 
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots

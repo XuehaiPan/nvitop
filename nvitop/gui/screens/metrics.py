@@ -411,8 +411,8 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             x = self.x + 7
             for col, value in columns.items():
                 width = len(value)
-                self.addstr(self.y + 2, x, col.rjust(width))
-                self.addstr(self.y + 4, x, str(value + '  '))
+                self.addstr(self.y + 2, x, col.rjust(width) + '  ')
+                self.addstr(self.y + 4, x, str(value + '    '))
                 x += width + 1
 
             x += 1
