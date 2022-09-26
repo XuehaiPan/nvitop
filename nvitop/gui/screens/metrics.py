@@ -56,20 +56,23 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
     h2p = sorted(h2p.items())
     ticks = []
     if len(h2p) >= 2:
-        (h1, p1), (h2, p2) = h2p[-2:]
+        (hm1, pm1), (h2, p2) = h2p[-2:]
         if height < 12:
-            if h2e[h1] < h2e[h2]:
-                ticks = [(h1, p1)]
+            if h2e[hm1] < h2e[h2]:
+                ticks = [(hm1, pm1)]
             else:
                 ticks = [(h2, p2)]
         else:
             ticks = [(h2, p2)]
             if p2 % 2 == 0 and p2 // 2 in p2h and p2h[p2 // 2] >= 3:
-                ticks.append((p2h[p2 // 2], p2 // 2))
-                p3 = 3 * p2 // 2
+                p1 = p2 // 2
+                h1 = int(p2h_f(p1))
+                p3 = 3 * p1
                 h3 = int(p2h_f(p3))
-                if h2 < h3 < max_height:
-                    ticks.append((h3, p3))
+                if p1 >= 3:
+                    ticks.append((h1, p1))
+                    if h2 < h3 < max_height:
+                        ticks.append((h3, p3))
     else:
         ticks = list(h2p)
     if not upsidedown:
