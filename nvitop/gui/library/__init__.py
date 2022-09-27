@@ -14,6 +14,7 @@ from nvitop.gui.library.keybinding import (
     SPECIAL_KEYS,
     KeyBuffer,
     KeyMaps,
+    normalize_keybinding,
 )
 from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
 from nvitop.gui.library.mouse import MouseEvent
