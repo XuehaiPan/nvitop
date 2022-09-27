@@ -18,7 +18,7 @@ from nvitop.gui.screens import (
 )
 
 
-class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
+class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
