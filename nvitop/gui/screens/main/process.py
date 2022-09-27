@@ -454,11 +454,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 self.addstr(
                     y,
                     self.x,
-                    '│{:>4} {:>7} {} {:>7} {:>8} {:>3} {} │'.format(
+                    '│{:>4} {:>7} {} {} {:>8} {:>3} {} │'.format(
                         device_display_index,
                         cut_string(process.pid, maxlen=7, padstr='.'),
                         process.type,
-                        cut_string(process.username, maxlen=7, padstr='+'),
+                        str(
+                            WideString(cut_string(process.username, maxlen=7, padstr='+')).rjust(7)
+                        ),
                         process.gpu_memory_human,
                         process.gpu_sm_utilization_string.replace('%', ''),
                         WideString(host_info).ljust(self.width - 39)[: self.width - 39],
@@ -578,10 +580,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
                 host_info = cut_string(process.host_info, padstr='..', maxlen=self.width - 39)
 
-                info = '{:>7} {} {:>7} {:>8} {:>3} {}'.format(
+                info = '{:>7} {} {} {:>8} {:>3} {}'.format(
                     cut_string(process.pid, maxlen=7, padstr='.'),
                     process.type,
-                    cut_string(process.username, maxlen=7, padstr='+'),
+                    str(WideString(cut_string(process.username, maxlen=7, padstr='+')).rjust(7)),
                     process.gpu_memory_human,
                     process.gpu_sm_utilization_string.replace('%', ''),
                     WideString(host_info).ljust(self.width - 39)[: self.width - 39],

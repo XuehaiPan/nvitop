@@ -41,7 +41,7 @@ def wcslen(string):
 
 
 class WideString:  # pylint: disable=too-few-public-methods
-    def __init__(self, string, chars=None):
+    def __init__(self, string='', chars=None):
         if isinstance(string, WideString):
             string = string.string
 
@@ -54,7 +54,7 @@ class WideString:  # pylint: disable=too-few-public-methods
         else:
             self.chars = chars
 
-    def __add__(self, string):
+    def __add__(self, other):
         """
         >>> (WideString('a') + WideString('b')).string
         'ab'
@@ -64,29 +64,35 @@ class WideString:  # pylint: disable=too-few-public-methods
         ['a', 'f', 'd', 'b', 'c']
         """
 
-        if isinstance(string, str):
-            return WideString(self.string + string)
-        if isinstance(string, WideString):
-            return WideString(self.string + string.string, self.chars + string.chars)
-        return None
+        if isinstance(other, str):
+            return WideString(self.string + other)
+        if isinstance(other, WideString):
+            return WideString(self.string + other.string, self.chars + other.chars)
+        return NotImplemented
 
-    def __radd__(self, string):
+    def __radd__(self, other):
         """
         >>> ('bc' + WideString('afd')).chars
         ['b', 'c', 'a', 'f', 'd']
         """
 
-        if isinstance(string, str):
-            return WideString(string + self.string)
-        if isinstance(string, WideString):
-            return WideString(string.string + self.string, string.chars + self.chars)
-        return None
+        if isinstance(other, str):
+            return WideString(other + self.string)
+        if isinstance(other, WideString):
+            return WideString(other.string + self.string, other.chars + self.chars)
+        return NotImplemented
+
+    def __iadd__(self, other):
+        new = self + other
+        self.string = new.string
+        self.chars = new.chars
+        return self
 
     def __str__(self):
         return self.string
 
     def __repr__(self):
-        return "<{} '{}'>".format(self.__class__.__name__, self.string)
+        return '<{} {!r}>'.format(self.__class__.__name__, self.string)
 
     def __eq__(self, other):
         if not isinstance(other, (str, WideString)):

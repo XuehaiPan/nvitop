@@ -394,8 +394,18 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             process = self.process.snapshot
             columns = OrderedDict(
                 [
-                    ('PID', str(process.pid).rjust(3)),
-                    ('USER', WideString('{} {}'.format(process.type, process.username).rjust(6))),
+                    (' GPU', self.process.device.display_index.rjust(4)),
+                    ('PID  ', '{} {}'.format(str(process.pid).rjust(3), process.type)),
+                    (
+                        'USER',
+                        WideString(
+                            cut_string(
+                                WideString(process.username).rjust(4),
+                                maxlen=32,
+                                padstr='+',
+                            )
+                        ),
+                    ),
                     (' GPU-MEM', process.gpu_memory_human.rjust(8)),
                     (' %SM', str(process.gpu_sm_utilization).rjust(4)),
                     ('%GMBW', str(process.gpu_memory_utilization).rjust(5)),
@@ -407,39 +417,53 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 ]
             )
 
-            self.addstr(self.y + 4, self.x + 1, '{:>4} '.format(self.process.device.display_index))
+            x = self.x + 1
+            header = ''
+            fields = WideString()
+            no_break = True
+            for i, (col, value) in enumerate(columns.items()):
+                width = len(value)
+                if x + width < self.width - 2:
+                    if i == 0:
+                        header += col.rjust(width)
+                        fields += value
+                    else:
+                        header += ' ' + col.rjust(width)
+                        fields += ' ' + value
+                    x = self.x + 1 + len(fields)
+                else:
+                    no_break = False
+                    break
+
+            self.addstr(self.y + 2, self.x + 1, header.ljust(self.width - 2))
+            self.addstr(self.y + 4, self.x + 1, str(fields.ljust(self.width - 2)))
             self.color_at(
                 self.y + 4, self.x + 1, width=4, fg=self.process.device.snapshot.display_color
             )
-            x = self.x + 7
-            for col, value in columns.items():
-                width = len(value)
-                self.addstr(self.y + 2, x, col.rjust(width) + '  ')
-                self.addstr(self.y + 4, x, str(value + '    '))
-                x += width + 1
 
-            x += 1
-            if x + 4 < self.width - 2:
-                self.addstr(
-                    self.y + 2,
-                    x,
-                    cut_string('COMMAND', self.width - x - 2, padstr='..').ljust(
-                        self.width - x - 2
-                    ),
-                )
-                if process.is_zombie or process.no_permissions:
-                    self.color(fg='yellow')
-                elif process.is_gone:
-                    self.color(fg='red')
-                self.addstr(
-                    self.y + 4,
-                    x,
-                    cut_string(
-                        WideString(process.command).ljust(self.width - x - 2),
-                        self.width - x - 2,
-                        padstr='..',
-                    ),
-                )
+            if no_break:
+                x = self.x + 1 + len(fields) + 2
+                if x + 4 < self.width - 2:
+                    self.addstr(
+                        self.y + 2,
+                        x,
+                        cut_string('COMMAND', self.width - x - 2, padstr='..').ljust(
+                            self.width - x - 2
+                        ),
+                    )
+                    if process.is_zombie or process.no_permissions:
+                        self.color(fg='yellow')
+                    elif process.is_gone:
+                        self.color(fg='red')
+                    self.addstr(
+                        self.y + 4,
+                        x,
+                        cut_string(
+                            WideString(process.command).ljust(self.width - x - 2),
+                            self.width - x - 2,
+                            padstr='..',
+                        ),
+                    )
 
             self.color(fg='cyan')
             for y, line in enumerate(self.cpu_percent.graph, start=self.y + 6):
@@ -489,8 +513,6 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     self.addstr(y, self.x + self.left_width + 2, line)
 
             self.color_reset()
-            self.addstr(self.y + 2, self.x + self.width - 2, ' │')  # handle overflow
-            self.addstr(self.y + 4, self.x + self.width - 2, ' │')  # handle overflow
             self.addstr(self.y + 6, self.x + 1, ' {} '.format(self.cpu_percent.max_value_string()))
             self.addstr(self.y + 7, self.x + 5, ' {} '.format(self.cpu_percent))
             self.addstr(
