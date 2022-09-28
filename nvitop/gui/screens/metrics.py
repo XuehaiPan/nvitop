@@ -64,7 +64,7 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
                 ticks = [(h2, p2)]
         else:
             ticks = [(h2, p2)]
-            if p2 % 2 == 0 and p2 // 2 in p2h and p2h[p2 // 2] >= 3:
+            if p2 % 2 == 0:
                 p1 = p2 // 2
                 h1 = int(p2h_f(p1))
                 p3 = 3 * p1
