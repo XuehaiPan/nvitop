@@ -6,7 +6,7 @@
 import threading
 from functools import partial
 
-from nvitop.gui.library import LARGE_INTEGER, DisplayableContainer, MouseEvent
+from nvitop.gui.library import LARGE_INTEGER, DisplayableContainer, MouseEvent, send_signal
 from nvitop.gui.screens.main.device import DevicePanel
 from nvitop.gui.screens.main.host import HostPanel
 from nvitop.gui.screens.main.process import ProcessPanel
@@ -200,15 +200,6 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             self.selection.tag()
             select_move(direction=+1)
 
-        def terminate():
-            self.selection.terminate()
-
-        def kill():
-            self.selection.kill()
-
-        def interrupt():
-            self.selection.interrupt()
-
         def sort_by(order, reverse):
             self.process_panel.order = order
             self.process_panel.reverse = reverse
@@ -261,9 +252,10 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         keymaps.bind('main', '<Esc>', select_clear)
         keymaps.bind('main', '<Space>', tag)
 
-        keymaps.bind('main', 'T', terminate)
-        keymaps.bind('main', 'K', kill)
-        keymaps.bind('main', '<C-c>', interrupt)
+        keymaps.bind('main', 'T', partial(send_signal, signal='terminate', panel=self))
+        keymaps.bind('main', 'K', partial(send_signal, signal='kill', panel=self))
+        keymaps.copy('main', 'K', 'k')
+        keymaps.bind('main', '<C-c>', partial(send_signal, signal='interrupt', panel=self))
         keymaps.copy('main', '<C-c>', 'I')
 
         keymaps.bind('main', ',', order_previous)

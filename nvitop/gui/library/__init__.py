@@ -17,6 +17,7 @@ from nvitop.gui.library.keybinding import (
     normalize_keybinding,
 )
 from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
+from nvitop.gui.library.messagebox import MessageBox, send_signal
 from nvitop.gui.library.mouse import MouseEvent
 from nvitop.gui.library.process import GpuProcess, HostProcess, Snapshot, bytes2human, host
 from nvitop.gui.library.selection import Selection

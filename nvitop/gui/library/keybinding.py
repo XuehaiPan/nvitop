@@ -279,7 +279,10 @@ class KeyMaps(dict):
                 raise KeyError(
                     "Tried to copy the keybinding `%s', but it was not found." % source
                 ) from ex
-        self.bind(context, target, copy.deepcopy(pointer))
+        try:
+            self.bind(context, target, copy.deepcopy(pointer))
+        except TypeError:
+            self.bind(context, target, pointer)
 
     def unbind(self, context, keys):
         keys, pointer = self._clean_input(context, keys)

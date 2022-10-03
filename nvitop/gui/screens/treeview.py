@@ -21,6 +21,7 @@ from nvitop.gui.library import (
     Snapshot,
     WideString,
     host,
+    send_signal,
 )
 
 
@@ -549,15 +550,6 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.selection.tag()
             select_move(direction=+1)
 
-        def terminate():
-            self.selection.terminate()
-
-        def kill():
-            self.selection.kill()
-
-        def interrupt():
-            self.selection.interrupt()
-
         keymaps = self.root.keymaps
 
         keymaps.bind('treeview', '<Left>', tree_left)
@@ -581,7 +573,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         keymaps.bind('treeview', '<Esc>', select_clear)
         keymaps.bind('treeview', '<Space>', tag)
 
-        keymaps.bind('treeview', 'T', terminate)
-        keymaps.bind('treeview', 'K', kill)
-        keymaps.bind('treeview', '<C-c>', interrupt)
+        keymaps.bind('treeview', 'T', partial(send_signal, signal='terminate', panel=self))
+        keymaps.bind('treeview', 'K', partial(send_signal, signal='kill', panel=self))
+        keymaps.copy('treeview', 'K', 'k')
+        keymaps.bind('treeview', '<C-c>', partial(send_signal, signal='interrupt', panel=self))
         keymaps.copy('treeview', '<C-c>', 'I')
