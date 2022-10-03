@@ -319,6 +319,7 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
 
         self.keymaps.bind('main', '<Enter>', show_process_metrics)
         self.keymaps.bind('process-metrics', '<Enter>', show_main)
+        self.keymaps.copy('process-metrics', '<Enter>', '<Esc>')
         self.keymaps.copy('process-metrics', '<Enter>', 'q')
         self.keymaps.copy('process-metrics', '<Enter>', 'Q')
         self.keymaps.bind('process-metrics', 'e', show_environ)
