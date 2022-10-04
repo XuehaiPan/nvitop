@@ -136,7 +136,8 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             y = y_option_start + attr.pop('y')
             x = x_option_start + option.offset + attr.pop('x')
             attr['fg'], attr['bg'] = attr.get('bg', -1), attr.get('fg', -1)
-            attr['attr'] = ('standout | bold | ' + attr.get('attr', '')).rstrip(' | ')
+            attr['attr'] = self.get_fg_bg_attr(attr=attr.get('attr', 0))
+            attr['attr'] |= self.get_fg_bg_attr(attr='standout | bold')
             self.color_at(y, x, **attr)
 
     def press(self, key):
