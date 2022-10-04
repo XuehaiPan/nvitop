@@ -4,6 +4,8 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+import curses
+import time
 from functools import partial
 
 from nvitop.gui.library.displayable import Displayable
@@ -49,6 +51,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         self.yes = yes
         self.cancel = cancel
         self.no = no  # pylint: disable=invalid-name
+        self.timestamp = time.monotonic()
 
         self.name_len = max(8, max(len(option.name) for option in options))
         for option in self.options:
@@ -90,6 +93,15 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
         self.lines = lines
 
+    @property
+    def current(self):
+        return self._current
+
+    @current.setter
+    def current(self, value):
+        self._current = value
+        self.timestamp = time.monotonic()
+
     def draw(self):
         self.set_base_attr(attr=0)
         self.color_reset()
@@ -119,8 +131,10 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
                     0 <= current < self.num_options
                     and x_option_start - 3 <= x < x_option_start + self.name_len + 3
                 ):
-                    self.current = current
-            self.xy_mouse = None
+                    if self.current == current and time.monotonic() >= self.timestamp + 0.5:
+                        curses.ungetch(ord('\n'))
+                    else:
+                        self.current = current
 
         option = self.options[self.current]
         x_option_start = x_start + 6 + self.current * (self.name_len + 6)
@@ -139,6 +153,10 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             attr['attr'] = self.get_fg_bg_attr(attr=attr.get('attr', 0))
             attr['attr'] |= self.get_fg_bg_attr(attr='standout | bold')
             self.color_at(y, x, **attr)
+
+    def finalize(self):
+        self.xy_mouse = None
+        super().finalize()
 
     def press(self, key):
         self.root.keymaps.use_keymap('messagebox')
