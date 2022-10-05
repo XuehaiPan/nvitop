@@ -169,13 +169,13 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         self.current = (self.current + direction) % self.num_options
         return True
 
-    def apply(self, index=None, wait=False):
+    def apply(self, index=None, wait=None):
         if index is None:
             index = self.current
 
         assert 0 <= index < self.num_options
 
-        if index != self.current or wait:
+        if (index != self.current and wait is None) or wait:
             self.current = index
 
             def confirm():
@@ -230,10 +230,10 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             if 'N' not in keymaps['messagebox']:
                 keymaps.copy('messagebox', self.options[self.no].key, 'N')
         if self.cancel is not None:
-            keymaps.copy('messagebox', self.options[self.cancel].key, '<Esc>')
+            keymaps.bind('messagebox', '<Esc>', partial(self.apply, index=self.cancel, wait=False))
             if 'q' not in keymaps['messagebox'] and 'Q' not in keymaps['messagebox']:
-                keymaps.copy('messagebox', self.options[self.cancel].key, 'q')
-                keymaps.copy('messagebox', self.options[self.cancel].key, 'Q')
+                keymaps.copy('messagebox', '<Esc>', 'q')
+                keymaps.copy('messagebox', '<Esc>', 'Q')
 
         keymaps.bind('messagebox', '<Enter>', self.apply)
         if '<Space>' not in keymaps['messagebox']:
