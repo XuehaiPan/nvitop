@@ -209,7 +209,11 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             for key in option.keys:
                 keymaps.copy('messagebox', option.key, key)
 
-        if len(set('0123456789').intersection(keymaps['messagebox'])) and self.num_options <= 9:
+        keymaps['messagebox'][keymaps.keybuffer.quantifier_key] = 'false'
+        if (
+            len(set('0123456789').intersection(keymaps['messagebox'])) == 0
+            and self.num_options <= 9
+        ):
             for key_n, option in zip('123456789', self.options):
                 keymaps.copy('messagebox', option.key, key_n)
 
