@@ -5,6 +5,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import curses
+import threading
 import time
 from functools import partial
 
@@ -131,10 +132,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
                     0 <= current < self.num_options
                     and x_option_start - 3 <= x < x_option_start + self.name_len + 3
                 ):
-                    if self.current == current and time.monotonic() >= self.timestamp + 0.5:
-                        curses.ungetch(ord('\n'))
-                    else:
-                        self.current = current
+                    self.apply(current, wait=True)
 
         option = self.options[self.current]
         x_option_start = x_start + 6 + self.current * (self.name_len + 6)
@@ -171,19 +169,32 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         self.current = (self.current + direction) % self.num_options
         return True
 
+    def apply(self, index=None, wait=False):
+        if index is None:
+            index = self.current
+
+        assert 0 <= index < self.num_options
+
+        if index != self.current or wait:
+            self.current = index
+
+            def confirm():
+                time.sleep(0.25)
+                curses.ungetch(curses.KEY_ENTER)
+
+            threading.Thread(name='messagebox-confirm', target=confirm, daemon=True).start()
+            return
+
+        callback = self.options[index].callback
+        if callback is not None:
+            callback()
+
+        self.root.keymaps.clear_keymap('messagebox')
+        self.root.keymaps.use_keymap(self.previous_keymap)
+        self.root.need_redraw = True
+        self.root.messagebox = None
+
     def init_keybindings(self):  # pylint: disable=too-many-branches
-        def apply(index):
-            callback = self.options[index].callback
-            if callback is not None:
-                callback()
-            self.root.keymaps.clear_keymap('messagebox')
-            self.root.keymaps.use_keymap(self.previous_keymap)
-            self.root.need_redraw = True
-            self.root.messagebox = None
-
-        def confirm():
-            apply(self.current)
-
         def select_previous():
             self.current = (self.current - 1) % self.num_options
 
@@ -194,7 +205,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         keymaps.clear_keymap('messagebox')
 
         for i, option in enumerate(self.options):
-            keymaps.bind('messagebox', option.key, partial(apply, index=i))
+            keymaps.bind('messagebox', option.key, partial(self.apply, index=i))
             for key in option.keys:
                 keymaps.copy('messagebox', option.key, key)
 
@@ -220,7 +231,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
                 keymaps.copy('messagebox', self.options[self.cancel].key, 'q')
                 keymaps.copy('messagebox', self.options[self.cancel].key, 'Q')
 
-        keymaps.bind('messagebox', '<Enter>', confirm)
+        keymaps.bind('messagebox', '<Enter>', self.apply)
         if '<Space>' not in keymaps['messagebox']:
             keymaps.copy('messagebox', '<Enter>', '<Space>')
 

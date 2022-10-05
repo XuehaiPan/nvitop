@@ -113,7 +113,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes
                 flag = True
 
         if flag:
-            time.sleep(0.5)
+            time.sleep(0.25)
         self.clear()
 
     def send_signal(self, sig):
