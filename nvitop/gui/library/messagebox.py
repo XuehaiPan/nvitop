@@ -12,13 +12,15 @@ from functools import partial
 from nvitop.gui.library.displayable import Displayable
 from nvitop.gui.library.keybinding import normalize_keybinding
 from nvitop.gui.library.process import host
+from nvitop.gui.library.utils import cut_string
+from nvitop.gui.library.widestring import WideString
 
 
 class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
     class Option:  # pylint: disable=too-few-public-methods
         # pylint: disable-next=too-many-arguments
         def __init__(self, name, key, callback, keys=(), attrs=()):
-            self.name = name
+            self.name = WideString(name)
             self.offset = 0
             self.key = normalize_keybinding(key)
             self.callback = callback
@@ -26,7 +28,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             self.attrs = attrs
 
         def __str__(self):
-            return self.name
+            return str(self.name)
 
     # pylint: disable-next=too-many-arguments
     def __init__(self, message, options, default, yes, no, cancel, win, root):
@@ -67,7 +69,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
 
         lines = []
         for msg in self.message.splitlines():
-            words = iter(msg.split())
+            words = iter(map(WideString, msg.split()))
             try:
                 lines.append(next(words))
             except StopIteration:
@@ -80,7 +82,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
                     lines[-1] = lines[-1].strip()
                     lines.append(word)
         if len(lines) == 1:
-            lines[-1] = lines[-1].center(self.width - 6)
+            lines[-1] = WideString(lines[-1]).center(self.width - 6)
         lines = [' │ {} │ '.format(line.ljust(self.width - 6)) for line in lines]
         lines = [
             ' ╒' + '═' * (self.width - 4) + '╕ ',
@@ -264,6 +266,7 @@ def send_signal(signal, panel):
             username = process.username()
         except host.PsutilError:
             username = 'N/A'
+        username = cut_string(username, maxlen=24, padstr='+')
         processes.append('{}({})'.format(process.pid, username))
     if len(processes) == 0:
         return
