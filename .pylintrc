@@ -264,7 +264,8 @@ good-names=i,
            s,
            fg,
            bg,
-           n
+           n,
+           ui
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted

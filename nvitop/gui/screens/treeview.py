@@ -21,6 +21,7 @@ from nvitop.gui.library import (
     Snapshot,
     WideString,
     host,
+    send_signal,
 )
 
 
@@ -549,37 +550,31 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.selection.tag()
             select_move(direction=+1)
 
-        def terminate():
-            self.selection.terminate()
+        keymaps = self.root.keymaps
 
-        def kill():
-            self.selection.kill()
+        keymaps.bind('treeview', '<Left>', tree_left)
+        keymaps.copy('treeview', '<Left>', '<A-h>')
+        keymaps.bind('treeview', '<Right>', tree_right)
+        keymaps.copy('treeview', '<Right>', '<A-l>')
+        keymaps.bind('treeview', '<C-a>', tree_begin)
+        keymaps.copy('treeview', '<C-a>', '^')
+        keymaps.bind('treeview', '<Up>', partial(select_move, direction=-1))
+        keymaps.copy('treeview', '<Up>', '<S-Tab>')
+        keymaps.copy('treeview', '<Up>', '<A-k>')
+        keymaps.copy('treeview', '<Up>', '<PageUp>')
+        keymaps.copy('treeview', '<Up>', '[')
+        keymaps.bind('treeview', '<Down>', partial(select_move, direction=+1))
+        keymaps.copy('treeview', '<Down>', '<Tab>')
+        keymaps.copy('treeview', '<Down>', '<A-j>')
+        keymaps.copy('treeview', '<Down>', '<PageDown>')
+        keymaps.copy('treeview', '<Down>', ']')
+        keymaps.bind('treeview', '<Home>', partial(select_move, direction=-(1 << 20)))
+        keymaps.bind('treeview', '<End>', partial(select_move, direction=+(1 << 20)))
+        keymaps.bind('treeview', '<Esc>', select_clear)
+        keymaps.bind('treeview', '<Space>', tag)
 
-        def interrupt():
-            self.selection.interrupt()
-
-        self.root.keymaps.bind('treeview', '<Left>', tree_left)
-        self.root.keymaps.copy('treeview', '<Left>', '<A-h>')
-        self.root.keymaps.bind('treeview', '<Right>', tree_right)
-        self.root.keymaps.copy('treeview', '<Right>', '<A-l>')
-        self.root.keymaps.bind('treeview', '<C-a>', tree_begin)
-        self.root.keymaps.copy('treeview', '<C-a>', '^')
-        self.root.keymaps.bind('treeview', '<Up>', partial(select_move, direction=-1))
-        self.root.keymaps.copy('treeview', '<Up>', '<S-Tab>')
-        self.root.keymaps.copy('treeview', '<Up>', '<A-k>')
-        self.root.keymaps.copy('treeview', '<Up>', '<PageUp>')
-        self.root.keymaps.copy('treeview', '<Up>', '[')
-        self.root.keymaps.bind('treeview', '<Down>', partial(select_move, direction=+1))
-        self.root.keymaps.copy('treeview', '<Down>', '<Tab>')
-        self.root.keymaps.copy('treeview', '<Down>', '<A-j>')
-        self.root.keymaps.copy('treeview', '<Down>', '<PageDown>')
-        self.root.keymaps.copy('treeview', '<Down>', ']')
-        self.root.keymaps.bind('treeview', '<Home>', partial(select_move, direction=-(1 << 20)))
-        self.root.keymaps.bind('treeview', '<End>', partial(select_move, direction=+(1 << 20)))
-        self.root.keymaps.bind('treeview', '<Esc>', select_clear)
-        self.root.keymaps.bind('treeview', '<Space>', tag)
-
-        self.root.keymaps.bind('treeview', 'T', terminate)
-        self.root.keymaps.bind('treeview', 'K', kill)
-        self.root.keymaps.bind('treeview', '<C-c>', interrupt)
-        self.root.keymaps.copy('treeview', '<C-c>', 'I')
+        keymaps.bind('treeview', 'T', partial(send_signal, signal='terminate', panel=self))
+        keymaps.bind('treeview', 'K', partial(send_signal, signal='kill', panel=self))
+        keymaps.copy('treeview', 'K', 'k')
+        keymaps.bind('treeview', '<C-c>', partial(send_signal, signal='interrupt', panel=self))
+        keymaps.copy('treeview', '<C-c>', 'I')

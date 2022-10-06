@@ -12,4 +12,4 @@ from nvitop.gui.library import (
     set_color,
     setlocale_utf8,
 )
-from nvitop.gui.top import Top
+from nvitop.gui.ui import UI

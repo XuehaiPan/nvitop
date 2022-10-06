@@ -197,3 +197,49 @@ class WideString:  # pylint: disable=too-few-public-methods
         if width > len(self):
             return WideString(fillchar * width + self.string)[-width:]
         return self
+
+    def center(self, width, fillchar=' '):
+        """
+        >>> WideString('poo').center(2)
+        <WideString 'poo'>
+        >>> WideString('poo').center(5)
+        <WideString ' poo '>
+        >>> WideString('モヒカン').center(10)
+        <WideString ' モヒカン '>
+        """
+
+        if width > len(self):
+            left_width = (width - len(self)) // 2
+            right_width = width - left_width
+            return WideString(fillchar * left_width + self.string + fillchar * right_width)[:width]
+        return self
+
+    def strip(self, chars=None):
+        """
+        >>> WideString('  poo  ').strip()
+        <WideString 'poo'>
+        >>> WideString('  モヒカン  ').strip()
+        <WideString 'モヒカン'>
+        """
+
+        return WideString(self.string.strip(chars))
+
+    def lstrip(self, chars=None):
+        """
+        >>> WideString('  poo  ').lstrip()
+        <WideString 'poo  '>
+        >>> WideString('  モヒカン  ').lstrip()
+        <WideString 'モヒカン  '>
+        """
+
+        return WideString(self.string.lstrip(chars))
+
+    def rstrip(self, chars=None):
+        """
+        >>> WideString('  poo  ').rstrip()
+        <WideString '  poo'>
+        >>> WideString('  モヒカン  ').rstrip()
+        <WideString '  モヒカン'>
+        """
+
+        return WideString(self.string.rstrip(chars))

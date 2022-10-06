@@ -18,7 +18,7 @@ from nvitop.gui.screens import (
 )
 
 
-class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
+class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
@@ -47,6 +47,8 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.main_screen.focused = False
         self.add_child(self.main_screen)
         self.current_screen = self.previous_screen = self.main_screen
+
+        self._messagebox = None
 
         if win is not None:
             self.environ_screen = EnvironScreen(win=win, root=self)
@@ -78,6 +80,29 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.last_input_time = time.monotonic()
             self.init_keybindings()
 
+    @property
+    def messagebox(self):
+        return self._messagebox
+
+    @messagebox.setter
+    def messagebox(self, value):
+        self.need_redraw = True
+        if self._messagebox is not None:
+            self.remove_child(self._messagebox)
+
+        self._messagebox = value
+        if value is not None:
+            self._messagebox.visible = True
+            self._messagebox.focused = True
+            self._messagebox.ascii = self.ascii
+            self._messagebox.previous_focused = self.get_focused_obj()
+            self.add_child(self._messagebox)
+
+    def get_focused_obj(self):
+        if self.messagebox is not None:
+            return self.messagebox
+        return super().get_focused_obj()
+
     def update_size(self, termsize=None):
         n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
@@ -108,6 +133,8 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.color_reset()
 
         if self.width >= 79:
+            if self.messagebox is not None:
+                self.set_base_attr(attr='dim')
             super().draw()
             return
         if not self.need_redraw:
@@ -117,9 +144,10 @@ class Top(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         message = 'nvitop needs at least a width of 79 to render, the current width is {}.'.format(
             self.width
         )
+        words = iter(message.split())
         width = min(max(n_term_cols, 40), n_term_cols, 60) - 10
-        lines = ['nvitop']
-        for word in message.split()[1:]:
+        lines = [next(words)]
+        for word in words:
             if len(lines[-1]) + len(word) + 1 <= width:
                 lines[-1] += ' ' + word
             else:

@@ -9,7 +9,7 @@ import os
 import sys
 
 from nvitop.core import HostProcess, libnvml
-from nvitop.gui import USERNAME, Device, Top, colored, libcurses, set_color, setlocale_utf8
+from nvitop.gui import UI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
 from nvitop.version import __version__
 
 
@@ -329,11 +329,11 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         pids = set(args.pid)
         filters.append(lambda process: process.pid in pids)
 
-    top = None
+    ui = None
     if hasattr(args, 'monitor') and len(devices) > 0:
         try:
             with libcurses(colorful=args.colorful, light_theme=args.light) as win:
-                top = Top(
+                ui = UI(
                     devices,
                     filters,
                     ascii=args.ascii,
@@ -341,14 +341,14 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
                     interval=args.interval,
                     win=win,
                 )
-                top.loop()
+                ui.loop()
         except curses.error as ex:
-            if top is not None:
+            if ui is not None:
                 raise
             messages.append('ERROR: Failed to initialize `curses` ({})'.format(ex))
 
-    if top is None:
-        top = Top(devices, filters, ascii=args.ascii)
+    if ui is None:
+        ui = UI(devices, filters, ascii=args.ascii)
         if not sys.stdout.isatty():
             parent = HostProcess().parent()
             grandparent = parent.parent() if parent is not None else None
@@ -358,8 +358,8 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
                     file=sys.stderr,
                 )
 
-    top.print()
-    top.destroy()
+    ui.print()
+    ui.destroy()
 
     if len(libnvml.UNKNOWN_FUNCTIONS) > 0:
         unknown_function_messages = [

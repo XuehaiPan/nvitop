@@ -212,6 +212,21 @@ def construct_keybinding(keys):
     return ''.join(strings)
 
 
+def normalize_keybinding(keybinding):
+    """Normalize a keybinding to a string
+
+    >>> normalize_keybinding('lol<CR>')
+    'lol<Enter>'
+
+    >>> normalize_keybinding('x<A-Left>')
+    'x<A-Left>'
+
+    >>> normalize_keybinding('x<Alt><Left>')
+    'x<A-Left>'
+    """
+    return construct_keybinding(parse_keybinding(keybinding))
+
+
 class KeyMaps(dict):
     def __init__(self, keybuffer=None):
         super().__init__()
@@ -222,6 +237,12 @@ class KeyMaps(dict):
         self.keybuffer.keymap = self.get(keymap_name, {})
         if self.used_keymap != keymap_name:
             self.used_keymap = keymap_name
+            self.keybuffer.clear()
+
+    def clear_keymap(self, keymap_name):
+        self[keymap_name] = {}
+        if self.used_keymap == keymap_name:
+            self.keybuffer.keymap = {}
             self.keybuffer.clear()
 
     def _clean_input(self, context, keys):
@@ -258,7 +279,10 @@ class KeyMaps(dict):
                 raise KeyError(
                     "Tried to copy the keybinding `%s', but it was not found." % source
                 ) from ex
-        self.bind(context, target, copy.deepcopy(pointer))
+        try:
+            self.bind(context, target, copy.deepcopy(pointer))
+        except TypeError:
+            self.bind(context, target, pointer)
 
     def unbind(self, context, keys):
         keys, pointer = self._clean_input(context, keys)

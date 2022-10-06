@@ -39,7 +39,7 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
         return 0.01 * scale * p * (max_bound - baseline) * (height - 1) / (bound - baseline)
 
     max_height = height - 2
-    percentages = (1, 2, 5, 10, 20, 40, 50, 80, 100, 200, 400, 500, 800, 1000)
+    percentages = (1, 2, 4, 5, 8, 10, 20, 40, 50, 80, 100, 200, 400, 500, 800, 1000)
     h2p = {}
     p2h = {}
     h2e = {}

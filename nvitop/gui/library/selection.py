@@ -95,16 +95,16 @@ class Selection:  # pylint: disable=too-many-instance-attributes
             except KeyError:
                 self.tagged[self.pid] = self.process
 
-    def foreach(self, func):
+    def processes(self):
         if len(self.tagged) > 0:
-            processes = tuple(self.tagged.values())
-        elif self.owned() and self.within_window:
-            processes = (self.process,)
-        else:
-            return
+            return tuple(sorted(self.tagged.values(), key=lambda p: p.pid))
+        if self.owned() and self.within_window:
+            return (self.process,)
+        return ()
 
+    def foreach(self, func):
         flag = False
-        for process in processes:
+        for process in self.processes():
             try:
                 func(process)
             except host.PsutilError:
@@ -113,7 +113,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes
                 flag = True
 
         if flag:
-            time.sleep(0.5)
+            time.sleep(0.25)
         self.clear()
 
     def send_signal(self, sig):
