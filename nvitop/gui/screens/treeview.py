@@ -58,7 +58,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
     def __hash__(self):
         return hash(self.process)
 
-    def as_snapshot(self):  # pylint: disable=too-many-branches
+    def as_snapshot(self):  # pylint: disable=too-many-branches,too-many-statements
         if not isinstance(self.process, Snapshot):
             with self.process.oneshot():
                 try:
@@ -103,6 +103,11 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                 except host.PsutilError:
                     num_threads = NA
 
+                try:
+                    running_time_human = self.process.running_time_human()
+                except host.PsutilError:
+                    running_time_human = NA
+
             self.process = Snapshot(
                 real=self.process,
                 pid=self.process.pid,
@@ -113,6 +118,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                 memory_percent=memory_percent,
                 memory_percent_string=memory_percent_string,
                 num_threads=num_threads,
+                running_time_human=running_time_human,
             )
 
         if len(self.children) > 0:
