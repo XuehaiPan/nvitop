@@ -315,13 +315,13 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
 
     filters = []
     if args.compute:
-        filters.append(lambda process: 'C' in process.type)
+        filters.append(lambda process: 'C' in process.type or 'X' in process.type)
     if args.no_compute:
-        filters.append(lambda process: 'C' not in process.type)
+        filters.append(lambda process: 'C' not in process.type and 'X' not in process.type)
     if args.graphics:
-        filters.append(lambda process: 'G' in process.type)
+        filters.append(lambda process: 'G' in process.type or 'X' in process.type)
     if args.no_graphics:
-        filters.append(lambda process: 'G' not in process.type)
+        filters.append(lambda process: 'G' not in process.type and 'X' not in process.type)
     if args.user is not None:
         users = set(args.user)
         filters.append(lambda process: process.username in users)
