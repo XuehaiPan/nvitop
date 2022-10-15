@@ -296,7 +296,7 @@ usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
               [--interval SEC] [--ascii] [--colorful] [--force-color] [--light]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--only idx [idx ...]] [--only-visible]
-              [--compute] [--no-compute] [--graphics] [--no-graphics]
+              [--compute] [--only-compute] [--graphics] [--only-graphics]
               [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
@@ -337,9 +337,9 @@ device filtering:
 
 process filtering:
   --compute, -c         Only show GPU processes with the compute context. (type: 'C' or 'C+G')
-  --no-compute, -C      Exclude GPU processes with the compute context. (type: 'G' only)
+  --only-compute, -C    Only show GPU processes exactly with the compute context. (type: 'C' only)
   --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
-  --no-graphics, -G     Exclude GPU processes with the graphics context. (type: 'C' only)
+  --only-graphics, -G   Only show GPU processes exactly with the graphics context. (type: 'G' only)
   --user [USERNAME ...], -u [USERNAME ...]
                         Only show processes of the given users (or `$USER` for no argument).
   --pid PID [PID ...], -p PID [PID ...]

@@ -172,11 +172,11 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         help="Only show GPU processes with the compute context. (type: 'C' or 'C+G')",
     )
     process_filtering.add_argument(
-        '--no-compute',
+        '--only-compute',
         '-C',
-        dest='no_compute',
+        dest='only_compute',
         action='store_true',
-        help="Exclude GPU processes with the compute context. (type: 'G' only)",
+        help="Only show GPU processes exactly with the compute context. (type: 'C' only)",
     )
     process_filtering.add_argument(
         '--graphics',
@@ -186,11 +186,11 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         help="Only show GPU processes with the graphics context. (type: 'G' or 'C+G')",
     )
     process_filtering.add_argument(
-        '--no-graphics',
+        '--only-graphics',
         '-G',
-        dest='no_graphics',
+        dest='only_graphics',
         action='store_true',
-        help="Exclude GPU processes with the graphics context. (type: 'C' only)",
+        help="Only show GPU processes exactly with the graphics context. (type: 'G' only)",
     )
     process_filtering.add_argument(
         '--user',
@@ -316,12 +316,12 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
     filters = []
     if args.compute:
         filters.append(lambda process: 'C' in process.type or 'X' in process.type)
-    if args.no_compute:
-        filters.append(lambda process: 'C' not in process.type and 'X' not in process.type)
+    if args.only_compute:
+        filters.append(lambda process: 'G' not in process.type and 'X' not in process.type)
     if args.graphics:
         filters.append(lambda process: 'G' in process.type or 'X' in process.type)
-    if args.no_graphics:
-        filters.append(lambda process: 'G' not in process.type and 'X' not in process.type)
+    if args.only_graphics:
+        filters.append(lambda process: 'C' not in process.type and 'X' not in process.type)
     if args.user is not None:
         users = set(args.user)
         filters.append(lambda process: process.username in users)
