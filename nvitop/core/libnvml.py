@@ -5,8 +5,11 @@
 
 # pylint: disable=invalid-name
 
+import ctypes as _ctypes
+import functools as _functools
 import inspect as _inspect
 import logging as _logging
+import os as _os
 import re as _re
 import sys as _sys
 import threading as _threading
@@ -49,7 +52,6 @@ nvmlExceptionClass.__doc__ = """Maps value to a proper subclass of :class:`NVMLE
 
 # Load members from module `pynvml` and register them in `__all__` and globals.
 _vars_pynvml = vars(_pynvml)
-_vars = _OrderedDict()
 _name = _attr = None
 _errcode_to_name = {}
 _const_names = []
@@ -158,6 +160,22 @@ __initialized = False
 __lock = _threading.Lock()
 
 LOGGER = _logging.getLogger(__name__)
+try:
+    LOGGER.setLevel(_os.getenv('LOGLEVEL', default='WARNING').upper())
+except (ValueError, TypeError):
+    pass
+if not LOGGER.hasHandlers() and LOGGER.isEnabledFor(_logging.DEBUG):
+    _formatter = _logging.Formatter(
+        '[%(levelname)s] %(asctime)s %(name)s::%(funcName)s: %(message)s'
+    )
+    _stream_handler = _logging.StreamHandler()
+    _stream_handler.setFormatter(_formatter)
+    _file_handler = _logging.FileHandler('nvitop.log')
+    _file_handler.setFormatter(_formatter)
+    LOGGER.addHandler(_stream_handler)
+    LOGGER.addHandler(_file_handler)
+    del _formatter, _stream_handler, _file_handler
+
 UNKNOWN_FUNCTIONS = {}
 UNKNOWN_FUNCTIONS_CACHE_SIZE = 1024
 VERSIONED_PATTERN = _re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
@@ -397,7 +415,241 @@ def nvmlCheckReturn(
     return retval != NA and isinstance(retval, types)
 
 
-# Add support for lookup fallback and context manager.
+# Patch layers for backward compatibility ##########################################################
+def __patch_backward_compatibility_layers() -> None:
+    function_name_mapping_lock = _threading.Lock()
+    function_name_mapping = {}
+
+    def function_mapping_update(mapping):
+        with function_name_mapping_lock:
+            mapping = dict(mapping)
+            for name, mapped_name in function_name_mapping.items():
+                if mapped_name in mapping:
+                    mapping[name] = mapping[mapped_name]
+            function_name_mapping.update(mapping)
+        return mapping
+
+    def with_mapped_function_name():
+        def wrapper(nvmlGetFunctionPointer):
+            @_functools.wraps(nvmlGetFunctionPointer)
+            def wrapped(name):
+                mapped_name = function_name_mapping.get(name, name)
+                return nvmlGetFunctionPointer(mapped_name)
+
+            return wrapped
+
+        _pynvml.__dict__.update(  # need to use module.__dict__.__setitem__ because module.__setattr__ will not work
+            _nvmlGetFunctionPointer=wrapper(
+                _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access
+            )
+        )
+
+    def patch_function_pointers_when_fail(names, callback):
+        """Patches the function pointers of the NVML library."""
+
+        def wrapper(nvmlGetFunctionPointer):
+            @_functools.wraps(nvmlGetFunctionPointer)
+            def wrapped(name):
+                try:
+                    return nvmlGetFunctionPointer(name)
+                except NVMLError_FunctionNotFound as ex:
+                    if name in names:
+                        new_name = callback(name, names, ex, _pynvml, __modself)
+                        return nvmlGetFunctionPointer(new_name)
+                    raise
+
+            return wrapped
+
+        return wrapper
+
+    def patch_process_info():
+        PrintableStructure = _pynvml._PrintableStructure  # pylint: disable=protected-access
+
+        # pylint: disable-next=missing-class-docstring,too-few-public-methods
+        class c_nvmlProcessInfo_v1_t(PrintableStructure):
+            _fields_ = [
+                ('pid', _ctypes.c_uint),
+                ('usedGpuMemory', _ctypes.c_ulonglong),
+            ]
+            _fmt_ = {
+                'usedGpuMemory': '%d B',
+            }
+
+        # pylint: disable-next=missing-class-docstring,too-few-public-methods
+        class c_nvmlProcessInfo_v2_t(PrintableStructure):
+            _fields_ = [
+                ('pid', _ctypes.c_uint),
+                ('usedGpuMemory', _ctypes.c_ulonglong),
+                ('gpuInstanceId', _ctypes.c_uint),
+                ('computeInstanceId', _ctypes.c_uint),
+            ]
+            _fmt_ = {
+                'usedGpuMemory': '%d B',
+            }
+
+        nvmlDeviceGetRunningProcesses_v3_v2 = {
+            'nvmlDeviceGetComputeRunningProcesses_v3': 'nvmlDeviceGetComputeRunningProcesses_v2',
+            'nvmlDeviceGetGraphicsRunningProcesses_v3': 'nvmlDeviceGetGraphicsRunningProcesses_v2',
+            'nvmlDeviceGetMPSComputeRunningProcesses_v3': 'nvmlDeviceGetMPSComputeRunningProcesses_v2',
+        }
+        nvmlDeviceGetRunningProcesses_v2_v1 = {
+            'nvmlDeviceGetComputeRunningProcesses_v2': 'nvmlDeviceGetComputeRunningProcesses',
+            'nvmlDeviceGetGraphicsRunningProcesses_v2': 'nvmlDeviceGetGraphicsRunningProcesses',
+            'nvmlDeviceGetMPSComputeRunningProcesses_v2': 'nvmlDeviceGetMPSComputeRunningProcesses',
+        }
+
+        def patch_process_info_callback(
+            name, names, exception, pynvml, modself
+        ):  # pylint: disable=unused-argument
+            if name in nvmlDeviceGetRunningProcesses_v3_v2:
+                mapping = nvmlDeviceGetRunningProcesses_v3_v2
+                struct_type = c_nvmlProcessInfo_v2_t
+            elif name in nvmlDeviceGetRunningProcesses_v2_v1:
+                mapping = nvmlDeviceGetRunningProcesses_v2_v1
+                struct_type = c_nvmlProcessInfo_v1_t
+            else:
+                raise exception  # no fallbacks for v1 APIs
+
+            LOGGER.debug('Patching NVML function pointer `%s`', name)
+            mapping = function_mapping_update(mapping)
+            pynvml.__dict__.update(c_nvmlProcessInfo_t=struct_type)
+            modself.__dict__.update(c_nvmlProcessInfo_t=struct_type)
+
+            for old_name, mapped_name in mapping.items():
+                LOGGER.debug('    Map NVML function `%s` to `%s`', old_name, mapped_name)
+            LOGGER.debug(
+                '    Patch NVML struct `c_nvmlProcessInfo_t` to `%s`', struct_type.__name__
+            )
+            return mapping[name]
+
+        _pynvml.__dict__.update(  # need to use module.__dict__.__setitem__ because module.__setattr__ will not work
+            # The patching ordering is important
+            _nvmlGetFunctionPointer=patch_function_pointers_when_fail(
+                names=set(nvmlDeviceGetRunningProcesses_v3_v2), callback=patch_process_info_callback
+            )(
+                patch_function_pointers_when_fail(
+                    names=set(nvmlDeviceGetRunningProcesses_v2_v1),
+                    callback=patch_process_info_callback,
+                )(
+                    _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access
+                )
+            )
+        )
+
+    with_mapped_function_name()  # patch first and only for once
+    patch_process_info()
+
+
+__patch_backward_compatibility_layers()
+del __patch_backward_compatibility_layers
+
+
+_pynvml_memory_v2_available = hasattr(_pynvml, 'nvmlMemory_v2')
+_pynvml_get_memory_info_v2_available = _pynvml_memory_v2_available
+_driver_get_memory_info_v2_available = None
+
+
+def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-many-branches
+    """Retrieves the amount of used, free, reserved and total memory available on the device, in bytes.
+
+    Note:
+        - The version 2 API adds additional memory information. The reserved amount is supported on
+          version 2 only.
+        - In MIG mode, if device handle is provided, the API returns aggregate information, only if
+          the caller has appropriate privileges. Per-instance information can be queried by using
+          specific MIG device handles.
+
+    Raises:
+        NVMLError_InvalidArgument:
+            If the library has not been successfully initialized.
+        NVMLError_NoPermission:
+            If the user doesn't have permission to perform this operation.
+        NVMLError_InvalidArgument:
+            If device is invalid or memory is NULL.
+        NVMLError_GpuIsLost:
+            If the target GPU has fallen off the bus or is otherwise inaccessible.
+        NVMLError_Unknown:
+            On any unexpected error.
+    """
+
+    global _pynvml_get_memory_info_v2_available, _driver_get_memory_info_v2_available  # pylint: disable=global-statement
+
+    _lazy_init()
+
+    if _driver_get_memory_info_v2_available is None:
+        try:
+            # pylint: disable-next=protected-access
+            _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo_v2')
+        except NVMLError_FunctionNotFound:
+            with __lock:
+                _driver_get_memory_info_v2_available = False
+                _pynvml_get_memory_info_v2_available = False
+        else:
+            with __lock:
+                _driver_get_memory_info_v2_available = True
+
+        if _driver_get_memory_info_v2_available:
+            if _pynvml_memory_v2_available:
+                # driver ✔ pynvml ?
+                try:
+                    # pylint: disable-next=unexpected-keyword-arg,no-member
+                    retval = _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
+                except TypeError as ex:
+                    if 'unexpected keyword argument' in str(ex).lower():
+                        # driver ✔ pynvml ✘
+                        with __lock:
+                            _pynvml_get_memory_info_v2_available = False
+                        LOGGER.debug(
+                            'NVML memory info version 2 is not available due to incompatible `nvidia-ml-py` package.'
+                        )
+                    else:
+                        # driver ✔ pynvml ? user ✘
+                        with __lock:
+                            _driver_get_memory_info_v2_available = (
+                                None  # unset the flag for user exceptions
+                            )
+                        raise
+                except (NVMLError_FunctionNotFound, NVMLError_Unknown):
+                    # driver ✔ pynvml ✘
+                    with __lock:
+                        _pynvml_get_memory_info_v2_available = False
+                    LOGGER.debug(
+                        'NVML memory info version 2 is not available due to incompatible NVIDIA driver.'
+                    )
+                else:
+                    # driver ✔ pynvml ✔
+                    LOGGER.debug('NVML memory info version 2 is available.')
+                    return retval
+            else:
+                # driver ✔ pynvml ✘
+                LOGGER.debug(
+                    'NVML constant `nvmlMemory_v2` not found in package `nvidia-ml-py`, but '
+                    'your NVIDIA driver does support the NVML memory info version 2 APIs. NVML '
+                    'memory info version 2 is not available due to the legacy dependencies. '
+                    'Please consider upgrading your `nvidia-ml-py` package by running '
+                    '`pip3 install --upgrade nvitop nvidia-ml-py`.'
+                )
+        elif _pynvml_memory_v2_available:
+            # driver ✘ pynvml ?
+            LOGGER.debug(
+                'NVML memory info version 2 is not available due to incompatible NVIDIA driver.'
+            )
+        else:
+            # driver ✘ pynvml ✘
+            LOGGER.debug(
+                'NVML constant `nvmlMemory_v2` not found in package `nvidia-ml-py`, and '
+                'your NVIDIA driver does not support the NVML memory info version 2 APIs. '
+                'NVML memory info version 2 is not available.'
+            )
+
+    elif _pynvml_get_memory_info_v2_available:
+        # pylint: disable-next=unexpected-keyword-arg
+        return _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
+
+    return _pynvml.nvmlDeviceGetMemoryInfo(handle)
+
+
+# Add support for lookup fallback and context manager ##############################################
 class _CustomModule(_ModuleType):
     """Modified module type to support lookup fallback and context manager.
 
@@ -445,6 +697,7 @@ __modself = _sys.modules[__name__]
 __modself.__class__ = _CustomModule
 del _CustomModule
 
-del _inspect, _logging, _re, _sys, _threading
+# Delete imported references
+del _inspect, _logging, _os, _re, _sys, _threading
 del _OrderedDict, _FunctionType, _ModuleType
 del _Tuple, _Callable, _Type, _Union, _Optional, _Any

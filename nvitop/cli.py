@@ -353,9 +353,8 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
             parent = HostProcess().parent()
             grandparent = parent.parent() if parent is not None else None
             if grandparent is not None and parent.name() == 'sh' and grandparent.name() == 'watch':
-                print(
-                    'HINT: You are running `nvitop` under `watch` command. Please try `nvitop -m` directly.',
-                    file=sys.stderr,
+                messages.append(
+                    'HINT: You are running `nvitop` under `watch` command. Please try `nvitop -m` directly.'
                 )
 
     ui.print()
@@ -397,11 +396,31 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
             ).replace('@VERSION@', Device.driver_version())
         messages.append(message)
 
+    # pylint: disable-next=protected-access
+    if libnvml._driver_get_memory_info_v2_available and not libnvml._pynvml_memory_v2_available:
+        messages.append(
+            (
+                'WARNING: The `{0}` package does not support the NVML memory info version 2 APIs, which would\n'
+                'get inaccurate results. Please upgrade `{0}` via `{1}`.'
+            ).format(
+                colored('nvidia-ml-py', attrs=('bold',)),
+                colored('pip3 install --upgrade nvitop nvidia-ml-py', attrs=('bold',)),
+            )
+        )
+
     if len(messages) > 0:
         for message in messages:
             if message.startswith('ERROR:'):
                 message = message.replace(
                     'ERROR:', colored('ERROR:', color='red', attrs=('bold',)), 1
+                )
+            elif message.startswith('WARNING:'):
+                message = message.replace(
+                    'WARNING:', colored('WARNING:', color='yellow', attrs=('bold',)), 1
+                )
+            elif message.startswith('HINT:'):
+                message = message.replace(
+                    'HINT:', colored('HINT:', color='green', attrs=('bold',)), 1
                 )
             print(message, file=sys.stderr)
         return 1
