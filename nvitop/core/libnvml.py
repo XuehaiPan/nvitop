@@ -541,10 +541,12 @@ __patch_backward_compatibility_layers()
 del __patch_backward_compatibility_layers
 
 
-__memory_info_v2_available = None
+_pynvml_memory_v2_available = hasattr(_pynvml, 'nvmlMemory_v2')
+_pynvml_get_memory_info_v2_available = _pynvml_memory_v2_available
+_driver_get_memory_info_v2_available = None
 
 
-def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined
+def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-many-branches
     """Retrieves the amount of used, free, reserved and total memory available on the device, in bytes.
 
     Note:
@@ -567,36 +569,77 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined
             On any unexpected error.
     """
 
-    global __memory_info_v2_available  # pylint: disable=global-statement
+    global _pynvml_get_memory_info_v2_available, _driver_get_memory_info_v2_available  # pylint: disable=global-statement
 
-    if __memory_info_v2_available is None:
-        if not hasattr(_pynvml, 'nvmlMemory_v2'):
+    _lazy_init()
+
+    if _driver_get_memory_info_v2_available is None:
+        try:
+            # pylint: disable-next=protected-access
+            _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo_v2')
+        except NVMLError_FunctionNotFound:
             with __lock:
-                __memory_info_v2_available = False
+                _driver_get_memory_info_v2_available = False
+                _pynvml_get_memory_info_v2_available = False
+        else:
+            with __lock:
+                _driver_get_memory_info_v2_available = True
+
+        if _driver_get_memory_info_v2_available:
+            if _pynvml_memory_v2_available:
+                # driver ✔ pynvml ?
+                try:
+                    # pylint: disable-next=unexpected-keyword-arg,no-member
+                    retval = _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
+                except TypeError as ex:
+                    if 'unexpected keyword argument' in str(ex).lower():
+                        # driver ✔ pynvml ✘
+                        with __lock:
+                            _pynvml_get_memory_info_v2_available = False
+                        LOGGER.debug(
+                            'NVML memory info version 2 is not available due to incompatible `nvidia-ml-py` package.'
+                        )
+                    else:
+                        # driver ✔ pynvml ? user ✘
+                        with __lock:
+                            _driver_get_memory_info_v2_available = (
+                                None  # unset the flag for user exceptions
+                            )
+                        raise
+                except (NVMLError_FunctionNotFound, NVMLError_Unknown):
+                    # driver ✔ pynvml ✘
+                    with __lock:
+                        _pynvml_get_memory_info_v2_available = False
+                    LOGGER.debug(
+                        'NVML memory info version 2 is not available due to incompatible NVIDIA driver.'
+                    )
+                else:
+                    # driver ✔ pynvml ✔
+                    LOGGER.debug('NVML memory info version 2 is available.')
+                    return retval
+            else:
+                # driver ✔ pynvml ✘
+                LOGGER.debug(
+                    'NVML constant `nvmlMemory_v2` not found in package `nvidia-ml-py`, but '
+                    'your NVIDIA driver does support the NVML memory info version 2 APIs. NVML '
+                    'memory info version 2 is not available due to the legacy dependencies. '
+                    'Please consider upgrading your `nvidia-ml-py` package by running '
+                    '`pip3 install --upgrade nvitop nvidia-ml-py`.'
+                )
+        elif _pynvml_memory_v2_available:
+            # driver ✘ pynvml ?
             LOGGER.debug(
-                'NVML constant `nvmlMemory_v2` not found. NVML memory info version 2 is not available.'
+                'NVML memory info version 2 is not available due to incompatible NVIDIA driver.'
             )
         else:
-            try:
-                # pylint: disable-next=unexpected-keyword-arg,no-member
-                retval = _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
-            except TypeError as ex:
-                if 'unexpected keyword argument' in str(ex).lower():
-                    with __lock:
-                        __memory_info_v2_available = False
-                    LOGGER.debug('NVML memory info version 2 is not available.')
-                else:
-                    raise
-            except (NVMLError_FunctionNotFound, NVMLError_Unknown):
-                with __lock:
-                    __memory_info_v2_available = False
-                LOGGER.debug('NVML memory info version 2 is not available.')
-            else:
-                with __lock:
-                    __memory_info_v2_available = True
-                LOGGER.debug('NVML memory info version 2 is available.')
-                return retval
-    elif __memory_info_v2_available:
+            # driver ✘ pynvml ✘
+            LOGGER.debug(
+                'NVML constant `nvmlMemory_v2` not found in package `nvidia-ml-py`, and '
+                'your NVIDIA driver does not support the NVML memory info version 2 APIs. '
+                'NVML memory info version 2 is not available.'
+            )
+
+    elif _pynvml_get_memory_info_v2_available:
         # pylint: disable-next=unexpected-keyword-arg
         return _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
 
