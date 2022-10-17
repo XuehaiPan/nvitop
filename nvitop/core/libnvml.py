@@ -498,7 +498,9 @@ def __patch_backward_compatibility_layers() -> None:
             'nvmlDeviceGetMPSComputeRunningProcesses_v2': 'nvmlDeviceGetMPSComputeRunningProcesses',
         }
 
-        def callback(name, names, exception, pynvml, modself):  # pylint: disable=unused-argument
+        def patch_process_info_callback(
+            name, names, exception, pynvml, modself
+        ):  # pylint: disable=unused-argument
             if name in nvmlDeviceGetRunningProcesses_v3_v2:
                 mapping = nvmlDeviceGetRunningProcesses_v3_v2
                 struct_type = c_nvmlProcessInfo_v2_t
@@ -523,10 +525,11 @@ def __patch_backward_compatibility_layers() -> None:
         _pynvml.__dict__.update(  # need to use module.__dict__.__setitem__ because module.__setattr__ will not work
             # The patching ordering is important
             _nvmlGetFunctionPointer=patch_function_pointers_when_fail(
-                names=set(nvmlDeviceGetRunningProcesses_v3_v2), callback=callback
+                names=set(nvmlDeviceGetRunningProcesses_v3_v2), callback=patch_process_info_callback
             )(
                 patch_function_pointers_when_fail(
-                    names=set(nvmlDeviceGetRunningProcesses_v2_v1), callback=callback
+                    names=set(nvmlDeviceGetRunningProcesses_v2_v1),
+                    callback=patch_process_info_callback,
                 )(
                     _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access
                 )
