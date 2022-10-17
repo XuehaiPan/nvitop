@@ -44,6 +44,7 @@ if not __release__:
 # cause problems with Old versions of NVIDIA drivers.
 # The ideal solution is to let the user install the best-fit version of `nvidia-ml-py`.
 PYNVML_VERSION_CANDIDATES = [
+    # Sync with pyproject.toml and requirements.txt
     '11.450.51',  # the last version supports the R430 driver (CUDA 10.x)
     '11.450.129',  # requires at last the R450 driver
     '11.460.79',
