@@ -570,28 +570,35 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined
     global __memory_info_v2_available  # pylint: disable=global-statement
 
     if __memory_info_v2_available is None:
-        try:
-            # pylint: disable-next=unexpected-keyword-arg
-            retval = _pynvml.nvmlDeviceGetMemoryInfo(handle, version=2)
-        except TypeError as ex:
-            if 'unexpected keyword argument' in str(ex).lower():
+        if not hasattr(_pynvml, 'nvmlMemory_v2'):
+            with __lock:
+                __memory_info_v2_available = False
+            LOGGER.debug(
+                'NVML constant `nvmlMemory_v2` not found. NVML memory info version 2 is not available.'
+            )
+        else:
+            try:
+                # pylint: disable-next=unexpected-keyword-arg,no-member
+                retval = _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
+            except TypeError as ex:
+                if 'unexpected keyword argument' in str(ex).lower():
+                    with __lock:
+                        __memory_info_v2_available = False
+                    LOGGER.debug('NVML memory info version 2 is not available.')
+                else:
+                    raise
+            except (NVMLError_FunctionNotFound, NVMLError_Unknown):
                 with __lock:
                     __memory_info_v2_available = False
                 LOGGER.debug('NVML memory info version 2 is not available.')
             else:
-                raise
-        except (NVMLError_FunctionNotFound, NVMLError_Unknown):
-            with __lock:
-                __memory_info_v2_available = False
-            LOGGER.debug('NVML memory info version 2 is not available.')
-        else:
-            with __lock:
-                __memory_info_v2_available = True
-            LOGGER.debug('NVML memory info version 2 is available.')
-            return retval
+                with __lock:
+                    __memory_info_v2_available = True
+                LOGGER.debug('NVML memory info version 2 is available.')
+                return retval
     elif __memory_info_v2_available:
         # pylint: disable-next=unexpected-keyword-arg
-        return _pynvml.nvmlDeviceGetMemoryInfo(handle, version=2)
+        return _pynvml.nvmlDeviceGetMemoryInfo(handle, version=_pynvml.nvmlMemory_v2)
 
     return _pynvml.nvmlDeviceGetMemoryInfo(handle)
 
