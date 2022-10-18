@@ -523,9 +523,10 @@ def __patch_backward_compatibility_layers() -> None:
             return mapping[name]
 
         _pynvml.__dict__.update(  # need to use module.__dict__.__setitem__ because module.__setattr__ will not work
-            # The patching ordering is important
+            # The patching ordering is important: v3 -> v2 -> v1
             _nvmlGetFunctionPointer=patch_function_pointers_when_fail(
-                names=set(nvmlDeviceGetRunningProcesses_v3_v2), callback=patch_process_info_callback
+                names=set(nvmlDeviceGetRunningProcesses_v3_v2),
+                callback=patch_process_info_callback,
             )(
                 patch_function_pointers_when_fail(
                     names=set(nvmlDeviceGetRunningProcesses_v2_v1),
@@ -676,6 +677,7 @@ class _CustomModule(_ModuleType):
     def __enter__(self) -> '_CustomModule':
         """Entry of the context manager for ``with`` statement."""
 
+        _lazy_init()
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
