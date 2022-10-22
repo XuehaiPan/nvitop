@@ -372,12 +372,11 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         )
         unknown_function_messages.append(
             (
-                'Please verify whether the `{0}` package is compatible with your NVIDIA driver version.\n'
-                'You can check the release history of `{0}` and install the compatible version manually.\n'
-                'See {1} for more information.'
+                'Please verify whether the `nvidia-ml-py` package is compatible with your NVIDIA driver version.\n'
+                'You can check the release history of `nvidia-ml-py` and install the compatible version manually.\n'
+                'See {} for more information.'
             ).format(
-                colored('nvidia-ml-py', attrs=('bold',)),
-                colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',)),
+                colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',))
             )
         )
         message = '\n'.join(unknown_function_messages)
@@ -391,28 +390,41 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
                     '',
                     'You are using CUDA 10.x driver (yours is: @VERSION@) which is too old. Please contact',
                     'your system admin to update the NVIDIA driver, or reinstall `nvitop` using:',
+                    '',
                     '    pip3 install "nvitop[cuda10]"',
+                    '',
                 )
             ).replace('@VERSION@', Device.driver_version())
         messages.append(message)
 
     if libnvml._pynvml_installation_corrupted:  # pylint: disable=protected-access
-        messages.append(
+        message = '\n'.join(
             (
-                'WARNING: The `{}` package is corrupted. Please reinstall it using:\n\n'
-                '    pip3 install --force-reinstall nvitop nvidia-ml-py\n'
-            ).format(colored('nvidia-ml-py', attrs=('bold',)))
+                'WARNING: The `nvidia-ml-py` package is corrupted. Please reinstall it using:',
+                '',
+                '    pip3 install --force-reinstall nvitop nvidia-ml-py',
+                '',
+                'or install `nvitop` in an isolated environment:',
+                '',
+                '    pip3 install --upgrade pipx',
+                '    pipx install nvitop',
+                '',
+            )
         )
+        messages.append(message)
 
     # pylint: disable-next=protected-access
     if libnvml._driver_get_memory_info_v2_available and not libnvml._pynvml_memory_v2_available:
-        messages.append(
+        message = '\n'.join(
             (
-                'WARNING: The `{}` package does not support the NVML memory info version 2 APIs, which would\n'
-                'get inaccurate results. Please upgrade it via:\n\n'
-                '    pip3 install --upgrade nvitop nvidia-ml-py\n'
-            ).format(colored('nvidia-ml-py', attrs=('bold',)))
+                'WARNING: The `nvidia-ml-py` package does not support the NVML memory info version 2 APIs, which would',
+                'get inaccurate results. Please upgrade it via:',
+                '',
+                '    pip3 install --upgrade nvitop nvidia-ml-py',
+                '',
+            )
         )
+        messages.append(message)
 
     if len(messages) > 0:
         for message in messages:
