@@ -137,6 +137,12 @@ Run `bash install-nvidia-driver.sh --help` for more information.
 
 ## Installation
 
+**It is highly recommended to install `nvitop` in an isolated virtual environment.** Simple installation and run via [`pipx`](https://pypa.github.io/pipx):
+
+```bash
+pipx run nvitop
+```
+
 Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop) / ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)):
 
 ```bash

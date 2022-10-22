@@ -45,6 +45,14 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 Installation
 """"""""""""
 
+**It is highly recommended to install nvitop in an isolated virtual environment.** Simple installation and run via `pipx <https://pypa.github.io/pipx>`_:
+
+.. code:: bash
+
+    pipx run nvitop
+
+Install from PyPI (|PyPI Package|_ / |Package Status|_):
+
 .. code:: bash
 
     pip3 install --upgrade nvitop
@@ -52,12 +60,6 @@ Installation
 .. note::
 
     Python 3.5+ is required, and Python versions lower than 3.5 is not supported.
-
-Install from PyPI (|PyPI Package|_ / |Package Status|_):
-
-.. code:: bash
-
-    pip3 install --upgrade nvitop
 
 Install from conda-forge (|Conda Package|_):
 

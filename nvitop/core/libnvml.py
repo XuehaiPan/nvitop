@@ -42,6 +42,14 @@ __all__ = [  # will be updated in below
     'NVMLError',
 ]
 
+
+if not callable(getattr(_pynvml, 'nvmlInitWithFlags', None)):
+    raise ImportError(
+        'Your installed package `nvidia-ml-py` is corrupted. Please reinstall package '
+        '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.'
+    )
+
+
 ### Members from `pynvml` ##########################################################################
 
 NVMLError = _pynvml.NVMLError
@@ -416,7 +424,15 @@ def nvmlCheckReturn(
 
 
 # Patch layers for backward compatibility ##########################################################
+__patched_backward_compatibility_layers = False
+
+
 def __patch_backward_compatibility_layers() -> None:
+    global __patched_backward_compatibility_layers  # pylint: disable=global-statement
+
+    if __patched_backward_compatibility_layers:
+        return
+
     function_name_mapping_lock = _threading.Lock()
     function_name_mapping = {}
 
@@ -440,7 +456,7 @@ def __patch_backward_compatibility_layers() -> None:
 
         _pynvml.__dict__.update(  # need to use module.__dict__.__setitem__ because module.__setattr__ will not work
             _nvmlGetFunctionPointer=wrapper(
-                _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access
+                _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access,no-member
             )
         )
 
@@ -463,7 +479,8 @@ def __patch_backward_compatibility_layers() -> None:
         return wrapper
 
     def patch_process_info():
-        PrintableStructure = _pynvml._PrintableStructure  # pylint: disable=protected-access
+        # pylint: disable-next=protected-access,no-member
+        PrintableStructure = _pynvml._PrintableStructure
 
         # pylint: disable-next=missing-class-docstring,too-few-public-methods
         class c_nvmlProcessInfo_v1_t(PrintableStructure):
@@ -532,7 +549,7 @@ def __patch_backward_compatibility_layers() -> None:
                     names=set(nvmlDeviceGetRunningProcesses_v2_v1),
                     callback=patch_process_info_callback,
                 )(
-                    _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access
+                    _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access,no-member
                 )
             )
         )
@@ -540,14 +557,19 @@ def __patch_backward_compatibility_layers() -> None:
     with_mapped_function_name()  # patch first and only for once
     patch_process_info()
 
+    __patched_backward_compatibility_layers = True
 
-__patch_backward_compatibility_layers()
+
+_pynvml_installation_corrupted = not callable(getattr(_pynvml, '_nvmlGetFunctionPointer', None))
+
+if not _pynvml_installation_corrupted:
+    __patch_backward_compatibility_layers()
 del __patch_backward_compatibility_layers
 
 
 _pynvml_memory_v2_available = hasattr(_pynvml, 'nvmlMemory_v2')
 _pynvml_get_memory_info_v2_available = _pynvml_memory_v2_available
-_driver_get_memory_info_v2_available = None
+_driver_get_memory_info_v2_available = None if not _pynvml_installation_corrupted else False
 
 
 def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-many-branches
@@ -579,7 +601,7 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-m
 
     if _driver_get_memory_info_v2_available is None:
         try:
-            # pylint: disable-next=protected-access
+            # pylint: disable-next=protected-access,no-member
             _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo_v2')
         except NVMLError_FunctionNotFound:
             with __lock:

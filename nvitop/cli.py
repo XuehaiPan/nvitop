@@ -396,16 +396,22 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
             ).replace('@VERSION@', Device.driver_version())
         messages.append(message)
 
+    if libnvml._pynvml_installation_corrupted:  # pylint: disable=protected-access
+        messages.append(
+            (
+                'WARNING: The `{}` package is corrupted. Please reinstall it using:\n\n'
+                '    pip3 install --force-reinstall nvitop nvidia-ml-py\n'
+            ).format(colored('nvidia-ml-py', attrs=('bold',)))
+        )
+
     # pylint: disable-next=protected-access
     if libnvml._driver_get_memory_info_v2_available and not libnvml._pynvml_memory_v2_available:
         messages.append(
             (
-                'WARNING: The `{0}` package does not support the NVML memory info version 2 APIs, which would\n'
-                'get inaccurate results. Please upgrade `{0}` via `{1}`.'
-            ).format(
-                colored('nvidia-ml-py', attrs=('bold',)),
-                colored('pip3 install --upgrade nvitop nvidia-ml-py', attrs=('bold',)),
-            )
+                'WARNING: The `{}` package does not support the NVML memory info version 2 APIs, which would\n'
+                'get inaccurate results. Please upgrade it via:\n\n'
+                '    pip3 install --upgrade nvitop nvidia-ml-py\n'
+            ).format(colored('nvidia-ml-py', attrs=('bold',)))
         )
 
     if len(messages) > 0:
