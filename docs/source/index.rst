@@ -13,19 +13,22 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 .. |GitHub| image:: https://img.shields.io/badge/GitHub-Homepage-blue?logo=github
 .. _GitHub: https://github.com/XuehaiPan/nvitop
 
-.. |Python Version| image:: https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg
+.. |Python Version| image:: https://img.shields.io/badge/Python-3.5%2B-brightgreen
 .. _Python Version: https://pypi.org/project/nvitop
 
-.. |PyPI Package| image:: https://img.shields.io/pypi/v/nvitop?label=PyPI
+.. |PyPI Package| image:: https://img.shields.io/pypi/v/nvitop?label=PyPI&logo=pypi
 .. _PyPI Package: https://pypi.org/project/nvitop
+
+.. |Conda Package| image:: https://img.shields.io/conda/v/conda-forge/nvitop?logo=condaforge
+.. _Conda Package: https://anaconda.org/conda-forge/nvitop
 
 .. |Package Status| image:: https://img.shields.io/pypi/status/nvitop?label=Status
 .. _Package Status: https://pypi.org/project/nvitop
 
-.. |Documentation Status| image:: https://readthedocs.org/projects/nvitop/badge/?version=latest
-.. _Documentation Status: https://nvitop.readthedocs.io/en/latest/?badge=latest
+.. |Documentation Status| image:: https://img.shields.io/readthedocs/nvitop?label=Docs&logo=readthedocs
+.. _Documentation Status: https://nvitop.readthedocs.io
 
-.. |Downloads| image:: https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month
+.. |Downloads| image:: https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=Downloads
 .. _Downloads: https://pepy.tech/project/nvitop
 
 .. |GitHub Repo Stars| image:: https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen
@@ -55,6 +58,12 @@ Install from PyPI (|PyPI Package|_ / |Package Status|_):
 .. code:: bash
 
     pip3 install --upgrade nvitop
+
+Install from conda-forge (|Conda Package|_):
+
+.. code:: bash
+
+    conda install -c conda-forge nvitop
 
 Install the latest version from GitHub (|Commit Count|):
 

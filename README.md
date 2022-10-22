@@ -2,14 +2,14 @@
 
 <!-- markdownlint-disable html -->
 
-![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen.svg)
-[![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop)
+![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen)
+[![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI&logo=pypi)](https://pypi.org/project/nvitop)
 ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
-[![Documentation Status](https://readthedocs.org/projects/nvitop/badge/?version=latest)](https://nvitop.readthedocs.io/en/latest/?badge=latest)
-[![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=month&left_color=grey&right_color=blue&left_text=Downloads/month)](https://pepy.tech/project/nvitop)
+[![conda-forge](https://img.shields.io/conda/vn/conda-forge/nvitop?label=Conda&logo=condaforge)](https://anaconda.org/conda-forge/nvitop)
+[![Documentation Status](https://img.shields.io/readthedocs/nvitop?label=Docs&logo=readthedocs)](https://nvitop.readthedocs.io)
+[![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/nvitop)
 [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop/stargazers)
 [![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
-[![Tweet](https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop)](https://twitter.com/intent/tweet?text=Wow:&url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop)
 
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references host at <https://nvitop.readthedocs.io>.
 
@@ -141,6 +141,12 @@ Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](ht
 
 ```bash
 pip3 install --upgrade nvitop
+```
+
+Install from conda-forge ([![conda-forge](https://img.shields.io/conda/v/conda-forge/nvitop?logo=condaforge)](https://anaconda.org/conda-forge/nvitop)):
+
+```bash
+conda install -c conda-forge nvitop
 ```
 
 Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.10.0)):
