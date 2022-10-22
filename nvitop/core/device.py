@@ -589,8 +589,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self._handle = libnvml.nvmlQuery(
                     'nvmlDeviceGetHandleByIndex', index, ignore_errors=False
                 )
-            except (libnvml.NVMLError_GpuIsLost, libnvml.NVMLError_Unknown):
+            except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
+                self._name = 'ERROR: GPU is Lost'
+            except libnvml.NVMLError_Unknown:
+                self._handle = None
+                self._name = 'ERROR: Unknown'
         else:
             try:
                 if uuid is not None:
@@ -601,9 +605,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     self._handle = libnvml.nvmlQuery(
                         'nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False
                     )
-            except (libnvml.NVMLError_GpuIsLost, libnvml.NVMLError_Unknown):
+            except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
                 self._nvml_index = NA
+                self._name = 'ERROR: GPU is Lost'
+            except libnvml.NVMLError_Unknown:
+                self._handle = None
+                self._nvml_index = NA
+                self._name = 'ERROR: Unknown'
             else:
                 self._nvml_index = libnvml.nvmlQuery('nvmlDeviceGetIndex', self._handle)
 
@@ -663,6 +672,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         try:
             return super().__getattr__(name)
         except AttributeError:
+            if name == '_cache':
+                raise
             if self._handle is None:
                 return lambda: NA
 

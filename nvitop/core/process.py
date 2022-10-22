@@ -557,6 +557,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         try:
             return super().__getattr__(name)
         except AttributeError:
+            if name == '_cache':
+                raise
             attribute = getattr(self.host, name)
             if isinstance(attribute, FunctionType):
                 attribute = auto_garbage_clean(fallback=_RAISE)(attribute)
