@@ -589,7 +589,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self._handle = libnvml.nvmlQuery(
                     'nvmlDeviceGetHandleByIndex', index, ignore_errors=False
                 )
-            except libnvml.NVMLError_GpuIsLost:
+            except (libnvml.NVMLError_GpuIsLost, libnvml.NVMLError_Unknown):
                 self._handle = None
         else:
             try:
@@ -601,7 +601,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     self._handle = libnvml.nvmlQuery(
                         'nvmlDeviceGetHandleByPciBusId', bus_id, ignore_errors=False
                     )
-            except libnvml.NVMLError_GpuIsLost:
+            except (libnvml.NVMLError_GpuIsLost, libnvml.NVMLError_Unknown):
                 self._handle = None
                 self._nvml_index = NA
             else:
