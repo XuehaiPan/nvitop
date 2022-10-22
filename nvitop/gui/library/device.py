@@ -125,12 +125,18 @@ class Device(DeviceBase):
         return 'light'
 
     def display_color(self):
+        if self.name().startswith('ERROR:'):
+            return 'red'
         return self.INTENSITY2COLOR.get(self.loading_intensity())
 
     def memory_display_color(self):
+        if self.name().startswith('ERROR:'):
+            return 'red'
         return self.INTENSITY2COLOR.get(self.memory_loading_intensity())
 
     def gpu_display_color(self):
+        if self.name().startswith('ERROR:'):
+            return 'red'
         return self.INTENSITY2COLOR.get(self.gpu_loading_intensity())
 
     @staticmethod

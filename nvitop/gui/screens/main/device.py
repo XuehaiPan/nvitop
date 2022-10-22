@@ -448,12 +448,12 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         (
                             'MEM',
                             device.memory_percent,
-                            Device.INTENSITY2COLOR[device.memory_loading_intensity],
+                            device.memory_display_color,
                         ),
                         (
                             'UTL',
                             device.gpu_utilization,
-                            Device.INTENSITY2COLOR[device.gpu_loading_intensity],
+                            device.gpu_display_color,
                         ),
                     ]
                     if device.is_mig_device:
