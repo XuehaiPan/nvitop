@@ -1251,7 +1251,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.graphics
         """  # pylint: disable=line-too-long
 
-        return self.clock_infos().graphics
+        return self.max_clock_infos().graphics
 
     def max_sm_clock(self) -> Union[int, NaType]:  # in MHz
         """Maximum frequency of SM (Streaming Multiprocessor) clock in MHz.
@@ -1266,7 +1266,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.sm
         """  # pylint: disable=line-too-long
 
-        return self.clock_infos().sm
+        return self.max_clock_infos().sm
 
     def max_memory_clock(self) -> Union[int, NaType]:  # in MHz
         """Maximum frequency of memory clock in MHz.
@@ -1281,7 +1281,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.memory
         """
 
-        return self.clock_infos().memory
+        return self.max_clock_infos().memory
 
     def max_video_clock(self) -> Union[int, NaType]:  # in MHz
         """Maximum frequency of video encoder/decoder clock in MHz.
@@ -1296,7 +1296,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=clocks.max.video
         """  # pylint: disable=line-too-long
 
-        return self.clock_infos().video
+        return self.max_clock_infos().video
 
     @ttl_cache(ttl=5.0)
     def fan_speed(self) -> Union[int, NaType]:  # in percentage
