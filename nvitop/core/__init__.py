@@ -4,7 +4,7 @@
 """The core APIs of nvitop."""
 
 from nvitop.core import host, libcuda, libnvml, utils
-from nvitop.core.collector import ResourceMetricCollector, take_snapshots
+from nvitop.core.collector import ResourceMetricCollector, collect_in_background, take_snapshots
 from nvitop.core.device import (
     CudaDevice,
     CudaMigDevice,
@@ -21,6 +21,7 @@ from nvitop.core.utils import *
 
 __all__ = [
     'take_snapshots',
+    'collect_in_background',
     'ResourceMetricCollector',
     'libnvml',
     'nvmlCheckReturn',

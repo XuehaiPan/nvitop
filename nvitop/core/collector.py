@@ -10,7 +10,7 @@ import os
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from typing import Dict, Hashable, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Dict, Hashable, Iterable, List, NamedTuple, Optional, Tuple, Union
 from weakref import WeakSet
 
 from nvitop.core import host
@@ -19,7 +19,7 @@ from nvitop.core.process import GpuProcess, HostProcess
 from nvitop.core.utils import GiB, MiB, Snapshot
 
 
-__all__ = ['take_snapshots', 'ResourceMetricCollector']
+__all__ = ['take_snapshots', 'collect_in_background', 'ResourceMetricCollector']
 
 
 SnapshotResult = NamedTuple(
@@ -166,6 +166,97 @@ def take_snapshots(
     gpu_processes = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
 
     return SnapshotResult(devices, gpu_processes)
+
+
+def collect_in_background(
+    on_collect: Callable[[Dict[str, float]], bool],
+    collector: Optional['ResourceMetricCollector'] = None,
+    interval: Optional[float] = None,
+    *,
+    on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
+    on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
+    tag: str = 'metrics-daemon',
+    start: bool = True,
+) -> threading.Thread:
+    """Starts a background daemon thread that collect and call the callback function periodically.
+
+    Args:
+        on_collect: (Callable[[Dict[str, float]], bool])
+            A callback function that will be called periodically. It takes a dictionary containing
+            the resource metrics and returns a boolean indicating whether to continue monitoring.
+        collector: (Optional[ResourceMetricCollector])
+            A :class:`ResourceMetricCollector` instance to collect metrics. If not given, it will
+            collect metrics for all GPUs and subprocess of the current process.
+        interval: (Optional[float])
+            The collect interval. If not given, use ``collector.interval``.
+        on_start: (Optional[Callable[['ResourceMetricCollector'], None]])
+            A function to initialize the daemon thread and collector.
+        on_stop: (Optional[Callable[['ResourceMetricCollector'], None]])
+            A function that do some necessary cleanup after the daemon thread is stopped.
+        tag: (str)
+            The tag prefix used for metrics results.
+        start: (bool)
+            Whether to start the daemon thread on return.
+
+    Returns: threading.Thread
+        A daemon thread object.
+
+    Examples:
+
+    .. code-block:: python
+
+        logger = ...
+
+        def on_collect(metrics):  # will be called periodically
+            if logger.is_closed():  # closed manually by user
+                return False
+            logger.log(metrics)
+            return True
+
+        def on_stop(collector):  # will be called only once at stop
+            if not logger.is_closed():
+                logger.close()  # cleanup
+
+        # Record metrics to the logger in background every 5 seconds.
+        # It will collect 5-second mean/min/max for each metric.
+        collect_in_background(
+            on_collect,
+            ResourceMetricCollector(Device.cuda.all()),
+            interval=5.0,
+            on_stop=on_stop,
+        )
+    """
+
+    if collector is None:
+        collector = ResourceMetricCollector()
+    if isinstance(interval, (int, float)) and interval > 0:
+        interval = float(interval)
+    elif interval is None:
+        interval = collector.interval
+    else:
+        raise ValueError('Invalid argument interval={!r}'.format(interval))
+    interval = min(interval, collector.interval)
+
+    def target():
+        if on_start is not None:
+            on_start(collector)
+        try:
+            with collector(tag):
+                try:
+                    next_snapshot = timer() + interval
+                    while on_collect(collector.collect()):
+                        time.sleep(max(0.0, next_snapshot - timer()))
+                        next_snapshot += interval
+                except KeyboardInterrupt:
+                    pass
+        finally:
+            if on_stop is not None:
+                on_stop(collector)
+
+    daemon = threading.Thread(target=target, name=tag, daemon=True)
+    if start:
+        daemon.start()
+    return daemon
 
 
 class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
