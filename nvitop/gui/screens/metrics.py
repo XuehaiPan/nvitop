@@ -523,12 +523,24 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 6,
                 self.x + 1,
-                ' {} '.format(self.used_host_memory.max_value_string()),
+                ' {} '.format(
+                    cut_string(
+                        self.used_host_memory.max_value_string(),
+                        maxlen=self.left_width - 2,
+                        padstr='..',
+                    )
+                ),
             )
             self.addstr(
                 self.y + 6,
                 self.x + self.left_width + 2,
-                ' {} '.format(self.used_gpu_memory.max_value_string()),
+                ' {} '.format(
+                    cut_string(
+                        self.used_gpu_memory.max_value_string(),
+                        maxlen=self.right_width - 2,
+                        padstr='..',
+                    )
+                ),
             )
             self.addstr(
                 self.y + 7, self.x + self.left_width + 6, ' {} '.format(self.used_gpu_memory)
