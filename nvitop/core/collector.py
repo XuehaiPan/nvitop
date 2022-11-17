@@ -168,11 +168,11 @@ def take_snapshots(
     return SnapshotResult(devices, gpu_processes)
 
 
+# pylint: disable-next=too-many-arguments
 def collect_in_background(
     on_collect: Callable[[Dict[str, float]], bool],
     collector: Optional['ResourceMetricCollector'] = None,
     interval: Optional[float] = None,
-    *,
     on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
     on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
     tag: str = 'metrics-daemon',
