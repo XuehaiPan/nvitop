@@ -3,21 +3,21 @@
 <!-- markdownlint-disable html -->
 
 ![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen)
-[![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI&logo=pypi)](https://pypi.org/project/nvitop)
-![Status](https://img.shields.io/pypi/status/nvitop?label=Status)
-[![conda-forge](https://img.shields.io/conda/vn/conda-forge/nvitop?label=Conda&logo=condaforge)](https://anaconda.org/conda-forge/nvitop)
-[![Documentation Status](https://img.shields.io/readthedocs/nvitop?label=Docs&logo=readthedocs)](https://nvitop.readthedocs.io)
-[![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=Downloads)](https://pepy.tech/project/nvitop)
-[![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop/stargazers)
-[![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=License)](#license)
+[![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)
+![Status](https://img.shields.io/pypi/status/nvitop?label=status)
+[![conda-forge](https://img.shields.io/conda/vn/conda-forge/nvitop?label=conda&logo=condaforge)](https://anaconda.org/conda-forge/nvitop)
+[![Documentation Status](https://img.shields.io/readthedocs/nvitop?label=docs&logo=readthedocs)](https://nvitop.readthedocs.io)
+[![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=downloads)](https://pepy.tech/project/nvitop)
+[![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop/stargazers)
+[![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=license)](#license)
 
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references host at <https://nvitop.readthedocs.io>.
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/171005261-1aad126e-dc27-4ed3-a89b-7f9c1c998bf7.png" alt="Monitor">
-  </br>
+  <br/>
   Monitor mode of <code>nvitop</code>.
-  </br>
+  <br/>
   (TERM: GNOME Terminal / OS: Ubuntu 16.04 LTS (over SSH) / Locale: <code>en_US.UTF-8</code>)
 </p>
 
@@ -55,12 +55,18 @@ This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) 
 
 [nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
 
-If this repo is useful to you, please star ⭐️ it to let more people know 🤗. [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop)
+If this repo is useful to you, please star ⭐️ it to let more people know 🤗. [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop)
 
 <p align="center">
-  <img width="100%" src="https://user-images.githubusercontent.com/16078332/117765245-3f16de80-b260-11eb-99c7-077cd5519074.png" alt="Comparison">
-  </br>
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/202362686-859bf4ad-6237-46ca-b2f7-f547d2f63213.png" alt="Comparison">
+  <br/>
   Compare to <code>nvidia-smi</code>.
+</p>
+
+<p align="center">
+  <img width="100%" src="https://user-images.githubusercontent.com/16078332/202362811-34f2c01d-97c8-49d2-b19b-0d7da648f2d5.png" alt="Filter">
+  <br/>
+  Process filtering and more colorful interface.
 </p>
 
 ------
@@ -90,9 +96,9 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/129374533-fe06c01a-630d-4994-b54b-821cccd0d33c.png" alt="Windows">
-  </br>
+  <br/>
   <code>nvitop</code> supports Windows!
-  </br>
+  <br/>
   (SHELL: PowerShell / TERM: Windows Terminal / OS: Windows 10 / Locale: <code>en-US</code>)
 </p>
 
@@ -125,7 +131,7 @@ bash install-nvidia-driver.sh --latest                     # install the latest 
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/174480112-e9a35edc-8f42-438e-a103-1d0ce998b381.png" alt="install-nvidia-driver">
-  </br>
+  <br/>
   NVIDIA driver installer for Ubuntu Linux.
 </p>
 
@@ -143,7 +149,7 @@ Run `bash install-nvidia-driver.sh --help` for more information.
 pipx run nvitop
 ```
 
-Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=PyPI)](https://pypi.org/project/nvitop) / ![Status](https://img.shields.io/pypi/status/nvitop?label=Status)):
+Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop) / ![Status](https://img.shields.io/pypi/status/nvitop?label=status)):
 
 ```bash
 pip3 install --upgrade nvitop
@@ -173,9 +179,9 @@ pip3 install .
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/178963038-a5cd4eb5-02a8-4456-966f-d5ff04eb44d8.png" alt="MIG Device Support">
-  </br>
+  <br/>
   MIG Device Support.
-  </br>
+  <br/>
 </p>
 
 ------
@@ -248,7 +254,7 @@ Also, to enter the process metrics screen, select a process and then press the <
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/192108815-37c03705-be44-47d4-9908-6d05175db230.png" alt="Process Metrics Screen">
-  </br>
+  <br/>
   Watch metrics for a specific process (shortcut: <kbd>Enter</kbd> / <kbd>Return</kbd>).
 </p>
 
@@ -256,7 +262,7 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/192108664-61f1983c-6f62-48e6-87c5-29633d9c409e.png" alt="Help Screen">
-  </br>
+  <br/>
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
 
@@ -346,7 +352,7 @@ process filtering:
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/182555606-8388e5a5-43a9-4990-90d4-46e45ac448a0.png" alt="Spectrum-like Bar Charts">
-  </br>
+  <br/>
   Spectrum-like bar charts (with option <code>--colorful</code>).
 </p>
 
@@ -400,7 +406,7 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                    `<End>` | Select the last process.                                                             |
 |                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).          |
 |                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                     |
-|              `<PageUp>` / `<PageDown>`</br> `<A-K>` / `<A-J>`<br>`[` / `]` | scroll entire screen (for large amounts of processes).                               |
+|              `<PageUp>` / `<PageDown>`<br/> `<A-K>` / `<A-J>`<br>`[` / `]` | scroll entire screen (for large amounts of processes).                               |
 |                                                                            |                                                                                      |
 |                                                                  `<Space>` | Tag/untag current process.                                                           |
 |                                                                    `<Esc>` | Clear process selection.                                                             |
@@ -675,7 +681,7 @@ for device in devices:
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/177041142-fe988d58-6a97-4559-84fd-b51204cf9231.png" alt="Demo">
-  </br>
+  <br/>
   An example monitoring script built with APIs from <code>nvitop</code>.
 </p>
 

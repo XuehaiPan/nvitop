@@ -1,7 +1,7 @@
 Welcome to nvitop's documentation!
 ==================================
 
-|GitHub|_ |Python Version|_ |PyPI Package|_ |Package Status|_ |Documentation Status|_ |Downloads|_ |GitHub Repo Stars|_ |License|_ |Tweet|_
+|GitHub|_ |Python Version|_ |PyPI Package|_ |Package Status|_ |Conda Package|_ |Documentation Status|_ |Downloads|_ |GitHub Repo Stars|_ |License|_ |Tweet|_
 
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management.
 
@@ -16,25 +16,25 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 .. |Python Version| image:: https://img.shields.io/badge/Python-3.5%2B-brightgreen
 .. _Python Version: https://pypi.org/project/nvitop
 
-.. |PyPI Package| image:: https://img.shields.io/pypi/v/nvitop?label=PyPI&logo=pypi
+.. |PyPI Package| image:: https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi
 .. _PyPI Package: https://pypi.org/project/nvitop
 
 .. |Conda Package| image:: https://img.shields.io/conda/v/conda-forge/nvitop?logo=condaforge
 .. _Conda Package: https://anaconda.org/conda-forge/nvitop
 
-.. |Package Status| image:: https://img.shields.io/pypi/status/nvitop?label=Status
+.. |Package Status| image:: https://img.shields.io/pypi/status/nvitop?label=status
 .. _Package Status: https://pypi.org/project/nvitop
 
-.. |Documentation Status| image:: https://img.shields.io/readthedocs/nvitop?label=Docs&logo=readthedocs
+.. |Documentation Status| image:: https://img.shields.io/readthedocs/nvitop?label=docs&logo=readthedocs
 .. _Documentation Status: https://nvitop.readthedocs.io
 
-.. |Downloads| image:: https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=Downloads
+.. |Downloads| image:: https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=downloads
 .. _Downloads: https://pepy.tech/project/nvitop
 
-.. |GitHub Repo Stars| image:: https://img.shields.io/github/stars/XuehaiPan/nvitop?label=Stars&logo=github&color=brightgreen
+.. |GitHub Repo Stars| image:: https://img.shields.io/github/stars/XuehaiPan/nvitop?label=stars&logo=github&color=brightgreen
 .. _GitHub Repo Stars: https://github.com/XuehaiPan/nvitop
 
-.. |License| image:: https://img.shields.io/github/license/XuehaiPan/nvitop?label=License
+.. |License| image:: https://img.shields.io/github/license/XuehaiPan/nvitop?label=license
 .. _License: https://github.com/XuehaiPan/nvitop#license
 
 .. |Tweet| image:: https://img.shields.io/twitter/url?url=https%3A%2F%2Fgithub.com%2FXuehaiPan%2Fnvitop
