@@ -180,6 +180,8 @@ def collect_in_background(
 ) -> threading.Thread:
     """Starts a background daemon thread that collect and call the callback function periodically.
 
+    See also :func:`ResourceMetricCollector.daemonize`.
+
     Args:
         on_collect: (Callable[[Dict[str, float]], bool])
             A callback function that will be called periodically. It takes a dictionary containing
@@ -592,6 +594,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         start: bool = True,
     ) -> threading.Thread:
         """Starts a background daemon thread that collect and call the callback function periodically.
+
+        See also :func:`collect_in_background`.
 
         Args:
             on_collect: (Callable[[Dict[str, float]], bool])
