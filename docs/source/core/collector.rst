@@ -8,6 +8,7 @@ nvitop.collector module
     take_snapshots
     collect_in_background
     ResourceMetricCollector
+    ResourceMetricCollector.daemonize
 
 .. automodule:: nvitop.collector
     :no-members:
