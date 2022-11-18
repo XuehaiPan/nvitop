@@ -898,6 +898,43 @@ df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimesta
 df.to_csv('results.csv', index=False)
 ```
 
+You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.collect_in_background) or [`ResourceMetricCollector.daemonize`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.ResourceMetricCollector.daemonize) with callback functions.
+
+```python
+from nvitop import Device, ResourceMetricCollector, collect_in_background
+
+logger = ...
+
+def on_collect(metrics):  # will be called periodically
+    if logger.is_closed():  # closed manually by user
+        return False
+    logger.log(metrics)
+    return True
+
+def on_stop(collector):  # will be called only once at stop
+    if not logger.is_closed():
+        logger.close()  # cleanup
+
+# Record metrics to the logger in background every 5 seconds.
+# It will collect 5-second mean/min/max for each metric.
+collect_in_background(
+    on_collect,
+    ResourceMetricCollector(Device.cuda.all()),
+    interval=5.0,
+    on_stop=on_stop,
+)
+```
+
+or simply:
+
+```python
+ResourceMetricCollector(Device.cuda.all()).daemonize(
+    on_collect,
+    interval=5.0,
+    on_stop=on_stop,
+)
+```
+
 ------
 
 #### Low-level APIs
