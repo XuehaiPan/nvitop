@@ -898,7 +898,7 @@ df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimesta
 df.to_csv('results.csv', index=False)
 ```
 
-You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.collect_in_background) with callback functions.
+You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.collect_in_background) or [`ResourceMetricCollector.daemonize`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.ResourceMetricCollector.daemonize) with callback functions.
 
 ```python
 from nvitop import Device, ResourceMetricCollector, collect_in_background
