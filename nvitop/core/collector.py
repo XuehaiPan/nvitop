@@ -254,6 +254,7 @@ def collect_in_background(
                 on_stop(collector)
 
     daemon = threading.Thread(target=target, name=tag, daemon=True)
+    daemon.collector = collector
     if start:
         daemon.start()
     return daemon
@@ -283,6 +284,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         with collector(tag='<tag>'):
             ...
+
+        collector.daemonize(on_collect_fn)
 
     Examples:
 
@@ -577,6 +580,71 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             if timer() - self._last_timestamp > self.interval:
                 self.take_snapshots()
             return self._metric_buffer.collect()
+
+    # pylint: disable-next=too-many-arguments
+    def daemonize(
+        self,
+        on_collect: Callable[[Dict[str, float]], bool],
+        interval: Optional[float] = None,
+        on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
+        on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
+        tag: str = 'metrics-daemon',
+        start: bool = True,
+    ) -> threading.Thread:
+        """Starts a background daemon thread that collect and call the callback function periodically.
+
+        Args:
+            on_collect: (Callable[[Dict[str, float]], bool])
+                A callback function that will be called periodically. It takes a dictionary containing
+                the resource metrics and returns a boolean indicating whether to continue monitoring.
+            interval: (Optional[float])
+                The collect interval. If not given, use ``collector.interval``.
+            on_start: (Optional[Callable[['ResourceMetricCollector'], None]])
+                A function to initialize the daemon thread and collector.
+            on_stop: (Optional[Callable[['ResourceMetricCollector'], None]])
+                A function that do some necessary cleanup after the daemon thread is stopped.
+            tag: (str)
+                The tag prefix used for metrics results.
+            start: (bool)
+                Whether to start the daemon thread on return.
+
+        Returns: threading.Thread
+            A daemon thread object.
+
+        Examples:
+
+        .. code-block:: python
+
+            logger = ...
+
+            def on_collect(metrics):  # will be called periodically
+                if logger.is_closed():  # closed manually by user
+                    return False
+                logger.log(metrics)
+                return True
+
+            def on_stop(collector):  # will be called only once at stop
+                if not logger.is_closed():
+                    logger.close()  # cleanup
+
+            # Record metrics to the logger in background every 5 seconds.
+            # It will collect 5-second mean/min/max for each metric.
+            ResourceMetricCollector(Device.cuda.all()).daemonize(
+                on_collect,
+                ResourceMetricCollector(Device.cuda.all()),
+                interval=5.0,
+                on_stop=on_stop,
+            )
+        """
+        return collect_in_background(
+            on_collect,
+            collector=self,
+            interval=interval,
+            on_start=on_start,
+            on_stop=on_stop,
+            tag=tag,
+            start=start,
+        )
 
     def __del__(self) -> None:
         self._daemon_running.clear()

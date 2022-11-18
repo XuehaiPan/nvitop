@@ -901,7 +901,7 @@ df.to_csv('results.csv', index=False)
 You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.collect_in_background) with callback functions.
 
 ```python
-from nvitop import Device, collect_in_background
+from nvitop import Device, ResourceMetricCollector, collect_in_background
 
 logger = ...
 
@@ -920,6 +920,16 @@ def on_stop(collector):  # will be called only once at stop
 collect_in_background(
     on_collect,
     ResourceMetricCollector(Device.cuda.all()),
+    interval=5.0,
+    on_stop=on_stop,
+)
+```
+
+or simply:
+
+```python
+ResourceMetricCollector(Device.cuda.all()).daemonize(
+    on_collect,
     interval=5.0,
     on_stop=on_stop,
 )
