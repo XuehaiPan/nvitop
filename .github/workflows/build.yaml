@@ -49,7 +49,7 @@ jobs:
         id: py
         uses: actions/setup-python@v4
         with:
-          python-version: "3.5 - 3.10"
+          python-version: "3.5 - 3.11"
           update-environment: true
 
       - name: Set up Python 3.5
@@ -117,7 +117,7 @@ jobs:
         uses: actions/setup-python@v4
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          python-version: "3.5 - 3.10"
+          python-version: "3.5 - 3.11"
           update-environment: true
 
       - name: Set __release__

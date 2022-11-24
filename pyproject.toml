@@ -29,6 +29,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Environment :: GPU",
@@ -70,7 +71,7 @@ include = ["nvitop", "nvitop.*"]
 [tool.black]
 line-length = 100
 skip-string-normalization = true
-target-version = ["py35", "py36", "py37", "py38", "py39", "py310"]
+target-version = ["py35", "py36", "py37", "py38", "py39", "py310", "py311"]
 
 [tool.isort]
 profile = "black"
