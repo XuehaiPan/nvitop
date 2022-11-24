@@ -12,35 +12,37 @@
 # pylint: disable=missing-module-docstring
 
 import pathlib
+import re
 import sys
 
 from setuptools import setup
 
 
-VERSION_FILE = pathlib.Path(__file__).absolute().parent / 'nvitop' / 'version.py'
+HERE = pathlib.Path(__file__).absolute().parent
+VERSION_FILE = HERE / 'nvitop' / 'version.py'
 
-try:
-    from nvitop import version
-except ImportError:
-    sys.path.insert(0, str(VERSION_FILE.parent))
-    import version
+sys.path.insert(0, str(VERSION_FILE.parent))
+# pylint: disable-next=import-error,wrong-import-position
+import version  # noqa
 
 
 VERSION_CONTENT = None
-if not version.__release__:
-    import re
-
-    VERSION_CONTENT = VERSION_FILE.read_text(encoding='UTF-8')
-    VERSION_FILE.write_text(
-        data=re.sub(
-            r"""__version__\s*=\s*('[^']+'|"[^"]+")""",
-            r"__version__ = '{}'".format(version.__version__),
-            string=VERSION_CONTENT,
-        ),
-        encoding='UTF-8',
-    )
 
 try:
+    if not version.__release__:
+        try:
+            VERSION_CONTENT = VERSION_FILE.read_text(encoding='UTF-8')
+            VERSION_FILE.write_text(
+                data=re.sub(
+                    r"""__version__\s*=\s*('[^']+'|"[^"]+")""",
+                    r"__version__ = '{}'".format(version.__version__),
+                    string=VERSION_CONTENT,
+                ),
+                encoding='UTF-8',
+            )
+        except OSError:
+            VERSION_CONTENT = None
+
     setup(
         name='nvitop',
         version=version.__version__,
