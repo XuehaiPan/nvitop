@@ -48,6 +48,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
       - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
 - [License](#license)
+  - [Copyright Notice](#copyright-notice)
 
 ------
 
@@ -1382,6 +1383,50 @@ Environment variable screen (shortcut: <kbd>e</kbd>):
 
 ## License
 
-`nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**.
+The source code of `nvitop` is dual-licensed by the **Apache License, Version 2.0 (Apache-2.0)** and **GNU General Public License, version 3 (GPLv3)** . The `nvitop` CLI is released under the **GPLv3** license while the remaining part of `nvitop` is released under the **Apache-2.0** license. The license file can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE).
 
-**NOTE:** Please feel free to use `nvitop` as a package or dependency for your own projects. However, if you want to add or modify some features of `nvitop`, or copy some source code of `nvitop` into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
+The source code is organized as:
+
+```text
+nvitop           (GPLv3)
+├── __init__.py  (Apache-2.0)
+├── version.py   (Apache-2.0)
+├── core         (Apache-2.0)
+│   ├── LICENSE  (Apache-2.0)
+│   └── *        (Apache-2.0)
+├── callbacks    (Apache-2.0)
+│   ├── LICENSE  (Apache-2.0)
+│   └── *        (Apache-2.0)
+├── select.py    (Apache-2.0)
+├── __main__.py  (GPLv3)
+├── cli.py       (GPLv3)
+└── gui          (GPLv3)
+    ├── COPYING  (GPLv3)
+    └── *        (GPLv3)
+```
+
+### Copyright Notice
+
+Please feel free to use `nvitop` as a dependency for your own projects. The following Python import statements are permitted:
+
+```python
+import nvitop
+import nvitop as alias
+from nvitop import *
+from nvitop import Device, ResourceMetricCollector
+```
+
+The public APIs from `nvitop` are released under the **Apache License, Version 2.0 (Apache-2.0)**. The original license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE), [nvitop/core/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/core/LICENSE), and [nvitop/callbacks/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/callbacks/LICENSE).
+
+The CLI of `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**. The original license files can be found at [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) and [nvitop/gui/COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/gui/COPYING). If you dynamically load the source code of `nvitop`'s CLI or GUI:
+
+```python
+from nvitop import cli
+from nvitop import gui
+import nvitop.cli
+import nvitop.gui
+```
+
+your source code should also be released under the GPLv3 License.
+
+If you want to add or modify some features of `nvitop`'s CLI, or copy some source code of `nvitop`'s CLI into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).

@@ -8,7 +8,7 @@ description = "An interactive NVIDIA-GPU process viewer, the one-stop solution f
 readme = "README.md"
 requires-python = ">= 3.5"
 authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
-license = { text = "GNU General Public License, version 3 (GPLv3)" }
+license = { text = "Apache License, Version 2.0 (Apache-2.0) & GNU General Public License, version 3 (GPLv3)" }
 keywords = [
     "nvidia",
     "nvidia-smi",
