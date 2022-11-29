@@ -19,8 +19,11 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 .. |PyPI Package| image:: https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi
 .. _PyPI Package: https://pypi.org/project/nvitop
 
-.. |Conda Package| image:: https://img.shields.io/conda/v/conda-forge/nvitop?logo=condaforge
+.. |Conda Package| image:: https://img.shields.io/conda/vn/conda-forge/nvitop?label=conda&logo=condaforge
 .. _Conda Package: https://anaconda.org/conda-forge/nvitop
+
+.. |Conda-forge Package| image:: https://img.shields.io/conda/v/conda-forge/nvitop?logo=condaforge
+.. _Conda-forge Package: https://anaconda.org/conda-forge/nvitop
 
 .. |Package Status| image:: https://img.shields.io/pypi/status/nvitop?label=status
 .. _Package Status: https://pypi.org/project/nvitop
@@ -61,7 +64,7 @@ Install from PyPI (|PyPI Package|_ / |Package Status|_):
 
     Python 3.5+ is required, and Python versions lower than 3.5 is not supported.
 
-Install from conda-forge (|Conda Package|_):
+Install from conda-forge (|Conda-forge Package|_):
 
 .. code:: bash
 
