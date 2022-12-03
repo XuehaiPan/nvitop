@@ -128,8 +128,8 @@ class NaType(str):
         'n/a'
         >>> NA.ljust(5)                    # NA is an instance of `str`
         'N/A  '
-        >>> NA + 'str'                     # string contamination if the operand is a string
-        'N/Astr'
+        >>> NA + ' str'                    # string contamination if the operand is a string
+        'N/A str'
 
         >>> float(NA)                      # explicit conversion to float (`math.nan`)
         nan
@@ -182,8 +182,8 @@ class NaType(str):
         string concatenation if the operand is a string. A special case is when the operand is
         :const:`nvitop.NA` itself, the result is :data:`math.nan` instead of :const:`'N/AN/A'`.
 
-        >>> NA + 'str'
-        'N/Astr'
+        >>> NA + ' str'
+        'N/A str'
         >>> NA + NA
         nan
         >>> NA + 1

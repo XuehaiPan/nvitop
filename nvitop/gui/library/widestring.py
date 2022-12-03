@@ -40,7 +40,7 @@ def wcslen(string):
     return len(WideString(string))
 
 
-class WideString:  # pylint: disable=too-few-public-methods
+class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-docstring
     def __init__(self, string='', chars=None):
         if isinstance(string, WideString):
             string = string.string
@@ -102,8 +102,14 @@ class WideString:  # pylint: disable=too-few-public-methods
     def __hash__(self):
         return hash(self.string)
 
-    def __getslice__(self, start, stop):
+    def __getitem__(self, item):
         """
+        >>> WideString('asdf')[2]
+        <WideString 'd'>
+        >>> WideString('……')[0]
+        <WideString '…'>
+        >>> WideString('……')[1]
+        <WideString '…'>
         >>> WideString('asdf')[1:3]
         <WideString 'sd'>
         >>> WideString('asdf')[1:-100]
@@ -126,6 +132,13 @@ class WideString:  # pylint: disable=too-few-public-methods
         <WideString 'a'>
         """
 
+        if isinstance(item, slice):
+            assert item.step is None or item.step == 1
+            start, stop = item.start, item.stop
+        else:
+            assert isinstance(item, int)
+            start, stop = item, item + 1
+
         length = len(self)
 
         if stop is None or stop > length:
@@ -146,21 +159,6 @@ class WideString:  # pylint: disable=too-few-public-methods
             return WideString(' ' + ''.join(self.chars[start : stop - 1]))
         return WideString(''.join(self.chars[start:stop]))
 
-    def __getitem__(self, item):
-        """
-        >>> WideString('asdf')[2]
-        <WideString 'd'>
-        >>> WideString('……')[0]
-        <WideString '…'>
-        >>> WideString('……')[1]
-        <WideString '…'>
-        """
-
-        if isinstance(item, slice):
-            assert item.step is None or item.step == 1
-            return self.__getslice__(item.start, item.stop)
-        return self.__getslice__(item, item + 1)
-
     def __len__(self):
         """
         >>> len(WideString('poo'))
@@ -168,6 +166,7 @@ class WideString:  # pylint: disable=too-few-public-methods
         >>> len(WideString('モヒカン'))
         8
         """
+
         return len(self.chars)
 
     def ljust(self, width, fillchar=' '):
