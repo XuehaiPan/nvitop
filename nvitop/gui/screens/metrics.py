@@ -138,17 +138,17 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         def format_cpu_percent(value):
             if value is NA:
-                return 'CPU: {}'.format(value)
-            return 'CPU: {:.1f}%'.format(value)
+                return f'CPU: {value}'
+            return f'CPU: {value:.1f}%'
 
         def format_max_cpu_percent(value):
             if value is NA:
-                return 'MAX CPU: {}'.format(value)
-            return 'MAX CPU: {:.1f}%'.format(value)
+                return f'MAX CPU: {value}'
+            return f'MAX CPU: {value:.1f}%'
 
         def format_host_memory(value):
             if value is NA:
-                return 'HOST-MEM: {}'.format(value)
+                return f'HOST-MEM: {value}'
             return 'HOST-MEM: {} ({:.1f}%)'.format(
                 bytes2human(value),
                 round(100.0 * value / total_host_memory, 1),
@@ -156,7 +156,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         def format_max_host_memory(value):
             if value is NA:
-                return 'MAX HOST-MEM: {}'.format(value)
+                return f'MAX HOST-MEM: {value}'
             return 'MAX HOST-MEM: {} ({:.1f}%) / {}'.format(
                 bytes2human(value),
                 round(100.0 * value / total_host_memory, 1),
@@ -169,7 +169,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     bytes2human(value),
                     round(100.0 * value / total_gpu_memory, 1),
                 )
-            return 'GPU-MEM: {}'.format(value)
+            return f'GPU-MEM: {value}'
 
         def format_max_gpu_memory(value):
             if value is not NA and total_gpu_memory is not NA:
@@ -178,17 +178,17 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     round(100.0 * value / total_gpu_memory, 1),
                     total_gpu_memory_human,
                 )
-            return 'MAX GPU-MEM: {}'.format(value)
+            return f'MAX GPU-MEM: {value}'
 
         def format_sm(value):
             if value is NA:
-                return 'GPU-SM: {}'.format(value)
-            return 'GPU-SM: {:.1f}%'.format(value)
+                return f'GPU-SM: {value}'
+            return f'GPU-SM: {value:.1f}%'
 
         def format_max_sm(value):
             if value is NA:
-                return 'MAX GPU-SM: {}'.format(value)
-            return 'MAX GPU-SM: {:.1f}%'.format(value)
+                return f'MAX GPU-SM: {value}'
+            return f'MAX GPU-SM: {value:.1f}%'
 
         with self.snapshot_lock:
             self.cpu_percent = BufferedHistoryGraph(
@@ -395,7 +395,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             columns = OrderedDict(
                 [
                     (' GPU', self.process.device.display_index.rjust(4)),
-                    ('PID  ', '{} {}'.format(str(process.pid).rjust(3), process.type)),
+                    ('PID  ', f'{str(process.pid).rjust(3)} {process.type}'),
                     (
                         'USER',
                         WideString(
@@ -513,12 +513,12 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     self.addstr(y, self.x + self.left_width + 2, line)
 
             self.color_reset()
-            self.addstr(self.y + 6, self.x + 1, ' {} '.format(self.cpu_percent.max_value_string()))
-            self.addstr(self.y + 7, self.x + 5, ' {} '.format(self.cpu_percent))
+            self.addstr(self.y + 6, self.x + 1, f' {self.cpu_percent.max_value_string()} ')
+            self.addstr(self.y + 7, self.x + 5, f' {self.cpu_percent} ')
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 5,
                 self.x + 5,
-                ' {} '.format(self.used_host_memory),
+                f' {self.used_host_memory} ',
             )
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 6,
@@ -542,18 +542,16 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     )
                 ),
             )
-            self.addstr(
-                self.y + 7, self.x + self.left_width + 6, ' {} '.format(self.used_gpu_memory)
-            )
+            self.addstr(self.y + 7, self.x + self.left_width + 6, f' {self.used_gpu_memory} ')
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 5,
                 self.x + self.left_width + 6,
-                ' {} '.format(self.gpu_sm_utilization),
+                f' {self.gpu_sm_utilization} ',
             )
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 6,
                 self.x + self.left_width + 2,
-                ' {} '.format(self.gpu_sm_utilization.max_value_string()),
+                f' {self.gpu_sm_utilization.max_value_string()} ',
             )
 
             for y in range(self.y + 6, self.y + 6 + self.upper_height):
@@ -570,14 +568,14 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 get_yticks(self.cpu_percent, self.y + 6),
                 get_yticks(self.used_host_memory, self.y + self.upper_height + 7),
             ):
-                self.addstr(y, self.x, '├╴{}% '.format(p))
+                self.addstr(y, self.x, f'├╴{p}% ')
                 self.color_at(y, self.x, width=2, attr=0)
             x = self.x + self.left_width + 1
             for y, p in itertools.chain(
                 get_yticks(self.used_gpu_memory, self.y + 6),
                 get_yticks(self.gpu_sm_utilization, self.y + self.upper_height + 7),
             ):
-                self.addstr(y, x, '├╴{}% '.format(p))
+                self.addstr(y, x, f'├╴{p}% ')
                 self.color_at(y, x, width=2, attr=0)
 
     def destroy(self):

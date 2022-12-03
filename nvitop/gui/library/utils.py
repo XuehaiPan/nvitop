@@ -34,7 +34,7 @@ def cut_string(s, maxlen, padstr='...', align='left'):
 
 # pylint: disable=disallowed-name
 def make_bar(prefix, percent, width):
-    bar = '{}: '.format(prefix)
+    bar = f'{prefix}: '
     if percent != NA and not (isinstance(percent, float) and not math.isfinite(percent)):
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent.replace('%', '')
@@ -44,10 +44,10 @@ def make_bar(prefix, percent, width):
         bar += '█' * quotient
         if remainder > 0:
             bar += ' ▏▎▍▌▋▊▉'[remainder]
-        if isinstance(percent, float) and len('{} {:.1f}%'.format(bar, percent)) <= width:
-            bar += ' {:.1f}%'.format(percent)
+        if isinstance(percent, float) and len(f'{bar} {percent:.1f}%') <= width:
+            bar += f' {percent:.1f}%'
         else:
-            bar += ' {:d}%'.format(min(round(percent), 100)).replace('100%', 'MAX')
+            bar += f' {min(round(percent), 100):d}%'.replace('100%', 'MAX')
     else:
         bar += '░' * (width - len(bar) - 4) + ' N/A'
     return bar.ljust(width)
@@ -73,6 +73,6 @@ else:
 
 HOSTNAME = platform.node()
 if host.WSL:
-    HOSTNAME = '{} (WSL)'.format(HOSTNAME)
+    HOSTNAME = f'{HOSTNAME} (WSL)'
 
-USERCONTEXT = '{}@{}'.format(USERNAME, HOSTNAME)
+USERCONTEXT = f'{USERNAME}@{HOSTNAME}'

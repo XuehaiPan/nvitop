@@ -168,7 +168,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self._compact = value
             processes = self.snapshots
             n_processes, n_devices = len(processes), len(
-                set(p.device.physical_index for p in processes)
+                {p.device.physical_index for p in processes}
             )
             self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
             self.compact_height = 1 + max(6, 5 + n_processes)
@@ -205,9 +205,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         time_header = ' ' * (time_length - 4) + 'TIME'
         info_length = max((len(p.host_info) for p in snapshots), default=0)
-        n_processes, n_devices = len(snapshots), len(
-            set(p.device.physical_index for p in snapshots)
-        )
+        n_processes, n_devices = len(snapshots), len({p.device.physical_index for p in snapshots})
         self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
         self.compact_height = 1 + max(6, 5 + n_processes)
         height = self.compact_height if self.compact else self.full_height
@@ -296,7 +294,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             else:
                 message = ' Gathering process status...'
             header.extend(
-                ['│ {} │'.format(message.ljust(self.width - 4)), '╘' + '═' * (self.width - 2) + '╛']
+                [f'│ {message.ljust(self.width - 4)} │', '╘' + '═' * (self.width - 2) + '╛']
             )
         return header
 
@@ -383,7 +381,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.addstr(
                 self.y + 3,
                 self.x + 38,
-                '{}'.format(host_headers[host_offset:].ljust(self.width - 40)),
+                f'{host_headers[host_offset:].ljust(self.width - 40)}',
             )
         else:
             self.addstr(self.y + 3, self.x + 38, '{}'.format('COMMAND'.ljust(self.width - 40)))
@@ -517,7 +515,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         elif self.has_snapshots:
             message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
-            self.addstr(self.y + 5, self.x, '│ {} │'.format(message.ljust(self.width - 4)))
+            self.addstr(self.y + 5, self.x, f'│ {message.ljust(self.width - 4)} │')
 
         text_offset = self.x + self.width - 47
         if len(self.selection.tagged) > 0 or (
@@ -597,9 +595,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     ).join(info)
                 elif process.username != USERNAME and not SUPERUSER:
                     info = colored(info, attrs=('dark',))
-                lines.append(
-                    '│{} {} │'.format(colored('{:>4}'.format(device_display_index), color), info)
-                )
+                lines.append('│{} {} │'.format(colored(f'{device_display_index:>4}', color), info))
 
             lines.append('╘' + '═' * (self.width - 2) + '╛')
 

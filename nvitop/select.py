@@ -93,7 +93,7 @@ def select_devices(
     tolerance: int = 0,  # in percentage
     free_accounts: List[str] = None,
     sort: bool = True,
-    **kwargs  # fmt: skip # pylint: disable=unused-argument
+    **kwargs,  # fmt: skip # pylint: disable=unused-argument
 ) -> Union[List[int], List[Tuple[int, int]], List[str]]:
     """Selected a subset of devices satisfying the specified criteria. Returns a list of the device
     identifiers.
@@ -301,7 +301,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         '-V',
         dest='version',
         action='version',
-        version='%(prog)s {}'.format(__version__),
+        version=f'%(prog)s {__version__}',
         help="Show %(prog)s's version number and exit.",
     )
 

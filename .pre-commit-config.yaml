@@ -27,7 +27,12 @@ repos:
     rev: 22.10.0
     hooks:
       - id: black
-        args: [--safe]
+        stages: [commit, push, manual]
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.0
+    hooks:
+      - id: pyupgrade
+        args: [--py36-plus]
         stages: [commit, push, manual]
   - repo: local
     hooks:

@@ -253,7 +253,7 @@ class CUDAError(Exception):
                 self.value,
             )
         except CUDAError:
-            return 'CUDA Error with code {}.'.format(self.value)
+            return f'CUDA Error with code {self.value}.'
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, CUDAError):
@@ -273,7 +273,7 @@ def cudaExceptionClass(cudaErrorCode: int) -> _Type[CUDAError]:
 
     # pylint: disable=protected-access
     if cudaErrorCode not in CUDAError._value_class_mapping:
-        raise ValueError('cudaErrorCode {} is not valid.'.format(cudaErrorCode))
+        raise ValueError(f'cudaErrorCode {cudaErrorCode} is not valid.')
     return CUDAError._value_class_mapping[cudaErrorCode]
 
 
@@ -292,7 +292,7 @@ def _extract_cuda_errors_as_classes() -> None:
     for err_name in cuda_error_names:
         # e.g. Turn CUDA_ERROR_INVALID_VALUE into CUDAError_InvalidValue
         pascal_case = _string.capwords(err_name.replace('CUDA_ERROR_', ''), '_').replace('_', '')
-        class_name = 'CUDAError_{}'.format(pascal_case)
+        class_name = f'CUDAError_{pascal_case}'
         err_val = getattr(this_module, err_name)
 
         def gen_new(value):
@@ -504,7 +504,7 @@ def cuDriverGetVersion() -> str:
     _cudaCheckReturn(ret)
     major = driver_version.value // 1000
     minor = (driver_version.value % 1000) // 10
-    return '{}.{}'.format(major, minor)
+    return f'{major}.{minor}'
 
 
 def cuDeviceGetCount() -> int:

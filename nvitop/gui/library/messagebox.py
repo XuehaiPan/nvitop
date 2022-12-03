@@ -24,7 +24,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             self.offset = 0
             self.key = normalize_keybinding(key)
             self.callback = callback
-            self.keys = tuple(set(normalize_keybinding(key) for key in keys).difference({self.key}))
+            self.keys = tuple({normalize_keybinding(key) for key in keys}.difference({self.key}))
             self.attrs = attrs
 
         def __str__(self):
@@ -83,7 +83,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
                     lines.append(word)
         if len(lines) == 1:
             lines[-1] = WideString(lines[-1]).center(self.width - 6)
-        lines = [' │ {} │ '.format(line.ljust(self.width - 6)) for line in lines]
+        lines = [f' │ {line.ljust(self.width - 6)} │ ' for line in lines]
         lines = [
             ' ╒' + '═' * (self.width - 4) + '╕ ',
             ' │' + ' ' * (self.width - 4) + '│ ',
@@ -267,11 +267,11 @@ def send_signal(signal, panel):
         except host.PsutilError:
             username = 'N/A'
         username = cut_string(username, maxlen=24, padstr='+')
-        processes.append('{}({})'.format(process.pid, username))
+        processes.append(f'{process.pid}({username})')
     if len(processes) == 0:
         return
     if len(processes) == 1:
-        message = 'Send signal to process {}?'.format(processes[0])
+        message = f'Send signal to process {processes[0]}?'
     else:
         maxlen = max(map(len, processes))
         processes = [process.ljust(maxlen) for process in processes]

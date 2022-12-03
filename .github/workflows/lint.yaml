@@ -27,19 +27,19 @@ jobs:
         id: py
         uses: actions/setup-python@v4
         with:
-          python-version: "3.5 - 3.11"
+          python-version: "3.6 - 3.11"
           update-environment: true
 
-      - name: Set up Python 3.5
-        id: py35
+      - name: Set up Python 3.6
+        id: py36
         uses: actions/setup-python@v4
         with:
-          python-version: "3.5"
+          python-version: "3.6"
           update-environment: false
 
-      - name: Check syntax (Python 3.5)
+      - name: Check syntax (Python 3.6)
         run: |
-          "${{ steps.py35.outputs.python-path }}" -m compileall nvitop
+          "${{ steps.py36.outputs.python-path }}" -m compileall nvitop
 
       - name: Upgrade pip
         run: |

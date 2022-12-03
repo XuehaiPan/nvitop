@@ -154,7 +154,7 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
                 lines[-1] = lines[-1].strip()
                 lines.append(word)
         height, width = len(lines) + 4, max(map(len, lines)) + 4
-        lines = ['│ {} │'.format(line.ljust(width - 4)) for line in lines]
+        lines = [f'│ {line.ljust(width - 4)} │' for line in lines]
         lines = [
             '╒' + '═' * (width - 2) + '╕',
             '│' + ' ' * (width - 2) + '│',

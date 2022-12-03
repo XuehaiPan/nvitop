@@ -72,7 +72,7 @@ def _uncase_special_key(string):
     """
     uncased = string.lower()
     if len(uncased) == 3 and (uncased.startswith('a-') or uncased.startswith('m-')):
-        uncased = '%s-%s' % (uncased[0], string[-1])
+        uncased = f'{uncased[0]}-{string[-1]}'
     return uncased
 
 
@@ -143,8 +143,7 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
                     string = ''.join(bracket_content)
                     try:
                         keys = SPECIAL_KEYS_UNCASED[_uncase_special_key(string)]
-                        for key in keys:
-                            yield key
+                        yield from keys
                     except KeyError:
                         if string.isdigit():
                             yield int(string)

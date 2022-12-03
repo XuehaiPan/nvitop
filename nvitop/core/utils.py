@@ -527,22 +527,22 @@ def bytes2human(b: Union[int, float, NaType]) -> str:  # pylint: disable=too-man
             return NA
 
     if b < KiB:
-        return '{}B'.format(b)
+        return f'{b}B'
     if b < MiB:
-        return '{}KiB'.format(round(b / KiB))
+        return f'{round(b / KiB)}KiB'
     if b <= 20 * GiB:
-        return '{}MiB'.format(round(b / MiB))
+        return f'{round(b / MiB)}MiB'
     if b < 100 * GiB:
-        return '{:.2f}GiB'.format(round(b / GiB, 2))
+        return f'{round(b / GiB, 2):.2f}GiB'
     if b < 1000 * GiB:
-        return '{:.1f}GiB'.format(round(b / GiB, 1))
+        return f'{round(b / GiB, 1):.1f}GiB'
     if b < 100 * TiB:
-        return '{:.2f}TiB'.format(round(b / TiB, 2))
+        return f'{round(b / TiB, 2):.2f}TiB'
     if b < 1000 * TiB:
-        return '{:.1f}TiB'.format(round(b / TiB, 1))
+        return f'{round(b / TiB, 1):.1f}TiB'
     if b < 100 * PiB:
-        return '{:.2f}PiB'.format(round(b / PiB, 2))
-    return '{:.1f}PiB'.format(round(b / PiB, 1))
+        return f'{round(b / PiB, 2):.2f}PiB'
+    return f'{round(b / PiB, 1):.1f}PiB'
 
 
 def human2bytes(s: Union[int, str]) -> int:
@@ -571,11 +571,11 @@ def human2bytes(s: Union[int, str]) -> int:
     if isinstance(s, int):
         if s >= 0:
             return s
-        raise ValueError('Cannot convert {!r} to bytes.'.format(s))
+        raise ValueError(f'Cannot convert {s!r} to bytes.')
 
     match = SIZE_PATTERN.match(s)
     if match is None:
-        raise ValueError('Cannot convert {!r} to bytes.'.format(s))
+        raise ValueError(f'Cannot convert {s!r} to bytes.')
     size, unit = match.groups()
     unit = unit.upper().replace('I', 'i').replace('B', '') + 'B'
     return int(float(size) * SIZE_UNITS[unit])
@@ -591,7 +591,7 @@ def timedelta2human(dt: Union[int, float, datetime.timedelta, NaType]) -> str:
         return NA
 
     if dt.days >= 4:
-        return '{:.1f} days'.format(dt.days + dt.seconds / 86400)
+        return f'{dt.days + dt.seconds / 86400:.1f} days'
 
     hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)
     if hours > 0:
@@ -604,9 +604,9 @@ def utilization2string(utilization: Union[int, float, NaType]) -> str:
 
     if utilization != NA:
         if isinstance(utilization, int):
-            return '{}%'.format(utilization)
+            return f'{utilization}%'
         if isinstance(utilization, float):
-            return '{:.1f}%'.format(utilization)
+            return f'{utilization:.1f}%'
     return NA
 
 
@@ -642,7 +642,7 @@ class Snapshot:
         keyvals = []
         for key in keys:
             value = getattr(self, key)
-            keyval = '{}={!r}'.format(key, value)
+            keyval = f'{key}={value!r}'
             if isinstance(value, Snapshot):
                 keyval = keyval.replace('\n', '\n    ')  # extra indentation for nested snapshots
             keyvals.append(keyval)

@@ -57,9 +57,9 @@ if host.POSIX:
             if ' ' not in s:
                 return s
             if '"' not in s:
-                return '"{}"'.format(s)
+                return f'"{s}"'
         if "'" not in s and '\n' not in s:
-            return "'{}'".format(s)
+            return f"'{s}'"
         return '"{}"'.format(
             s.replace('\\', r'\\').replace('"', r'\"').replace('$', r'\$').replace('\n', r'\n')
         )
@@ -75,7 +75,7 @@ elif host.WINDOWS:
             if ' ' not in s:
                 return s
             if '"' not in s:
-                return '"{}"'.format(s)
+                return f'"{s}"'
         return '"{}"'.format(
             s.replace('^', '^^').replace('"', '^"').replace('%', '^%').replace('\n', r'\n')
         )
@@ -527,8 +527,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self._gpu_instance_id = self._compute_instance_id = NA
 
         for util in ('sm', 'memory', 'encoder', 'decoder'):
-            if not hasattr(self, '_gpu_{}_utilization'.format(util)):
-                setattr(self, '_gpu_{}_utilization'.format(util), NA)
+            if not hasattr(self, f'_gpu_{util}_utilization'):
+                setattr(self, f'_gpu_{util}_utilization', NA)
 
     def __str__(self) -> str:
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(

@@ -128,3 +128,6 @@ bstate
 getmouse
 uncase
 lol
+xx
+yyy
+zz

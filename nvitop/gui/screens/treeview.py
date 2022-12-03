@@ -82,9 +82,9 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                     if cpu_percent is NA:
                         cpu_percent_string = NA
                     elif cpu_percent < 1000.0:
-                        cpu_percent_string = '{:.1f}%'.format(cpu_percent)
+                        cpu_percent_string = f'{cpu_percent:.1f}%'
                     elif cpu_percent < 10000:
-                        cpu_percent_string = '{}%'.format(int(cpu_percent))
+                        cpu_percent_string = f'{int(cpu_percent)}%'
                     else:
                         cpu_percent_string = '9999+%'
 
@@ -94,7 +94,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                     memory_percent = memory_percent_string = NA
                 else:
                     if memory_percent is not NA:
-                        memory_percent_string = '{:.1f}%'.format(memory_percent)
+                        memory_percent_string = f'{memory_percent:.1f}%'
                     else:
                         memory_percent_string = NA
 

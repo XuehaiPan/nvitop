@@ -343,7 +343,7 @@ def nvmlQuery(
     default: _Any = NA,
     ignore_errors: bool = True,
     ignore_function_not_found: bool = False,
-    **kwargs
+    **kwargs,
 ) -> _Any:
     """Calls a function with the given arguments from NVML. The NVML context will be automatically
     initialized.
@@ -411,7 +411,7 @@ def nvmlQuery(
                             'Please verify whether the `nvidia-ml-py` package is '
                             'compatible with your NVIDIA driver version.'
                         ),
-                        'nvmlQuery({!r}, *args, **kwargs)'.format(func),
+                        f'nvmlQuery({func!r}, *args, **kwargs)',
                     )
         if ignore_errors or ignore_function_not_found:
             return default

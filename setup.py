@@ -35,7 +35,7 @@ try:
             VERSION_FILE.write_text(
                 data=re.sub(
                     r"""__version__\s*=\s*('[^']+'|"[^"]+")""",
-                    r"__version__ = '{}'".format(version.__version__),
+                    f"__version__ = '{version.__version__}'",
                     string=VERSION_CONTENT,
                 ),
                 encoding='UTF-8',
@@ -56,7 +56,7 @@ try:
             'cuda10': ['nvidia-ml-py == 11.450.51'],
             **{
                 # The identifier could not start with numbers, add a prefix `pynvml-`
-                'pynvml-{}'.format(pynvml): ['nvidia-ml-py == {}'.format(pynvml)]
+                f'pynvml-{pynvml}': [f'nvidia-ml-py == {pynvml}']
                 for pynvml in version.PYNVML_VERSION_CANDIDATES
             },
         },

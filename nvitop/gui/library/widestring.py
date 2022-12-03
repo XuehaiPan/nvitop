@@ -92,7 +92,7 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         return self.string
 
     def __repr__(self):
-        return '<{} {!r}>'.format(self.__class__.__name__, self.string)
+        return f'<{self.__class__.__name__} {self.string!r}>'
 
     def __eq__(self, other):
         if not isinstance(other, (str, WideString)):

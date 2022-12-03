@@ -36,9 +36,9 @@ from nvitop.core.utils import GiB, MiB, Snapshot
 __all__ = ['take_snapshots', 'collect_in_background', 'ResourceMetricCollector']
 
 
-SnapshotResult = NamedTuple(
-    'SnapshotResult', [('devices', List[Snapshot]), ('gpu_processes', List[Snapshot])]
-)
+class SnapshotResult(NamedTuple):  # pylint: disable=missing-class-docstring
+    devices: List[Snapshot]
+    gpu_processes: List[Snapshot]
 
 
 timer = time.monotonic
@@ -48,7 +48,7 @@ timer = time.monotonic
 def take_snapshots(
     devices: Optional[Union[Device, Iterable[Device]]] = None,
     *,
-    gpu_processes: Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]] = None
+    gpu_processes: Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]] = None,
 ) -> SnapshotResult:
     """Retrieves status of demanded devices and GPU processes.
 
@@ -187,6 +187,7 @@ def collect_in_background(
     on_collect: Callable[[Dict[str, float]], bool],
     collector: Optional['ResourceMetricCollector'] = None,
     interval: Optional[float] = None,
+    *,
     on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
     on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
     tag: str = 'metrics-daemon',
@@ -250,7 +251,7 @@ def collect_in_background(
     elif interval is None:
         interval = collector.interval
     else:
-        raise ValueError('Invalid argument interval={!r}'.format(interval))
+        raise ValueError(f'Invalid argument interval={interval!r}')
     interval = min(interval, collector.interval)
 
     def target():
@@ -400,7 +401,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         if isinstance(interval, (int, float)) and interval > 0:
             interval = float(interval)
         else:
-            raise ValueError('Invalid argument interval={!r}'.format(interval))
+            raise ValueError(f'Invalid argument interval={interval!r}')
 
         if devices is None:
             devices = Device.all()
@@ -463,9 +464,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 self._metric_buffer = _MetricBuffer(tag, self, prev=self._metric_buffer)
                 self._last_timestamp = timer() - 2.0 * self.interval
             else:
-                raise RuntimeError(
-                    'Resource metric collector is already started with tag "{}"'.format(tag)
-                )
+                raise RuntimeError(f'Resource metric collector is already started with tag "{tag}"')
 
         self._daemon_running.set()
         try:
@@ -493,7 +492,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 tag = self._metric_buffer.tag
             elif tag not in self._tags:
                 raise RuntimeError(
-                    'Resource metric collector has not been started with tag "{}".'.format(tag)
+                    f'Resource metric collector has not been started with tag "{tag}".'
                 )
 
             buffer = self._metric_buffer
@@ -576,7 +575,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 tag = self._metric_buffer.tag
             elif tag not in self._tags:
                 raise RuntimeError(
-                    'Resource metric collector has not been started with tag "{}".'.format(tag)
+                    f'Resource metric collector has not been started with tag "{tag}".'
                 )
 
             buffer = self._metric_buffer
@@ -602,6 +601,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self,
         on_collect: Callable[[Dict[str, float]], bool],
         interval: Optional[float] = None,
+        *,
         on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
         on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
         tag: str = 'metrics-daemon',
@@ -728,23 +728,23 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         device_identifiers = {}
         for device in devices:
-            identifier = 'gpu:{}'.format(device.index)
+            identifier = f'gpu:{device.index}'
             if isinstance(device.real, CudaDevice):
-                identifier = 'cuda:{} ({})'.format(device.cuda_index, identifier)
+                identifier = f'cuda:{device.cuda_index} ({identifier})'
             device_identifiers[device.real] = identifier
 
             for attr, name, unit in self.DEVICE_METRICS:
                 value = float(getattr(device, attr)) / unit
-                metrics['{}/{}'.format(identifier, name)] = value
+                metrics[f'{identifier}/{name}'] = value
 
         for process in gpu_processes:
             device_identifier = device_identifiers[process.device]
-            identifier = 'pid:{}'.format(process.pid)
+            identifier = f'pid:{process.pid}'
 
             for attr, scope, name, unit in self.PROCESS_METRICS:
                 scope = scope or device_identifier
                 value = float(getattr(process, attr)) / unit
-                metrics['{}/{}/{}'.format(identifier, scope, name)] = value
+                metrics[f'{identifier}/{scope}/{name}'] = value
 
         with self._lock:
             if self._metric_buffer is not None:
@@ -769,7 +769,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
 
         self.tag = tag
         if self.prev is not None:
-            self.key_prefix = '{}/{}'.format(self.prev.key_prefix, self.tag)
+            self.key_prefix = f'{self.prev.key_prefix}/{self.tag}'
         else:
             self.key_prefix = self.tag
 
@@ -799,7 +799,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
 
     def collect(self) -> Dict[str, float]:
         metrics = {
-            '{}/{}/{}'.format(self.key_prefix, key, name): value
+            f'{self.key_prefix}/{key}/{name}': value
             for key, stats in self.buffer.items()
             for name, value in stats.items()
         }
@@ -811,8 +811,8 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
                 'host/running_time (min)/min'
             ):
                 del metrics[key]
-        metrics['{}/duration (s)'.format(self.key_prefix)] = timer() - self.start_timestamp
-        metrics['{}/timestamp'.format(self.key_prefix)] = time.time()
+        metrics[f'{self.key_prefix}/duration (s)'] = timer() - self.start_timestamp
+        metrics[f'{self.key_prefix}/timestamp'] = time.time()
         return metrics
 
     def __len__(self) -> int:

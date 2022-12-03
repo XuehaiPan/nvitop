@@ -42,7 +42,7 @@ if not __release__:
         )
         if sep:
             version_prefix, dot, version_tail = prefix.rpartition('.')
-            prefix = '{}{}{}'.format(version_prefix, dot, int(version_tail) + 1)
+            prefix = f'{version_prefix}{dot}{int(version_tail) + 1}'
             __version__ = sep.join((prefix, suffix))
             del version_prefix, dot, version_tail
         else:

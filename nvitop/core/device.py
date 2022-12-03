@@ -129,29 +129,31 @@ __all__ = [
 
 ### Class definitions ##############################################################################
 
-MemoryInfo = NamedTuple(
-    'MemoryInfo',  # in bytes
-    [('total', Union[int, NaType]), ('free', Union[int, NaType]), ('used', Union[int, NaType])],
-)
-ClockInfos = NamedTuple(
-    'ClockInfos',  # in MHz
-    [
-        ('graphics', Union[int, NaType]),
-        ('sm', Union[int, NaType]),
-        ('memory', Union[int, NaType]),
-        ('video', Union[int, NaType]),
-    ],
-)
-ClockSpeedInfos = NamedTuple('ClockSpeedInfos', [('current', ClockInfos), ('max', ClockInfos)])
-UtilizationRates = NamedTuple(
-    'UtilizationRates',  # in percentage
-    [
-        ('gpu', Union[int, NaType]),
-        ('memory', Union[int, NaType]),
-        ('encoder', Union[int, NaType]),
-        ('decoder', Union[int, NaType]),
-    ],
-)
+
+class MemoryInfo(NamedTuple):  # in bytes # pylint: disable=missing-class-docstring
+    total: Union[int, NaType]
+    free: Union[int, NaType]
+    used: Union[int, NaType]
+
+
+class ClockInfos(NamedTuple):  # in MHz # pylint: disable=missing-class-docstring
+    graphics: Union[int, NaType]
+    sm: Union[int, NaType]
+    memory: Union[int, NaType]
+    video: Union[int, NaType]
+
+
+class ClockSpeedInfos(NamedTuple):  # pylint: disable=missing-class-docstring
+    current: ClockInfos
+    max: ClockInfos
+
+
+class UtilizationRates(NamedTuple):  # in percentage # pylint: disable=missing-class-docstring
+    gpu: Union[int, NaType]
+    memory: Union[int, NaType]
+    encoder: Union[int, NaType]
+    decoder: Union[int, NaType]
+
 
 _VALUE_OMITTED = object()
 
@@ -295,8 +297,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             minor = (cuda_driver_version % 1000) // 10
             revision = cuda_driver_version % 10
             if revision == 0:
-                return '{}.{}'.format(major, minor)
-            return '{}.{}.{}'.format(major, minor, revision)
+                return f'{major}.{minor}'
+            return f'{major}.{minor}.{revision}'
         return NA
 
     max_cuda_version = cuda_version = cuda_driver_version  # alias for backward compatibility
@@ -439,7 +441,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         devices = []
         for cuda_index in cuda_indices:
             if not 0 <= cuda_index < cuda_device_count:
-                raise RuntimeError('CUDA Error: invalid device ordinal: {!r}.'.format(cuda_index))
+                raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             device = cuda_devices[cuda_index]
             devices.append(device)
 
@@ -500,7 +502,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         index: Optional[Union[int, Tuple[int, int], str]] = None,
         *,
         uuid: Optional[str] = None,
-        bus_id: Optional[str] = None
+        bus_id: Optional[str] = None,
     ) -> 'Device':
         """Creates a new instance of Device. The type of the result is determined by the given argument.
 
@@ -549,8 +551,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     and isinstance(index[1], int)
                 ):
                     raise TypeError(
-                        'index for MIG device must be a tuple of 2 integers '
-                        'but index = {!r} was given'.format((index))
+                        f'index for MIG device must be a tuple of 2 integers '
+                        f'but index = {index!r} was given'
                     )
                 return super().__new__(MigDevice)
         elif uuid is not None:
@@ -563,7 +565,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         index: Optional[Union[int, str]] = None,
         *,
         uuid: Optional[str] = None,
-        bus_id: Optional[str] = None
+        bus_id: Optional[str] = None,
     ) -> None:
         """Initializes the instance created by :meth:`__new__()`.
 
@@ -584,9 +586,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
             index, uuid = None, index
 
-        index, uuid, bus_id = [
+        index, uuid, bus_id = (
             arg.encode() if isinstance(arg, str) else arg for arg in (index, uuid, bus_id)
-        ]
+        )
 
         self._name = NA
         self._uuid = NA
@@ -716,7 +718,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     return NA
 
             attribute.__name__ = name
-            attribute.__qualname__ = '{}.{}'.format(self.__class__.__name__, name)
+            attribute.__qualname__ = f'{self.__class__.__name__}.{name}'
             setattr(self, name, attribute)
             return attribute
 
@@ -966,7 +968,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             The used memory over total memory in human readable format, or :const:`'N/A / N/A'` when not applicable.
         """  # pylint: disable=line-too-long
 
-        return '{} / {}'.format(self.memory_used_human(), self.memory_total_human())
+        return f'{self.memory_used_human()} / {self.memory_total_human()}'
 
     @memoize_when_activated
     @ttl_cache(ttl=1.0)
@@ -1059,7 +1061,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             The used BAR1 memory over total BAR1 memory in human readable format, or :const:`'N/A / N/A'` when not applicable.
         """  # pylint: disable=line-too-long
 
-        return '{} / {}'.format(self.bar1_memory_used_human(), self.bar1_memory_total_human())
+        return f'{self.bar1_memory_used_human()} / {self.bar1_memory_total_human()}'
 
     @memoize_when_activated
     @ttl_cache(ttl=1.0)
@@ -1395,10 +1397,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         power_usage = self.power_usage()
         power_limit = self.power_limit()
         if libnvml.nvmlCheckReturn(power_usage, int):
-            power_usage = '{}W'.format(round(power_usage / 1000.0))
+            power_usage = f'{round(power_usage / 1000.0)}W'
         if libnvml.nvmlCheckReturn(power_limit, int):
-            power_limit = '{}W'.format(round(power_limit / 1000.0))
-        return '{} / {}'.format(power_usage, power_limit)
+            power_limit = f'{round(power_limit / 1000.0)}W'
+        return f'{power_usage} / {power_limit}'
 
     @ttl_cache(ttl=60.0)
     def display_active(self) -> Union[str, NaType]:
@@ -1919,7 +1921,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         if isinstance(index, str) and self.UUID_PATTERN.match(index) is not None:  # passed by UUID
             index, uuid = None, index
 
-        index, uuid = [arg.encode() if isinstance(arg, str) else arg for arg in (index, uuid)]
+        index, uuid = (arg.encode() if isinstance(arg, str) else arg for arg in (index, uuid))
 
         self._name = NA
         self._uuid = NA
@@ -2172,7 +2174,7 @@ class CudaDevice(Device):
         cuda_index: Optional[int] = None,
         *,
         nvml_index: Optional[Union[int, Tuple[int, int]]] = None,
-        uuid: Optional[str] = None
+        uuid: Optional[str] = None,
     ) -> 'Device':
         """Creates a new instance of CudaDevice. The type of the result is determined by the given argument.
 
@@ -2200,7 +2202,7 @@ class CudaDevice(Device):
         if cuda_index is not None and nvml_index is None and uuid is None:
             cuda_visible_devices = cls.parse_cuda_visible_devices()
             if not isinstance(cuda_index, int) or not 0 <= cuda_index < len(cuda_visible_devices):
-                raise RuntimeError('CUDA Error: invalid device ordinal: {!r}.'.format(cuda_index))
+                raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             nvml_index = cuda_visible_devices[cuda_index]
 
         if not isinstance(nvml_index, int) or is_mig_device_uuid(uuid):
@@ -2213,7 +2215,7 @@ class CudaDevice(Device):
         cuda_index: Optional[int] = None,
         *,
         nvml_index: Optional[Union[int, Tuple[int, int]]] = None,
-        uuid: Optional[str] = None
+        uuid: Optional[str] = None,
     ) -> None:
         """Initializes the instance created by :meth:`__new__()`.
 
@@ -2237,7 +2239,7 @@ class CudaDevice(Device):
         if cuda_index is not None and nvml_index is None and uuid is None:
             cuda_visible_devices = self.parse_cuda_visible_devices()
             if not isinstance(cuda_index, int) or not 0 <= cuda_index < len(cuda_visible_devices):
-                raise RuntimeError('CUDA Error: invalid device ordinal: {!r}.'.format(cuda_index))
+                raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             nvml_index = cuda_visible_devices[cuda_index]
 
         super().__init__(index=nvml_index, uuid=uuid)

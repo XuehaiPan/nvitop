@@ -36,7 +36,7 @@ TRUE_COLORS = dict(
         ('bright cyan', 14),
         ('bright white', 15),
     ]
-    + [('preserved {:02d}'.format(i), i) for i in range(16, 64)]
+    + [(f'preserved {i:02d}', i) for i in range(16, 64)]
 )
 
 
@@ -81,13 +81,13 @@ def _get_color(fg, bg):
     global COLOR_PAIRS  # pylint: disable=global-statement,global-variable-not-assigned
 
     if isinstance(fg, str):
-        fg = getattr(curses, 'COLOR_{}'.format(fg.upper()), -1)
+        fg = getattr(curses, f'COLOR_{fg.upper()}', -1)
     elif isinstance(fg, tuple):
         fg = _get_true_color(fg)
     elif isinstance(fg, float):
         fg = _get_true_color(_colormap(fg))
     if isinstance(bg, str):
-        bg = getattr(curses, 'COLOR_{}'.format(bg.upper()), -1)
+        bg = getattr(curses, f'COLOR_{bg.upper()}', -1)
     elif isinstance(bg, tuple):
         bg = _get_true_color(bg)
     elif isinstance(bg, float):
@@ -259,7 +259,7 @@ class CursesShortcuts:
             attr_strings = map(str.strip, attr.split('|'))
             attr = 0
             for s in attr_strings:
-                attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
+                attr |= getattr(curses, f'A_{s.upper()}', 0)
 
         if LIGHT_THEME:  # tweak for light themes
             if attr & curses.A_REVERSE != 0 and bg == -1 and fg not in (DEFAULT_FOREGROUND, -1):
@@ -304,6 +304,6 @@ class CursesShortcuts:
             attr_strings = map(str.strip, attr.split('|'))
             attr = 0
             for s in attr_strings:
-                attr |= getattr(curses, 'A_{}'.format(s.upper()), 0)
+                attr |= getattr(curses, f'A_{s.upper()}', 0)
 
         BASE_ATTR = attr

@@ -52,7 +52,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
         '-V',
         dest='version',
         action='version',
-        version='%(prog)s {}'.format(__version__),
+        version=f'%(prog)s {__version__}',
         help="Show %(prog)s's version number and exit.",
     )
 
@@ -301,14 +301,14 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         invalid_indices = indices.difference(range(device_count))
         indices.intersection_update(range(device_count))
         if len(invalid_indices) > 1:
-            messages.append('ERROR: Invalid device indices: {}.'.format(sorted(invalid_indices)))
+            messages.append(f'ERROR: Invalid device indices: {sorted(invalid_indices)}.')
         elif len(invalid_indices) == 1:
-            messages.append('ERROR: Invalid device index: {}.'.format(list(invalid_indices)[0]))
+            messages.append(f'ERROR: Invalid device index: {list(invalid_indices)[0]}.')
     elif args.only_visible:
-        indices = set(
+        indices = {
             index if isinstance(index, int) else index[0]
             for index in Device.parse_cuda_visible_devices()
-        )
+        }
     else:
         indices = range(device_count)
     devices = Device.from_indices(sorted(set(indices)))
@@ -345,7 +345,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
         except curses.error as ex:
             if ui is not None:
                 raise
-            messages.append('ERROR: Failed to initialize `curses` ({})'.format(ex))
+            messages.append(f'ERROR: Failed to initialize `curses` ({ex})')
 
     if ui is None:
         ui = UI(devices, filters, ascii=args.ascii)
@@ -367,7 +367,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
             else 'ERROR: A FunctionNotFound error occurred while calling:'
         ]
         unknown_function_messages.extend(
-            '    nvmlQuery({.__name__!r}, *args, **kwargs)'.format(func)
+            f'    nvmlQuery({func.__name__!r}, *args, **kwargs)'
             for func, _ in libnvml.UNKNOWN_FUNCTIONS.values()
         )
         unknown_function_messages.append(

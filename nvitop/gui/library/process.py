@@ -30,16 +30,16 @@ class GpuProcess(GpuProcessBase):
         if host_snapshot.cpu_percent is NA:
             host_snapshot.cpu_percent_string = NA
         elif host_snapshot.cpu_percent < 1000.0:
-            host_snapshot.cpu_percent_string = '{:.1f}%'.format(host_snapshot.cpu_percent)
+            host_snapshot.cpu_percent_string = f'{host_snapshot.cpu_percent:.1f}%'
         elif host_snapshot.cpu_percent < 10000:
-            host_snapshot.cpu_percent_string = '{}%'.format(int(host_snapshot.cpu_percent))
+            host_snapshot.cpu_percent_string = f'{int(host_snapshot.cpu_percent)}%'
         else:
             host_snapshot.cpu_percent_string = '9999+%'
 
         if host_snapshot.memory_percent is NA:
             host_snapshot.memory_percent_string = NA
         else:
-            host_snapshot.memory_percent_string = '{:.1f}%'.format(host_snapshot.memory_percent)
+            host_snapshot.memory_percent_string = f'{host_snapshot.memory_percent:.1f}%'
 
         return host_snapshot
 

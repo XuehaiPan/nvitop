@@ -76,7 +76,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
 
         if value is not None:
             self.items = [
-                (WideString(key), WideString('{}={}'.format(key, normalize(value[key]))))
+                (WideString(key), WideString(f'{key}={normalize(value[key])}'))
                 for key in sorted(value.keys())
             ]
             value = OrderedDict(self.items)

@@ -172,8 +172,8 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         version_infos = [
             'NVITOP {}'.format(__version__.partition('+')[0]),
-            'Driver Version: {}'.format(self.driver_version),
-            'CUDA Driver Version: {}'.format(self.cuda_driver_version),
+            f'Driver Version: {self.driver_version}',
+            f'CUDA Driver Version: {self.cuda_driver_version}',
         ]
         if sum(len(v) for v in version_infos) % 2 == 0:
             version_infos[0] += ' '
@@ -462,7 +462,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         bar = make_bar(  # pylint: disable=disallowed-name
                             prefix, utilization, width=remaining_width - 3
                         )
-                        lines[y] += ' {} │'.format(colored(bar, color))
+                        lines[y] += f' {colored(bar, color)} │'
 
                     if index == len(self.snapshots) - 1:
                         lines[y_start + len(matrix)] = (

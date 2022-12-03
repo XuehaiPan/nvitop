@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable html -->
 
-![Python 3.5+](https://img.shields.io/badge/Python-3.5%2B-brightgreen)
+![Python 3.6+](https://img.shields.io/badge/Python-3.6%2B-brightgreen)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)
 ![Status](https://img.shields.io/pypi/status/nvitop?label=status)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/nvitop?label=conda&logo=condaforge)](https://anaconda.org/conda-forge/nvitop)
@@ -107,7 +107,7 @@ If this repo is useful to you, please star ⭐️ it to let more people know �
 
 ## Requirements
 
-- Python 3.5+ (with `pip>=10.0`)
+- Python 3.6+ (with `pip>=10.0`)
 - NVIDIA Management Library (NVML)
 - nvidia-ml-py
 - psutil
@@ -297,7 +297,7 @@ ssh user@host -t '~/.local/bin/nvitop'  # installed by `pip3 install --user ...`
 Type `nvitop --help` for more command options:
 
 ```text
-usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
+usage: nvitop [--help] [--version] [--once | --monitor [{auto,full,compact}]]
               [--interval SEC] [--ascii] [--colorful] [--force-color] [--light]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
               [--only idx [idx ...]] [--only-visible]
@@ -306,7 +306,7 @@ usage: nvitop [--help] [--version] [--once] [--monitor [{auto,full,compact}]]
 
 An interactive NVIDIA-GPU process viewer.
 
-optional arguments:
+options:
   --help, -h            Show this help message and exit.
   --version, -V         Show nvitop's version number and exit.
   --once, -1            Report query data only once.
@@ -517,7 +517,7 @@ usage: nvisel [--help] [--version]
 
 CUDA visible devices selection tool.
 
-optional arguments:
+options:
   --help, -h            Show this help message and exit.
   --version, -V         Show nvisel's version number and exit.
 

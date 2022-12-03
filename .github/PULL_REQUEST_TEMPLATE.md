@@ -14,7 +14,7 @@
 
 - Operating system and version: [e.g. Ubuntu 20.04 LTS / Windows 10 Build 19043.1110]
 - Terminal emulator and version: [e.g. GNOME Terminal 3.36.2 / Windows Terminal 1.8.1521.0]
-- Python version: [e.g. `3.5.6` / `3.9.6`]
+- Python version: [e.g. `3.6.6` / `3.9.6`]
 - NVML version (driver version): [e.g. `460.84`]
 - `nvitop` version or commit: [e.g. `0.10.0` / `0.10.1.dev7+ga083321` / `main@75ae3c`]
 - `python-ml-py` version: [e.g. `11.450.51`]

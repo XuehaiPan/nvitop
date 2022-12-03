@@ -47,22 +47,22 @@ def get_gpu_stats(
 
     stats = {}
     for device in devices:
-        prefix = 'gpu_id: {}'.format(device.cuda_index)
+        prefix = f'gpu_id: {device.cuda_index}'
         if device.cuda_index != device.physical_index:
-            prefix += ' (physical index: {})'.format(device.physical_index)
+            prefix += f' (physical index: {device.physical_index})'
         with device.oneshot():
             if memory_utilization or gpu_utilization:
                 utilization = device.utilization_rates()
                 if memory_utilization:
-                    stats['{}/utilization.memory (%)'.format(prefix)] = float(utilization.memory)
+                    stats[f'{prefix}/utilization.memory (%)'] = float(utilization.memory)
                 if gpu_utilization:
-                    stats['{}/utilization.gpu (%)'.format(prefix)] = float(utilization.gpu)
+                    stats[f'{prefix}/utilization.gpu (%)'] = float(utilization.gpu)
             if memory_utilization:
-                stats['{}/memory.used (MiB)'.format(prefix)] = float(device.memory_used()) / MiB
-                stats['{}/memory.free (MiB)'.format(prefix)] = float(device.memory_free()) / MiB
+                stats[f'{prefix}/memory.used (MiB)'] = float(device.memory_used()) / MiB
+                stats[f'{prefix}/memory.free (MiB)'] = float(device.memory_free()) / MiB
             if fan_speed:
-                stats['{}/fan.speed (%)'.format(prefix)] = float(device.fan_speed())
+                stats[f'{prefix}/fan.speed (%)'] = float(device.fan_speed())
             if temperature:
-                stats['{}/temperature.gpu (C)'.format(prefix)] = float(device.fan_speed())
+                stats[f'{prefix}/temperature.gpu (C)'] = float(device.fan_speed())
 
     return stats
