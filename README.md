@@ -4,12 +4,11 @@
 
 ![Python 3.6+](https://img.shields.io/badge/Python-3.6%2B-brightgreen)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)
-![Status](https://img.shields.io/pypi/status/nvitop?label=status)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/nvitop?label=conda&logo=condaforge)](https://anaconda.org/conda-forge/nvitop)
 [![Documentation Status](https://img.shields.io/readthedocs/nvitop?label=docs&logo=readthedocs)](https://nvitop.readthedocs.io)
 [![Downloads](https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=downloads)](https://pepy.tech/project/nvitop)
 [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop/stargazers)
-[![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=license)](#license)
+[![License](https://img.shields.io/github/license/XuehaiPan/nvitop?label=license&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZmZmZmZmIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMi43NSAyLjc1YS43NS43NSAwIDAwLTEuNSAwVjQuNUg5LjI3NmExLjc1IDEuNzUgMCAwMC0uOTg1LjMwM0w2LjU5NiA1Ljk1N0EuMjUuMjUgMCAwMTYuNDU1IDZIMi4zNTNhLjc1Ljc1IDAgMTAwIDEuNUgzLjkzTC41NjMgMTUuMThhLjc2Mi43NjIgMCAwMC4yMS44OGMuMDguMDY0LjE2MS4xMjUuMzA5LjIyMS4xODYuMTIxLjQ1Mi4yNzguNzkyLjQzMy42OC4zMTEgMS42NjIuNjIgMi44NzYuNjJhNi45MTkgNi45MTkgMCAwMDIuODc2LS42MmMuMzQtLjE1NS42MDYtLjMxMi43OTItLjQzMy4xNS0uMDk3LjIzLS4xNTguMzEtLjIyM2EuNzUuNzUgMCAwMC4yMDktLjg3OEw1LjU2OSA3LjVoLjg4NmMuMzUxIDAgLjY5NC0uMTA2Ljk4NC0uMzAzbDEuNjk2LTEuMTU0QS4yNS4yNSAwIDAxOS4yNzUgNmgxLjk3NXYxNC41SDYuNzYzYS43NS43NSAwIDAwMCAxLjVoMTAuNDc0YS43NS43NSAwIDAwMC0xLjVIMTIuNzVWNmgxLjk3NGMuMDUgMCAuMS4wMTUuMTQuMDQzbDEuNjk3IDEuMTU0Yy4yOS4xOTcuNjMzLjMwMy45ODQuMzAzaC44ODZsLTMuMzY4IDcuNjhhLjc1Ljc1IDAgMDAuMjMuODk2Yy4wMTIuMDA5IDAgMCAuMDAyIDBhMy4xNTQgMy4xNTQgMCAwMC4zMS4yMDZjLjE4NS4xMTIuNDUuMjU2Ljc5LjRhNy4zNDMgNy4zNDMgMCAwMDIuODU1LjU2OCA3LjM0MyA3LjM0MyAwIDAwMi44NTYtLjU2OWMuMzM4LS4xNDMuNjA0LS4yODcuNzktLjM5OWEzLjUgMy41IDAgMDAuMzEtLjIwNi43NS43NSAwIDAwLjIzLS44OTZMMjAuMDcgNy41aDEuNTc4YS43NS43NSAwIDAwMC0xLjVoLTQuMTAyYS4yNS4yNSAwIDAxLS4xNC0uMDQzbC0xLjY5Ny0xLjE1NGExLjc1IDEuNzUgMCAwMC0uOTg0LS4zMDNIMTIuNzVWMi43NXpNMi4xOTMgMTUuMTk4YTUuNDE4IDUuNDE4IDAgMDAyLjU1Ny42MzUgNS40MTggNS40MTggMCAwMDIuNTU3LS42MzVMNC43NSA5LjM2OGwtMi41NTcgNS44M3ptMTQuNTEtLjAyNGMuMDgyLjA0LjE3NC4wODMuMjc1LjEyNi41My4yMjMgMS4zMDUuNDUgMi4yNzIuNDVhNS44NDYgNS44NDYgMCAwMDIuNTQ3LS41NzZMMTkuMjUgOS4zNjdsLTIuNTQ3IDUuODA3eiI+PC9wYXRoPjwvc3ZnPgo=)](#license)
 
 An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management. The full API references host at <https://nvitop.readthedocs.io>.
 
@@ -54,7 +53,7 @@ An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process 
 
 This project is inspired by [nvidia-htop](https://github.com/peci1/nvidia-htop) and [nvtop](https://github.com/Syllo/nvtop) for monitoring, and [gpustat](https://github.com/wookayin/gpustat) for application integration.
 
-[nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are modified from [ranger](https://github.com/ranger/ranger) under the **GPLv3 License**.
+[nvidia-htop](https://github.com/peci1/nvidia-htop) is a tool for enriching the output of `nvidia-smi`. It uses regular expressions to read the output of `nvidia-smi` from a subprocess, which is inefficient. In the meanwhile, there is a powerful interactive GPU monitoring tool called [nvtop](https://github.com/Syllo/nvtop). But [nvtop](https://github.com/Syllo/nvtop) is written in *C*, which makes it lack of portability. And what is really inconvenient is that you should compile it yourself during the installation. Therefore, I made this repo. I got a lot help when reading the source code of [ranger](https://github.com/ranger/ranger), the console file manager. Some files in this repo are modified from [ranger](https://github.com/ranger/ranger) under the **GPL-3.0 License**.
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗. [![GitHub Repo Stars](https://img.shields.io/github/stars/XuehaiPan/nvitop?label=stars&logo=github&color=brightgreen)](https://github.com/XuehaiPan/nvitop)
 
@@ -1383,12 +1382,12 @@ Environment variable screen (shortcut: <kbd>e</kbd>):
 
 ## License
 
-The source code of `nvitop` is dual-licensed by the **Apache License, Version 2.0 (Apache-2.0)** and **GNU General Public License, version 3 (GPLv3)** . The `nvitop` CLI is released under the **GPLv3** license while the remaining part of `nvitop` is released under the **Apache-2.0** license. The license file can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE).
+The source code of `nvitop` is dual-licensed by the **Apache License, Version 2.0 (Apache-2.0)** and **GNU General Public License, Version 3 (GPL-3.0)** . The `nvitop` CLI is released under the **GPL-3.0** license while the remaining part of `nvitop` is released under the **Apache-2.0** license. The license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE) (Apache-2.0) and [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) (GPL-3.0).
 
 The source code is organized as:
 
 ```text
-nvitop           (GPLv3)
+nvitop           (GPL-3.0)
 ├── __init__.py  (Apache-2.0)
 ├── version.py   (Apache-2.0)
 ├── core         (Apache-2.0)
@@ -1398,11 +1397,11 @@ nvitop           (GPLv3)
 │   ├── LICENSE  (Apache-2.0)
 │   └── *        (Apache-2.0)
 ├── select.py    (Apache-2.0)
-├── __main__.py  (GPLv3)
-├── cli.py       (GPLv3)
-└── gui          (GPLv3)
-    ├── COPYING  (GPLv3)
-    └── *        (GPLv3)
+├── __main__.py  (GPL-3.0)
+├── cli.py       (GPL-3.0)
+└── gui          (GPL-3.0)
+    ├── COPYING  (GPL-3.0)
+    └── *        (GPL-3.0)
 ```
 
 ### Copyright Notice
@@ -1418,7 +1417,7 @@ from nvitop import Device, ResourceMetricCollector
 
 The public APIs from `nvitop` are released under the **Apache License, Version 2.0 (Apache-2.0)**. The original license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE), [nvitop/core/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/core/LICENSE), and [nvitop/callbacks/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/callbacks/LICENSE).
 
-The CLI of `nvitop` is released under the **GNU General Public License, version 3 (GPLv3)**. The original license files can be found at [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) and [nvitop/gui/COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/gui/COPYING). If you dynamically load the source code of `nvitop`'s CLI or GUI:
+The CLI of `nvitop` is released under the **GNU General Public License, Version 3 (GPL-3.0)**. The original license files can be found at [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) and [nvitop/gui/COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/gui/COPYING). If you dynamically load the source code of `nvitop`'s CLI or GUI:
 
 ```python
 from nvitop import cli
@@ -1427,6 +1426,6 @@ import nvitop.cli
 import nvitop.gui
 ```
 
-your source code should also be released under the GPLv3 License.
+your source code should also be released under the GPL-3.0 License.
 
-If you want to add or modify some features of `nvitop`'s CLI, or copy some source code of `nvitop`'s CLI into your own code, the source code should also be released under the GPLv3 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPLv3 License).
+If you want to add or modify some features of `nvitop`'s CLI, or copy some source code of `nvitop`'s CLI into your own code, the source code should also be released under the GPL-3.0 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPL-3.0 License).

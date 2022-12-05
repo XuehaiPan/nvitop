@@ -63,4 +63,5 @@ try:
     )
 finally:
     if VERSION_CONTENT is not None:
-        VERSION_FILE.write_text(data=VERSION_CONTENT, encoding='UTF-8')
+        with VERSION_FILE.open(mode='wt', encoding='UTF-8', newline='') as file:
+            file.write(VERSION_CONTENT)
