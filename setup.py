@@ -50,7 +50,7 @@ try:
             'lint': [
                 'black >= 22.6.0',
                 'isort',
-                'pylint[spelling] >= 2.15.0, != 2.16, != 2.17',
+                'pylint[spelling] >= 2.15.0, < 2.15.6',
                 'pre-commit',
             ],
             'cuda10': ['nvidia-ml-py == 11.450.51'],
