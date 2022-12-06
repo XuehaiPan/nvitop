@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nvitop"
-description = "An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."
+description = "An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management."
 readme = "README.md"
 requires-python = ">= 3.6"
 authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
-license = { text = "Apache License, Version 2.0 (Apache-2.0) & GNU General Public License, version 3 (GPLv3)" }
+license = { text = "Apache License, Version 2.0 (Apache-2.0) & GNU General Public License, Version 3 (GPL-3.0)" }
 keywords = [
     "nvidia",
     "nvidia-smi",

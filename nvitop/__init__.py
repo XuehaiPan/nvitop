@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."""
+"""An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management."""
 
 from nvitop import core
 from nvitop.core import *

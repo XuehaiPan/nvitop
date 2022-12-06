@@ -3,7 +3,7 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-"""An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management."""
+"""An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management."""
 
 import sys
 

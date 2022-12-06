@@ -3,7 +3,7 @@ Welcome to nvitop's documentation!
 
 |GitHub|_ |Python Version|_ |PyPI Package|_ |Conda Package|_ |Documentation Status|_ |Downloads|_ |GitHub Repo Stars|_ |License|_
 
-An interactive NVIDIA-GPU process viewer, the one-stop solution for GPU process management.
+An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management.
 
 .. figure:: https://user-images.githubusercontent.com/16078332/171005261-1aad126e-dc27-4ed3-a89b-7f9c1c998bf7.png
     :align: center
