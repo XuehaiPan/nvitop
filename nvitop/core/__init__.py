@@ -51,5 +51,5 @@ __all__ = [
     'HostProcess',
     'GpuProcess',
     'command_join',
+    *utils.__all__,
 ]
-__all__.extend(utils.__all__)

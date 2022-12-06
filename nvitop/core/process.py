@@ -981,7 +981,12 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self, *, host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
     ) -> Snapshot:
         """Returns a onetime snapshot of the process on the GPU device.
-        See also :meth:`take_snapshots` and :meth:`failsafe`.
+
+        Note:
+            To return the fallback value rather than raise an exception, please use the context
+            manager :meth:`GpuProcess.failsafe`. Also, consider using the batched version to take
+            snapshots with :meth:`GpuProcess.take_snapshots`, which caches the results and reduces
+            redundant queries. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
 
         host_process_snapshot_cache = host_process_snapshot_cache or {}
@@ -1060,7 +1065,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             ... with GpuProcess.failsafe():
             ...     print('fallback:              {!r}'.format(p.cpu_percent()))
             ...     print('fallback (float cast): {!r}'.format(float(p.cpu_percent())))  # `nvitop.NA` can be cast to float or int
-            ...     print('fallback (int cast):   {!r}'.format(float(p.cpu_percent())))  # `nvitop.NA` can be cast to float or int
+            ...     print('fallback (int cast):   {!r}'.format(int(p.cpu_percent())))    # `nvitop.NA` can be cast to float or int
             fallback:              'N/A'
             fallback (float cast): nan
             fallback (int cast):   0
