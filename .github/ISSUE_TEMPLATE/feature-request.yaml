@@ -30,6 +30,7 @@ body:
     id: motivation
     attributes:
       label: Motivation
+      description: Outline the motivation for the proposal.
       value: |
         <!-- Please outline the motivation for the proposal.
         Is your feature request related to a problem? E.g., "I'm always frustrated when [...]".
@@ -41,19 +42,16 @@ body:
     id: solution
     attributes:
       label: Solution
-      placeholder: |
-        Provide a clear and concise description of what you want to happen.
+      description: Provide a clear and concise description of what you want to happen.
 
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives
-      placeholder: |
-        A clear and concise description of any alternative solutions or features you've considered.
+      description: A clear and concise description of any alternative solutions or features you've considered.
 
   - type: textarea
     id: additional-context
     attributes:
       label: Additional context
-      placeholder: |
-        Add any other context about the problem here. Screenshots may also be helpful.
+      description: Add any other context about the problem here. Screenshots may also be helpful.
