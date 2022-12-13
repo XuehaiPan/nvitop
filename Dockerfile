@@ -1,4 +1,6 @@
-ARG basetag="418.87.01-ubuntu18.04"  # Ubuntu only
+# Ubuntu only
+ARG basetag="418.87.01-ubuntu18.04"  
+
 FROM nvidia/driver:"${basetag}"
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -18,6 +20,11 @@ RUN apt-get update && \
 # Setup locale
 ENV LC_ALL=C.UTF-8
 RUN update-locale LC_ALL="C.UTF-8"
+
+# Install dependencies
+RUN python3 -m pip install --upgrade pip
+COPY ./requirements.txt /tmp/requirements.txt
+RUN pip3 install -r /tmp/requirements.txt
 
 # Install nvitop
 COPY . /nvitop
