@@ -1,6 +1,7 @@
-ARG basetag="470-signed-ubuntu22.04"  # Ubuntu only
+ARG basetag="450-signed-ubuntu22.04"  # Ubuntu only
 FROM nvcr.io/nvidia/driver:"${basetag}"
 
+ENV NVIDIA_DISABLE_REQUIRE=true
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update APT sources
