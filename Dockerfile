@@ -1,5 +1,5 @@
-ARG basetag="418.87.01-ubuntu18.04"  # Ubuntu only
-FROM nvidia/driver:"${basetag}"
+ARG basetag="470-signed-ubuntu22.04"  # Ubuntu only
+FROM nvcr.io/nvidia/driver:"${basetag}"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -11,19 +11,27 @@ RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] && \
 
 # Install Python 3
 RUN apt-get update && \
-  apt-get install --quiet --yes --no-install-recommends \
-  python3-dev python3-pip python3-setuptools python3-wheel locales && \
+  apt-get install --quiet --yes --no-install-recommends python3-dev python3-venv locales && \
   rm -rf /var/lib/apt/lists/*
 
 # Setup locale
 ENV LC_ALL=C.UTF-8
 RUN update-locale LC_ALL="C.UTF-8"
 
+# Setup environment
+RUN python3 -m venv /venv && \
+  . /venv/bin/activate && \
+  python3 -m pip install --upgrade pip setuptools && \
+  rm -rf /root/.cache && \
+  echo && echo && echo "source /venv/bin/activate" >> /root/.bashrc
+ENV SHELL /bin/bash
+
 # Install nvitop
 COPY . /nvitop
 WORKDIR /nvitop
-RUN pip3 install --compile . && \
+RUN . /venv/bin/activate && \
+  python3 -m pip install . && \
   rm -rf /root/.cache
 
 # Entrypoint
-ENTRYPOINT [ "python3", "-m", "nvitop" ]
+ENTRYPOINT [ "/venv/bin/python3", "-m", "nvitop" ]
