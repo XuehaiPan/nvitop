@@ -39,6 +39,7 @@ oneshot
 ctx
 IPython
 libcuda
+libcudart
 libnvml
 nvidia
 nvidia-smi

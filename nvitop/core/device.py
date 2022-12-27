@@ -112,7 +112,7 @@ from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tu
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import libcuda, libnvml
+from nvitop.core import libcuda, libcudart, libnvml
 from nvitop.core.process import GpuProcess
 from nvitop.core.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
 
@@ -278,8 +278,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     def cuda_driver_version() -> Union[str, NaType]:
-        """The maximum CUDA version supported by the NVIDIA display driver.
-        This can be different from the version of the CUDA runtime.
+        """The maximum CUDA version supported by the NVIDIA display driver. This is an alphanumeric string.
+
+        This can be different from the version of the CUDA Runtime. See also :meth:`cuda_runtime_version`.
+
+        Returns: Union[str, NaType]
+            The maximum CUDA version supported by the NVIDIA display driver.
 
         Raises:
             libnvml.NVMLError_LibraryNotFound:
@@ -301,7 +305,25 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return f'{major}.{minor}.{revision}'
         return NA
 
-    max_cuda_version = cuda_version = cuda_driver_version  # alias for backward compatibility
+    max_cuda_version = cuda_driver_version
+
+    @staticmethod
+    def cuda_runtime_version() -> Union[str, NaType]:
+        """The CUDA Runtime version. This is an alphanumeric string.
+
+        This can be different from the CUDA driver version. See also :meth:`cuda_driver_version`.
+
+        Returns: Union[str, NaType]
+            The CUDA Runtime version, or :const:`nvitop.NA` when no CUDA Runtime is available or no
+            CUDA-capable devices are present.
+        """
+
+        try:
+            return libcudart.cudaRuntimeGetVersion()
+        except libcudart.cudaError:
+            return NA
+
+    cudart_version = cuda_runtime_version
 
     @classmethod
     def count(cls) -> int:

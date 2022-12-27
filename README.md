@@ -985,7 +985,8 @@ The [device module](https://nvitop.readthedocs.io/en/latest/core/device.html) pr
 ```python
 In [1]: from nvitop import (
    ...:     host,
-   ...:     Device, PhysicalDevice, CudaDevice, parse_cuda_visible_devices, normalize_cuda_visible_devices
+   ...:     Device, PhysicalDevice, CudaDevice,
+   ...:     parse_cuda_visible_devices, normalize_cuda_visible_devices
    ...:     HostProcess, GpuProcess,
    ...:     NA,
    ...: )
@@ -993,21 +994,24 @@ In [1]: from nvitop import (
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '9,8,7,6'  # comma-separated integers or UUID strings
 
 In [2]: Device.driver_version()
-Out[2]: '430.64'
+Out[2]: '525.60.11'
 
-In [3]: Device.cuda_driver_version()  # the maximum CUDA version supported by the driver (can be different from the CUDA runtime version)
-Out[3]: '10.1'
+In [3]: Device.cuda_driver_version()  # the maximum CUDA version supported by the driver (can be different from the CUDA Runtime version)
+Out[3]: '12.0'
 
-In [4]: Device.count()
-Out[4]: 10
+In [4]: Device.cuda_runtime_version()  # the CUDA Runtime version
+Out[4]: '11.8'
 
-In [5]: CudaDevice.count()  # or `Device.cuda.count()`
-Out[5]: 4
+In [5]: Device.count()
+Out[5]: 10
 
-In [6]: all_devices      = Device.all()                 # all devices on board (physical device)
+In [6]: CudaDevice.count()  # or `Device.cuda.count()`
+Out[6]: 4
+
+In [7]: all_devices      = Device.all()                 # all devices on board (physical device)
    ...: nvidia0, nvidia1 = Device.from_indices([0, 1])  # from physical device indices
    ...: all_devices
-Out[6]: [
+Out[7]: [
     PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     PhysicalDevice(index=2, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
@@ -1020,54 +1024,54 @@ Out[6]: [
     PhysicalDevice(index=9, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
-In [7]: # NOTE: The function results might be different between calls when the `CUDA_VISIBLE_DEVICES` environment variable has been modified
+In [8]: # NOTE: The function results might be different between calls when the `CUDA_VISIBLE_DEVICES` environment variable has been modified
    ...: cuda_visible_devices = Device.from_cuda_visible_devices()  # from the `CUDA_VISIBLE_DEVICES` environment variable
    ...: cuda0, cuda1         = Device.from_cuda_indices([0, 1])    # from CUDA device indices (might be different from physical device indices if `CUDA_VISIBLE_DEVICES` is set)
    ...: cuda_visible_devices = CudaDevice.all()                    # shortcut to `Device.from_cuda_visible_devices()`
    ...: cuda_visible_devices = Device.cuda.all()                   # `Device.cuda` is aliased to `CudaDevice`
    ...: cuda_visible_devices
-Out[7]: [
+Out[8]: [
     CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
     CudaDevice(cuda_index=1, nvml_index=8, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
     CudaDevice(cuda_index=2, nvml_index=7, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB),
     CudaDevice(cuda_index=3, nvml_index=6, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
 ]
 
-In [8]: nvidia0 = Device(0)  # from device index (or `Device(index=0)`)
+In [9]: nvidia0 = Device(0)  # from device index (or `Device(index=0)`)
    ...: nvidia0
-Out[8]: PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+Out[9]: PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
-In [9]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # from UUID string (or just`Device('GPU-xxxxxxxx-...')`)
-   ...: nvidia2 = Device(bus_id='00000000:06:00.0')                        # from PCI bus ID
-   ...: nvidia1
-Out[9]: PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
+In [10]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # from UUID string (or just`Device('GPU-xxxxxxxx-...')`)
+    ...: nvidia2 = Device(bus_id='00000000:06:00.0')                        # from PCI bus ID
+    ...: nvidia1
+Out[10]: PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
-In [10]: cuda0 = CudaDevice(0)                        # from CUDA device index (equivalent to `CudaDevice(cuda_index=0)`)
+In [11]: cuda0 = CudaDevice(0)                        # from CUDA device index (equivalent to `CudaDevice(cuda_index=0)`)
     ...: cuda1 = CudaDevice(nvml_index=8)             # from physical device index
     ...: cuda3 = CudaDevice(uuid='GPU-xxxxxxxx-...')  # from UUID string
     ...: cuda4 = Device.cuda(4)                       # `Device.cuda` is aliased to `CudaDevice`
     ...: cuda0
-Out[10]:
+Out[11]:
 CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB)
 
-In [11]: nvidia0.memory_used()  # in bytes
-Out[11]: 9293398016
+In [12]: nvidia0.memory_used()  # in bytes
+Out[12]: 9293398016
 
-In [12]: nvidia0.memory_used_human()
-Out[12]: '8862MiB'
+In [13]: nvidia0.memory_used_human()
+Out[13]: '8862MiB'
 
-In [13]: nvidia0.gpu_utilization()  # in percentage
-Out[13]: 5
+In [14]: nvidia0.gpu_utilization()  # in percentage
+Out[14]: 5
 
-In [14]: nvidia0.processes()  # type: Dict[int, GpuProcess]
-Out[14]: {
+In [15]: nvidia0.processes()  # type: Dict[int, GpuProcess]
+Out[15]: {
     52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
     53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
 }
 
-In [15]: nvidia1_snapshot = nvidia1.as_snapshot()
+In [16]: nvidia1_snapshot = nvidia1.as_snapshot()
     ...: nvidia1_snapshot
-Out[15]: PhysicalDeviceSnapshot(
+Out[16]: PhysicalDeviceSnapshot(
     real=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB),
     bus_id='00000000:05:00.0',
     compute_mode='Default',
@@ -1107,14 +1111,14 @@ Out[15]: PhysicalDeviceSnapshot(
     uuid='GPU-01234567-89ab-cdef-0123-456789abcdef'
 )
 
-In [16]: nvidia1_snapshot.memory_percent  # snapshot uses properties instead of function calls
-Out[16]: 9.5
+In [17]: nvidia1_snapshot.memory_percent  # snapshot uses properties instead of function calls
+Out[17]: 9.5
 
-In [17]: nvidia1_snapshot['memory_info']  # snapshot also supports `__getitem__` by string
-Out[17]: MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
+In [18]: nvidia1_snapshot['memory_info']  # snapshot also supports `__getitem__` by string
+Out[18]: MemoryInfo(total=11554717696, free=10462232576, used=1092485120)
 
-In [18]: nvidia1_snapshot.bar1_memory_info  # snapshot will automatically retrieve not presented attributes from `real`
-Out[18]: MemoryInfo(total=268435456, free=257622016, used=10813440)
+In [19]: nvidia1_snapshot.bar1_memory_info  # snapshot will automatically retrieve not presented attributes from `real`
+Out[19]: MemoryInfo(total=268435456, free=257622016, used=10813440)
 ```
 
 **NOTE:** Some entry values may be `'N/A'` (type: [`NaType`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NaType), subclass of `str`) when the corresponding resources are not applicable. The [`NA`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NA) value supports arithmetic operations. It acts like `math.nan: float`.
@@ -1185,33 +1189,33 @@ The [process module](https://nvitop.readthedocs.io/en/latest/core/process.html) 
 </table>
 
 ```python
-In [19]: processes = nvidia1.processes()  # type: Dict[int, GpuProcess]
+In [20]: processes = nvidia1.processes()  # type: Dict[int, GpuProcess]
     ...: processes
-Out[19]: {
+Out[20]: {
     23266: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
 }
 
-In [20]: process = processes[23266]
+In [21]: process = processes[23266]
     ...: process
-Out[20]: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
+Out[21]: GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=Device(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40'))
 
-In [21]: process.status()  # GpuProcess will automatically inherit attributes from GpuProcess.host
-Out[21]: 'running'
+In [22]: process.status()  # GpuProcess will automatically inherit attributes from GpuProcess.host
+Out[22]: 'running'
 
-In [22]: process.cmdline()  # type: List[str]
-Out[22]: ['python3', 'rllib_train.py']
+In [23]: process.cmdline()  # type: List[str]
+Out[23]: ['python3', 'rllib_train.py']
 
-In [23]: process.command()  # type: str
-Out[23]: 'python3 rllib_train.py'
+In [24]: process.command()  # type: str
+Out[24]: 'python3 rllib_train.py'
 
-In [24]: process.cwd()  # GpuProcess will automatically inherit attributes from GpuProcess.host
-Out[24]: '/home/xxxxxx/Projects/xxxxxx'
+In [25]: process.cwd()  # GpuProcess will automatically inherit attributes from GpuProcess.host
+Out[25]: '/home/xxxxxx/Projects/xxxxxx'
 
-In [25]: process.gpu_memory_human()
-Out[25]: '1031MiB'
+In [26]: process.gpu_memory_human()
+Out[26]: '1031MiB'
 
-In [26]: process.as_snapshot()
-Out[26]: GpuProcessSnapshot(
+In [27]: process.as_snapshot()
+Out[27]: GpuProcessSnapshot(
     real=GpuProcess(pid=23266, gpu_memory=1031MiB, type=C, device=PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=23266, name='python3', status='running', started='2021-05-10 21:02:40')),
     cmdline=['python3', 'rllib_train.py'],
     command='python3 rllib_train.py',
@@ -1256,13 +1260,13 @@ Out[26]: GpuProcessSnapshot(
     username='panxuehai'
 )
 
-In [27]: process.uids()  # GpuProcess will automatically inherit attributes from GpuProcess.host
-Out[27]: puids(real=1001, effective=1001, saved=1001)
+In [28]: process.uids()  # GpuProcess will automatically inherit attributes from GpuProcess.host
+Out[28]: puids(real=1001, effective=1001, saved=1001)
 
-In [28]: process.kill()  # GpuProcess will automatically inherit attributes from GpuProcess.host
+In [29]: process.kill()  # GpuProcess will automatically inherit attributes from GpuProcess.host
 
-In [29]: list(map(Device.processes, all_devices))  # all processes
-Out[29]: [
+In [30]: list(map(Device.processes, all_devices))  # all processes
+Out[30]: [
     {
         52059: GpuProcess(pid=52059, gpu_memory=7885MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=52059, name='ipython3', status='sleeping', started='14:31:22')),
         53002: GpuProcess(pid=53002, gpu_memory=967MiB, type=C, device=PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=53002, name='python', status='running', started='14:31:59'))
@@ -1282,61 +1286,61 @@ Out[29]: [
     }
 ]
 
-In [30]: this = HostProcess(os.getpid())
+In [31]: this = HostProcess(os.getpid())
     ...: this
-Out[30]: HostProcess(pid=35783, name='python', status='running', started='19:19:00')
+Out[31]: HostProcess(pid=35783, name='python', status='running', started='19:19:00')
 
-In [31]: this.cmdline()  # type: List[str]
-Out[31]: ['python', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
+In [32]: this.cmdline()  # type: List[str]
+Out[32]: ['python', '-c', 'import IPython; IPython.terminal.ipapp.launch_new_instance()']
 
-In [32]: this.command()  # not simply `' '.join(cmdline)` but quotes are added
-Out[32]: 'python -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
+In [33]: this.command()  # not simply `' '.join(cmdline)` but quotes are added
+Out[33]: 'python -c "import IPython; IPython.terminal.ipapp.launch_new_instance()"'
 
-In [33]: this.memory_info()
-Out[33]: pmem(rss=83988480, vms=343543808, shared=12079104, text=8192, lib=0, data=297435136, dirty=0)
+In [34]: this.memory_info()
+Out[34]: pmem(rss=83988480, vms=343543808, shared=12079104, text=8192, lib=0, data=297435136, dirty=0)
 
-In [34]: import cupy as cp
+In [35]: import cupy as cp
     ...: x = cp.zeros((10000, 1000))
     ...: this = GpuProcess(os.getpid(), cuda0)  # construct from `GpuProcess(pid, device)` explicitly rather than calling `device.processes()`
     ...: this
-Out[34]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+Out[35]: GpuProcess(pid=35783, gpu_memory=N/A, type=N/A, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [35]: this.update_gpu_status()  # update used GPU memory from new driver queries
-Out[35]: 267386880
+In [36]: this.update_gpu_status()  # update used GPU memory from new driver queries
+Out[36]: 267386880
 
-In [36]: this
-Out[36]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
+In [37]: this
+Out[37]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda_index=0, nvml_index=9, name="NVIDIA GeForce RTX 2080 Ti", total_memory=11019MiB), host=HostProcess(pid=35783, name='python', status='running', started='19:19:00'))
 
-In [37]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instance will be reused while the process is running
-Out[37]: True
+In [38]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instance will be reused while the process is running
+Out[38]: True
 ```
 
 ##### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
 ```python
-In [38]: host.cpu_count()
-Out[38]: 88
+In [39]: host.cpu_count()
+Out[39]: 88
 
-In [39]: host.cpu_percent()
-Out[39]: 18.5
+In [40]: host.cpu_percent()
+Out[40]: 18.5
 
-In [40]: host.cpu_times()
-Out[40]: scputimes(user=2346377.62, nice=53321.44, system=579177.52, idle=10323719.85, iowait=28750.22, irq=0.0, softirq=11566.87, steal=0.0, guest=0.0, guest_nice=0.0)
+In [41]: host.cpu_times()
+Out[41]: scputimes(user=2346377.62, nice=53321.44, system=579177.52, idle=10323719.85, iowait=28750.22, irq=0.0, softirq=11566.87, steal=0.0, guest=0.0, guest_nice=0.0)
 
-In [41]: host.load_average()
-Out[41]: (14.88, 17.8, 19.91)
+In [42]: host.load_average()
+Out[42]: (14.88, 17.8, 19.91)
 
-In [42]: host.virtual_memory()
-Out[42]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
+In [43]: host.virtual_memory()
+Out[43]: svmem(total=270352478208, available=192275968000, percent=28.9, used=53350518784, free=88924037120, active=125081112576, inactive=44803993600, buffers=37006450688, cached=91071471616, shared=23820632064, slab=8200687616)
 
-In [43]: host.memory_percent()
-Out[43]: 28.9
+In [44]: host.memory_percent()
+Out[44]: 28.9
 
-In [44]: host.swap_memory()
-Out[44]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
+In [45]: host.swap_memory()
+Out[45]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, sin=2404139008, sout=4259434496)
 
-In [45]: host.swap_percent()
-Out[45]: 0.0
+In [46]: host.swap_percent()
+Out[46]: 0.0
 ```
 
 ------

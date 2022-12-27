@@ -16,7 +16,7 @@
 # ==============================================================================
 """The core APIs of nvitop."""
 
-from nvitop.core import host, libcuda, libnvml, utils
+from nvitop.core import host, libcuda, libcudart, libnvml, utils
 from nvitop.core.collector import ResourceMetricCollector, collect_in_background, take_snapshots
 from nvitop.core.device import (
     CudaDevice,
@@ -40,6 +40,7 @@ __all__ = [
     'nvmlCheckReturn',
     'NVMLError',
     'libcuda',
+    'libcudart',
     'Device',
     'PhysicalDevice',
     'MigDevice',
