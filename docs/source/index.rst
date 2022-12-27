@@ -180,6 +180,7 @@ Please refer to section `More than a Monitor <https://github.com/XuehaiPan/nvito
     core/collector
     core/libnvml
     core/libcuda
+    core/libcudart
     core/utils
     select
     callbacks
