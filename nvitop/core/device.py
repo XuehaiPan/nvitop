@@ -619,6 +619,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._memory_total_human = NA
         self._is_mig_device = None
         self._cuda_index = None
+        self._cuda_compute_capability = None
 
         if index is not None:
             self._nvml_index = index
@@ -1584,6 +1585,25 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             libnvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
         }.get(libnvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
 
+    def cuda_compute_capability(self) -> Union[Tuple[int, int], NaType]:
+        """The CUDA compute capability for the device.
+
+        Returns: Union[Tuple[int, int], NaType]
+            The CUDA compute capability version in format ``(major, minor)``, or :const:`nvitop.NA` when not applicable.
+
+        Command line equivalent:
+
+        .. code:: bash
+
+            nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_cap
+        """
+
+        if self._cuda_compute_capability is None:
+            self._cuda_compute_capability = libnvml.nvmlQuery(
+                'nvmlDeviceGetCudaComputeCapability', self.handle
+            )
+        return self._cuda_compute_capability
+
     def is_mig_device(self) -> bool:
         """Returns whether or not the device is a MIG device."""
 
@@ -1750,6 +1770,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'performance_state',
         'total_volatile_uncorrected_ecc_errors',
         'compute_mode',
+        'cuda_compute_capability',
         'mig_mode',
     ]
 
@@ -1954,6 +1975,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         self._compute_instance_id = NA
         self._is_mig_device = True
         self._cuda_index = None
+        self._cuda_compute_capability = None
 
         if index is not None:
             self._nvml_index = index

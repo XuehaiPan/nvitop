@@ -1077,6 +1077,7 @@ Out[16]: PhysicalDeviceSnapshot(
     compute_mode='Default',
     clock_infos=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680),  # in MHz
     clock_speed_infos=ClockSpeedInfos(current=ClockInfos(graphics=1815, sm=1815, memory=6800, video=1680), max=ClockInfos(graphics=2100, sm=2100, memory=7000, video=1950)),  # in MHz
+    cuda_compute_capability=(7, 5),
     current_driver_model='N/A',
     decoder_utilization=0,              # in percentage
     display_active='Disabled',
