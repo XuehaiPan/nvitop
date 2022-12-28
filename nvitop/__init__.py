@@ -23,4 +23,4 @@ from nvitop.select import select_devices
 from nvitop.version import __version__
 
 
-__all__ = ['select_devices'] + core.__all__
+__all__ = [*core.__all__, 'select_devices']

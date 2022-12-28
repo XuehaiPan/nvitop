@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Python bindings for the `CUDA driver APIs <https://docs.nvidia.com/cuda/cuda-driver-api>`_."""
+"""Python bindings for the `CUDA Driver APIs <https://docs.nvidia.com/cuda/cuda-driver-api>`_."""
 
 # pylint: disable=invalid-name
 
@@ -536,7 +536,8 @@ def cuDeviceGetCount() -> int:
 def cuDeviceGet(ordinal: int) -> c_CUdevice_t:
     """Returns a handle to a compute device.
 
-    Returns a device handle given an ordinal in the range :code:`[0, ..., cuDeviceGetCount() - 1]`.
+    Returns:
+        A device handle given an ordinal in the range :code:`[0, ..., cuDeviceGetCount() - 1]`.
 
     Raises:
         CUDAError_InvalidContext:
@@ -560,10 +561,70 @@ def cuDeviceGet(ordinal: int) -> c_CUdevice_t:
     return device
 
 
+def cuDeviceGetByPCIBusId(pciBusId: str) -> c_CUdevice_t:
+    """Returns a handle to a compute device.
+
+    Args:
+        pciBusId: str
+            String in one of the following forms: ``[domain]:[bus]:[device].[function]``,
+            ``[domain]:[bus]:[device]``, ``[bus]:[device].[function]`` where ``domain``, ``bus``,
+            ``device``, and ``function`` are all hexadecimal values.
+
+    Returns: int
+        A device handle given a PCI bus ID string.
+
+    Raises:
+        CUDAError_InvalidDevice:
+            If the device ordinal supplied by the user does not correspond to a valid CUDA device or
+            that the action requested is invalid for the specified device.
+        CUDAError_InvalidValue:
+            If the value of :data:`pciBusId` is not a valid PCI bus identifier.
+        CUDAError_Deinitialized:
+            If the CUDA driver in the process is shutting down.
+        CUDAError_NotInitialized:
+            If the CUDA driver API is not initialized.
+    """
+
+    fn = __cudaGetFunctionPointer('cuDeviceGetByPCIBusId')
+
+    device = c_CUdevice_t()
+    ret = fn(_ctypes.byref(device), _ctypes.c_char_p(pciBusId.encode('UTF-8')))
+    _cudaCheckReturn(ret)
+    return device
+
+
+def cuDeviceGetPCIBusId(device: c_CUdevice_t) -> str:
+    """Returns a PCI Bus Id string for the device.
+
+    Returns: str
+        An identifier string for the device in the following format ``[domain]:[bus]:[device].[function]``
+        where ``domain``, ``bus``, ``device``, and ``function`` are all hexadecimal values.
+
+    Raises:
+        CUDAError_InvalidDevice:
+            If the device ordinal supplied by the user does not correspond to a valid CUDA device or
+            that the action requested is invalid for the specified device.
+        CUDAError_InvalidValue:
+            If the driver call fails.
+        CUDAError_Deinitialized:
+            If the CUDA driver in the process is shutting down.
+        CUDAError_NotInitialized:
+            If the CUDA driver API is not initialized.
+    """
+
+    fn = __cudaGetFunctionPointer('cuDeviceGetPCIBusId')
+
+    pciBusId = _ctypes.create_string_buffer(256)
+    ret = fn(pciBusId, _ctypes.c_int(256), device)
+    _cudaCheckReturn(ret)
+    return pciBusId.value.decode('UTF-8', errors='replace')
+
+
 def cuDeviceGetName(device: c_CUdevice_t) -> str:
     """Returns an identifier string for the device.
 
-    Returns an ASCII string identifying the device.
+    Returns: str
+        An ASCII string identifying the device.
 
     Raises:
         CUDAError_InvalidContext:

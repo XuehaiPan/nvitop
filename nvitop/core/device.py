@@ -112,7 +112,7 @@ from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tu
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import libcuda, libnvml
+from nvitop.core import libcuda, libcudart, libnvml
 from nvitop.core.process import GpuProcess
 from nvitop.core.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
 
@@ -278,8 +278,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     def cuda_driver_version() -> Union[str, NaType]:
-        """The maximum CUDA version supported by the NVIDIA display driver.
-        This can be different from the version of the CUDA runtime.
+        """The maximum CUDA version supported by the NVIDIA display driver. This is an alphanumeric string.
+
+        This can be different from the version of the CUDA Runtime. See also :meth:`cuda_runtime_version`.
+
+        Returns: Union[str, NaType]
+            The maximum CUDA version supported by the NVIDIA display driver.
 
         Raises:
             libnvml.NVMLError_LibraryNotFound:
@@ -301,7 +305,25 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return f'{major}.{minor}.{revision}'
         return NA
 
-    max_cuda_version = cuda_version = cuda_driver_version  # alias for backward compatibility
+    max_cuda_version = cuda_driver_version
+
+    @staticmethod
+    def cuda_runtime_version() -> Union[str, NaType]:
+        """The CUDA Runtime version. This is an alphanumeric string.
+
+        This can be different from the CUDA driver version. See also :meth:`cuda_driver_version`.
+
+        Returns: Union[str, NaType]
+            The CUDA Runtime version, or :const:`nvitop.NA` when no CUDA Runtime is available or no
+            CUDA-capable devices are present.
+        """
+
+        try:
+            return libcudart.cudaRuntimeGetVersion()
+        except libcudart.cudaError:
+            return NA
+
+    cudart_version = cuda_runtime_version
 
     @classmethod
     def count(cls) -> int:
@@ -597,6 +619,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._memory_total_human = NA
         self._is_mig_device = None
         self._cuda_index = None
+        self._cuda_compute_capability = None
 
         if index is not None:
             self._nvml_index = index
@@ -1562,6 +1585,25 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             libnvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
         }.get(libnvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
 
+    def cuda_compute_capability(self) -> Union[Tuple[int, int], NaType]:
+        """The CUDA compute capability for the device.
+
+        Returns: Union[Tuple[int, int], NaType]
+            The CUDA compute capability version in format ``(major, minor)``, or :const:`nvitop.NA` when not applicable.
+
+        Command line equivalent:
+
+        .. code:: bash
+
+            nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_cap
+        """
+
+        if self._cuda_compute_capability is None:
+            self._cuda_compute_capability = libnvml.nvmlQuery(
+                'nvmlDeviceGetCudaComputeCapability', self.handle
+            )
+        return self._cuda_compute_capability
+
     def is_mig_device(self) -> bool:
         """Returns whether or not the device is a MIG device."""
 
@@ -1728,6 +1770,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'performance_state',
         'total_volatile_uncorrected_ecc_errors',
         'compute_mode',
+        'cuda_compute_capability',
         'mig_mode',
     ]
 
@@ -1932,6 +1975,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         self._compute_instance_id = NA
         self._is_mig_device = True
         self._cuda_index = None
+        self._cuda_compute_capability = None
 
         if index is not None:
             self._nvml_index = index
