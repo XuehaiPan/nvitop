@@ -19,17 +19,17 @@ repos:
       - id: debug-statements
       - id: double-quote-string-fixer
   - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
+    rev: 5.11.4
     hooks:
       - id: isort
         stages: [commit, push, manual]
   - repo: https://github.com/psf/black
-    rev: 22.10.0
+    rev: 22.12.0
     hooks:
       - id: black
         stages: [commit, push, manual]
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.0
+    rev: v3.3.1
     hooks:
       - id: pyupgrade
         args: [--py36-plus]
@@ -43,3 +43,14 @@ repos:
         types: [python]
         require_serial: true
         stages: [commit, push, manual]
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 6.2.1
+    hooks:
+      - id: pydocstyle
+        additional_dependencies: [toml]
+        exclude: |
+          (?x)(
+            ^nvitop/gui/|
+            ^nvitop/callbacks/|
+            ^docs/
+          )
