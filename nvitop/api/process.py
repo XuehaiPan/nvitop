@@ -28,8 +28,8 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 from weakref import WeakValueDictionary
 
-from nvitop.core import host, libnvml
-from nvitop.core.utils import (
+from nvitop.api import host, libnvml
+from nvitop.api.utils import (
     NA,
     NaType,
     Snapshot,
@@ -40,7 +40,7 @@ from nvitop.core.utils import (
 
 
 if TYPE_CHECKING:
-    from nvitop.core.device import Device
+    from nvitop.api.device import Device
 
 
 __all__ = ['HostProcess', 'GpuProcess', 'command_join']

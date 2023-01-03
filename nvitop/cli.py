@@ -8,7 +8,7 @@ import curses
 import os
 import sys
 
-from nvitop.core import HostProcess, libnvml
+from nvitop.api import HostProcess, libnvml
 from nvitop.gui import UI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
 from nvitop.version import __version__
 

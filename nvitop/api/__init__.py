@@ -16,9 +16,9 @@
 # ==============================================================================
 """The core APIs of nvitop."""
 
-from nvitop.core import host, libcuda, libcudart, libnvml, utils
-from nvitop.core.collector import ResourceMetricCollector, collect_in_background, take_snapshots
-from nvitop.core.device import (
+from nvitop.api import collector, device, host, libcuda, libcudart, libnvml, process, utils
+from nvitop.api.collector import ResourceMetricCollector, collect_in_background, take_snapshots
+from nvitop.api.device import (
     CudaDevice,
     CudaMigDevice,
     Device,
@@ -27,9 +27,9 @@ from nvitop.core.device import (
     normalize_cuda_visible_devices,
     parse_cuda_visible_devices,
 )
-from nvitop.core.libnvml import NVMLError, nvmlCheckReturn
-from nvitop.core.process import GpuProcess, HostProcess, command_join
-from nvitop.core.utils import *
+from nvitop.api.libnvml import NVMLError, nvmlCheckReturn
+from nvitop.api.process import GpuProcess, HostProcess, command_join
+from nvitop.api.utils import *
 
 
 __all__ = [

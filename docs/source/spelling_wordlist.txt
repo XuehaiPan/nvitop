@@ -133,3 +133,6 @@ xx
 yyy
 zz
 CLI
+submodule
+submodules
+namespace

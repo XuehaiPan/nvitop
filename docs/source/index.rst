@@ -174,14 +174,14 @@ Please refer to section `More than a Monitor <https://github.com/XuehaiPan/nvito
     :maxdepth: 4
     :caption: API Reference
 
-    core/device
-    core/process
-    core/host
-    core/collector
-    core/libnvml
-    core/libcuda
-    core/libcudart
-    core/utils
+    api/device
+    api/process
+    api/host
+    api/collector
+    api/libnvml
+    api/libcuda
+    api/libcudart
+    api/utils
     select
     callbacks
 

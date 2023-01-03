@@ -8,7 +8,7 @@ import math
 import os
 import platform
 
-from nvitop.core import NA, colored, host, set_color  # pylint: disable=unused-import
+from nvitop.api import NA, colored, host, set_color  # pylint: disable=unused-import
 from nvitop.gui.library.widestring import WideString
 
 

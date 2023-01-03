@@ -27,10 +27,10 @@ from collections import OrderedDict, defaultdict
 from typing import Callable, Dict, Hashable, Iterable, List, NamedTuple, Optional, Tuple, Union
 from weakref import WeakSet
 
-from nvitop.core import host
-from nvitop.core.device import CudaDevice, Device
-from nvitop.core.process import GpuProcess, HostProcess
-from nvitop.core.utils import GiB, MiB, Snapshot
+from nvitop.api import host
+from nvitop.api.device import CudaDevice, Device
+from nvitop.api.process import GpuProcess, HostProcess
+from nvitop.api.utils import GiB, MiB, Snapshot
 
 
 __all__ = ['take_snapshots', 'collect_in_background', 'ResourceMetricCollector']

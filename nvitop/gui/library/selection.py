@@ -7,7 +7,7 @@ import signal
 import time
 from weakref import WeakValueDictionary
 
-from nvitop.core import NA, Snapshot, host
+from nvitop.api import NA, Snapshot, host
 from nvitop.gui.library.utils import LARGE_INTEGER, SUPERUSER, USERNAME
 
 
