@@ -54,8 +54,6 @@ Python API:
     )
 """  # pylint: disable=line-too-long
 
-# pylint: disable=missing-function-docstring
-
 import argparse
 import getpass
 import math
@@ -95,15 +93,13 @@ def select_devices(
     sort: bool = True,
     **kwargs,  # fmt: skip # pylint: disable=unused-argument
 ) -> Union[List[int], List[Tuple[int, int]], List[str]]:
-    """Selected a subset of devices satisfying the specified criteria. Returns a list of the device
-    identifiers.
+    """Select a subset of devices satisfying the specified criteria.
 
     Note:
         The *min count* constraint may not be satisfied if the no enough devices are available. This
         constraint is only enforced when there are both MIG and non-MIG devices present.
 
     Examples:
-
         Put the following lines to the top of your script:
 
         .. code-block:: python
@@ -144,8 +140,10 @@ def select_devices(
             A list of accounts whose used GPU memory needs be considered as free memory.
         sort (bool):
             If :data:`True`, sort the selected devices by memory usage and GPU utilization.
-    """
 
+    Returns:
+        A list of the device identifiers.
+    """
     assert format in ('index', 'uuid', 'device')
     assert tolerance >= 0
     tolerance = tolerance / 100.0
@@ -274,6 +272,8 @@ def select_devices(
 
 
 def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
+    """Parse command-line arguments for ``nvisel``."""
+
     def non_negint(argstring):
         num = int(argstring)
         if num < 0:
@@ -490,6 +490,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
 
 def main():
+    """Main function for ``nvisel`` CLI."""
     args = parse_arguments()
 
     try:

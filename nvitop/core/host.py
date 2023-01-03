@@ -16,8 +16,8 @@
 # ==============================================================================
 """Shortcuts for package ``psutil``.
 
-psutil is a cross-platform library for retrieving information on running processes
-and system utilization (CPU, memory, disks, network, sensors) in Python.
+``psutil`` is a cross-platform library for retrieving information on running processes and system
+utilization (CPU, memory, disks, network, sensors) in Python.
 """
 
 import os as _os
@@ -50,31 +50,30 @@ swap_memory = _ttl_cache(ttl=0.25)(_psutil.swap_memory)
 
 try:
     load_average = _ttl_cache(ttl=2.0)(_psutil.getloadavg)
+    load_average.__doc__ = """Get the system load average."""
 except AttributeError:
 
-    def load_average():  # pylint: disable=missing-function-docstring
+    def load_average():
+        """Get the system load average."""
         return None
 
 
 def memory_percent():
-    """The percentage usage of virtual memory, calculated as (total - available) / total * 100."""
-
+    """The percentage usage of virtual memory, calculated as ``(total - available) / total * 100``."""
     return virtual_memory().percent
 
 
 def swap_percent():
-    """The percentage usage of virtual memory, calculated as used / total * 100."""
-
+    """The percentage usage of virtual memory, calculated as ``used / total * 100``."""
     return swap_memory().percent
 
 
 ppid_map = _psutil._ppid_map  # pylint: disable=protected-access
-"""Obtains a ``{pid: ppid, ...}`` dict for all running processes in one shot."""
+"""Obtain a ``{pid: ppid, ...}`` dict for all running processes in one shot."""
 
 
 def reverse_ppid_map():  # pylint: disable=function-redefined
-    """Obtains a ``{ppid: [pid, ...], ...}`` dict for all running processes in one shot."""
-
+    """Obtain a ``{ppid: [pid, ...], ...}`` dict for all running processes in one shot."""
     from collections import defaultdict  # pylint: disable=import-outside-toplevel
 
     tree = defaultdict(list)

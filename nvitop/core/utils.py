@@ -76,8 +76,7 @@ COLOR = sys.stdout.isatty()
 
 
 def set_color(value: bool) -> None:
-    """Force enables text coloring."""
-
+    """Force enable text coloring."""
     global COLOR  # pylint: disable=global-statement
     COLOR = bool(value)
 
@@ -88,7 +87,7 @@ def colored(
     on_color: Optional[str] = None,
     attrs: Iterable[str] = None,
 ) -> str:
-    """Colorizes text.
+    """Colorize text with ANSI color escape codes.
 
     Available text colors:
         red, green, yellow, blue, magenta, cyan, white.
@@ -100,11 +99,9 @@ def colored(
         bold, dark, underline, blink, reverse, concealed.
 
     Examples:
-
         >>> colored('Hello, World!', 'red', 'on_grey', ['blue', 'blink'])
         >>> colored('Hello, World!', 'green')
     """
-
     if COLOR:
         return _colored(text, color=color, on_color=on_color, attrs=attrs)
     return text
@@ -114,11 +111,10 @@ class NaType(str):
     """A singleton (:const:`str: 'N/A'`) class represents a not applicable value.
 
     The :const:`NA` instance behaves like a :class:`str` instance (:const:`'N/A'`) when doing string
-    manipulation (e.g. concatenation). For arithmetic operations, for example :code:`NA / 1024 / 1024`,
+    manipulation (e.g. concatenation). For arithmetic operations, for example ``NA / 1024 / 1024``,
     it acts like the :data:`math.nan`.
 
     Examples:
-
         >>> NA
         'N/A'
 
@@ -142,45 +138,42 @@ class NaType(str):
     """
 
     def __new__(cls) -> 'NaType':
-        """Gets the singleton instance (:const:`nvitop.NA`)."""
-
+        """Get the singleton instance (:const:`nvitop.NA`)."""
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
         return cls._instance
 
     def __bool__(self) -> bool:
-        """Converts :const:`NA` to :class:`bool`. Returns :data:`False`.
+        """Convert :const:`NA` to :class:`bool` and return :data:`False`.
 
         >>> bool(NA)
         False
         """
-
         return False
 
     def __int__(self) -> int:
-        """Converts :const:`NA` to :class:`int`. Returns :const:`0`.
+        """Convert :const:`NA` to :class:`int` and return :const:`0`.
 
         >>> int(NA)
         0
         """
-
         return 0
 
     def __float__(self) -> float:
-        """Converts :const:`NA` to :class:`float`. Returns :data:`math.nan`.
+        """Convert :const:`NA` to :class:`float` and return :data:`math.nan`.
 
         >>> float(NA)
         nan
         >>> float(NA) is math.nan
         True
         """
-
         return math.nan
 
     def __add__(self, other: object) -> Union[str, float]:
-        """:const:`nvitop.NA` + other: Returns :data:`math.nan` if the operand is a number or uses
-        string concatenation if the operand is a string. A special case is when the operand is
-        :const:`nvitop.NA` itself, the result is :data:`math.nan` instead of :const:`'N/AN/A'`.
+        """Return :data:`math.nan` if the operand is a number or uses string concatenation if the operand is a string (``NA + other``).
+
+        A special case is when the operand is :const:`nvitop.NA` itself, the result is
+        :data:`math.nan` instead of :const:`'N/AN/A'`.
 
         >>> NA + ' str'
         'N/A str'
@@ -190,14 +183,13 @@ class NaType(str):
         nan
         >>> NA + 1.0
         nan
-        """
-
+        """  # pylint: disable=line-too-long
         if isinstance(other, (int, float)) or other is NA:
             return float(self) + other
         return super().__add__(other)
 
     def __radd__(self, other: object) -> Union[str, float]:
-        """other + :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number or uses string concatenation if the operand is a string (``other + NA``).
 
         >>> 'str' + NA
         'strN/A'
@@ -205,14 +197,13 @@ class NaType(str):
         nan
         >>> 1.0 + NA
         nan
-        """
-
+        """  # pylint: disable=line-too-long
         if isinstance(other, (int, float)):
             return other + float(self)
         return NotImplemented
 
     def __sub__(self, other: object) -> float:
-        """:const:`nvitop.NA` - other: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``NA - other``).
 
         >>> NA - 'str'
         TypeError: unsupported operand type(s) for -: 'NaType' and 'str'
@@ -223,13 +214,12 @@ class NaType(str):
         >>> NA + 1.0
         nan
         """
-
         if isinstance(other, (int, float)) or other is NA:
             return float(self) - other
         return NotImplemented
 
     def __rsub__(self, other: object) -> float:
-        """other - :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``other - NA``).
 
         >>> 'str' - NA
         TypeError: unsupported operand type(s) for -: 'str' and 'NaType'
@@ -238,14 +228,14 @@ class NaType(str):
         >>> 1.0 - NA
         nan
         """
-
         if isinstance(other, (int, float)):
             return other - float(self)
         return NotImplemented
 
     def __mul__(self, other: object) -> float:
-        """:const:`nvitop.NA` * other: Returns :data:`math.nan` if the operand is a number. A special
-        case is when the operand is :const:`nvitop.NA` itself, the result is also :data:`math.nan`.
+        """Return :data:`math.nan` if the operand is a number (``NA * other``).
+
+        A special case is when the operand is :const:`nvitop.NA` itself, the result is also :data:`math.nan`.
 
         >>> NA * 1024
         nan
@@ -254,26 +244,24 @@ class NaType(str):
         >>> NA * NA
         nan
         """
-
         if isinstance(other, (int, float)) or other is NA:
             return float(self) * other
         return NotImplemented
 
     def __rmul__(self, other: object) -> float:
-        """other * :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``other * NA``).
 
         >>> 1024 * NA
         nan
         >>> 1024.0 * NA
         nan
         """
-
         if isinstance(other, (int, float)):
             return other * float(self)
         return NotImplemented
 
     def __truediv__(self, other: object) -> float:
-        """:const:`nvitop.NA` / other: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``NA / other``).
 
         >>> NA / 1024
         nan
@@ -284,26 +272,24 @@ class NaType(str):
         >>> NA / 0.0
         ZeroDivisionError: float division by zero
         """
-
         if isinstance(other, (int, float)):
             return float(self) / other
         return NotImplemented
 
     def __rtruediv__(self, other: object) -> float:
-        """other / :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``other / NA``).
 
         >>> 1024 / NA
         nan
         >>> 1024.0 / NA
         nan
         """
-
         if isinstance(other, (int, float)):
             return other / float(self)
         return NotImplemented
 
     def __floordiv__(self, other: object) -> float:
-        """:const:`nvitop.NA` // other: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``NA // other``).
 
         >>> NA // 1024
         nan
@@ -314,26 +300,24 @@ class NaType(str):
         >>> NA / 0.0
         ZeroDivisionError: float division by zero
         """
-
         if isinstance(other, (int, float)):
             return float(self) // other
         return NotImplemented
 
     def __rfloordiv__(self, other: object) -> float:
-        """other // :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``other // NA``).
 
         >>> 1024 // NA
         nan
         >>> 1024.0 // NA
         nan
         """
-
         if isinstance(other, (int, float)):
             return other // float(self)
         return NotImplemented
 
     def __mod__(self, other: object) -> float:
-        """:const:`nvitop.NA` % other: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``NA % other``).
 
         >>> NA % 1024
         nan
@@ -344,26 +328,24 @@ class NaType(str):
         >>> NA % 0.0
         ZeroDivisionError: float modulo
         """
-
         if isinstance(other, (int, float)):
             return float(self) % other
         return NotImplemented
 
     def __rmod__(self, other: object) -> float:
-        """other % :const:`nvitop.NA`: Returns :data:`math.nan` if the operand is a number.
+        """Return :data:`math.nan` if the operand is a number (``other % NA``).
 
         >>> 1024 % NA
         nan
         >>> 1024.0 % NA
         nan
         """
-
         if isinstance(other, (int, float)):
             return other % float(self)
         return NotImplemented
 
     def __divmod__(self, other: object) -> Tuple[float, float]:
-        """divmod(:const:`nvitop.NA`, other): The pair (:const:`nvitop.NA` // other, :const:`nvitop.NA` % other).
+        """The pair ``(NA // other, NA % other)`` (``divmod(NA, other)``).
 
         >>> divmod(NA, 1024)
         (nan, nan)
@@ -374,49 +356,44 @@ class NaType(str):
         >>> divmod(NA, 0.0)
         ZeroDivisionError: float floor division by zero
         """
-
         return (self // other, self % other)
 
     def __rdivmod__(self, other: object) -> Tuple[float, float]:
-        """divmod(other, :const:`nvitop.NA`): The pair (other // :const:`nvitop.NA`, other % :const:`nvitop.NA`).
+        """The pair ``(other // NA, other % NA)`` (``divmod(other, NA)``).
 
         >>> divmod(1024, NA)
         (nan, nan)
         >>> divmod(1024.0, NA)
         (nan, nan)
         """
-
         return (other // self, other % self)
 
     def __pos__(self) -> float:
-        """+:const:`nvitop.NA`: Returns :data:`math.nan`.
+        """Return :data:`math.nan` (``+NA``).
 
         >>> +NA
         nan
         """
-
         return +float(self)
 
     def __neg__(self) -> float:
-        """+:const:`nvitop.NA`: Returns :data:`math.nan`.
+        """Return :data:`math.nan` (``-NA``).
 
         >>> -NA
         nan
         """
-
         return -float(self)
 
     def __abs__(self) -> float:
-        """abs(NA): Returns :data:`math.nan`.
+        """Return :data:`math.nan` (``abs(NA)``).
 
         >>> abs(NA)
         nan
         """
-
         return abs(float(self))
 
     def __round__(self, ndigits: Optional[int] = None) -> Union[int, float]:
-        """Rounds :const:`nvitop.NA` to ``ndigits`` decimal places, defaulting to :const:`0`.
+        """Round :const:`nvitop.NA` to ``ndigits`` decimal places, defaulting to :const:`0`.
 
         If ``ndigits`` is omitted or :data:`None`, returns :const:`0`, otherwise returns :data:`math.nan`.
 
@@ -427,40 +404,36 @@ class NaType(str):
         >>> round(NA, 1)
         nan
         """
-
         if ndigits is None:
             return int(self)
         return round(float(self), ndigits)
 
     def __lt__(self, x: object) -> bool:
-        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
-
+        """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return False
         return super().__lt__(x)
 
     def __le__(self, x: object) -> bool:
-        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
-
+        """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return False
         return super().__le__(x)
 
     def __gt__(self, x: object) -> bool:
-        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
-
+        """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return True
         return super().__gt__(x)
 
     def __ge__(self, x: object) -> bool:
-        """The :const:`nvitop.NA` is always greater than any number. Use the dictionary order for string."""
-
+        """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return True
         return super().__ge__(x)
 
     def __format__(self, format_spec: str) -> str:
+        """Format :const:`nvitop.NA` according to ``format_spec``."""
         try:
             return super().__format__(format_spec)
         except ValueError:
@@ -515,8 +488,7 @@ SIZE_PATTERN = re.compile(
 
 
 def bytes2human(b: Union[int, float, NaType]) -> str:  # pylint: disable=too-many-return-statements
-    """Converts bytes to a human readable string."""
-
+    """Convert bytes to a human readable string."""
     if b == NA:
         return NA
 
@@ -546,14 +518,13 @@ def bytes2human(b: Union[int, float, NaType]) -> str:  # pylint: disable=too-man
 
 
 def human2bytes(s: Union[int, str]) -> int:
-    """Converts a human readable size string (*case insensitive*) to bytes.
+    """Convert a human readable size string (*case insensitive*) to bytes.
 
     Raises:
         ValueError:
             If cannot convert the given size string.
 
     Examples:
-
         >>> human2bytes('500B')
         500
         >>> human2bytes('10k')
@@ -567,7 +538,6 @@ def human2bytes(s: Union[int, str]) -> int:
         >>> human2bytes('1.5GiB')
         1610612736
     """
-
     if isinstance(s, int):
         if s >= 0:
             return s
@@ -582,8 +552,7 @@ def human2bytes(s: Union[int, str]) -> int:
 
 
 def timedelta2human(dt: Union[int, float, datetime.timedelta, NaType]) -> str:
-    """Converts a number in seconds or a :class:`datetime.timedelta` instance to a human readable string."""
-
+    """Convert a number in seconds or a :class:`datetime.timedelta` instance to a human readable string."""
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
 
@@ -600,8 +569,7 @@ def timedelta2human(dt: Union[int, float, datetime.timedelta, NaType]) -> str:
 
 
 def utilization2string(utilization: Union[int, float, NaType]) -> str:
-    """Converts a utilization rate to string."""
-
+    """Convert a utilization rate to string."""
     if utilization != NA:
         if isinstance(utilization, int):
             return f'{utilization}%'
@@ -611,8 +579,7 @@ def utilization2string(utilization: Union[int, float, NaType]) -> str:
 
 
 def boolify(string: str, default: Any = None) -> bool:
-    """Converts the given value, usually a string, to boolean."""
-
+    """Convert the given value, usually a string, to boolean."""
     if string.lower() in ('true', 'yes', 'on', 'enabled', '1'):
         return True
     if string.lower() in ('false', 'no', 'off', 'disabled', '0'):
@@ -624,6 +591,7 @@ def boolify(string: str, default: Any = None) -> bool:
 
 class Snapshot:
     """A dict-like object holds the snapshot values.
+
     The value can be accessed by ``snapshot.name`` or ``snapshot['name']`` syntax.
     The Snapshot can also be converted to a dictionary by ``dict(snapshot)`` or ``{**snapshot}``.
 
@@ -631,12 +599,14 @@ class Snapshot:
     """
 
     def __init__(self, real: Any, **items) -> None:
+        """Initialize a new :class:`Snapshot` object with the given attributes."""
         self.real = real
         self.timestamp = time.time()
         for key, value in items.items():
             setattr(self, key, value)
 
     def __str__(self) -> str:
+        """Return a string representation of the snapshot."""
         keys = set(self.__dict__.keys()).difference({'real', 'timestamp'})
         keys = ['real', *sorted(keys)]
         keyvals = []
@@ -653,13 +623,14 @@ class Snapshot:
     __repr__ = __str__
 
     def __hash__(self) -> int:
+        """Return a hash value of the snapshot."""
         return hash((self.real, self.timestamp))
 
     def __getattr__(self, name: str) -> Any:
-        """Gets a member from the instance.
+        """Get a member from the instance.
+
         If the attribute is not defined, fetches from the original object and makes a function call.
         """
-
         try:
             return super().__getattr__(name)
         except AttributeError:
@@ -671,20 +642,18 @@ class Snapshot:
             return attribute
 
     def __getitem__(self, name: str) -> Any:
-        """Supports ``snapshot['name']`` syntax."""
-
+        """Support ``snapshot['name']`` syntax."""
         try:
             return getattr(self, name)
         except AttributeError as ex:
             raise KeyError(name) from ex
 
     def __setitem__(self, name: str, value: Any) -> None:
-        """Supports ``snapshot['name'] = value`` syntax."""
-
+        """Support ``snapshot['name'] = value`` syntax."""
         setattr(self, name, value)
 
     def __iter__(self) -> Iterable[str]:
-        """Supports ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
+        """Support ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
 
         def gen() -> str:
             for name in self.__dict__:
@@ -694,18 +663,17 @@ class Snapshot:
         return gen()
 
     def keys(self) -> Iterable[str]:
-        """Supports `**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and
-        ``dict(snapshot)`` dictionary conversion.
-        """
-
+        # pylint: disable-next=line-too-long
+        """Support `**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and ``dict(snapshot)`` dictionary conversion."""
         return iter(self)
 
 
 # Modified from psutil (https://github.com/giampaolo/psutil)
 def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]:
-    """A memoize decorator which is disabled by default. It can be activated and
-    deactivated on request. For efficiency reasons it can be used only against
-    class methods accepting no arguments.
+    """A memoize decorator which is disabled by default.
+
+    It can be activated and deactivated on request. For efficiency reasons it can be used only
+    against class methods accepting no arguments.
     """
 
     @functools.wraps(method)
@@ -729,10 +697,10 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
         return ret
 
     def cache_activate(self):
-        """Activate cache. Expects a Process instance. Cache will be stored as
-        a "_cache" instance attribute.
-        """
+        """Activate cache.
 
+        Expects an instance. Cache will be stored as a "_cache" instance attribute.
+        """
         if not hasattr(self, '_cache'):
             setattr(self, '_cache', {})
 

@@ -67,9 +67,9 @@ if not callable(getattr(_pynvml, 'nvmlInitWithFlags', None)):
 
 NVMLError = _pynvml.NVMLError
 NVMLError.__doc__ = """Base exception class for NVML query errors."""
-NVMLError.__new__.__doc__ = """Maps value to a proper subclass of :class:`NVMLError`."""
+NVMLError.__new__.__doc__ = """Map value to a proper subclass of :class:`NVMLError`."""
 nvmlExceptionClass = _pynvml.nvmlExceptionClass
-nvmlExceptionClass.__doc__ = """Maps value to a proper subclass of :class:`NVMLError`."""
+nvmlExceptionClass.__doc__ = """Map value to a proper subclass of :class:`NVMLError`."""
 
 # Load members from module `pynvml` and register them in `__all__` and globals.
 _vars_pynvml = vars(_pynvml)
@@ -143,7 +143,7 @@ Functions and Exceptions
 
 .. function:: __exit__(*args, **kwargs) -> None
 
-    Shutdowns the NVML context in the context manager for ``with`` statement.
+    Shutdown the NVML context in the context manager for ``with`` statement.
 
 """.format('\n\n'.join(_data_docs))  # fmt: skip
 
@@ -203,7 +203,7 @@ VERSIONED_PATTERN = _re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
 
 
 def _lazy_init() -> None:
-    """Lazily initializes the NVML context.
+    """Lazily initialize the NVML context.
 
     Raises:
         NVMLError_LibraryNotFound:
@@ -217,7 +217,6 @@ def _lazy_init() -> None:
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
-
     with __lock:
         if __initialized:
             return
@@ -225,7 +224,7 @@ def _lazy_init() -> None:
 
 
 def nvmlInit() -> None:  # pylint: disable=function-redefined
-    """Initializes the NVML context with default flag (0).
+    """Initialize the NVML context with default flag (0).
 
     Raises:
         NVMLError_LibraryNotFound:
@@ -239,12 +238,11 @@ def nvmlInit() -> None:  # pylint: disable=function-redefined
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
-
     nvmlInitWithFlags(0)
 
 
 def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
-    """Initializes the NVML context with the given flags.
+    """Initialize the NVML context with the given flags.
 
     Raises:
         NVMLError_LibraryNotFound:
@@ -258,7 +256,6 @@ def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
-
     global __flags, __initialized  # pylint: disable=global-statement,global-variable-not-assigned
 
     with __lock:
@@ -312,7 +309,7 @@ def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
 
 
 def nvmlShutdown() -> None:  # pylint: disable=function-redefined
-    """Shutdowns the NVML context.
+    """Shutdown the NVML context.
 
     Raises:
         NVMLError_LibraryNotFound:
@@ -325,7 +322,6 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
         NVMLError_Uninitialized:
             If NVML was not first initialized with :func:`nvmlInit`.
     """
-
     global __flags, __initialized  # pylint: disable=global-statement,global-variable-not-assigned
 
     _pynvml.nvmlShutdown()
@@ -345,8 +341,9 @@ def nvmlQuery(
     ignore_function_not_found: bool = False,
     **kwargs,
 ) -> _Any:
-    """Calls a function with the given arguments from NVML. The NVML context will be automatically
-    initialized.
+    """Call a function with the given arguments from NVML.
+
+    The NVML context will be automatically initialized.
 
     Args:
         func (Union[Callable[..., Any], str]):
@@ -380,7 +377,6 @@ def nvmlQuery(
         NVMLError_InvalidArgument:
             If passed with an invalid argument.
     """
-
     global UNKNOWN_FUNCTIONS  # pylint: disable=global-statement,global-variable-not-assigned
 
     _lazy_init()
@@ -429,8 +425,7 @@ def nvmlQuery(
 def nvmlCheckReturn(
     retval: _Any, types: _Optional[_Union[_Type, _Tuple[_Type, ...]]] = None
 ) -> bool:
-    """Checks the return value is not :const:`nvitop.NA` and is one of the given types."""
-
+    """Check whether the return value is not :const:`nvitop.NA` and is one of the given types."""
     if types is None:
         return retval != NA
     return retval != NA and isinstance(retval, types)
@@ -474,8 +469,6 @@ def __patch_backward_compatibility_layers() -> None:
         )
 
     def patch_function_pointers_when_fail(names, callback):
-        """Patches the function pointers of the NVML library."""
-
         def wrapper(nvmlGetFunctionPointer):
             @_functools.wraps(nvmlGetFunctionPointer)
             def wrapped(name):
@@ -586,7 +579,7 @@ _driver_get_memory_info_v2_available = None if not _pynvml_installation_corrupte
 
 
 def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-many-branches
-    """Retrieves the amount of used, free, reserved and total memory available on the device, in bytes.
+    """Retrieve the amount of used, free, reserved and total memory available on the device, in bytes.
 
     Note:
         - The version 2 API adds additional memory information. The reserved amount is supported on
@@ -607,7 +600,6 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-m
         NVMLError_Unknown:
             On any unexpected error.
     """
-
     global _pynvml_get_memory_info_v2_available, _driver_get_memory_info_v2_available  # pylint: disable=global-statement
 
     _lazy_init()
@@ -702,8 +694,7 @@ class _CustomModule(_ModuleType):
     """
 
     def __getattribute__(self, name: str) -> _Union[_Any, _Callable[..., _Any]]:
-        """Gets a member from the current module. Fallback to the original package if missing."""
-
+        """Get a member from the current module. Fallback to the original package if missing."""
         try:
             return super().__getattribute__(name)
         except AttributeError:
@@ -711,18 +702,15 @@ class _CustomModule(_ModuleType):
 
     def __enter__(self) -> '_CustomModule':
         """Entry of the context manager for ``with`` statement."""
-
         _lazy_init()
         return self
 
     def __exit__(self, *args, **kwargs) -> None:
-        """Shutdowns the NVML context in the context manager for ``with`` statement."""
-
+        """Shutdown the NVML context in the context manager for ``with`` statement."""
         self.__del__()
 
     def __del__(self) -> None:
-        """Automatically shutdowns the NVML context on destruction."""
-
+        """Automatically shutdown the NVML context on destruction."""
         try:
             nvmlShutdown()
         except NVMLError:

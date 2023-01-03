@@ -43,8 +43,7 @@ def get_gpu_stats(
     fan_speed: bool = False,
     temperature: bool = False,
 ) -> Dict[str, float]:
-    """Get the GPU status from NVML queries"""
-
+    """Get the GPU status from NVML queries."""
     stats = {}
     for device in devices:
         prefix = f'gpu_id: {device.cuda_index}'
