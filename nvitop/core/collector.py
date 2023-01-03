@@ -15,7 +15,7 @@
 # limitations under the License.
 # ==============================================================================
 
-# pylint: disable=missing-module-docstring
+"""Resource metrics collectors."""
 
 import contextlib
 import itertools
@@ -44,24 +44,27 @@ class SnapshotResult(NamedTuple):  # pylint: disable=missing-class-docstring
 timer = time.monotonic
 
 
+def _unique(iterable: Iterable[Hashable]) -> List[Hashable]:
+    return list(OrderedDict.fromkeys(iterable).keys())
+
+
 # pylint: disable-next=too-many-branches
 def take_snapshots(
     devices: Optional[Union[Device, Iterable[Device]]] = None,
     *,
     gpu_processes: Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]] = None,
 ) -> SnapshotResult:
-    """Retrieves status of demanded devices and GPU processes.
+    """Retrieve status of demanded devices and GPU processes.
 
     Args:
         devices (Optional[Union[Device, Iterable[Device]]]):
-            Requested devices for snapshots. If not given, the devices will be
-            determined from GPU processes:
-            - All devices (no GPU processes are given)
-            - Devices that used by given GPU processes
+            Requested devices for snapshots. If not given, the devices will be determined from GPU
+            processes: **(1)** All devices (no GPU processes are given); **(2)** Devices that used
+            by given GPU processes.
         gpu_processes (Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]]):
-            Requested GPU processes snapshots. If not given, all GPU processes
-            running on the requested device will be returned. The GPU process
-            snapshots can be suppressed by specifying ``gpu_processes=False``.
+            Requested GPU processes snapshots. If not given, all GPU processes running on the
+            requested device will be returned. The GPU process snapshots can be suppressed by
+            specifying ``gpu_processes=False``.
 
     Returns: SnapshotResult
         A named tuple containing two lists of snapshots.
@@ -71,7 +74,6 @@ def take_snapshots(
         be returned.
 
     Examples:
-
         >>> from nvitop import take_snapshots, Device
         >>> import os
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'
@@ -136,10 +138,6 @@ def take_snapshots(
             ]
         )
     """  # pylint: disable=line-too-long
-
-    def unique(iterable: Iterable[Hashable]) -> List[Hashable]:
-        return list(OrderedDict.fromkeys(iterable).keys())
-
     if isinstance(devices, Device):
         devices = [devices]
     if isinstance(gpu_processes, GpuProcess):
@@ -148,7 +146,7 @@ def take_snapshots(
     if gpu_processes is not None:
         if gpu_processes:  # is not False or is a non-empty list/tuple
             gpu_processes = list(gpu_processes)
-            process_devices = unique(process.device for process in gpu_processes)
+            process_devices = _unique(process.device for process in gpu_processes)
             for device in process_devices:
                 device.processes()  # update GPU status for requested GPU processes
             if devices is None:
@@ -193,57 +191,55 @@ def collect_in_background(
     tag: str = 'metrics-daemon',
     start: bool = True,
 ) -> threading.Thread:
-    """Starts a background daemon thread that collect and call the callback function periodically.
+    """Start a background daemon thread that collect and call the callback function periodically.
 
     See also :func:`ResourceMetricCollector.daemonize`.
 
     Args:
-        on_collect: (Callable[[Dict[str, float]], bool])
+        on_collect (Callable[[Dict[str, float]], bool]):
             A callback function that will be called periodically. It takes a dictionary containing
             the resource metrics and returns a boolean indicating whether to continue monitoring.
-        collector: (Optional[ResourceMetricCollector])
+        collector (Optional[ResourceMetricCollector]):
             A :class:`ResourceMetricCollector` instance to collect metrics. If not given, it will
             collect metrics for all GPUs and subprocess of the current process.
-        interval: (Optional[float])
+        interval (Optional[float]):
             The collect interval. If not given, use ``collector.interval``.
-        on_start: (Optional[Callable[['ResourceMetricCollector'], None]])
+        on_start (Optional[Callable[[ResourceMetricCollector], None]]):
             A function to initialize the daemon thread and collector.
-        on_stop: (Optional[Callable[['ResourceMetricCollector'], None]])
+        on_stop (Optional[Callable[[ResourceMetricCollector], None]]):
             A function that do some necessary cleanup after the daemon thread is stopped.
-        tag: (str)
+        tag (str):
             The tag prefix used for metrics results.
-        start: (bool)
+        start (bool):
             Whether to start the daemon thread on return.
 
     Returns: threading.Thread
         A daemon thread object.
 
     Examples:
+        .. code-block:: python
 
-    .. code-block:: python
+            logger = ...
 
-        logger = ...
+            def on_collect(metrics):  # will be called periodically
+                if logger.is_closed():  # closed manually by user
+                    return False
+                logger.log(metrics)
+                return True
 
-        def on_collect(metrics):  # will be called periodically
-            if logger.is_closed():  # closed manually by user
-                return False
-            logger.log(metrics)
-            return True
+            def on_stop(collector):  # will be called only once at stop
+                if not logger.is_closed():
+                    logger.close()  # cleanup
 
-        def on_stop(collector):  # will be called only once at stop
-            if not logger.is_closed():
-                logger.close()  # cleanup
-
-        # Record metrics to the logger in background every 5 seconds.
-        # It will collect 5-second mean/min/max for each metric.
-        collect_in_background(
-            on_collect,
-            ResourceMetricCollector(Device.cuda.all()),
-            interval=5.0,
-            on_stop=on_stop,
-        )
+            # Record metrics to the logger in background every 5 seconds.
+            # It will collect 5-second mean/min/max for each metric.
+            collect_in_background(
+                on_collect,
+                ResourceMetricCollector(Device.cuda.all()),
+                interval=5.0,
+                on_stop=on_stop,
+            )
     """
-
     if collector is None:
         collector = ResourceMetricCollector()
     if isinstance(interval, (int, float)) and interval > 0:
@@ -282,13 +278,13 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     Args:
         devices (Iterable[Device]):
-            Set of Device instances for logging. If not given, all physical
-            devices on board will be used.
+            Set of Device instances for logging. If not given, all physical devices on board will be
+            used.
         root_pids (Set[int]):
-            A set of PIDs, only the status of the descendant processes on the
-            GPUs will be collected. If not given, the PID of the current process
-            will be used.
-        interval (float): The snapshot interval for background daemon thread.
+            A set of PIDs, only the status of the descendant processes on the GPUs will be collected.
+            If not given, the PID of the current process will be used.
+        interval (float):
+            The snapshot interval for background daemon thread.
 
     Core methods:
 
@@ -305,7 +301,6 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         collector.daemonize(on_collect_fn)
 
     Examples:
-
         >>> import os
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
@@ -398,6 +393,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         root_pids: Optional[Iterable[int]] = None,
         interval: Union[int, float] = 1.0,
     ) -> None:
+        """Initialize the resource metric collector."""
         if isinstance(interval, (int, float)) and interval > 0:
             interval = float(interval)
         else:
@@ -440,15 +436,14 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
     def activate(self, tag: str) -> 'ResourceMetricCollector':
-        """Starts a new metric collection with the given tag.
+        """Start a new metric collection with the given tag.
 
         Args:
             tag (str):
-                The name of the new metric collection. The tag will be used to
-                identify the metric collection. It must be a unique string.
+                The name of the new metric collection. The tag will be used to identify the metric
+                collection. It must be a unique string.
 
         Examples:
-
             >>> collector = ResourceMetricCollector()
 
             >>> collector.activate(tag='train')  # key prefix -> 'train'
@@ -457,7 +452,6 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             >>> collector.deactivate()           # the collector has been stopped
             >>> collector.activate(tag='test')   # key prefix -> 'test'
         """
-
         with self._lock:
             if self._metric_buffer is None or tag not in self._tags:
                 self._tags.add(tag)
@@ -477,11 +471,15 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     start = activate
 
     def deactivate(self, tag: Optional[str] = None) -> 'ResourceMetricCollector':
-        """Stops the current collection with the given tag and remove all sub-tags.
-        If the tag is not specified, deactivate the current active collection.
-        For nested collections, the sub-collections will be deactivated as well.
-        """
+        """Stop the current collection with the given tag and remove all sub-tags.
 
+        If the tag is not specified, deactivate the current active collection. For nested
+        collections, the sub-collections will be deactivated as well.
+
+        Args:
+            tag (Optional[str]):
+                The tag to deactivate. If :data:`None`, the current active collection will be used.
+        """
         with self._lock:
             if self._metric_buffer is None:
                 if tag is not None:
@@ -516,18 +514,16 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         Args:
             tag (str):
-                The name of the new metric collection. The tag will be used to
-                identify the metric collection. It must be a unique string.
+                The name of the new metric collection. The tag will be used to identify the metric
+                collection. It must be a unique string.
 
         Examples:
-
             >>> collector = ResourceMetricCollector()
 
             >>> with collector.context(tag='train'):  # key prefix -> 'train'
             ...     # Do something
             ...     collector.collect()  # -> Dict[str, float]
         """
-
         try:
             self.activate(tag=tag)
             yield self
@@ -537,17 +533,16 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     __call__ = context  # alias for `with collector(tag='<tag>')`
 
     def clear(self, tag: Optional[str] = None) -> None:
-        """Resets the metric collection with the given tag. If the tag is not
-        specified, reset the current active collection. For nested collections,
+        """Reset the metric collection with the given tag.
+
+        If the tag is not specified, reset the current active collection. For nested collections,
         the sub-collections will be reset as well.
 
         Args:
             tag (Optional[str]):
-                The tag to reset. If None, the current active collection
-                will be reset.
+                The tag to reset. If :data:`None`, the current active collection will be reset.
 
         Examples:
-
             >>> collector = ResourceMetricCollector()
 
             >>> with collector(tag='train'):          # key prefix -> 'train'
@@ -564,7 +559,6 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             ...     with collector(tag='batch'):      # key prefix -> 'train/batch'
             ...         collector.reset(tag='train')  # reset both 'train' and 'train/batch'
         """
-
         with self._lock:
             if self._metric_buffer is None:
                 if tag is not None:
@@ -586,8 +580,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 buffer = buffer.prev
 
     def collect(self) -> Dict[str, float]:
-        """Gets the average resource consumption during collection."""
-
+        """Get the average resource consumption during collection."""
         with self._lock:
             if self._metric_buffer is None:
                 raise RuntimeError('Resource metric collector has not been not started yet.')
@@ -607,52 +600,51 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         tag: str = 'metrics-daemon',
         start: bool = True,
     ) -> threading.Thread:
-        """Starts a background daemon thread that collect and call the callback function periodically.
+        """Start a background daemon thread that collect and call the callback function periodically.
 
         See also :func:`collect_in_background`.
 
         Args:
-            on_collect: (Callable[[Dict[str, float]], bool])
+            on_collect (Callable[[Dict[str, float]], bool]):
                 A callback function that will be called periodically. It takes a dictionary containing
                 the resource metrics and returns a boolean indicating whether to continue monitoring.
-            interval: (Optional[float])
+            interval (Optional[float]):
                 The collect interval. If not given, use ``collector.interval``.
-            on_start: (Optional[Callable[['ResourceMetricCollector'], None]])
+            on_start (Optional[Callable[[ResourceMetricCollector], None]]):
                 A function to initialize the daemon thread and collector.
-            on_stop: (Optional[Callable[['ResourceMetricCollector'], None]])
+            on_stop (Optional[Callable[[ResourceMetricCollector], None]]):
                 A function that do some necessary cleanup after the daemon thread is stopped.
-            tag: (str)
+            tag (str):
                 The tag prefix used for metrics results.
-            start: (bool)
+            start (bool):
                 Whether to start the daemon thread on return.
 
         Returns: threading.Thread
             A daemon thread object.
 
         Examples:
+            .. code-block:: python
 
-        .. code-block:: python
+                logger = ...
 
-            logger = ...
+                def on_collect(metrics):  # will be called periodically
+                    if logger.is_closed():  # closed manually by user
+                        return False
+                    logger.log(metrics)
+                    return True
 
-            def on_collect(metrics):  # will be called periodically
-                if logger.is_closed():  # closed manually by user
-                    return False
-                logger.log(metrics)
-                return True
+                def on_stop(collector):  # will be called only once at stop
+                    if not logger.is_closed():
+                        logger.close()  # cleanup
 
-            def on_stop(collector):  # will be called only once at stop
-                if not logger.is_closed():
-                    logger.close()  # cleanup
-
-            # Record metrics to the logger in background every 5 seconds.
-            # It will collect 5-second mean/min/max for each metric.
-            ResourceMetricCollector(Device.cuda.all()).daemonize(
-                on_collect,
-                ResourceMetricCollector(Device.cuda.all()),
-                interval=5.0,
-                on_stop=on_stop,
-            )
+                # Record metrics to the logger in background every 5 seconds.
+                # It will collect 5-second mean/min/max for each metric.
+                ResourceMetricCollector(Device.cuda.all()).daemonize(
+                    on_collect,
+                    ResourceMetricCollector(Device.cuda.all()),
+                    interval=5.0,
+                    on_stop=on_stop,
+                )
         """
         return collect_in_background(
             on_collect,
@@ -665,10 +657,12 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         )
 
     def __del__(self) -> None:
+        """Clean up the demon thread on destruction."""
         self._daemon_running.clear()
 
-    # pylint: disable-next=missing-function-docstring,too-many-branches,too-many-locals,too-many-statements
+    # pylint: disable-next=too-many-branches,too-many-locals,too-many-statements
     def take_snapshots(self) -> SnapshotResult:
+        """Take snapshots of the current resource metrics and update the metric buffer."""
         if len(self.root_pids) > 0:
             all_gpu_processes = []
             for device in self.leaf_devices:

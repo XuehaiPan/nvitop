@@ -33,27 +33,25 @@ from nvitop.core import libnvml
 
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor
 class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
-    r"""
-    Automatically log GPU stats during training stage. :class:`GpuStatsLogger` is a
-    callback and in order to use it you need to assign a logger in the ``Trainer``.
+    """Automatically log GPU stats during training stage. :class:`GpuStatsLogger` is a callback and
+    in order to use it you need to assign a logger in the ``Trainer``.
 
     Args:
         memory_utilization (bool):
-            Set to :data:`True` to log used, free and the percentage of memory
-            utilization at the start and end of each step. Default: :data:`True`.
+            Set to :data:`True` to log used, free and the percentage of memory utilization at the
+            start and end of each step. Default: :data:`True`.
         gpu_utilization (bool):
-            Set to :data:`True` to log the percentage of GPU utilization
-            at the start and end of each step. Default: :data:`True`.
+            Set to :data:`True` to log the percentage of GPU utilization at the start and end of
+            each step. Default: :data:`True`.
         intra_step_time (bool):
             Set to :data:`True` to log the time of each step. Default: :data:`False`.
         inter_step_time (bool):
-            Set to :data:`True` to log the time between the end of one step
-            and the start of the next step. Default: :data:`False`.
+            Set to :data:`True` to log the time between the end of one step and the start of the
+            next step. Default: :data:`False`.
         fan_speed (bool):
             Set to :data:`True` to log percentage of fan speed. Default: :data:`False`.
         temperature (bool):
-            Set to :data:`True` to log the gpu temperature in degree Celsius.
-            Default: :data:`False`.
+            Set to :data:`True` to log the gpu temperature in degree Celsius. Default: :data:`False`.
 
     Raises:
         MisconfigurationException:
@@ -68,16 +66,19 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
     GPU stats are mainly based on NVML queries. The description of the queries is as follows:
 
-    - **fan.speed** - The fan speed value is the percent of maximum speed that the device's fan is currently
-      intended to run at. It ranges from 0 to 100 %. Note: The reported speed is the intended fan speed.
-      If the fan is physically blocked and unable to spin, this output will not match the actual fan speed.
-      Many parts do not report fan speeds because they rely on cooling via fans in the surrounding enclosure.
+    - **fan.speed** - The fan speed value is the percent of maximum speed that the device's fan is
+      currently intended to run at. It ranges from 0 to 100 %. Note: The reported speed is the
+      intended fan speed. If the fan is physically blocked and unable to spin, this output will not
+      match the actual fan speed. Many parts do not report fan speeds because they rely on cooling
+      via fans in the surrounding enclosure.
     - **memory.used** - Total memory allocated by active contexts, in MiBs.
     - **memory.free** - Total free memory, in MiBs.
-    - **utilization.gpu** - Percent of time over the past sample period during which one or more kernels was
-      executing on the GPU. The sample period may be between 1 second and 1/6 second depending on the product.
-    - **utilization.memory** - Percent of time over the past sample period during which global (device) memory was
-      being read or written. The sample period may be between 1 second and 1/6 second depending on the product.
+    - **utilization.gpu** - Percent of time over the past sample period during which one or more
+      kernels was executing on the GPU. The sample period may be between 1 second and 1/6 second
+      depending on the product.
+    - **utilization.memory** - Percent of time over the past sample period during which global
+      (device) memory was being read or written. The sample period may be between 1 second and 1/6
+      second depending on the product.
     - **temperature** - Core GPU temperature, in degrees C.
     """
 
@@ -161,8 +162,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         trainer.logger.log_metrics(logs, step=trainer.global_step)
 
     def _get_gpu_stats(self) -> Dict[str, float]:
-        """Get the gpu status from NVML queries"""
-
+        """Get the gpu status from NVML queries."""
         return get_gpu_stats(
             devices=self._devices,
             memory_utilization=self._memory_utilization,

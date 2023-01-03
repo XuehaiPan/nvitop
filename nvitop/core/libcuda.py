@@ -29,11 +29,11 @@ from typing import Type as _Type
 
 
 # pylint: disable-next=missing-class-docstring,too-few-public-methods
-class struct_c_CUdevice_t(_ctypes.Structure):
+class _struct_c_CUdevice_t(_ctypes.Structure):
     pass  # opaque handle
 
 
-c_CUdevice_t = _ctypes.POINTER(struct_c_CUdevice_t)
+_c_CUdevice_t = _ctypes.POINTER(_struct_c_CUdevice_t)
 
 _CUresult_t = _ctypes.c_uint
 
@@ -229,8 +229,7 @@ class CUDAError(Exception):
     _errcode_to_name = {}
 
     def __new__(cls, value: int) -> 'CUDAError':
-        """Maps value to a proper subclass of :class:`CUDAError`."""
-
+        """Map value to a proper subclass of :class:`CUDAError`."""
         if cls is CUDAError:
             # pylint: disable-next=self-cls-assignment
             cls = CUDAError._value_class_mapping.get(value, cls)
@@ -239,6 +238,7 @@ class CUDAError(Exception):
         return obj
 
     def __str__(self) -> str:
+        """Return a string representation of the error."""
         # pylint: disable=no-member
         try:
             if self.value not in CUDAError._errcode_to_string:
@@ -255,30 +255,32 @@ class CUDAError(Exception):
         except CUDAError:
             return f'CUDA Error with code {self.value}.'
 
+    __repr__ = __str__
+
     def __eq__(self, other: object) -> bool:
+        """Test equality to other object."""
         if not isinstance(other, CUDAError):
             return NotImplemented
         return self.value == other.value  # pylint: disable=no-member
 
     def __reduce__(self) -> _Tuple[_Type['CUDAError'], _Tuple[int]]:
+        """Return state information for pickling."""
         return CUDAError, (self.value,)  # pylint: disable=no-member
 
 
 def cudaExceptionClass(cudaErrorCode: int) -> _Type[CUDAError]:
-    """Maps value to a proper subclass of :class:`CUDAError`.
+    """Map value to a proper subclass of :class:`CUDAError`.
 
     Raises:
         ValueError: If the error code is not valid.
     """
-
-    # pylint: disable=protected-access
-    if cudaErrorCode not in CUDAError._value_class_mapping:
+    if cudaErrorCode not in CUDAError._value_class_mapping:  # pylint: disable=protected-access
         raise ValueError(f'cudaErrorCode {cudaErrorCode} is not valid.')
-    return CUDAError._value_class_mapping[cudaErrorCode]
+    return CUDAError._value_class_mapping[cudaErrorCode]  # pylint: disable=protected-access
 
 
 def _extract_cuda_errors_as_classes() -> None:
-    """Generates a hierarchy of classes on top of :class:`CUDAError` class.
+    """Generate a hierarchy of classes on top of :class:`CUDAError` class.
 
     Each CUDA Error gets a new :class:`CUDAError` subclass. This way try-except blocks can filter
     appropriate exceptions more easily.
@@ -286,7 +288,6 @@ def _extract_cuda_errors_as_classes() -> None:
     :class:`CUDAError` is a parent class. Each ``CUDA_ERROR_*`` gets it's own subclass.
     e.g. :data:`CUDA_ERROR_INVALID_VALUE` will be turned into :class:`CUDAError_InvalidValue`.
     """
-
     this_module = _sys.modules[__name__]
     cuda_error_names = [x for x in dir(this_module) if x.startswith('CUDA_ERROR_')]
     for err_name in cuda_error_names:
@@ -339,8 +340,7 @@ __cudaGetFunctionPointer_cache = {}
 
 
 def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
-    """
-    Get the function pointer from the CUDA driver library.
+    """Get the function pointer from the CUDA driver library.
 
     Raises:
         CUDAError_NotInitialized:
@@ -348,7 +348,6 @@ def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
         CUDAError_NotFound:
             If cannot found the function pointer.
     """
-
     if name in __cudaGetFunctionPointer_cache:
         return __cudaGetFunctionPointer_cache[name]
 
@@ -364,14 +363,12 @@ def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
 
 
 def __LoadCudaLibrary() -> None:
-    """
-    Load the library if it isn't loaded already.
+    """Load the library if it isn't loaded already.
 
     Raises:
         CUDAError_NotInitialized:
             If cannot found the CUDA driver library.
     """
-
     global __cudaLib  # pylint: disable=global-statement
 
     if __cudaLib is None:
@@ -409,7 +406,7 @@ def __LoadCudaLibrary() -> None:
 def cuInit(flags: int = 0) -> None:
     """Initialize the CUDA driver API.
 
-    Initializes the driver API and must be called before any other function from the driver API.
+    Initialize the driver API and must be called before any other function from the driver API.
     Currently, the ``flags`` parameter must be :data:`0`. If :func:`cuInit` has not been called,
     any function from the driver API will return :data:`CUDA_ERROR_NOT_INITIALIZED`.
 
@@ -429,7 +426,6 @@ def cuInit(flags: int = 0) -> None:
         CUDAError_NotInitialized:
             If cannot found the CUDA driver library.
     """
-
     global __initialized  # pylint: disable=global-statement
 
     __LoadCudaLibrary()
@@ -447,7 +443,7 @@ def cuInit(flags: int = 0) -> None:
 
 
 def cuGetErrorName(error: int) -> str:
-    """Gets the string representation of an error code enum name.
+    """Get the string representation of an error code enum name.
 
     Raises:
         CUDAError_InvalidValue:
@@ -455,7 +451,6 @@ def cuGetErrorName(error: int) -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuGetErrorName')
 
     p_name = _ctypes.POINTER(_ctypes.c_char_p)()
@@ -466,7 +461,7 @@ def cuGetErrorName(error: int) -> str:
 
 
 def cuGetErrorString(error: int) -> str:
-    """Gets the string description of an error code.
+    """Get the string description of an error code.
 
     Raises:
         CUDAError_InvalidValue:
@@ -474,7 +469,6 @@ def cuGetErrorString(error: int) -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuGetErrorString')
 
     p_name = _ctypes.POINTER(_ctypes.c_char_p)()
@@ -485,7 +479,7 @@ def cuGetErrorString(error: int) -> str:
 
 
 def cuDriverGetVersion() -> str:
-    """Returns the latest CUDA version supported by driver.
+    """Get the latest CUDA version supported by driver.
 
     Returns:
         A string of the form :data:`'<major>.<minor>'`.
@@ -496,7 +490,6 @@ def cuDriverGetVersion() -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDriverGetVersion')
 
     driver_version = _ctypes.c_int()
@@ -508,7 +501,7 @@ def cuDriverGetVersion() -> str:
 
 
 def cuDeviceGetCount() -> int:
-    """Returns the number of compute-capable devices.
+    """Get the number of compute-capable devices.
 
     Returns: int
         The number of devices with compute capability greater than or equal to 2.0 that are available
@@ -524,7 +517,6 @@ def cuDeviceGetCount() -> int:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceGetCount')
 
     count = _ctypes.c_int(0)
@@ -533,8 +525,8 @@ def cuDeviceGetCount() -> int:
     return count.value
 
 
-def cuDeviceGet(ordinal: int) -> c_CUdevice_t:
-    """Returns a handle to a compute device.
+def cuDeviceGet(ordinal: int) -> _c_CUdevice_t:
+    """Get a handle to a compute device.
 
     Returns:
         A device handle given an ordinal in the range :code:`[0, ..., cuDeviceGetCount() - 1]`.
@@ -552,20 +544,19 @@ def cuDeviceGet(ordinal: int) -> c_CUdevice_t:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceGet')
 
-    device = c_CUdevice_t()
+    device = _c_CUdevice_t()
     ret = fn(_ctypes.byref(device), _ctypes.c_int(ordinal))
     _cudaCheckReturn(ret)
     return device
 
 
-def cuDeviceGetByPCIBusId(pciBusId: str) -> c_CUdevice_t:
-    """Returns a handle to a compute device.
+def cuDeviceGetByPCIBusId(pciBusId: str) -> _c_CUdevice_t:
+    """Get a handle to a compute device.
 
     Args:
-        pciBusId: str
+        pciBusId (str):
             String in one of the following forms: ``[domain]:[bus]:[device].[function]``,
             ``[domain]:[bus]:[device]``, ``[bus]:[device].[function]`` where ``domain``, ``bus``,
             ``device``, and ``function`` are all hexadecimal values.
@@ -584,17 +575,16 @@ def cuDeviceGetByPCIBusId(pciBusId: str) -> c_CUdevice_t:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceGetByPCIBusId')
 
-    device = c_CUdevice_t()
+    device = _c_CUdevice_t()
     ret = fn(_ctypes.byref(device), _ctypes.c_char_p(pciBusId.encode('UTF-8')))
     _cudaCheckReturn(ret)
     return device
 
 
-def cuDeviceGetPCIBusId(device: c_CUdevice_t) -> str:
-    """Returns a PCI Bus Id string for the device.
+def cuDeviceGetPCIBusId(device: _c_CUdevice_t) -> str:
+    """Get a PCI Bus Id string for the device.
 
     Returns: str
         An identifier string for the device in the following format ``[domain]:[bus]:[device].[function]``
@@ -611,7 +601,6 @@ def cuDeviceGetPCIBusId(device: c_CUdevice_t) -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceGetPCIBusId')
 
     pciBusId = _ctypes.create_string_buffer(256)
@@ -620,8 +609,8 @@ def cuDeviceGetPCIBusId(device: c_CUdevice_t) -> str:
     return pciBusId.value.decode('UTF-8', errors='replace')
 
 
-def cuDeviceGetName(device: c_CUdevice_t) -> str:
-    """Returns an identifier string for the device.
+def cuDeviceGetName(device: _c_CUdevice_t) -> str:
+    """Get an identifier string for the device.
 
     Returns: str
         An ASCII string identifying the device.
@@ -639,7 +628,6 @@ def cuDeviceGetName(device: c_CUdevice_t) -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceGetName')
 
     name = _ctypes.create_string_buffer(256)
@@ -648,8 +636,8 @@ def cuDeviceGetName(device: c_CUdevice_t) -> str:
     return name.value.decode('UTF-8', errors='replace')
 
 
-def cuDeviceGetUuid(device: c_CUdevice_t) -> str:
-    """Returns a UUID for the device.
+def cuDeviceGetUuid(device: _c_CUdevice_t) -> str:
+    """Get a UUID for the device.
 
     Raises:
         CUDAError_InvalidDevice:
@@ -662,7 +650,6 @@ def cuDeviceGetUuid(device: c_CUdevice_t) -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     try:
         fn = __cudaGetFunctionPointer('cuDeviceGetUuid_v2')
     except AttributeError:
@@ -676,8 +663,8 @@ def cuDeviceGetUuid(device: c_CUdevice_t) -> str:
     return '-'.join((uuid[:8], uuid[8:12], uuid[12:16], uuid[16:20], uuid[20:32]))
 
 
-def cuDeviceGetUuid_v2(device: c_CUdevice_t) -> str:
-    """Returns a UUID for the device (CUDA 11.4+).
+def cuDeviceGetUuid_v2(device: _c_CUdevice_t) -> str:
+    """Get a UUID for the device (CUDA 11.4+).
 
     Raises:
         CUDAError_InvalidDevice:
@@ -690,7 +677,6 @@ def cuDeviceGetUuid_v2(device: c_CUdevice_t) -> str:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceGetUuid_v2')
 
     ubyte_array = _ctypes.c_ubyte * 16
@@ -701,8 +687,8 @@ def cuDeviceGetUuid_v2(device: c_CUdevice_t) -> str:
     return '-'.join((uuid[:8], uuid[8:12], uuid[12:16], uuid[16:20], uuid[20:32]))
 
 
-def cuDeviceTotalMem(device: c_CUdevice_t) -> int:
-    """Returns the total amount of memory on the device (in bytes).
+def cuDeviceTotalMem(device: _c_CUdevice_t) -> int:
+    """Get the total amount of memory on the device (in bytes).
 
     Raises:
         CUDAError_InvalidContext:
@@ -717,7 +703,6 @@ def cuDeviceTotalMem(device: c_CUdevice_t) -> int:
         CUDAError_NotInitialized:
             If the CUDA driver API is not initialized.
     """
-
     fn = __cudaGetFunctionPointer('cuDeviceTotalMem')
 
     bytes = _ctypes.c_size_t()  # pylint: disable=redefined-builtin
@@ -727,8 +712,7 @@ def cuDeviceTotalMem(device: c_CUdevice_t) -> int:
 
 
 def is_available() -> bool:
-    """Whether there are any CUDA visible devices."""
-
+    """Test whether there are any CUDA visible devices."""
     try:
         return cuDeviceGetCount() > 0
     except CUDAError:

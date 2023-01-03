@@ -281,8 +281,7 @@ class cudaError(Exception):
     _errcode_to_name = {}
 
     def __new__(cls, value: int) -> 'cudaError':
-        """Maps value to a proper subclass of :class:`cudaError`."""
-
+        """Map value to a proper subclass of :class:`cudaError`."""
         if cls is cudaError:
             # pylint: disable-next=self-cls-assignment
             cls = cudaError._value_class_mapping.get(value, cls)
@@ -291,6 +290,7 @@ class cudaError(Exception):
         return obj
 
     def __str__(self) -> str:
+        """Return a string representation of the error."""
         # pylint: disable=no-member
         try:
             if self.value not in cudaError._errcode_to_string:
@@ -307,30 +307,32 @@ class cudaError(Exception):
         except cudaError:
             return f'CUDA Error with code {self.value}.'
 
+    __repr__ = __str__
+
     def __eq__(self, other: object) -> bool:
+        """Test equality to other object."""
         if not isinstance(other, cudaError):
             return NotImplemented
         return self.value == other.value  # pylint: disable=no-member
 
     def __reduce__(self) -> _Tuple[_Type['cudaError'], _Tuple[int]]:
+        """Return state information for pickling."""
         return cudaError, (self.value,)  # pylint: disable=no-member
 
 
 def cudaExceptionClass(cudaErrorCode: int) -> _Type[cudaError]:
-    """Maps value to a proper subclass of :class:`cudaError`.
+    """Map value to a proper subclass of :class:`cudaError`.
 
     Raises:
         ValueError: If the error code is not valid.
     """
-
-    # pylint: disable=protected-access
-    if cudaErrorCode not in cudaError._value_class_mapping:
+    if cudaErrorCode not in cudaError._value_class_mapping:  # pylint: disable=protected-access
         raise ValueError(f'cudaErrorCode {cudaErrorCode} is not valid.')
-    return cudaError._value_class_mapping[cudaErrorCode]
+    return cudaError._value_class_mapping[cudaErrorCode]  # pylint: disable=protected-access
 
 
 def _extract_cuda_errors_as_classes() -> None:
-    """Generates a hierarchy of classes on top of :class:`cudaError` class.
+    """Generate a hierarchy of classes on top of :class:`cudaError` class.
 
     Each CUDA Error gets a new :class:`cudaError` subclass. This way try-except blocks can filter
     appropriate exceptions more easily.
@@ -338,7 +340,6 @@ def _extract_cuda_errors_as_classes() -> None:
     :class:`cudaError` is a parent class. Each ``cudaError*`` gets it's own subclass.
     e.g. :data:`cudaErrorInvalidValue` will be turned into :class:`cudaError_InvalidValue`.
     """
-
     this_module = _sys.modules[__name__]
     cuda_error_names = [
         x
@@ -393,8 +394,7 @@ __cudaGetFunctionPointer_cache = {}
 
 
 def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
-    """
-    Get the function pointer from the CUDA Runtime library.
+    """Get the function pointer from the CUDA Runtime library.
 
     Raises:
         cudaError_InitializationError:
@@ -402,7 +402,6 @@ def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
         cudaError_SymbolNotFound:
             If cannot found the function pointer.
     """
-
     if name in __cudaGetFunctionPointer_cache:
         return __cudaGetFunctionPointer_cache[name]
 
@@ -418,14 +417,12 @@ def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
 
 
 def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
-    """
-    Load the library if it isn't loaded already.
+    """Load the library if it isn't loaded already.
 
     Raises:
         cudaError_InitializationError:
             If cannot found the CUDA Runtime library.
     """
-
     global __cudaLib  # pylint: disable=global-statement
 
     if __cudaLib is None:
@@ -498,7 +495,7 @@ def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
 
 
 def cudaGetErrorName(error: int) -> str:
-    """Returns the string representation of an error code enum name.
+    """Get the string representation of an error code enum name.
 
     Returns: str
         A string containing the name of an error code in the enum. If the error code is not
@@ -508,7 +505,6 @@ def cudaGetErrorName(error: int) -> str:
         cudaError_InitializationError:
             If cannot found the CUDA Runtime library.
     """
-
     fn = __cudaGetFunctionPointer('cudaGetErrorName')
 
     fn.restype = _ctypes.c_char_p  # otherwise return is an int
@@ -518,7 +514,7 @@ def cudaGetErrorName(error: int) -> str:
 
 
 def cuGetErrorString(error: int) -> str:
-    """Returns the description string for an error code.
+    """Get the description string for an error code.
 
     Returns: str
         The description string for an error code. If the error code is not recognized, "unrecognized
@@ -528,7 +524,6 @@ def cuGetErrorString(error: int) -> str:
         cudaError_InitializationError:
             If cannot found the CUDA Runtime library.
     """
-
     fn = __cudaGetFunctionPointer('cudaGetErrorString')
 
     fn.restype = _ctypes.c_char_p  # otherwise return is an int
@@ -538,7 +533,7 @@ def cuGetErrorString(error: int) -> str:
 
 
 def cudaGetLastError() -> int:
-    """Returns the last error from a runtime call.
+    """Get the last error from a runtime call.
 
     Returns: int
         The last error that has been produced by any of the runtime calls in the same instance of
@@ -552,13 +547,12 @@ def cudaGetLastError() -> int:
         cudaError_NoDevice:
             If no CUDA-capable devices were detected by the installed CUDA driver.
     """
-
     fn = __cudaGetFunctionPointer('cudaGetLastError')
     return fn()
 
 
 def cudaPeekAtLastError() -> int:
-    """Returns the last error from a runtime call.
+    """Get the last error from a runtime call.
 
     Returns: int
         The last error that has been produced by any of the runtime calls in the same instance of
@@ -573,13 +567,12 @@ def cudaPeekAtLastError() -> int:
         cudaError_NoDevice:
             If no CUDA-capable devices were detected by the installed CUDA driver.
     """
-
     fn = __cudaGetFunctionPointer('cudaPeekAtLastError')
     return fn()
 
 
 def cudaDriverGetVersion() -> str:
-    """Returns the latest CUDA version supported by driver.
+    """Get the latest CUDA version supported by driver.
 
     Returns: str
         The latest version of CUDA supported by the driver of the form :data:`'<major>.<minor>'`.
@@ -592,7 +585,6 @@ def cudaDriverGetVersion() -> str:
         cudaError_NoDevice:
             If no CUDA-capable devices were detected by the installed CUDA driver.
     """
-
     fn = __cudaGetFunctionPointer('cudaDriverGetVersion')
 
     driver_version = _ctypes.c_int()
@@ -604,7 +596,7 @@ def cudaDriverGetVersion() -> str:
 
 
 def cudaRuntimeGetVersion() -> str:
-    """Returns the CUDA Runtime version.
+    """Get the CUDA Runtime version.
 
     Returns: str
         The version number of the current CUDA Runtime instance of the form :data:`'<major>.<minor>'`.
@@ -617,7 +609,6 @@ def cudaRuntimeGetVersion() -> str:
         cudaError_NoDevice:
             If no CUDA-capable devices were detected by the installed CUDA driver.
     """
-
     fn = __cudaGetFunctionPointer('cudaRuntimeGetVersion')
 
     runtime_version = _ctypes.c_int()
@@ -629,7 +620,7 @@ def cudaRuntimeGetVersion() -> str:
 
 
 def cudaGetDeviceCount() -> int:
-    """Returns the number of compute-capable devices.
+    """Get the number of compute-capable devices.
 
     Returns: int
         The number of devices with compute capability greater or equal to 2.0 that are available for
@@ -643,7 +634,6 @@ def cudaGetDeviceCount() -> int:
         cudaError_NoDevice:
             If no CUDA-capable devices were detected by the installed CUDA driver.
     """
-
     fn = __cudaGetFunctionPointer('cudaGetDeviceCount')
 
     count = _ctypes.c_int(0)
@@ -653,10 +643,10 @@ def cudaGetDeviceCount() -> int:
 
 
 def cudaDeviceGetByPCIBusId(pciBusId: str) -> int:
-    """Returns a handle to a compute device.
+    """Get a handle to a compute device.
 
     Args:
-        pciBusId: str
+        pciBusId (str):
             String in one of the following forms: ``[domain]:[bus]:[device].[function]``,
             ``[domain]:[bus]:[device]``, ``[bus]:[device].[function]`` where ``domain``, ``bus``,
             ``device``, and ``function`` are all hexadecimal values.
@@ -676,7 +666,6 @@ def cudaDeviceGetByPCIBusId(pciBusId: str) -> int:
         cudaError_InvalidDevice:
             If the device ordinal supplied by the user does not correspond to a valid CUDA device.
     """
-
     fn = __cudaGetFunctionPointer('cudaDeviceGetByPCIBusId')
 
     device = _ctypes.c_int()
@@ -686,7 +675,7 @@ def cudaDeviceGetByPCIBusId(pciBusId: str) -> int:
 
 
 def cudaDeviceGetPCIBusId(device: int) -> str:
-    """Returns a PCI Bus Id string for the device.
+    """Get a PCI Bus Id string for the device.
 
     Returns: str
         An ASCII string identifying the device.
@@ -703,7 +692,6 @@ def cudaDeviceGetPCIBusId(device: int) -> str:
         cudaError_InvalidDevice:
             If the device ordinal supplied by the user does not correspond to a valid CUDA device.
     """
-
     fn = __cudaGetFunctionPointer('cudaDeviceGetPCIBusId')
 
     pciBusId = _ctypes.create_string_buffer(256)
@@ -713,8 +701,7 @@ def cudaDeviceGetPCIBusId(device: int) -> str:
 
 
 def is_available() -> bool:
-    """Whether there are any CUDA visible devices."""
-
+    """Test whether there are any CUDA visible devices."""
     try:
         return cudaGetDeviceCount() > 0
     except cudaError:

@@ -82,3 +82,7 @@ indent = 4
 line_length = 100
 lines_after_imports = 2
 multi_line_output = 3
+
+[tool.pydocstyle]
+convention = "google"
+match-dir = '^(?!(gui|callbacks|docs))[^\.].*'

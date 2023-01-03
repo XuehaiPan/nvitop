@@ -1,7 +1,7 @@
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 # License: GNU GPL version 3.
 
-# pylint: disable=missing-module-docstring,missing-function-docstring
+"""The interactive NVIDIA-GPU process viewer."""
 
 import argparse
 import curses
@@ -20,7 +20,7 @@ NVITOP_MONITOR_MODE = set(
 
 
 def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
-
+    """Parse command-line arguments for ``nvtiop``."""
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(
         colored('light', 'green'), colored('moderate', 'yellow'), colored('heavy', 'red')
     )
@@ -252,6 +252,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
 
 
 def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+    """Main function for ``nvitop`` CLI."""
     args = parse_arguments()
 
     if args.force_color:

@@ -9,7 +9,7 @@
 #   pip install 'nvitop[pynvml-xx.yyy.zz]'
 #
 
-# pylint: disable=missing-module-docstring
+"""Setup script for ``nvitop``."""
 
 import pathlib
 import re
