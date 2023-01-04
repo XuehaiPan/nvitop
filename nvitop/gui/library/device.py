@@ -3,10 +3,10 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.core import NA
-from nvitop.core import MigDevice as MigDeviceBase
-from nvitop.core import PhysicalDevice as DeviceBase
-from nvitop.core import Snapshot, libnvml, utilization2string
+from nvitop.api import NA
+from nvitop.api import MigDevice as MigDeviceBase
+from nvitop.api import PhysicalDevice as DeviceBase
+from nvitop.api import Snapshot, libnvml, utilization2string
 from nvitop.gui.library.process import GpuProcess
 
 

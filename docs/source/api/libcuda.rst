@@ -1,7 +1,7 @@
 nvitop.libcuda module
 ---------------------
 
-.. automodule:: nvitop.core.libcuda
+.. automodule:: nvitop.libcuda
     :members:
     :undoc-members:
     :show-inheritance:

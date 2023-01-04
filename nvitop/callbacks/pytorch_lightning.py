@@ -27,8 +27,8 @@ from pytorch_lightning.utilities.exceptions import (  # pylint: disable=import-e
     MisconfigurationException,
 )
 
+from nvitop.api import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
-from nvitop.core import libnvml
 
 
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor

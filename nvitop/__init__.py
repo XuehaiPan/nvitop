@@ -16,11 +16,23 @@
 # ==============================================================================
 """An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management."""
 
-from nvitop import core
-from nvitop.core import *
-from nvitop.core import collector, device, host, libcuda, libnvml, process, utils
+import sys
+
+from nvitop import api
+from nvitop.api import *
+from nvitop.api import collector, device, host, libcuda, libcudart, libnvml, process, utils
 from nvitop.select import select_devices
 from nvitop.version import __version__
 
 
-__all__ = [*core.__all__, 'select_devices']
+__all__ = [*api.__all__, 'select_devices']
+
+# Add submodules to the top-level namespace
+for submodule in (collector, device, host, libcuda, libcudart, libnvml, process, utils):
+    sys.modules[f'{__name__}.{submodule.__name__.rpartition(".")[-1]}'] = submodule
+
+# Remove the nvitop.select module from sys.modules
+# Required for `python -m nvitop.select` to work properly
+sys.modules.pop(f'{__name__}.select', None)
+
+del sys

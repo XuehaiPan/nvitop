@@ -111,9 +111,9 @@ from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tu
 
 from cachetools.func import ttl_cache
 
-from nvitop.core import libcuda, libcudart, libnvml
-from nvitop.core.process import GpuProcess
-from nvitop.core.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
+from nvitop.api import libcuda, libcudart, libnvml
+from nvitop.api.process import GpuProcess
+from nvitop.api.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
 
 
 __all__ = [

@@ -1,7 +1,7 @@
 nvitop.utils module
 -------------------
 
-.. automodule:: nvitop.core.utils
+.. automodule:: nvitop.utils
     :members:
     :undoc-members:
     :show-inheritance:

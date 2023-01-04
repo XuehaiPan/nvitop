@@ -62,7 +62,7 @@ import sys
 import warnings
 from typing import Iterable, List, Optional, Tuple, Union
 
-from nvitop.core import Device, GpuProcess, colored, human2bytes, libnvml
+from nvitop.api import Device, GpuProcess, colored, human2bytes, libnvml
 from nvitop.version import __version__
 
 

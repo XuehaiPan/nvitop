@@ -1,7 +1,7 @@
 nvitop.libcudart module
 -----------------------
 
-.. automodule:: nvitop.core.libcudart
+.. automodule:: nvitop.libcudart
     :members:
     :undoc-members:
     :show-inheritance:

@@ -19,7 +19,7 @@
 
 from typing import Dict, List
 
-from nvitop.core import CudaDevice, Device, MiB
+from nvitop.api import CudaDevice, Device, MiB
 
 
 def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> List[CudaDevice]:

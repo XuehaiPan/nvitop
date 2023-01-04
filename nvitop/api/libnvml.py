@@ -41,8 +41,8 @@ from typing import Union as _Union
 import pynvml as _pynvml
 from pynvml import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
-from nvitop.core.utils import NA
-from nvitop.core.utils import colored as __colored
+from nvitop.api.utils import NA
+from nvitop.api.utils import colored as __colored
 
 
 __all__ = [  # will be updated in below

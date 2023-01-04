@@ -26,8 +26,8 @@ from tensorflow.python.keras.callbacks import (  # pylint: disable=import-error,
     Callback,
 )
 
+from nvitop.api import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
-from nvitop.core import libnvml
 
 
 # Ported version of .pytorch_lightning.GpuStatsLogger for Keras

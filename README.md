@@ -689,7 +689,7 @@ for device in devices:
 
 #### Status Snapshot
 
-`nvitop` provides a helper function [`take_snapshots`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.take_snapshots) to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
+`nvitop` provides a helper function [`take_snapshots`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.take_snapshots) to retrieve the status of both GPU devices and GPU processes at once. You can type `help(nvitop.take_snapshots)` in Python REPL for detailed documentation.
 
 ```python
 In [1]: from nvitop import take_snapshots, Device
@@ -766,7 +766,7 @@ Please refer to section [Low-level APIs](#low-level-apis) for more information.
 
 #### Resource Metric Collector
 
-[`ResourceMetricCollector`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.ResourceMetricCollector) is a class that collects resource metrics for host, GPUs and processes running on the GPUs. All metrics will be collected in an asynchronous manner. You can type `help(nvitop.ResourceMetricCollector)` in Python REPL for detailed documentation.
+[`ResourceMetricCollector`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.ResourceMetricCollector) is a class that collects resource metrics for host, GPUs and processes running on the GPUs. All metrics will be collected in an asynchronous manner. You can type `help(nvitop.ResourceMetricCollector)` in Python REPL for detailed documentation.
 
 ```python
 In [1]: from nvitop import ResourceMetricCollector, Device
@@ -898,7 +898,7 @@ df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimesta
 df.to_csv('results.csv', index=False)
 ```
 
-You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.collect_in_background) or [`ResourceMetricCollector.daemonize`](https://nvitop.readthedocs.io/en/latest/core/collector.html#nvitop.ResourceMetricCollector.daemonize) with callback functions.
+You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.collect_in_background) or [`ResourceMetricCollector.daemonize`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.ResourceMetricCollector.daemonize) with callback functions.
 
 ```python
 from nvitop import Device, ResourceMetricCollector, collect_in_background
@@ -943,7 +943,7 @@ The full API references can be found at <https://nvitop.readthedocs.io>.
 
 ##### Device
 
-The [device module](https://nvitop.readthedocs.io/en/latest/core/device.html) provides:
+The [device module](https://nvitop.readthedocs.io/en/latest/api/device.html) provides:
 
 <table class="autosummary longtable docutils align-default">
   <colgroup>
@@ -952,31 +952,31 @@ The [device module](https://nvitop.readthedocs.io/en/latest/core/device.html) pr
   </colgroup>
   <tbody>
     <tr class="row-odd">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.Device" title="nvitop.Device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Device</span></code></a>([index, uuid, bus_id])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.Device" title="nvitop.Device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Device</span></code></a>([index, uuid, bus_id])</p></td>
       <td><p>Live class of the GPU devices, different from the device snapshots.</p></td>
     </tr>
     <tr class="row-even">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.PhysicalDevice" title="nvitop.PhysicalDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhysicalDevice</span></code></a>([index, uuid, bus_id])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.PhysicalDevice" title="nvitop.PhysicalDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PhysicalDevice</span></code></a>([index, uuid, bus_id])</p></td>
       <td><p>Class for physical devices.</p></td>
     </tr>
     <tr class="row-odd">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.MigDevice" title="nvitop.MigDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MigDevice</span></code></a>([index, uuid, bus_id])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.MigDevice" title="nvitop.MigDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MigDevice</span></code></a>([index, uuid, bus_id])</p></td>
       <td><p>Class for MIG devices.</p></td>
     </tr>
     <tr class="row-even">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.CudaDevice" title="nvitop.CudaDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaDevice</span></code></a>([cuda_index, nvml_index, uuid])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.CudaDevice" title="nvitop.CudaDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaDevice</span></code></a>([cuda_index, nvml_index, uuid])</p></td>
       <td><p>Class for devices enumerated over the CUDA ordinal.</p></td>
     </tr>
     <tr class="row-odd">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.CudaMigDevice" title="nvitop.CudaMigDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaMigDevice</span></code></a>([cuda_index, nvml_index, uuid])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.CudaMigDevice" title="nvitop.CudaMigDevice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CudaMigDevice</span></code></a>([cuda_index, nvml_index, uuid])</p></td>
       <td><p>Class for CUDA devices that are MIG devices.</p></td>
     </tr>
     <tr class="row-even">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.parse_cuda_visible_devices" title="nvitop.parse_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_cuda_visible_devices</span></code></a>([...])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.parse_cuda_visible_devices" title="nvitop.parse_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_cuda_visible_devices</span></code></a>([...])</p></td>
       <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value into a list of NVML device indices.</p></td>
     </tr>
     <tr class="row-odd">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/device.html#nvitop.normalize_cuda_visible_devices" title="nvitop.normalize_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_cuda_visible_devices</span></code></a>([...])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.normalize_cuda_visible_devices" title="nvitop.normalize_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_cuda_visible_devices</span></code></a>([...])</p></td>
       <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value and convert it into a comma-separated string of UUIDs.</p></td>
     </tr>
   </tbody>
@@ -1166,7 +1166,7 @@ See [`nvitop.NaType`](https://nvitop.readthedocs.io/en/latest/apis/index.html#nv
 
 ##### Process
 
-The [process module](https://nvitop.readthedocs.io/en/latest/core/process.html) provides:
+The [process module](https://nvitop.readthedocs.io/en/latest/api/process.html) provides:
 
 <table class="autosummary longtable docutils align-default">
   <colgroup>
@@ -1175,15 +1175,15 @@ The [process module](https://nvitop.readthedocs.io/en/latest/core/process.html) 
   </colgroup>
   <tbody>
     <tr class="row-odd">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/process.html#nvitop.HostProcess" title="nvitop.HostProcess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HostProcess</span></code></a>([pid])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/process.html#nvitop.HostProcess" title="nvitop.HostProcess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HostProcess</span></code></a>([pid])</p></td>
       <td><p>Represents an OS process with the given PID.</p></td>
     </tr>
     <tr class="row-even">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/process.html#nvitop.GpuProcess" title="nvitop.GpuProcess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GpuProcess</span></code></a>(pid, device[, gpu_memory, ...])</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/process.html#nvitop.GpuProcess" title="nvitop.GpuProcess"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GpuProcess</span></code></a>(pid, device[, gpu_memory, ...])</p></td>
       <td><p>Represents a process with the given PID running on the given GPU device.</p></td>
     </tr>
     <tr class="row-odd">
-      <td><p><a href="https://nvitop.readthedocs.io/en/latest/core/process.html#nvitop.command_join" title="nvitop.command_join"><code class="xref py py-obj docutils literal notranslate"><span class="pre">command_join</span></code></a>(cmdline)</p></td>
+      <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/process.html#nvitop.command_join" title="nvitop.command_join"><code class="xref py py-obj docutils literal notranslate"><span class="pre">command_join</span></code></a>(cmdline)</p></td>
       <td><p>Returns a shell-escaped string from command line arguments.</p></td>
     </tr>
   </tbody>
@@ -1395,7 +1395,7 @@ The source code is organized as:
 nvitop           (GPL-3.0)
 ├── __init__.py  (Apache-2.0)
 ├── version.py   (Apache-2.0)
-├── core         (Apache-2.0)
+├── api          (Apache-2.0)
 │   ├── LICENSE  (Apache-2.0)
 │   └── *        (Apache-2.0)
 ├── callbacks    (Apache-2.0)
@@ -1416,11 +1416,14 @@ Please feel free to use `nvitop` as a dependency for your own projects. The foll
 ```python
 import nvitop
 import nvitop as alias
+import nvitop.api as api
+import nvitop.device as device
 from nvitop import *
+from nvitop.api import *
 from nvitop import Device, ResourceMetricCollector
 ```
 
-The public APIs from `nvitop` are released under the **Apache License, Version 2.0 (Apache-2.0)**. The original license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE), [nvitop/core/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/core/LICENSE), and [nvitop/callbacks/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/callbacks/LICENSE).
+The public APIs from `nvitop` are released under the **Apache License, Version 2.0 (Apache-2.0)**. The original license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE), [nvitop/api/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/api/LICENSE), and [nvitop/callbacks/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/callbacks/LICENSE).
 
 The CLI of `nvitop` is released under the **GNU General Public License, Version 3 (GPL-3.0)**. The original license files can be found at [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) and [nvitop/gui/COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/gui/COPYING). If you dynamically load the source code of `nvitop`'s CLI or GUI:
 

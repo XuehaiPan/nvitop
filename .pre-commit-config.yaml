@@ -44,10 +44,10 @@ repos:
         require_serial: true
         stages: [commit, push, manual]
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.2.1
+    rev: 6.2.2
     hooks:
       - id: pydocstyle
-        additional_dependencies: [toml]
+        additional_dependencies: ['.[toml]']
         exclude: |
           (?x)(
             ^nvitop/gui/|
