@@ -19,6 +19,7 @@
 # pylint: disable=invalid-name
 
 import ctypes as _ctypes
+import itertools as _itertools
 import platform as _platform
 import string as _string
 import sys as _sys
@@ -380,7 +381,9 @@ def __LoadCudaLibrary() -> None:
                 system = _platform.system()
                 if system == 'Darwin':
                     lib_filenames = [
-                        'libcuda.dylib',  # check library path first
+                        'libcuda.1.dylib',  # check library path first
+                        'libcuda.dylib',
+                        '/usr/local/cuda/lib/libcuda.1.dylib',
                         '/usr/local/cuda/lib/libcuda.dylib',
                     ]
                 elif system == 'Linux':
@@ -390,8 +393,13 @@ def __LoadCudaLibrary() -> None:
                         '/usr/lib/x86_64-linux-gnu/libcuda.so',  # Ubuntu
                         '/usr/lib/wsl/lib/libcuda.so',  # WSL
                     ]
+                    # Also add libraries with version suffix `.1`
+                    lib_filenames = list(
+                        _itertools.chain.from_iterable((f'{lib}.1', lib) for lib in lib_filenames)
+                    )
                 elif system == 'Windows':
-                    lib_filenames = ['nvcuda.dll']
+                    bits = _platform.architecture()[0].replace('bit', '')  # e.g., '64' or '32'
+                    lib_filenames = [f'nvcuda{bits}.dll', 'nvcuda.dll']
                 # Open library
                 for lib_filename in lib_filenames:
                     try:
