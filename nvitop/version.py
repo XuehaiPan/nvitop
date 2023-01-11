@@ -56,7 +56,7 @@ if not __release__:
 # The package `nvidia-ml-py` is not backward compatible over releases. This may
 # cause problems with Old versions of NVIDIA drivers.
 # The ideal solution is to let the user install the best-fit version of `nvidia-ml-py`.
-PYNVML_VERSION_CANDIDATES = [
+PYNVML_VERSION_CANDIDATES = (
     # Sync with pyproject.toml and requirements.txt
     '11.450.51',  # the last version supports the R430 driver (CUDA 10.x)
     '11.450.129',  # requires at last the R450 driver
@@ -66,7 +66,8 @@ PYNVML_VERSION_CANDIDATES = [
     '11.510.69',  # the first version supports the `nvmlMemory_v2` API
     '11.515.48',
     '11.515.75',
-]
+    '11.525.84',
+)
 """The list of supported ``nvidia-ml-py`` versions.
 See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
 
