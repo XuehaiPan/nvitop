@@ -169,6 +169,9 @@ class MigDevice(MigDeviceBase, Device):
         self.tuple_index = (self.index,) if isinstance(self.index, int) else self.index
         self.display_index = ':'.join(map(str, self.tuple_index))
 
+    def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
+        return f'{self.memory_used_human()} / {self.memory_total_human():>8s}'
+
     loading_intensity = Device.memory_loading_intensity
 
     SNAPSHOT_KEYS = [
