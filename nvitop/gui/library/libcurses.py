@@ -275,8 +275,7 @@ class CursesShortcuts:
             self.win.attrset(attr)
         except curses.error:
             return 0
-        else:
-            return attr
+        return attr
 
     def update_size(self, termsize=None):
         if termsize is None:

@@ -540,8 +540,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         if (index, uuid, bus_id).count(None) != 2:
             raise TypeError(
-                'Device(index=None, uuid=None, bus_id=None) takes 1 non-None arguments '
-                'but (index, uuid, bus_id) = {!r} were given'.format((index, uuid, bus_id))
+                f'Device(index=None, uuid=None, bus_id=None) takes 1 non-None arguments '
+                f'but (index, uuid, bus_id) = {(index, uuid, bus_id)!r} were given'
             )
 
         if cls is not Device:
@@ -784,15 +784,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self._cuda_index is None:
             visible_device_indices = self.parse_cuda_visible_devices()
             try:
-                cuda_index = visible_device_indices.index(self.index)
+                self._cuda_index = visible_device_indices.index(self.index)
             except ValueError as ex:
                 raise RuntimeError(
-                    'CUDA Error: Device(index={}) is not visible to CUDA applications'.format(
-                        self.index
-                    )
+                    f'CUDA Error: Device(index={self.index}) is not visible to CUDA applications'
                 ) from ex
-            else:
-                self._cuda_index = cuda_index
 
         return self._cuda_index
 

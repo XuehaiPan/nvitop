@@ -138,9 +138,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     if device.bar1_memory_percent >= 100:
                         device.bar1_memory_percent_string = 'MAX'
                     else:
-                        device.bar1_memory_percent_string = '{}%'.format(
-                            round(device.bar1_memory_percent)
-                        )
+                        device.bar1_memory_percent_string = f'{round(device.bar1_memory_percent)}%'
             else:
                 device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
                 device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')

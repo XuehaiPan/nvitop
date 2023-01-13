@@ -172,8 +172,8 @@ def key_to_string(key):
     if key in range(33, 127):
         return chr(key)
     if key in REVERSED_SPECIAL_KEYS:
-        return '<%s>' % REVERSED_SPECIAL_KEYS[key]
-    return '<%s>' % str(key)
+        return f'<{REVERSED_SPECIAL_KEYS[key]}>'
+    return f'<{key}>'
 
 
 def construct_keybinding(keys):
@@ -201,7 +201,7 @@ def construct_keybinding(keys):
             continue
         if alt_key_on:
             try:
-                strings.append('<%s>' % REVERSED_SPECIAL_KEYS[(ALT_KEY, key)])
+                strings.append(f'<{REVERSED_SPECIAL_KEYS[(ALT_KEY, key)]}>')
             except KeyError:
                 strings.extend(map(key_to_string, (ALT_KEY, key)))
         else:
@@ -276,7 +276,7 @@ class KeyMaps(dict):
                 pointer = pointer[key]
             except KeyError as ex:
                 raise KeyError(
-                    "Tried to copy the keybinding `%s', but it was not found." % source
+                    f'Tried to copy the keybinding `{source}`, but it was not found.'
                 ) from ex
         try:
             self.bind(context, target, copy.deepcopy(pointer))

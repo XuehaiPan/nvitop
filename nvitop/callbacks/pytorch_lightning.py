@@ -115,8 +115,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
         if trainer.strategy.root_device.type != 'cuda':
             raise MisconfigurationException(
-                'You are using GpuStatsLogger but are not running on GPU. '
-                'The root device type is {}.'.format(trainer.strategy.root_device.type)
+                f'You are using GpuStatsLogger but are not running on GPU. '
+                f'The root device type is {trainer.strategy.root_device.type}.'
             )
 
         device_ids = trainer.data_parallel_device_ids
@@ -124,8 +124,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             self._devices = get_devices_by_logical_ids(device_ids, unique=True)
         except (libnvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
-                'Cannot use GpuStatsLogger callback because devices unavailable. '
-                'Received: `gpus={}`'.format(device_ids)
+                f'Cannot use GpuStatsLogger callback because devices unavailable. '
+                f'Received: `gpus={device_ids}`'
             ) from ex
 
     def on_train_epoch_start(self, trainer, pl_module) -> None:

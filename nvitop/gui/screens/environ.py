@@ -145,15 +145,13 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
         self.color_reset()
 
         if isinstance(self.process, GpuProcess):
-            process_type = 'GPU: {}'.format(
-                self.process.type.replace('C', 'Compute').replace('G', 'Graphics')
+            process_type = 'GPU: ' + self.process.type.replace('C', 'Compute').replace(
+                'G', 'Graphics'
             )
         else:
             process_type = 'Host'
         header_prefix = WideString(
-            'Environment of process {} ({}@{}): '.format(
-                self.process.pid, self.username, process_type
-            )
+            f'Environment of process {self.process.pid} ({self.username}@{process_type}): '
         )
         offset = max(0, min(self.x_offset, len(self.command) + len(header_prefix) - self.width))
         header = str((header_prefix + self.command[offset:]).ljust(self.width)[: self.width])

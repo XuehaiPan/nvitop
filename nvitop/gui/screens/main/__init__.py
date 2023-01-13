@@ -212,7 +212,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
             sort_by(order=ProcessPanel.ORDERS[self.process_panel.order].next, reverse=False)
 
         def order_reverse():
-            sort_by(order=self.process_panel.order, reverse=(not self.process_panel.reverse))
+            sort_by(order=self.process_panel.order, reverse=not self.process_panel.reverse)
 
         keymaps = self.root.keymaps
 

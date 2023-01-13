@@ -277,6 +277,7 @@ def send_signal(signal, panel):
         processes = [process.ljust(maxlen) for process in processes]
         message = 'Send signal to the following processes?\n\n{}'.format(' '.join(processes))
 
+    # pylint: disable=use-dict-literal
     panel.root.messagebox = MessageBox(
         message=message,
         options=[
@@ -325,3 +326,4 @@ def send_signal(signal, panel):
         win=panel.win,
         root=panel.root,
     )
+    # pylint: enable=use-dict-literal

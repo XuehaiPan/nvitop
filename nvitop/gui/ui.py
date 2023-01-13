@@ -141,8 +141,8 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             return
 
         n_term_lines, n_term_cols = self.termsize
-        message = 'nvitop needs at least a width of 79 to render, the current width is {}.'.format(
-            self.width
+        message = (
+            f'nvitop needs at least a width of 79 to render, the current width is {self.width}.'
         )
         words = iter(message.split())
         width = min(max(n_term_cols, 40), n_term_cols, 60) - 10
@@ -199,8 +199,7 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             event = MouseEvent(curses.getmouse())
         except curses.error:
             return
-        else:
-            super().click(event)
+        super().click(event)
 
     def handle_key(self, key):
         """Handles key input"""

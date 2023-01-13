@@ -302,10 +302,10 @@ def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
 
         LOGGER.critical(message)
         raise
-    else:
-        with __lock:
-            __flags.append(flags)
-            __initialized = True
+
+    with __lock:
+        __flags.append(flags)
+        __initialized = True
 
 
 def nvmlShutdown() -> None:  # pylint: disable=function-redefined
@@ -416,10 +416,10 @@ def nvmlQuery(
         if ignore_errors:
             return default
         raise
-    else:
-        if isinstance(retval, bytes):
-            retval = retval.decode('UTF-8')
-        return retval
+
+    if isinstance(retval, bytes):
+        retval = retval.decode('UTF-8')
+    return retval
 
 
 def nvmlCheckReturn(

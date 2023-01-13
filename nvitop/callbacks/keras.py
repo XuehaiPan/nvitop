@@ -124,8 +124,8 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             self._devices = get_devices_by_logical_ids(gpu_ids, unique=True)
         except (libnvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
-                'Cannot use GpuStatsLogger callback because devices unavailable. '
-                'Received: `gpus={}`'.format(gpu_ids)
+                f'Cannot use GpuStatsLogger callback because devices unavailable. '
+                f'Received: `gpus={gpu_ids}`'
             ) from ex
 
         self._memory_utilization = memory_utilization
