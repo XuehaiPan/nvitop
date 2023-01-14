@@ -459,6 +459,9 @@ for dm in "${DM_SERVICES[@]}"; do
 	trap "exec_cmd 'sudo service ${dm} start'" EXIT # restart the service on exit
 done
 
+# Disable persistence mode
+exec_cmd "sudo nvidia-smi -pm 0 || true"
+
 sleep 1 # ensure the processes are stopped
 
 # Ensure no processes are using the NVIDIA devices
@@ -516,3 +519,6 @@ fi
 ### Reload the NVIDIA kernel modules ###############################################################
 
 exec_cmd 'nvidia-smi'
+
+# Enable persistence mode
+exec_cmd "sudo nvidia-smi -pm 1 || true"
