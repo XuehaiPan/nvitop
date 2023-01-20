@@ -664,7 +664,7 @@ class Snapshot:
 
     def keys(self) -> Iterable[str]:
         # pylint: disable-next=line-too-long
-        """Support `**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and ``dict(snapshot)`` dictionary conversion."""
+        """Support ``**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and ``dict(snapshot)`` dictionary conversion."""
         return iter(self)
 
 
