@@ -46,6 +46,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
       - [Process](#process)
       - [Host (inherited from psutil)](#host-inherited-from-psutil)
 - [Screenshots](#screenshots)
+- [Changelog](#changelog)
 - [License](#license)
   - [Copyright Notice](#copyright-notice)
 
@@ -145,7 +146,7 @@ Run `bash install-nvidia-driver.sh --help` for more information.
 pipx run nvitop
 ```
 
-Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop) / ![Status](https://img.shields.io/pypi/status/nvitop?label=status)):
+Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)):
 
 ```bash
 pip3 install --upgrade nvitop
@@ -157,7 +158,7 @@ Install from conda-forge ([![conda-forge](https://img.shields.io/conda/v/conda-f
 conda install -c conda-forge nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v0.11.0)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.0.0)):
 
 ```bash
 pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
@@ -1379,6 +1380,12 @@ Spectrum-like bar charts (with option <code>--colorful</code>):
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/182555606-8388e5a5-43a9-4990-90d4-46e45ac448a0.png" alt="Spectrum-like Bar Charts">
   <br/>
 </p>
+
+------
+
+## Changelog
+
+See [CHANGELOG.md](https://github.com/XuehaiPan/nvitop/blob/HEAD/CHANGELOG.md).
 
 ------
 

@@ -33,7 +33,7 @@ body:
     attributes:
       label: What version of nvitop are you using?
       description: Run command `nvitop --version` or `python3 -m nvitop --version` in your shell and paste the output here.
-      placeholder: E.g., 0.11.0
+      placeholder: E.g., 1.0.0
     validations:
       required: true
 
