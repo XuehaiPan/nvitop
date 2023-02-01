@@ -2495,10 +2495,22 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
             return Device(uuid=index_or_uuid)
         raise ValueError('invalid identifier')
 
+    def strip_identifier(identifier: str) -> str:
+        identifier = identifier.strip()
+        if len(identifier) > 0 and (
+            identifier[0].isdigit()
+            or (len(identifier) > 1 and identifier[0] in ('+', '-') and identifier[1].isdigit())
+        ):
+            offset = 1 if identifier[0] in ('+', '-') else 0
+            while offset < len(identifier) and identifier[offset].isdigit():
+                offset += 1
+            identifier = identifier[:offset]
+        return identifier
+
     devices = []
     presented = set()
     use_integer_identifiers = None
-    for identifier in map(str.strip, cuda_visible_devices.split(',')):
+    for identifier in map(strip_identifier, cuda_visible_devices.split(',')):
         if identifier in presented:
             return []  # duplicate identifiers found
 
