@@ -480,7 +480,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 environment variable will be unset before parsing.
 
         Returns: Union[List[int], List[Tuple[int, int]]]
-            A list of int (physical device) or a list of tuple of two ints (MIG device) for the
+            A list of int (physical device) or a list of tuple of two integers (MIG device) for the
             corresponding real device indices.
         """  # pylint: disable=line-too-long
         return parse_cuda_visible_devices(cuda_visible_devices)
@@ -557,14 +557,16 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         if index is not None:
             if not isinstance(index, int):
+                if not isinstance(index, tuple):
+                    raise TypeError(
+                        f'index must be an integer, or a tuple of two integers, or a valid UUID string, '
+                        f'but index = {index!r} was given'
+                    )
                 if not (
-                    isinstance(index, tuple)
-                    and len(index) == 2
-                    and isinstance(index[0], int)
-                    and isinstance(index[1], int)
+                    len(index) == 2 and isinstance(index[0], int) and isinstance(index[1], int)
                 ):
                     raise TypeError(
-                        f'index for MIG device must be a tuple of 2 integers '
+                        f'index for MIG device must be a tuple of two integers '
                         f'but index = {index!r} was given'
                     )
                 return super().__new__(MigDevice)
@@ -2290,7 +2292,7 @@ def parse_cuda_visible_devices(
             environment variable will be unset before parsing.
 
     Returns: Union[List[int], List[Tuple[int, int]]]
-        A list of int (physical device) or a list of tuple of two ints (MIG device) for the
+        A list of int (physical device) or a list of tuple of two integers (MIG device) for the
         corresponding real device indices.
 
     Examples:
