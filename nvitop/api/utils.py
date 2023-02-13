@@ -616,7 +616,7 @@ class Snapshot:
             if isinstance(value, Snapshot):
                 keyval = keyval.replace('\n', '\n    ')  # extra indentation for nested snapshots
             keyvals.append(keyval)
-        return '{}{}(\n    {}\n)'.format(
+        return '{}{}(\n    {},\n)'.format(
             self.real.__class__.__name__, self.__class__.__name__, ',\n    '.join(keyvals)
         )
 

@@ -1100,7 +1100,7 @@ Out[16]: PhysicalDeviceSnapshot(
     temperature=39,                     # in Celsius
     total_volatile_uncorrected_ecc_errors='N/A',
     utilization_rates=UtilizationRates(gpu=17, memory=7, encoder=0, decoder=0),  # in percentage
-    uuid='GPU-01234567-89ab-cdef-0123-456789abcdef'
+    uuid='GPU-01234567-89ab-cdef-0123-456789abcdef',
 )
 
 In [17]: nvidia1_snapshot.memory_percent  # snapshot uses properties instead of function calls
@@ -1236,7 +1236,7 @@ Out[27]: GpuProcessSnapshot(
         running_time_human='46:13:33',
         running_time_in_seconds=166413.470024,
         status='running',
-        username='panxuehai'
+        username='panxuehai',
     ),
     host_memory=9113627439,                 # in bytes
     host_memory_human='8691MiB',
@@ -1249,7 +1249,7 @@ Out[27]: GpuProcessSnapshot(
     running_time_in_seconds=166413.470024,
     status='running',
     type='C',                               # 'C' for Compute / 'G' for Graphics / 'C+G' for Both
-    username='panxuehai'
+    username='panxuehai',
 )
 
 In [28]: process.uids()  # GpuProcess will automatically inherit attributes from GpuProcess.host
