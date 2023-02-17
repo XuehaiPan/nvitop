@@ -126,7 +126,7 @@ __all__ = [
     'normalize_cuda_visible_devices',
 ]
 
-### Class definitions ##############################################################################
+# Class definitions ################################################################################
 
 
 class MemoryInfo(NamedTuple):  # in bytes # pylint: disable=missing-class-docstring
@@ -570,9 +570,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                         f'but index = {index!r} was given'
                     )
                 return super().__new__(MigDevice)
-        elif uuid is not None:
-            if match is not None and match.group('MigMode') is not None:
-                return super().__new__(MigDevice)
+        elif uuid is not None and match is not None and match.group('MigMode') is not None:
+            return super().__new__(MigDevice)
         return super().__new__(PhysicalDevice)
 
     def __init__(
@@ -2386,7 +2385,7 @@ def normalize_cuda_visible_devices(cuda_visible_devices: Optional[str] = _VALUE_
     return ','.join(_parse_cuda_visible_devices(cuda_visible_devices, format='uuid'))
 
 
-### Helper functions ###############################################################################
+# Helper functions #################################################################################
 
 _PhysicalDeviceAttrs = NamedTuple(
     'PhysicalDeviceAttrs',

@@ -24,7 +24,7 @@ import os as _os
 
 import psutil as _psutil
 from cachetools.func import ttl_cache as _ttl_cache
-from psutil import *  # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
+from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
 
 
 __all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [
@@ -39,8 +39,8 @@ __all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [
 __all__[__all__.index('Error')] = 'PsutilError'
 
 
-PsutilError = Error  # make alias
-del Error  # pylint: disable=undefined-variable
+PsutilError = Error  # make alias # noqa: F405
+del Error  # noqa: F405,F821 # pylint: disable=undefined-variable
 
 
 cpu_percent = _ttl_cache(ttl=0.25)(_psutil.cpu_percent)
@@ -83,7 +83,7 @@ def reverse_ppid_map():  # pylint: disable=function-redefined
     return tree
 
 
-if LINUX:
+if LINUX:  # noqa: F405
     WSL = _os.getenv('WSL_DISTRO_NAME', default=None)
     if WSL is not None and WSL == '':
         WSL = 'WSL'

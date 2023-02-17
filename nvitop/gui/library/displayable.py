@@ -232,12 +232,10 @@ class DisplayableContainer(Displayable):
         if focused_obj and focused_obj.click(event):
             return True
 
-        for displayable in self.container:
-            if displayable.visible and event in displayable:
-                if displayable.click(event):
-                    return True
-
-        return False
+        return any(
+            displayable.visible and event in displayable and displayable.click(event)
+            for displayable in self.container
+        )
 
     # new methods
 

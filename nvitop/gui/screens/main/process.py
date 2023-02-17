@@ -313,7 +313,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.selection.within_window = False
         if len(self.snapshots) > 0 and self.selection.is_set():
-            y = self.y + 5
+            y = self.y + 5  # noqa: SIM113
             prev_device_index = None
             for process in self.snapshots:
                 device_index = process.device.physical_index
@@ -426,7 +426,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.selection.within_window = False
         if len(self.snapshots) > 0:
-            y = self.y + 5
+            y = self.y + 5  # noqa: SIM113
             prev_device_index = None
             prev_device_display_index = None
             color = -1
@@ -589,7 +589,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 if process.is_zombie or process.no_permissions or process.is_gone:
                     info = info.split(process.command)
                     if process.username != USERNAME and not SUPERUSER:
-                        info = map(lambda item: colored(item, attrs=('dark',)), info)
+                        info = (colored(item, attrs=('dark',)) for item in info)
                     info = colored(
                         process.command, color=('red' if process.is_gone else 'yellow')
                     ).join(info)

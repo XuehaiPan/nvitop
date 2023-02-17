@@ -19,7 +19,7 @@
 import sys
 
 from nvitop import api
-from nvitop.api import *
+from nvitop.api import *  # noqa: F403
 from nvitop.api import collector, device, host, libcuda, libcudart, libnvml, process, utils
 from nvitop.select import select_devices
 from nvitop.version import __version__

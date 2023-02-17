@@ -35,7 +35,7 @@ try:
             VERSION_FILE.write_text(
                 data=re.sub(
                     r"""__version__\s*=\s*('[^']+'|"[^"]+")""",
-                    f"__version__ = '{version.__version__}'",
+                    f'__version__ = {version.__version__!r}',
                     string=VERSION_CONTENT,
                 ),
                 encoding='UTF-8',

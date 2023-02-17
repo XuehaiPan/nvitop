@@ -165,7 +165,7 @@ def select_devices(
 
     available_devices = []  # type: Iterable[DeviceSnapshot]
     for device in devices:
-        available_devices.extend(map(lambda device: device.as_snapshot(), device.to_leaf_devices()))
+        available_devices.extend(dev.as_snapshot() for dev in device.to_leaf_devices())
     for device in available_devices:
         device.loosen_constraints = 0
 
@@ -528,7 +528,7 @@ def main():
 
     retval = 0
     if len(identifiers) < args.min_count:
-        warnings.warn('Not enough devices found.', RuntimeWarning)
+        warnings.warn('Not enough devices found.', RuntimeWarning, stacklevel=1)
         retval = 4
 
     if args.sep == '\0':

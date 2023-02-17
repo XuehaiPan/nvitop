@@ -410,7 +410,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 def colorize(s):
                     if len(s) > 0:
                         # pylint: disable-next=cell-var-from-loop
-                        return colored(s, device.display_color)
+                        return colored(s, device.display_color)  # noqa: B023
                     return ''
 
                 fmts = self.mig_formats if device.is_mig_device else self.formats_full

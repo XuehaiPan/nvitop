@@ -310,10 +310,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             snapshot.prefix = node.prefix
             if len(node.devices) > 0:
                 snapshot.devices = 'GPU ' + ','.join(
-                    map(
-                        lambda device: device.display_index,
-                        sorted(node.devices, key=lambda device: device.tuple_index),
-                    )
+                    dev.display_index
+                    for dev in sorted(node.devices, key=lambda device: device.tuple_index)
                 )
             else:
                 snapshot.devices = 'Host'

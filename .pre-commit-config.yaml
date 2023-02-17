@@ -3,8 +3,8 @@
 ci:
   skip: [pylint]
   autofix_prs: true
-  autofix_commit_msg: 'fix: [pre-commit.ci] auto fixes [...]'
-  autoupdate_commit_msg: 'chore(pre-commit): [pre-commit.ci] autoupdate'
+  autofix_commit_msg: "fix: [pre-commit.ci] auto fixes [...]"
+  autoupdate_commit_msg: "chore(pre-commit): [pre-commit.ci] autoupdate"
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
@@ -39,6 +39,20 @@ repos:
       - id: pyupgrade
         args: [--py36-plus]
         stages: [commit, push, manual]
+  - repo: https://github.com/pycqa/flake8
+    rev: 6.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-docstrings
+          - flake8-pyi
+          - flake8-simplify
+        exclude: |
+          (?x)(
+            ^docs/source/conf.py$
+          )
   - repo: local
     hooks:
       - id: pylint
@@ -52,7 +66,7 @@ repos:
     rev: 6.3.0
     hooks:
       - id: pydocstyle
-        additional_dependencies: ['.[toml]']
+        additional_dependencies: [".[toml]"]
         exclude: |
           (?x)(
             ^nvitop/gui/|

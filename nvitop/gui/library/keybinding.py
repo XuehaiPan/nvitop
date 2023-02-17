@@ -96,10 +96,10 @@ def _special_keys_init():
     for n in range(64):
         SPECIAL_KEYS['F' + str(n)] = curses.KEY_F0 + n
 
-    SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)
+    SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)  # noqa: F821
 
     # Reorder the keys of SPECIAL_KEYS.
-    for key in NAMED_SPECIAL_KEYS:
+    for key in NAMED_SPECIAL_KEYS:  # noqa: F821
         SPECIAL_KEYS.move_to_end(key, last=True)
 
     for key, val in SPECIAL_KEYS.items():
@@ -129,8 +129,7 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
     """
     assert isinstance(obj, (tuple, int, str))
     if isinstance(obj, tuple):
-        for char in obj:
-            yield char
+        yield from obj
     elif isinstance(obj, int):  # pylint: disable=too-many-nested-blocks
         yield obj
     else:  # pylint: disable=too-many-nested-blocks
@@ -325,9 +324,12 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
         self.finished_parsing = False
         self.parse_error = False
 
-        if self.keymap and self.quantifier_key in self.keymap:
-            if self.keymap[self.quantifier_key] == 'false':
-                self.finished_parsing_quantifier = True
+        if (
+            self.keymap
+            and self.quantifier_key in self.keymap
+            and self.keymap[self.quantifier_key] == 'false'
+        ):
+            self.finished_parsing_quantifier = True
 
     def clear(self):
         self.__init__(self.keymap)  # pylint: disable=unnecessary-dunder-call

@@ -702,7 +702,7 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
         Expects an instance. Cache will be stored as a "_cache" instance attribute.
         """
         if not hasattr(self, '_cache'):
-            setattr(self, '_cache', {})
+            self._cache = {}  # pylint: disable=protected-access
 
     def cache_deactivate(self):
         """Deactivate and clear cache."""

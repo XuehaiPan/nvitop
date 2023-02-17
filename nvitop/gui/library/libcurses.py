@@ -261,9 +261,14 @@ class CursesShortcuts:
             for s in attr_strings:
                 attr |= getattr(curses, f'A_{s.upper()}', 0)
 
-        if LIGHT_THEME:  # tweak for light themes
-            if attr & curses.A_REVERSE != 0 and bg == -1 and fg not in (DEFAULT_FOREGROUND, -1):
-                bg = DEFAULT_FOREGROUND
+        # Tweak for light themes
+        if (
+            LIGHT_THEME
+            and attr & curses.A_REVERSE != 0
+            and bg == -1
+            and fg not in (DEFAULT_FOREGROUND, -1)
+        ):
+            bg = DEFAULT_FOREGROUND
 
         if fg == -1 and bg == -1:
             return attr | BASE_ATTR

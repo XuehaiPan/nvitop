@@ -136,3 +136,4 @@ CLI
 submodule
 submodules
 namespace
+noqa

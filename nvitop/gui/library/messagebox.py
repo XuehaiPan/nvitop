@@ -287,8 +287,8 @@ def send_signal(signal, panel):
                 panel.selection.terminate,
                 keys=('T',),
                 attrs=(
-                    dict(y=0, x=0, width=7, fg='red'),
-                    dict(y=0, x=3, width=1, fg='red', attr='bold | underline'),
+                    {'y': 0, 'x': 0, 'width': 7, 'fg': 'red'},
+                    {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
                 ),
             ),
             MessageBox.Option(
@@ -297,8 +297,8 @@ def send_signal(signal, panel):
                 panel.selection.kill,
                 keys=('K',),
                 attrs=(
-                    dict(y=0, x=0, width=7, fg='red'),
-                    dict(y=0, x=3, width=1, fg='red', attr='bold | underline'),
+                    {'y': 0, 'x': 0, 'width': 7, 'fg': 'red'},
+                    {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
                 ),
             ),
             MessageBox.Option(
@@ -307,8 +307,8 @@ def send_signal(signal, panel):
                 panel.selection.interrupt,
                 keys=('I',),
                 attrs=(
-                    dict(y=0, x=0, width=6, fg='red'),
-                    dict(y=0, x=3, width=1, fg='red', attr='bold | underline'),
+                    {'y': 0, 'x': 0, 'width': 6, 'fg': 'red'},
+                    {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
                 ),
             ),
             MessageBox.Option(
@@ -316,7 +316,7 @@ def send_signal(signal, panel):
                 'c',
                 None,
                 keys=('C',),
-                attrs=(dict(y=0, x=0, width=1, attr='bold | underline'),),
+                attrs=({'y': 0, 'x': 0, 'width': 1, 'attr': 'bold | underline'},),
             ),
         ],
         default=default,

@@ -349,7 +349,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         """
         return self.memory_info().rss
 
-    def parent(self) -> Union['HostProcess', None]:
+    def parent(self) -> Optional['HostProcess']:
         """Return the parent process as a :class:`HostProcess` instance or :data:`None` if there is no parent.
 
         Raises:

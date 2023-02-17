@@ -29,7 +29,7 @@ from nvitop.api.device import (
 )
 from nvitop.api.libnvml import NVMLError, nvmlCheckReturn
 from nvitop.api.process import GpuProcess, HostProcess, command_join
-from nvitop.api.utils import *
+from nvitop.api.utils import *  # noqa: F403
 
 
 __all__ = [

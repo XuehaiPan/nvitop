@@ -39,7 +39,7 @@ from typing import Union as _Union
 # Python Bindings for the NVIDIA Management Library (NVML)
 # https://pypi.org/project/nvidia-ml-py
 import pynvml as _pynvml
-from pynvml import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from pynvml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
 
 from nvitop.api.utils import NA
 from nvitop.api.utils import colored as __colored
@@ -63,7 +63,7 @@ if not callable(getattr(_pynvml, 'nvmlInitWithFlags', None)):
     )
 
 
-### Members from `pynvml` ##########################################################################
+# Members from `pynvml` ############################################################################
 
 NVMLError = _pynvml.NVMLError
 NVMLError.__doc__ = """Base exception class for NVML query errors."""
@@ -174,7 +174,7 @@ NVMLError_NotSupported = _pynvml.NVMLError_NotSupported
 NVMLError_Unknown = _pynvml.NVMLError_Unknown
 # pylint: enable=no-member
 
-### New members in `libnvml` #######################################################################
+# New members in `libnvml` #########################################################################
 
 __flags = []
 __initialized = False
@@ -441,7 +441,7 @@ def __patch_backward_compatibility_layers() -> None:
     if __patched_backward_compatibility_layers:
         return
 
-    function_name_mapping_lock = _threading.Lock()
+    function_name_mapping_lock = _threading.Lock()  # noqa: F405
     function_name_mapping = {}
 
     def function_mapping_update(mapping):
@@ -700,7 +700,7 @@ class _CustomModule(_ModuleType):
         except AttributeError:
             return getattr(_pynvml, name)
 
-    def __enter__(self) -> '_CustomModule':
+    def __enter__(self) -> '_CustomModule':  # noqa: F405
         """Entry of the context manager for ``with`` statement."""
         _lazy_init()
         return self
@@ -723,6 +723,6 @@ __modself.__class__ = _CustomModule
 del _CustomModule
 
 # Delete imported references
-del _inspect, _logging, _os, _re, _sys, _threading
+del _logging, _os, _re, _sys, _threading
 del _OrderedDict, _FunctionType, _ModuleType
 del _Tuple, _Callable, _Type, _Union, _Optional, _Any

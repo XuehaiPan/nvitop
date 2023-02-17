@@ -31,7 +31,7 @@ from typing import Type as _Type
 
 _cudaError_t = _ctypes.c_int
 
-## Error codes ##
+# Error codes #
 # pylint: disable=line-too-long
 cudaSuccess = 0
 """The API call returned with no errors. In the case of query calls, this also means that the operation being queried is complete (see :func:`cudaEventQuery` and :func:`cudaStreamQuery`)."""
@@ -262,7 +262,7 @@ cudaErrorUnknown = 999
 # pylint: enable=line-too-long
 
 
-## Error Checking ##
+# Error Checking #
 class cudaError(Exception):
     """Base exception class for CUDA driver query errors."""
 
@@ -386,7 +386,7 @@ def _cudaCheckReturn(ret: _Any) -> _Any:
     return ret
 
 
-## Function access ##
+# Function access #
 __cudaLib = None
 __libLoadLock = _threading.Lock()
 # Function pointers are cached to prevent unnecessary libLoadLock locking

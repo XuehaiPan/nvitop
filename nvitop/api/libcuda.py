@@ -38,7 +38,7 @@ _c_CUdevice_t = _ctypes.POINTER(_struct_c_CUdevice_t)
 
 _CUresult_t = _ctypes.c_uint
 
-## Error codes ##
+# Error codes #
 # pylint: disable=line-too-long
 CUDA_SUCCESS = 0
 """The API call returned with no errors. In the case of query calls, this also means that the operation being queried is complete (see :func:`cuEventQuery` and :func:`cuStreamQuery`)."""
@@ -211,7 +211,7 @@ CUDA_ERROR_UNKNOWN = 999
 # pylint: enable=line-too-long
 
 
-## Error Checking ##
+# Error Checking #
 class CUDAError(Exception):
     """Base exception class for CUDA driver query errors."""
 
@@ -332,7 +332,7 @@ def _cudaCheckReturn(ret: _Any) -> _Any:
     return ret
 
 
-## Function access ##
+# Function access #
 __cudaLib = None
 __initialized = False
 __libLoadLock = _threading.Lock()
