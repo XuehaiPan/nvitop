@@ -60,7 +60,7 @@ import math
 import os
 import sys
 import warnings
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 from nvitop.api import Device, GpuProcess, colored, human2bytes, libnvml
 from nvitop.version import __version__
@@ -76,8 +76,7 @@ except ModuleNotFoundError:
 TTY = sys.stdout.isatty()
 
 
-# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
-def select_devices(
+def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument
     devices: Iterable[Device] = None,
     *,
     format: str = 'index',  # pylint: disable=redefined-builtin
@@ -91,7 +90,7 @@ def select_devices(
     tolerance: int = 0,  # in percentage
     free_accounts: List[str] = None,
     sort: bool = True,
-    **kwargs,  # fmt: skip # pylint: disable=unused-argument
+    **kwargs: Any,
 ) -> Union[List[int], List[Tuple[int, int]], List[str]]:
     """Select a subset of devices satisfying the specified criteria.
 
@@ -163,7 +162,7 @@ def select_devices(
     if isinstance(min_total_memory, str):
         min_total_memory = human2bytes(min_total_memory)
 
-    available_devices = []  # type: Iterable[DeviceSnapshot]
+    available_devices = []
     for device in devices:
         available_devices.extend(dev.as_snapshot() for dev in device.to_leaf_devices())
     for device in available_devices:
@@ -261,20 +260,16 @@ def select_devices(
 
     if format == 'device':
         return [device.real for device in available_devices]
-
     if format == 'uuid':
-        identifiers = [device.uuid for device in available_devices]  # type: List[str]
-    else:
-        identifiers = [
-            device.index for device in available_devices
-        ]  # type: List[int, Tuple[int, int]]
-    return identifiers
+        return [device.uuid for device in available_devices]
+    return [device.index for device in available_devices]
 
 
-def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
+# pylint: disable-next=too-many-branches,too-many-statements
+def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments for ``nvisel``."""
 
-    def non_negint(argstring):
+    def non_negint(argstring: str) -> int:
         num = int(argstring)
         if num < 0:
             raise ValueError
@@ -489,7 +484,7 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     return args
 
 
-def main():
+def main() -> None:
     """Main function for ``nvisel`` CLI."""
     args = parse_arguments()
 

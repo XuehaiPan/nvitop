@@ -391,10 +391,7 @@ def nvmlQuery(
         retval = func(*args, **kwargs)
     except NVMLError_FunctionNotFound as e2:
         if not ignore_function_not_found:
-            if func.__name__ == '<lambda>':
-                identifier = _inspect.getsource(func)
-            else:
-                identifier = repr(func)
+            identifier = _inspect.getsource(func) if func.__name__ == '<lambda>' else repr(func)
             with __lock:
                 if (
                     identifier not in UNKNOWN_FUNCTIONS

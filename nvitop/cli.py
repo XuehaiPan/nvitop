@@ -19,13 +19,14 @@ NVITOP_MONITOR_MODE = set(
 )
 
 
-def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
+# pylint: disable=too-many-branches,too-many-statements
+def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments for ``nvtiop``."""
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(
         colored('light', 'green'), colored('moderate', 'yellow'), colored('heavy', 'red')
     )
 
-    def posint(argstring):
+    def posint(argstring: str) -> int:
         num = int(argstring)
         if num <= 0:
             raise ValueError
@@ -251,7 +252,8 @@ def parse_arguments():  # pylint: disable=too-many-branches,too-many-statements
     return args
 
 
-def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
+def main() -> None:
     """Main function for ``nvitop`` CLI."""
     args = parse_arguments()
 
@@ -272,10 +274,7 @@ def main():  # pylint: disable=too-many-branches,too-many-statements,too-many-lo
 
     if hasattr(args, 'monitor') and args.monitor is None:
         mode = NVITOP_MONITOR_MODE.intersection({'auto', 'full', 'compact'})
-        if len(mode) != 1:
-            mode = 'auto'
-        else:
-            mode = mode.pop()
+        mode = 'auto' if len(mode) != 1 else mode.pop()
         args.monitor = mode
 
     if not setlocale_utf8():

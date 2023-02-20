@@ -483,6 +483,12 @@ def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
                                 _glob.iglob(_os.path.join(candidate_dir, f'cudart{bits}*.dll'))
                             )
 
+                    # Normalize paths and remove duplicates
+                    candidate_paths = list(
+                        dict.fromkeys(
+                            _os.path.normpath(_os.path.normcase(p)) for p in candidate_paths
+                        )
+                    )
                     for lib_filename in candidate_paths:
                         try:
                             __cudaLib = _ctypes.CDLL(lib_filename)

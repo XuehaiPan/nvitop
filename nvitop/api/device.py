@@ -2019,7 +2019,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
         return snapshot
 
-    SNAPSHOT_KEYS = Device.SNAPSHOT_KEYS + ['gpu_instance_id', 'compute_instance_id']
+    SNAPSHOT_KEYS = [*Device.SNAPSHOT_KEYS, 'gpu_instance_id', 'compute_instance_id']
 
 
 class CudaDevice(Device):
@@ -2387,15 +2387,14 @@ def normalize_cuda_visible_devices(cuda_visible_devices: Optional[str] = _VALUE_
 
 # Helper functions #################################################################################
 
-_PhysicalDeviceAttrs = NamedTuple(
-    'PhysicalDeviceAttrs',
-    [
-        ('index', int),
-        ('name', str),
-        ('uuid', str),
-        ('support_mig_mode', bool),
-    ],
-)
+
+class _PhysicalDeviceAttrs(NamedTuple):
+    index: int
+    name: str
+    uuid: str
+    support_mig_mode: bool
+
+
 _PHYSICAL_DEVICE_ATTRS = None
 _GLOBAL_PHYSICAL_DEVICE = None
 _GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
@@ -2551,7 +2550,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
 
 def _parse_cuda_visible_devices_to_uuids(
     cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
-    verbose=True,
+    verbose: bool = True,
 ) -> List[str]:
     """Parse the given ``CUDA_VISIBLE_DEVICES`` environment variable in a separate process and return a list of device UUIDs.
 

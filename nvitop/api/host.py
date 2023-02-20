@@ -40,7 +40,7 @@ __all__[__all__.index('Error')] = 'PsutilError'
 
 
 PsutilError = Error  # make alias # noqa: F405
-del Error  # noqa: F405,F821 # pylint: disable=undefined-variable
+del Error  # noqa: F821 # pylint: disable=undefined-variable
 
 
 cpu_percent = _ttl_cache(ttl=0.25)(_psutil.cpu_percent)

@@ -250,7 +250,7 @@ def collect_in_background(
         raise ValueError(f'Invalid argument interval={interval!r}')
     interval = min(interval, collector.interval)
 
-    def target():
+    def target() -> None:
         if on_start is not None:
             on_start(collector)
         try:
@@ -402,10 +402,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         if devices is None:
             devices = Device.all()
 
-        if root_pids is None:
-            root_pids = {os.getpid()}
-        else:
-            root_pids = set(root_pids)
+        root_pids = {os.getpid()} if root_pids is None else set(root_pids)
 
         self.interval = interval
 

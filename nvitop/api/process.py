@@ -100,7 +100,9 @@ _RAISE = object()
 _USE_FALLBACK_WHEN_RAISE = threading.local()  # see also `GpuProcess.failsafe`
 
 
-def auto_garbage_clean(fallback=_RAISE):
+def auto_garbage_clean(
+    fallback: Any = _RAISE,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Remove the object references in the instance cache if the method call fails (the process is gone).
 
     The fallback value will be used with `:meth:`GpuProcess.failsafe`` context manager, otherwise
@@ -979,7 +981,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @classmethod
     def take_snapshots(  # batched version of `as_snapshot`
-        cls, gpu_processes: Iterable['GpuProcess'], *, failsafe=False
+        cls, gpu_processes: Iterable['GpuProcess'], *, failsafe: bool = False
     ) -> List[Snapshot]:
         """Take snapshots for a list of :class:`GpuProcess` instances.
 

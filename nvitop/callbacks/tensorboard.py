@@ -17,8 +17,28 @@
 
 # pylint: disable=missing-module-docstring
 
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
-def add_scalar_dict(writer, main_tag, tag_scalar_dict, global_step=None, walltime=None):
+
+if TYPE_CHECKING:
+    import numpy as np
+
+    try:
+        from tensorboard.summary import Writer as SummaryWriter
+    except ImportError:
+        try:
+            from tensorboardX import SummaryWriter
+        except ImportError:
+            pass
+
+
+def add_scalar_dict(
+    writer: 'SummaryWriter',
+    main_tag: str,
+    tag_scalar_dict: Dict[str, Union[int, float, 'np.floating']],
+    global_step: Optional[Union[int, 'np.integer']] = None,
+    walltime: Optional[float] = None,
+) -> None:
     """Add a batch of scalars to the writer.
 
     Batched version of ``writer.add_scalar``.
