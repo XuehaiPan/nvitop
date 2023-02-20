@@ -21,6 +21,7 @@
 import datetime
 import functools
 import math
+import os
 import re
 import sys
 import time
@@ -79,6 +80,12 @@ def set_color(value: bool) -> None:
     """Force enable text coloring."""
     global COLOR  # pylint: disable=global-statement
     COLOR = bool(value)
+    if COLOR:
+        os.environ['FORCE_COLOR'] = '1'
+        os.environ.pop('NO_COLOR', None)
+    else:
+        os.environ.pop('FORCE_COLOR', None)
+        os.environ['NO_COLOR'] = '1'
 
 
 def colored(
