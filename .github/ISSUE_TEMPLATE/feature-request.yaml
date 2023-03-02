@@ -23,7 +23,7 @@ body:
       options:
         - label: I have searched the [Issue Tracker](https://github.com/XuehaiPan/nvitop/issues) that this hasn't already been reported. (comment there if it has.)
           required: true
-        - label: I have tried the latest version of nvitop in an new isolated virtual environment.
+        - label: I have tried the latest version of nvitop in a new isolated virtual environment.
           required: false
 
   - type: textarea
