@@ -58,10 +58,7 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
     if len(h2p) >= 2:
         (hm1, pm1), (h2, p2) = h2p[-2:]
         if height < 12:
-            if h2e[hm1] < h2e[h2]:
-                ticks = [(hm1, pm1)]
-            else:
-                ticks = [(h2, p2)]
+            ticks = [(hm1, pm1)] if h2e[hm1] < h2e[h2] else [(h2, p2)]
         else:
             ticks = [(h2, p2)]
             if p2 % 2 == 0:
@@ -96,7 +93,9 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         self.enabled = False
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
-            name='process-metrics-snapshot-daemon', target=self._snapshot_target, daemon=True
+            name='process-metrics-snapshot-daemon',
+            target=self._snapshot_target,
+            daemon=True,
         )
         self._daemon_running = threading.Event()
 
@@ -313,7 +312,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
     def frame_lines(self):
         line = '│' + ' ' * self.left_width + '│' + ' ' * self.right_width + '│'
-        frame = [
+        return [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Process:'.ljust(self.width - 4)),
             '│ {} │'.format('GPU'.ljust(self.width - 4)),
@@ -325,7 +324,6 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             *([line] * self.lower_height),
             '╘' + '═' * self.left_width + '╧' + '═' * self.right_width + '╛',
         ]
-        return frame
 
     def poke(self):
         if self.visible and not self._daemon_running.is_set():
@@ -403,7 +401,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                                 WideString(process.username).rjust(4),
                                 maxlen=32,
                                 padstr='+',
-                            )
+                            ),
                         ),
                     ),
                     (' GPU-MEM', process.gpu_memory_human.rjust(8)),
@@ -414,7 +412,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     ('  %CPU', process.cpu_percent_string.rjust(6)),
                     (' %MEM', process.memory_percent_string.rjust(5)),
                     (' TIME', (' ' + process.running_time_human).rjust(5)),
-                ]
+                ],
             )
 
             x = self.x + 1
@@ -438,7 +436,10 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             self.addstr(self.y + 2, self.x + 1, header.ljust(self.width - 2))
             self.addstr(self.y + 4, self.x + 1, str(fields.ljust(self.width - 2)))
             self.color_at(
-                self.y + 4, self.x + 1, width=4, fg=self.process.device.snapshot.display_color
+                self.y + 4,
+                self.x + 1,
+                width=4,
+                fg=self.process.device.snapshot.display_color,
             )
 
             if no_break:
@@ -448,7 +449,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                         self.y + 2,
                         x,
                         cut_string('COMMAND', self.width - x - 2, padstr='..').ljust(
-                            self.width - x - 2
+                            self.width - x - 2,
                         ),
                     )
                     if process.is_zombie or process.no_permissions:
@@ -471,7 +472,8 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
             self.color(fg='magenta')
             for y, line in enumerate(
-                self.used_host_memory.graph, start=self.y + self.upper_height + 7
+                self.used_host_memory.graph,
+                start=self.y + self.upper_height + 7,
             ):
                 self.addstr(y, self.x + 1, line)
 
@@ -480,7 +482,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     self.upper_height - 1
                 )
                 for i, (y, line) in enumerate(
-                    enumerate(self.used_gpu_memory.graph, start=self.y + 6)
+                    enumerate(self.used_gpu_memory.graph, start=self.y + 6),
                 ):
                     self.addstr(
                         y,
@@ -493,7 +495,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     self.lower_height - 1
                 )
                 for i, (y, line) in enumerate(
-                    enumerate(self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7)
+                    enumerate(self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7),
                 ):
                     self.addstr(
                         y,
@@ -508,7 +510,8 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
                 self.color(fg=self.process.device.snapshot.gpu_display_color)
                 for y, line in enumerate(
-                    self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7
+                    self.gpu_sm_utilization.graph,
+                    start=self.y + self.upper_height + 7,
                 ):
                     self.addstr(y, self.x + self.left_width + 2, line)
 
@@ -528,7 +531,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                         self.used_host_memory.max_value_string(),
                         maxlen=self.left_width - 2,
                         padstr='..',
-                    )
+                    ),
                 ),
             )
             self.addstr(
@@ -539,7 +542,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                         self.used_gpu_memory.max_value_string(),
                         maxlen=self.right_width - 2,
                         padstr='..',
-                    )
+                    ),
                 ),
             )
             self.addstr(self.y + 7, self.x + self.left_width + 6, f' {self.used_gpu_memory} ')
@@ -558,7 +561,8 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 self.addstr(y, self.x, '│')
                 self.addstr(y, self.x + self.left_width + 1, '│')
             for y in range(
-                self.y + self.upper_height + 7, self.y + self.upper_height + self.lower_height + 7
+                self.y + self.upper_height + 7,
+                self.y + self.upper_height + self.lower_height + 7,
             ):
                 self.addstr(y, self.x, '│')
                 self.addstr(y, self.x + self.left_width + 1, '│')

@@ -15,7 +15,10 @@ from nvitop.version import __version__
 
 TTY = sys.stdin.isatty() and sys.stdout.isatty()
 NVITOP_MONITOR_MODE = set(
-    map(str.strip, os.environ.get('NVITOP_MONITOR_MODE', '').lower().split(','))
+    map(
+        str.strip,
+        os.environ.get('NVITOP_MONITOR_MODE', '').lower().split(','),
+    ),
 )
 
 
@@ -23,7 +26,9 @@ NVITOP_MONITOR_MODE = set(
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments for ``nvtiop``."""
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(
-        colored('light', 'green'), colored('moderate', 'yellow'), colored('heavy', 'red')
+        colored('light', 'green'),
+        colored('moderate', 'yellow'),
+        colored('heavy', 'red'),
     )
 
     def posint(argstring: str) -> int:
@@ -59,7 +64,11 @@ def parse_arguments() -> argparse.Namespace:
 
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument(
-        '--once', '-1', dest='once', action='store_true', help='Report query data only once.'
+        '--once',
+        '-1',
+        dest='once',
+        action='store_true',
+        help='Report query data only once.',
     )
     mode.add_argument(
         '--monitor',
@@ -354,7 +363,8 @@ def main() -> None:
             grandparent = parent.parent() if parent is not None else None
             if grandparent is not None and parent.name() == 'sh' and grandparent.name() == 'watch':
                 messages.append(
-                    'HINT: You are running `nvitop` under `watch` command. Please try `nvitop -m` directly.'
+                    'HINT: You are running `nvitop` under `watch` command. '
+                    'Please try `nvitop -m` directly.',
                 )
 
     ui.print()
@@ -364,7 +374,7 @@ def main() -> None:
         unknown_function_messages = [
             'ERROR: Some FunctionNotFound errors occurred while calling:'
             if len(libnvml.UNKNOWN_FUNCTIONS) > 1
-            else 'ERROR: A FunctionNotFound error occurred while calling:'
+            else 'ERROR: A FunctionNotFound error occurred while calling:',
         ]
         unknown_function_messages.extend(
             f'    nvmlQuery({func.__name__!r}, *args, **kwargs)'
@@ -376,8 +386,8 @@ def main() -> None:
                 'You can check the release history of `nvidia-ml-py` and install the compatible version manually.\n'
                 'See {} for more information.'
             ).format(
-                colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',))
-            )
+                colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',)),
+            ),
         )
         message = '\n'.join(unknown_function_messages)
         if (
@@ -393,7 +403,7 @@ def main() -> None:
                     '',
                     '    pip3 install "nvitop[cuda10]"',
                     '',
-                )
+                ),
             ).replace('@VERSION@', Device.driver_version())
         messages.append(message)
 
@@ -409,7 +419,7 @@ def main() -> None:
                 '    pip3 install --upgrade pipx',
                 '    pipx install nvitop',
                 '',
-            )
+            ),
         )
         messages.append(message)
 
@@ -422,7 +432,7 @@ def main() -> None:
                 '',
                 '    pip3 install --upgrade nvitop nvidia-ml-py',
                 '',
-            )
+            ),
         )
         messages.append(message)
 
@@ -430,15 +440,21 @@ def main() -> None:
         for message in messages:
             if message.startswith('ERROR:'):
                 message = message.replace(
-                    'ERROR:', colored('ERROR:', color='red', attrs=('bold',)), 1
+                    'ERROR:',
+                    colored('ERROR:', color='red', attrs=('bold',)),
+                    1,
                 )
             elif message.startswith('WARNING:'):
                 message = message.replace(
-                    'WARNING:', colored('WARNING:', color='yellow', attrs=('bold',)), 1
+                    'WARNING:',
+                    colored('WARNING:', color='yellow', attrs=('bold',)),
+                    1,
                 )
             elif message.startswith('HINT:'):
                 message = message.replace(
-                    'HINT:', colored('HINT:', color='green', attrs=('bold',)), 1
+                    'HINT:',
+                    colored('HINT:', color='green', attrs=('bold',)),
+                    1,
                 )
             print(message, file=sys.stderr)
         return 1

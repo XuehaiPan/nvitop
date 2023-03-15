@@ -129,7 +129,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                     node._gone,  # pylint: disable=protected-access
                     node.username,
                     node.pid,
-                )
+                ),
             )
             for child in self.children:
                 child.is_last = False
@@ -193,9 +193,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                     nodes[cpid] = child = cls(HostProcess(cpid))
                     node.add(child)
 
-        roots = sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
-
-        return roots
+        return sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
 
     @staticmethod
     def freeze(roots):
@@ -231,7 +229,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self._snapshots = []
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
-            name='treeview-snapshot-daemon', target=self._snapshot_target, daemon=True
+            name='treeview-snapshot-daemon',
+            target=self._snapshot_target,
+            daemon=True,
         )
         self._daemon_running = threading.Event()
 
@@ -289,7 +289,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
         cls.take_snapshots = ttl_cache(ttl=interval)(
-            cls.take_snapshots.__wrapped__  # pylint: disable=no-member
+            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
         )
 
     @ttl_cache(ttl=2.0)
@@ -354,7 +354,8 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                         elif y >= self.y + self.height:
                             self.scroll_offset += y - self.y - self.height + 1
                     self.scroll_offset = max(
-                        min(len(self.snapshots) - self.display_height, self.scroll_offset), 0
+                        min(len(self.snapshots) - self.display_height, self.scroll_offset),
+                        0,
                     )
                     break
         else:
@@ -367,14 +368,17 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
         username_width = max(
-            4, max((len(process.username) for process in self.snapshots), default=4)
+            4,
+            max((len(process.username) for process in self.snapshots), default=4),
         )
         device_width = max(6, max((len(process.devices) for process in self.snapshots), default=6))
         num_threads_width = max(
-            4, max((len(str(process.num_threads)) for process in self.snapshots), default=4)
+            4,
+            max((len(str(process.num_threads)) for process in self.snapshots), default=4),
         )
         time_width = max(
-            4, max((len(process.running_time_human) for process in self.snapshots), default=4)
+            4,
+            max((len(process.running_time_human) for process in self.snapshots), default=4),
         )
 
         header = '  '.join(
@@ -387,12 +391,14 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 '%MEM',
                 'TIME'.rjust(time_width),
                 'COMMAND',
-            ]
+            ],
         )
         command_offset = len(header) - 7
         if self.x_offset < command_offset:
             self.addstr(
-                self.y, self.x, header[self.x_offset : self.x_offset + self.width].ljust(self.width)
+                self.y,
+                self.x,
+                header[self.x_offset : self.x_offset + self.width].ljust(self.width),
             )
         else:
             self.addstr(self.y, self.x, 'COMMAND'.ljust(self.width))
@@ -413,7 +419,9 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         self.selection.within_window = False
         processes = islice(
-            self.snapshots, self.scroll_offset, self.scroll_offset + self.display_height
+            self.snapshots,
+            self.scroll_offset,
+            self.scroll_offset + self.display_height,
         )
         for y, process in enumerate(processes, start=self.y + 1):
             prefix_length = len(process.prefix)
@@ -485,7 +493,12 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 attr='bold | italic | reverse',
             )
             self.color_at(
-                self.y, text_offset + 10, width=3, fg='cyan', bg='red', attr='bold | reverse'
+                self.y,
+                text_offset + 10,
+                width=3,
+                fg='cyan',
+                bg='red',
+                attr='bold | reverse',
             )
             self.color_at(
                 self.y,
@@ -496,7 +509,12 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 attr='bold | italic | reverse',
             )
             self.color_at(
-                self.y, text_offset + 17, width=4, fg='cyan', bg='red', attr='bold | reverse'
+                self.y,
+                text_offset + 17,
+                width=4,
+                fg='cyan',
+                bg='red',
+                attr='bold | reverse',
             )
             self.color_at(
                 self.y,
@@ -507,7 +525,12 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 attr='bold | italic | reverse',
             )
             self.color_at(
-                self.y, text_offset + 25, width=4, fg='cyan', bg='red', attr='bold | reverse'
+                self.y,
+                text_offset + 25,
+                width=4,
+                fg='cyan',
+                bg='red',
+                attr='bold | reverse',
             )
 
     def finalize(self):

@@ -43,7 +43,9 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.memory_percent = None
         self.swap_percent = None
         self._snapshot_daemon = threading.Thread(
-            name='host-snapshot-daemon', target=self._snapshot_target, daemon=True
+            name='host-snapshot-daemon',
+            target=self._snapshot_target,
+            daemon=True,
         )
         self._daemon_running = threading.Event()
 
@@ -262,7 +264,11 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.color_at(self.y + 1, self.x, width=width_left, fg='magenta', attr='bold')
             self.color_at(self.y, self.x + width_left + 2, width=width_right, attr='bold')
             self.color_at(
-                self.y + 1, self.x + width_left + 2, width=width_right, fg='blue', attr='bold'
+                self.y + 1,
+                self.x + width_left + 2,
+                width=width_right,
+                fg='blue',
+                attr='bold',
             )
             return
 

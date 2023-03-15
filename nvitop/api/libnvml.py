@@ -56,7 +56,7 @@ __all__ = [  # will be updated in below
 if not callable(getattr(_pynvml, 'nvmlInitWithFlags', None)):
     raise ImportError(
         'Your installed package `nvidia-ml-py` is corrupted. Please reinstall package '
-        '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.'
+        '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
     )
 
 
@@ -79,7 +79,7 @@ _errcode_to_string = NVMLError._errcode_to_string  # pylint: disable=protected-a
 for _name, _attr in _vars_pynvml.items():
     if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
         continue
-    if _name.startswith('NVML_ERROR_') or _name.startswith('NVMLError_'):
+    if _name.startswith(('NVML_ERROR_', 'NVMLError_')):
         __all__.append(_name)
         if _name.startswith('NVML_ERROR_'):
             _errcode_to_name[_attr] = _name
@@ -101,7 +101,9 @@ _errcode = _reason = _subclass = None
 for _errcode, _reason in _errcode_to_string.items():
     _subclass = nvmlExceptionClass(_errcode)
     _subclass.__doc__ = '{}. Code: :data:`{}` ({})'.format(
-        _reason.rstrip('.'), _errcode_to_name[_errcode], _errcode
+        _reason.rstrip('.'),
+        _errcode_to_name[_errcode],
+        _errcode,
     )
 
 # 4. Add undocumented constants into module docstring
@@ -184,7 +186,7 @@ except (ValueError, TypeError):
     pass
 if not LOGGER.hasHandlers() and LOGGER.isEnabledFor(_logging.DEBUG):
     _formatter = _logging.Formatter(
-        '[%(levelname)s] %(asctime)s %(name)s::%(funcName)s: %(message)s'
+        '[%(levelname)s] %(asctime)s %(name)s::%(funcName)s: %(message)s',
     )
     _stream_handler = _logging.StreamHandler()
     _stream_handler.setFormatter(_formatter)
@@ -332,11 +334,11 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
 
 def nvmlQuery(
     func: _Callable[..., _Any] | str,
-    *args,
+    *args: _Any,
     default: _Any = NA,
     ignore_errors: bool = True,
     ignore_function_not_found: bool = False,
-    **kwargs,
+    **kwargs: _Any,
 ) -> _Any:
     """Call a function with the given arguments from NVML.
 
@@ -416,7 +418,10 @@ def nvmlQuery(
     return retval
 
 
-def nvmlCheckReturn(retval: _Any, types: type | tuple[type, ...] | None = None) -> bool:
+def nvmlCheckReturn(
+    retval: _Any,
+    types: type | tuple[type, ...] | None = None,
+) -> bool:
     """Check whether the return value is not :const:`nvitop.NA` and is one of the given types."""
     if types is None:
         return retval != NA
@@ -433,7 +438,7 @@ def __patch_backward_compatibility_layers() -> None:
     if __patched_backward_compatibility_layers:
         return
 
-    function_name_mapping_lock = _threading.Lock()  # noqa: F405
+    function_name_mapping_lock = _threading.Lock()
     function_name_mapping = {}
 
     def function_mapping_update(mapping):
@@ -456,8 +461,8 @@ def __patch_backward_compatibility_layers() -> None:
 
         _pynvml.__dict__.update(  # need to use module.__dict__.__setitem__ because module.__setattr__ will not work
             _nvmlGetFunctionPointer=wrapper(
-                _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access,no-member
-            )
+                _pynvml._nvmlGetFunctionPointer,  # pylint: disable=protected-access,no-member
+            ),
         )
 
     def patch_function_pointers_when_fail(names, callback):
@@ -514,8 +519,12 @@ def __patch_backward_compatibility_layers() -> None:
         }
 
         def patch_process_info_callback(
-            name, names, exception, pynvml, modself
-        ):  # pylint: disable=unused-argument
+            name,
+            names,  # pylint: disable=unused-argument
+            exception,
+            pynvml,
+            modself,
+        ):
             if name in nvmlDeviceGetRunningProcesses_v3_v2:
                 mapping = nvmlDeviceGetRunningProcesses_v3_v2
                 struct_type = c_nvmlProcessInfo_v2_t
@@ -533,7 +542,8 @@ def __patch_backward_compatibility_layers() -> None:
             for old_name, mapped_name in mapping.items():
                 LOGGER.debug('    Map NVML function `%s` to `%s`', old_name, mapped_name)
             LOGGER.debug(
-                '    Patch NVML struct `c_nvmlProcessInfo_t` to `%s`', struct_type.__name__
+                '    Patch NVML struct `c_nvmlProcessInfo_t` to `%s`',
+                struct_type.__name__,
             )
             return mapping[name]
 
@@ -547,9 +557,9 @@ def __patch_backward_compatibility_layers() -> None:
                     names=set(nvmlDeviceGetRunningProcesses_v2_v1),
                     callback=patch_process_info_callback,
                 )(
-                    _pynvml._nvmlGetFunctionPointer  # pylint: disable=protected-access,no-member
-                )
-            )
+                    _pynvml._nvmlGetFunctionPointer,  # pylint: disable=protected-access,no-member
+                ),
+            ),
         )
 
     with_mapped_function_name()  # patch first and only for once
@@ -570,7 +580,8 @@ _pynvml_get_memory_info_v2_available = _pynvml_memory_v2_available
 _driver_get_memory_info_v2_available = None if not _pynvml_installation_corrupted else False
 
 
-def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-many-branches
+# pylint: disable-next=function-redefined,too-many-branches
+def nvmlDeviceGetMemoryInfo(handle: c_nvmlDevice_t) -> _pynvml.c_nvmlMemory_t:
     """Retrieve the amount of used, free, reserved and total memory available on the device, in bytes.
 
     Note:
@@ -620,7 +631,8 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-m
                         with __lock:
                             _pynvml_get_memory_info_v2_available = False
                         LOGGER.debug(
-                            'NVML memory info version 2 is not available due to incompatible `nvidia-ml-py` package.'
+                            'NVML memory info version 2 is not available '
+                            'due to incompatible `nvidia-ml-py` package.',
                         )
                     else:
                         # driver ✔ pynvml ? user ✘
@@ -634,7 +646,8 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-m
                     with __lock:
                         _pynvml_get_memory_info_v2_available = False
                     LOGGER.debug(
-                        'NVML memory info version 2 is not available due to incompatible NVIDIA driver.'
+                        'NVML memory info version 2 is not available '
+                        'due to incompatible NVIDIA driver.',
                     )
                 else:
                     # driver ✔ pynvml ✔
@@ -647,19 +660,19 @@ def nvmlDeviceGetMemoryInfo(handle):  # pylint: disable=function-redefined,too-m
                     'your NVIDIA driver does support the NVML memory info version 2 APIs. NVML '
                     'memory info version 2 is not available due to the legacy dependencies. '
                     'Please consider upgrading your `nvidia-ml-py` package by running '
-                    '`pip3 install --upgrade nvitop nvidia-ml-py`.'
+                    '`pip3 install --upgrade nvitop nvidia-ml-py`.',
                 )
         elif _pynvml_memory_v2_available:
             # driver ✘ pynvml ?
             LOGGER.debug(
-                'NVML memory info version 2 is not available due to incompatible NVIDIA driver.'
+                'NVML memory info version 2 is not available due to incompatible NVIDIA driver.',
             )
         else:
             # driver ✘ pynvml ✘
             LOGGER.debug(
                 'NVML constant `nvmlMemory_v2` not found in package `nvidia-ml-py`, and '
                 'your NVIDIA driver does not support the NVML memory info version 2 APIs. '
-                'NVML memory info version 2 is not available.'
+                'NVML memory info version 2 is not available.',
             )
 
     elif _pynvml_get_memory_info_v2_available:
@@ -697,12 +710,8 @@ class _CustomModule(_ModuleType):
         _lazy_init()
         return self
 
-    def __exit__(self, *args, **kwargs) -> None:
+    def __exit__(self, *args: _Any, **kwargs: _Any) -> None:
         """Shutdown the NVML context in the context manager for ``with`` statement."""
-        self.__del__()
-
-    def __del__(self) -> None:
-        """Automatically shutdown the NVML context on destruction."""
         try:
             nvmlShutdown()
         except NVMLError:

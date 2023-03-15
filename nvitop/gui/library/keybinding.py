@@ -41,7 +41,7 @@ SPECIAL_KEYS = OrderedDict(
         ('S-Tab', curses.KEY_BTAB),
         ('lt', ord('<')),
         ('gt', ord('>')),
-    ]
+    ],
 )
 
 NAMED_SPECIAL_KEYS = tuple(SPECIAL_KEYS.keys())
@@ -55,7 +55,7 @@ VERY_SPECIAL_KEYS = {
 
 
 def _uncase_special_key(string):
-    """Uncase a special key
+    """Uncase a special key.
 
     >>> _uncase_special_key('Esc')
     'esc'
@@ -71,7 +71,7 @@ def _uncase_special_key(string):
     'a-x'
     """
     uncased = string.lower()
-    if len(uncased) == 3 and (uncased.startswith('a-') or uncased.startswith('m-')):
+    if len(uncased) == 3 and (uncased.startswith(('a-', 'm-'))):
         uncased = f'{uncased[0]}-{string[-1]}'
     return uncased
 
@@ -176,7 +176,7 @@ def key_to_string(key):
 
 
 def construct_keybinding(keys):
-    """Does the reverse of parse_keybinding
+    """Do the reverse of parse_keybinding.
 
     >>> construct_keybinding(parse_keybinding('lol<CR>'))
     'lol<Enter>'
@@ -211,7 +211,7 @@ def construct_keybinding(keys):
 
 
 def normalize_keybinding(keybinding):
-    """Normalize a keybinding to a string
+    """Normalize a keybinding to a string.
 
     >>> normalize_keybinding('lol<CR>')
     'lol<Enter>'
@@ -275,7 +275,7 @@ class KeyMaps(dict):
                 pointer = pointer[key]
             except KeyError as ex:
                 raise KeyError(
-                    f'Tried to copy the keybinding `{source}`, but it was not found.'
+                    f'Tried to copy the keybinding `{source}`, but it was not found.',
                 ) from ex
         try:
             self.bind(context, target, copy.deepcopy(pointer))

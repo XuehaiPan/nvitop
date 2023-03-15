@@ -20,7 +20,10 @@
 utilization (CPU, memory, disks, network, sensors) in Python.
 """
 
+from __future__ import annotations
+
 import os as _os
+from typing import Callable as _Callable
 
 import psutil as _psutil
 from cachetools.func import ttl_cache as _ttl_cache
@@ -49,30 +52,32 @@ swap_memory = _ttl_cache(ttl=0.25)(_psutil.swap_memory)
 
 
 try:
-    load_average = _ttl_cache(ttl=2.0)(_psutil.getloadavg)
+    load_average: _Callable[[], tuple[float, float, float]] = _ttl_cache(ttl=2.0)(
+        _psutil.getloadavg,
+    )
     load_average.__doc__ = """Get the system load average."""
 except AttributeError:
 
-    def load_average():
+    def load_average() -> None:
         """Get the system load average."""
-        return None
+        return
 
 
-def memory_percent():
+def memory_percent() -> float:
     """The percentage usage of virtual memory, calculated as ``(total - available) / total * 100``."""
     return virtual_memory().percent
 
 
-def swap_percent():
+def swap_percent() -> float:
     """The percentage usage of virtual memory, calculated as ``used / total * 100``."""
     return swap_memory().percent
 
 
-ppid_map = _psutil._ppid_map  # pylint: disable=protected-access
+ppid_map: _Callable[[], dict[int, int]] = _psutil._ppid_map  # pylint: disable=protected-access
 """Obtain a ``{pid: ppid, ...}`` dict for all running processes in one shot."""
 
 
-def reverse_ppid_map():  # pylint: disable=function-redefined
+def reverse_ppid_map() -> dict[int, list[int]]:  # pylint: disable=function-redefined
     """Obtain a ``{ppid: [pid, ...], ...}`` dict for all running processes in one shot."""
     from collections import defaultdict  # pylint: disable=import-outside-toplevel
 
@@ -91,6 +96,3 @@ else:
     WSL = None
 WINDOWS_SUBSYSTEM_FOR_LINUX = WSL
 """The Linux distribution name of the Windows Subsystem for Linux."""
-
-
-del _os, _ttl_cache

@@ -41,7 +41,7 @@ PAIR2SYMBOL_DOWN = {
     for s1, s2 in itertools.product(SYMBOL2VALUE_DOWN, repeat=2)
 }
 GRAPH_SYMBOLS = ''.join(
-    sorted(set(itertools.chain(VALUE2SYMBOL_UP.values(), VALUE2SYMBOL_DOWN.values())))
+    sorted(set(itertools.chain(VALUE2SYMBOL_UP.values(), VALUE2SYMBOL_DOWN.values()))),
 ).replace(' ', '')
 
 
@@ -92,7 +92,8 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
 
         self.maxlen = 2 * self.width + 1
         self.history = deque(
-            [self.baseline - 0.1] * (2 * self.MAX_WIDTH + 1), maxlen=(2 * self.MAX_WIDTH + 1)
+            [self.baseline - 0.1] * (2 * self.MAX_WIDTH + 1),
+            maxlen=(2 * self.MAX_WIDTH + 1),
         )
         self.reversed_history = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
         self._max_value_maintainer = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
@@ -118,18 +119,23 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     @width.setter
     def width(self, value):
         if self._width != value:
-            assert isinstance(value, int) and value >= 1
+            assert isinstance(value, int)
+            assert value >= 1
             self._width = value
             with self.write_lock:
                 self.maxlen = 2 * self.width + 1
                 self.reversed_history = deque(
-                    (self.baseline - 0.1,) * self.maxlen, maxlen=self.maxlen
+                    (self.baseline - 0.1,) * self.maxlen,
+                    maxlen=self.maxlen,
                 )
                 self._max_value_maintainer = deque(
-                    (self.baseline - 0.1,) * self.maxlen, maxlen=self.maxlen
+                    (self.baseline - 0.1,) * self.maxlen,
+                    maxlen=self.maxlen,
                 )
                 for history in itertools.islice(
-                    self.history, max(0, self.history.maxlen - self.maxlen), self.history.maxlen
+                    self.history,
+                    max(0, self.history.maxlen - self.maxlen),
+                    self.history.maxlen,
                 ):
                     if self.reversed_history[-1] == self._max_value_maintainer[0]:
                         self._max_value_maintainer.popleft()
@@ -149,7 +155,8 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     @height.setter
     def height(self, value):
         if self._height != value:
-            assert isinstance(value, int) and value >= 1
+            assert isinstance(value, int)
+            assert value >= 1
             self._height = value
             self.remake_graph()
 
@@ -160,8 +167,10 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     @graph_size.setter
     def graph_size(self, value):
         width, height = value
-        assert isinstance(width, int) and width >= 1
-        assert isinstance(height, int) and height >= 1
+        assert isinstance(width, int)
+        assert width >= 1
+        assert isinstance(height, int)
+        assert height >= 1
         self._height = height
         self._width = width - 1  # trigger force remake
         self.width = width

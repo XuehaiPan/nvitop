@@ -62,7 +62,7 @@ if host.POSIX:
         if "'" not in s and '\n' not in s:
             return f"'{s}'"
         return '"{}"'.format(
-            s.replace('\\', r'\\').replace('"', r'\"').replace('$', r'\$').replace('\n', r'\n')
+            s.replace('\\', r'\\').replace('"', r'\"').replace('$', r'\$').replace('\n', r'\n'),
         )
 
 elif host.WINDOWS:
@@ -77,7 +77,7 @@ elif host.WINDOWS:
             if '"' not in s:
                 return f'"{s}"'
         return '"{}"'.format(
-            s.replace('^', '^^').replace('"', '^"').replace('%', '^%').replace('\n', r'\n')
+            s.replace('^', '^^').replace('"', '^"').replace('%', '^%').replace('\n', r'\n'),
         )
 
 else:
@@ -113,7 +113,7 @@ def auto_garbage_clean(
 
     def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapped(self: GpuProcess, *args, **kwargs):
+        def wrapped(self: GpuProcess, *args: Any, **kwargs: Any) -> Any:
             try:
                 return func(self, *args, **kwargs)
             except host.PsutilError as ex:
@@ -127,9 +127,8 @@ def auto_garbage_clean(
                         del HostProcess.INSTANCES[self.pid]
                 except KeyError:
                     pass
-                if fallback is _RAISE or not getattr(
-                    _USE_FALLBACK_WHEN_RAISE, 'value', False  # see also `GpuProcess.failsafe`
-                ):
+                # See also `GpuProcess.failsafe`
+                if fallback is _RAISE or not getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False):
                     raise ex
                 if isinstance(fallback, tuple):
                     if isinstance(ex, host.AccessDenied) and fallback == ('No Such Process',):
@@ -381,7 +380,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
     @contextlib.contextmanager
-    def oneshot(self):
+    def oneshot(self) -> contextlib.AbstractContextManager:
         """A utility context manager which considerably speeds up the retrieval of multiple process information at the same time.
 
         Internally different process info (e.g. name, ppid, uids, gids, ...) may be fetched by using
@@ -416,7 +415,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                         self.running_time.cache_deactivate(self)
 
     def as_snapshot(
-        self, attrs: Iterable[str] | None = None, ad_value: Any | None = None
+        self,
+        attrs: Iterable[str] | None = None,
+        ad_value: Any | None = None,
     ) -> Snapshot:
         """Return a onetime snapshot of the process."""
         with self.oneshot():
@@ -912,7 +913,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def host_snapshot(self) -> Snapshot:
         """Return a onetime snapshot of the host process."""
         with self.host.oneshot():
-            host_snapshot = Snapshot(
+            return Snapshot(
                 real=self.host,
                 is_running=self.is_running(),
                 status=self.status(),
@@ -929,11 +930,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 running_time_in_seconds=self.running_time_in_seconds(),
             )
 
-        return host_snapshot
-
     @auto_garbage_clean(fallback=_RAISE)
     def as_snapshot(
-        self, *, host_process_snapshot_cache: dict[int, Snapshot] | None = None
+        self,
+        *,
+        host_process_snapshot_cache: dict[int, Snapshot] | None = None,
     ) -> Snapshot:
         """Return a onetime snapshot of the process on the GPU device.
 
@@ -983,7 +984,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @classmethod
     def take_snapshots(  # batched version of `as_snapshot`
-        cls, gpu_processes: Iterable[GpuProcess], *, failsafe: bool = False
+        cls,
+        gpu_processes: Iterable[GpuProcess],
+        *,
+        failsafe: bool = False,
     ) -> list[Snapshot]:
         """Take snapshots for a list of :class:`GpuProcess` instances.
 
@@ -993,15 +997,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         cache = {}
         context = cls.failsafe if failsafe else contextlib.nullcontext
         with context():
-            snapshots = [
+            return [
                 process.as_snapshot(host_process_snapshot_cache=cache) for process in gpu_processes
             ]
 
-        return snapshots
-
     @classmethod
     @contextlib.contextmanager
-    def failsafe(cls):
+    def failsafe(cls) -> contextlib.AbstractContextManager:
         """A context manager that enables fallback values for methods that fail.
 
         Examples:

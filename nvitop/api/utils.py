@@ -491,7 +491,8 @@ SIZE_UNITS = {
 }
 """Units of storage and memory measurements."""
 SIZE_PATTERN = re.compile(
-    r'^\s*\+?\s*(?P<size>\d+(?:\.\d+)?)\s*(?P<unit>[KMGTP]i?B?|B?)\s*$', flags=re.IGNORECASE
+    r'^\s*\+?\s*(?P<size>\d+(?:\.\d+)?)\s*(?P<unit>[KMGTP]i?B?|B?)\s*$',
+    flags=re.IGNORECASE,
 )
 """The regex pattern for human readable size."""
 
@@ -607,7 +608,7 @@ class Snapshot:
     Missing attributes will be automatically fetched from the original object.
     """
 
-    def __init__(self, real: Any, **items) -> None:
+    def __init__(self, real: Any, **items: Any) -> None:
         """Initialize a new :class:`Snapshot` object with the given attributes."""
         self.real = real
         self.timestamp = time.time()
@@ -626,7 +627,9 @@ class Snapshot:
                 keyval = keyval.replace('\n', '\n    ')  # extra indentation for nested snapshots
             keyvals.append(keyval)
         return '{}{}(\n    {},\n)'.format(
-            self.real.__class__.__name__, self.__class__.__name__, ',\n    '.join(keyvals)
+            self.real.__class__.__name__,
+            self.__class__.__name__,
+            ',\n    '.join(keyvals),
         )
 
     __repr__ = __str__
@@ -686,7 +689,7 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
     """
 
     @functools.wraps(method)
-    def wrapped(self):
+    def wrapped(self):  # noqa: ANN001,ANN202
         try:
             # case 1: we previously entered oneshot() ctx
             ret = self._cache[method]  # pylint: disable=protected-access
@@ -705,7 +708,7 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
                 pass
         return ret
 
-    def cache_activate(self):
+    def cache_activate(self):  # noqa: ANN001,ANN202
         """Activate cache.
 
         Expects an instance. Cache will be stored as a "_cache" instance attribute.
@@ -713,7 +716,7 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
         if not hasattr(self, '_cache'):
             self._cache = {}  # pylint: disable=protected-access
 
-    def cache_deactivate(self):
+    def cache_deactivate(self):  # noqa: ANN001,ANN202
         """Deactivate and clear cache."""
         try:
             del self._cache  # pylint: disable=protected-access

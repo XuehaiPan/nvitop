@@ -124,7 +124,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes
             self.send_signal(
                 signal.SIGINT
                 if not host.WINDOWS
-                else signal.CTRL_C_EVENT  # pylint: disable=no-member
+                else signal.CTRL_C_EVENT,  # pylint: disable=no-member
             )
         except SystemError:
             pass

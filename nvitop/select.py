@@ -245,7 +245,7 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
                 (not math.isnan(device.gpu_utilization), device.gpu_utilization),  # ascending
                 (not math.isnan(device.memory_utilization), device.memory_utilization),  # ascending
                 -device.physical_index,  # descending to keep <GPU 0> free
-            )
+            ),
         )
 
     if any(device.is_mig_device for device in available_devices):  # found MIG devices!

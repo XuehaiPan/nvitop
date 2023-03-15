@@ -7,7 +7,7 @@ from nvitop.gui.library import Device, Displayable, MouseEvent
 from nvitop.version import __version__
 
 
-HELP_TEMPLATE = '''nvitop {} - (C) Xuehai Pan, 2021-2023.
+HELP_TEMPLATE = """nvitop {} - (C) Xuehai Pan, 2021-2023.
 Released under the GNU GPLv3 License.
 
 GPU Process Type: C: Compute, G: Graphics, X: Mixed.
@@ -38,7 +38,7 @@ Device coloring rules by loading intensity:
         , .: select sort column                   /: invert sort order
 
 Press any key to return.
-'''
+"""
 
 
 class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes

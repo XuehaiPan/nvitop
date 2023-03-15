@@ -60,14 +60,16 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.snapshot_lock = threading.Lock()
         self.snapshots = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(
-            name='device-snapshot-daemon', target=self._snapshot_target, daemon=True
+            name='device-snapshot-daemon',
+            target=self._snapshot_target,
+            daemon=True,
         )
         self._daemon_running = threading.Event()
 
         self.formats_compact = [
             '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
             '{performance_state:>3} {power_status:>12} '
-            '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+            '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full = [
             '│ {physical_index:>3}  {name:<18}  {persistence_mode:<4} '
@@ -78,12 +80,13 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.mig_formats = [
             '│{physical_index:>2}:{mig_index:<2}{name:>12} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
-            '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │'
+            '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │',
         ]
 
         if host.WINDOWS:
             self.formats_full[0] = self.formats_full[0].replace(
-                'persistence_mode', 'current_driver_model'
+                'persistence_mode',
+                'current_driver_model',
             )
 
         self.support_mig = any('N/A' not in device.mig_mode for device in self.snapshots)
@@ -143,10 +146,12 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
                 device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
                 device.display_active = device.display_active.replace('Enabled', 'On').replace(
-                    'Disabled', 'Off'
+                    'Disabled',
+                    'Off',
                 )
                 device.persistence_mode = device.persistence_mode.replace('Enabled', 'On').replace(
-                    'Disabled', 'Off'
+                    'Disabled',
+                    'Off',
                 )
                 device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')
                 device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')
@@ -183,25 +188,25 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
         if self.device_count > 0:
             header.append(
-                '├───────────────────────────────┬──────────────────────┬──────────────────────┤'
+                '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
             )
             if compact:
                 header.append(
-                    '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │'
+                    '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │',
                 )
             else:
                 header.extend(
                     (
                         '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
                         '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-                    )
+                    ),
                 )
                 if host.WINDOWS:
                     header[-2] = header[-2].replace('Persistence-M', '    TCC/WDDM ')
                 if self.support_mig:
                     header[-2] = header[-2].replace('Volatile Uncorr. ECC', 'MIG M.   Uncorr. ECC')
             header.append(
-                '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡'
+                '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡',
             )
         else:
             header.extend(
@@ -209,7 +214,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     '╞═════════════════════════════════════════════════════════════════════════════╡',
                     '│  No visible devices found                                                   │',
                     '╘═════════════════════════════════════════════════════════════════════════════╛',
-                )
+                ),
             )
         return header
 
@@ -241,7 +246,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
             frame.pop()
             frame.append(
-                '╘═══════════════════════════════╧══════════════════════╧══════════════════════╛'
+                '╘═══════════════════════════════╧══════════════════════╧══════════════════════╛',
             )
             if self.width >= 100:
                 frame[5 - int(compact)] = (
@@ -273,10 +278,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.addstr(self.y, self.x, cut_string(time.strftime('%a %b %d %H:%M:%S %Y'), maxlen=32))
 
-        if self.compact:
-            formats = self.formats_compact
-        else:
-            formats = self.formats_full
+        formats = self.formats_compact if self.compact else self.formats_full
 
         remaining_width = self.width - 79
         draw_bars = self.width >= 100
@@ -375,7 +377,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         full_bar_len = width - prefix_len - 5
                         self.color_at(y, x_offset, width=width, fg=float(bar_len / full_bar_len))
                         for i, x in enumerate(
-                            range(x_offset + prefix_len + 1, x_offset + prefix_len + 1 + bar_len)
+                            range(x_offset + prefix_len + 1, x_offset + prefix_len + 1 + bar_len),
                         ):
                             self.color_at(y, x, width=1, fg=float(i / full_bar_len))
                     else:
@@ -404,7 +406,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     or prev_device_index[0] != device.tuple_index[0]
                 ):
                     lines.append(
-                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
+                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
                     )
 
                 def colorize(s):
@@ -421,7 +423,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 prev_device_index = device.tuple_index
 
             lines.append(
-                '╘═══════════════════════════════╧══════════════════════╧══════════════════════╛'
+                '╘═══════════════════════════════╧══════════════════════╧══════════════════════╛',
             )
 
             if self.width >= 100:
@@ -458,7 +460,9 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         matrix.pop()
                     for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
                         bar = make_bar(  # pylint: disable=disallowed-name
-                            prefix, utilization, width=remaining_width - 3
+                            prefix,
+                            utilization,
+                            width=remaining_width - 3,
                         )
                         lines[y] += f' {colored(bar, color)} │'
 

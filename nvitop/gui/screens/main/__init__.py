@@ -12,7 +12,7 @@ from nvitop.gui.screens.main.host import HostPanel
 from nvitop.gui.screens.main.process import ProcessPanel
 
 
-class BreakLoop(Exception):
+class BreakLoop(Exception):  # noqa: N818
     pass
 
 
@@ -44,7 +44,11 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         self.add_child(self.host_panel)
 
         self.process_panel = ProcessPanel(
-            self.device_panel.leaf_devices, compact, filters, win=win, root=root
+            self.device_panel.leaf_devices,
+            compact,
+            filters,
+            win=win,
+            root=root,
         )
         self.process_panel.focused = False
         self.add_child(self.process_panel)
@@ -265,8 +269,12 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         keymaps.bind('main', '/', order_reverse)
         for order in ProcessPanel.ORDERS:
             keymaps.bind(
-                'main', 'o' + order[:1].lower(), partial(sort_by, order=order, reverse=False)
+                'main',
+                'o' + order[:1].lower(),
+                partial(sort_by, order=order, reverse=False),
             )
             keymaps.bind(
-                'main', 'o' + order[:1].upper(), partial(sort_by, order=order, reverse=True)
+                'main',
+                'o' + order[:1].upper(),
+                partial(sort_by, order=order, reverse=True),
             )

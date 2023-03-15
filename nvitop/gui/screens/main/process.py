@@ -142,7 +142,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._snapshots = []
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
-            name='process-snapshot-daemon', target=self._snapshot_target, daemon=True
+            name='process-snapshot-daemon',
+            target=self._snapshot_target,
+            daemon=True,
         )
         self._daemon_running = threading.Event()
 
@@ -168,7 +170,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self._compact = value
             processes = self.snapshots
             n_processes, n_devices = len(processes), len(
-                {p.device.physical_index for p in processes}
+                {p.device.physical_index for p in processes},
             )
             self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
             self.compact_height = 1 + max(6, 5 + n_processes)
@@ -242,7 +244,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
         cls.take_snapshots = ttl_cache(ttl=interval)(
-            cls.take_snapshots.__wrapped__  # pylint: disable=no-member
+            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
         )
 
     def ensure_snapshots(self):
@@ -265,7 +267,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     ' ' * (time_length - len(snapshot.running_time_human))
                     + snapshot.running_time_human,
                     snapshot.command,
-                )
+                ),
             )
 
         with self.snapshot_lock:
@@ -284,7 +286,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
             '│ GPU     PID      USER  GPU-MEM %SM  {} │'.format(
-                '  '.join(self.host_headers).ljust(self.width - 40)
+                '  '.join(self.host_headers).ljust(self.width - 40),
             ),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
@@ -294,14 +296,14 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             else:
                 message = ' Gathering process status...'
             header.extend(
-                [f'│ {message.ljust(self.width - 4)} │', '╘' + '═' * (self.width - 2) + '╛']
+                [f'│ {message.ljust(self.width - 4)} │', '╘' + '═' * (self.width - 2) + '╛'],
             )
         return header
 
     @property
     def processes(self):
         return list(
-            itertools.chain.from_iterable(device.processes().values() for device in self.devices)
+            itertools.chain.from_iterable(device.processes().values() for device in self.devices),
         )
 
     def poke(self):
@@ -313,7 +315,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.selection.within_window = False
         if len(self.snapshots) > 0 and self.selection.is_set():
-            y = self.y + 5  # noqa: SIM113
+            y = self.y + 5
             prev_device_index = None
             for process in self.snapshots:
                 device_index = process.device.physical_index
@@ -397,7 +399,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             if offset > 38 or host_offset == 0:
                 self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
                 self.color_at(
-                    self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline'
+                    self.y + 3,
+                    self.x + offset - 1,
+                    width=column_width,
+                    attr='bold | underline',
                 )
             elif offset <= 38 < offset + column_width:
                 self.addstr(self.y + 3, self.x + 38, (column + indicator)[39 - offset :])
@@ -415,7 +420,10 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         else:
             self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
             self.color_at(
-                self.y + 3, self.x + offset - 1, width=column_width, attr='bold | underline'
+                self.y + 3,
+                self.x + offset - 1,
+                width=column_width,
+                attr='bold | underline',
             )
             self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
 
@@ -426,7 +434,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.selection.within_window = False
         if len(self.snapshots) > 0:
-            y = self.y + 5  # noqa: SIM113
+            y = self.y + 5
             prev_device_index = None
             prev_device_display_index = None
             color = -1
@@ -457,7 +465,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         cut_string(process.pid, maxlen=7, padstr='.'),
                         process.type,
                         str(
-                            WideString(cut_string(process.username, maxlen=7, padstr='+')).rjust(7)
+                            WideString(cut_string(process.username, maxlen=7, padstr='+')).rjust(7),
                         ),
                         process.gpu_memory_human,
                         process.gpu_sm_utilization_string.replace('%', ''),
@@ -542,7 +550,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     def print_width(self):
         self.ensure_snapshots()
         return min(
-            self.width, max((39 + len(process.host_info) for process in self.snapshots), default=79)
+            self.width,
+            max((39 + len(process.host_info) for process in self.snapshots), default=79),
         )
 
     def print(self):
@@ -556,7 +565,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 colored('@', attrs=('bold',)),
                 colored(HOSTNAME, color='green', attrs=('bold',)),
                 lines[2][-2:],
-            )
+            ),
         )
 
         if len(self.snapshots) > 0:
@@ -591,7 +600,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     if process.username != USERNAME and not SUPERUSER:
                         info = (colored(item, attrs=('dark',)) for item in info)
                     info = colored(
-                        process.command, color=('red' if process.is_gone else 'yellow')
+                        process.command,
+                        color=('red' if process.is_gone else 'yellow'),
                     ).join(info)
                 elif process.username != USERNAME and not SUPERUSER:
                     info = colored(info, attrs=('dark',))

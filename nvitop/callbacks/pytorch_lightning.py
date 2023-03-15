@@ -98,7 +98,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             libnvml.nvmlInit()
         except libnvml.NVMLError as ex:
             raise MisconfigurationException(
-                'Cannot use GpuStatsLogger callback because NVIDIA driver is not installed.'
+                'Cannot use GpuStatsLogger callback because NVIDIA driver is not installed.',
             ) from ex
 
         self._memory_utilization = memory_utilization
@@ -111,13 +111,13 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     def on_train_start(self, trainer, pl_module) -> None:
         if not trainer.logger:
             raise MisconfigurationException(
-                'Cannot use GpuStatsLogger callback with Trainer that has no logger.'
+                'Cannot use GpuStatsLogger callback with Trainer that has no logger.',
             )
 
         if trainer.strategy.root_device.type != 'cuda':
             raise MisconfigurationException(
                 f'You are using GpuStatsLogger but are not running on GPU. '
-                f'The root device type is {trainer.strategy.root_device.type}.'
+                f'The root device type is {trainer.strategy.root_device.type}.',
             )
 
         device_ids = trainer.data_parallel_device_ids
@@ -126,7 +126,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         except (libnvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
                 f'Cannot use GpuStatsLogger callback because devices unavailable. '
-                f'Received: `gpus={device_ids}`'
+                f'Received: `gpus={device_ids}`',
             ) from ex
 
     def on_train_epoch_start(self, trainer, pl_module) -> None:
