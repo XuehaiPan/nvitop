@@ -42,7 +42,8 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         self.options = options
         self.num_options = len(self.options)
 
-        assert cancel is not None and self.num_options >= 2
+        assert cancel is not None
+        assert self.num_options >= 2
         assert 0 <= no < self.num_options
         assert 0 <= cancel < self.num_options
         assert 0 <= default < self.num_options

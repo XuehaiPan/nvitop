@@ -14,16 +14,14 @@ WIDE_SYMBOLS = set('WF')
 
 
 def utf_char_width(string):
-    """Return the width of a single character"""
-
+    """Return the width of a single character."""
     if east_asian_width(string) in WIDE_SYMBOLS:
         return WIDE
     return NARROW
 
 
 def string_to_charlist(string):
-    """Return a list of characters with extra empty strings after wide chars"""
-
+    """Return a list of characters with extra empty strings after wide chars."""
     if ASCIIONLY.issuperset(string):
         return list(string)
     result = []
@@ -35,8 +33,7 @@ def string_to_charlist(string):
 
 
 def wcslen(string):
-    """Return the length of a string with wide chars"""
-
+    """Return the length of a string with wide chars."""
     return len(WideString(string))
 
 
@@ -63,7 +60,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> (WideString('afd') + 'bc').chars
         ['a', 'f', 'd', 'b', 'c']
         """
-
         if isinstance(other, str):
             return WideString(self.string + other)
         if isinstance(other, WideString):
@@ -75,7 +71,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> ('bc' + WideString('afd')).chars
         ['b', 'c', 'a', 'f', 'd']
         """
-
         if isinstance(other, str):
             return WideString(other + self.string)
         if isinstance(other, WideString):
@@ -131,7 +126,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('aモ')[0:1]
         <WideString 'a'>
         """
-
         if isinstance(item, slice):
             assert item.step is None or item.step == 1
             start, stop = item.start, item.stop
@@ -166,7 +160,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> len(WideString('モヒカン'))
         8
         """
-
         return len(self.chars)
 
     def ljust(self, width, fillchar=' '):
@@ -178,7 +171,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('モヒカン').ljust(10)
         <WideString 'モヒカン  '>
         """
-
         if width > len(self):
             return WideString(self.string + fillchar * width)[:width]
         return self
@@ -192,7 +184,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('モヒカン').rljust(10)
         <WideString '  モヒカン'>
         """
-
         if width > len(self):
             return WideString(fillchar * width + self.string)[-width:]
         return self
@@ -206,7 +197,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('モヒカン').center(10)
         <WideString ' モヒカン '>
         """
-
         if width > len(self):
             left_width = (width - len(self)) // 2
             right_width = width - left_width
@@ -220,7 +210,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('  モヒカン  ').strip()
         <WideString 'モヒカン'>
         """
-
         return WideString(self.string.strip(chars))
 
     def lstrip(self, chars=None):
@@ -230,7 +219,6 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('  モヒカン  ').lstrip()
         <WideString 'モヒカン  '>
         """
-
         return WideString(self.string.lstrip(chars))
 
     def rstrip(self, chars=None):
@@ -240,5 +228,4 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         >>> WideString('  モヒカン  ').rstrip()
         <WideString '  モヒカン'>
         """
-
         return WideString(self.string.rstrip(chars))

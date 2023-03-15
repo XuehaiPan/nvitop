@@ -75,7 +75,12 @@ jobs:
             python -m pip install --upgrade pip setuptools pre-commit pylint[spelling]
             python -m pip install -r requirements.txt &&
             python -m pre_commit install --install-hooks &&
-            python -m pre_commit run --all-files
+            python -m pre_commit run --all-files &&
+            python -c 'import nvitop' &&
+            python -m nvitop --version &&
+            python -m nvitop --help &&
+            python -m nvitop.select --version &&
+            python -m nvitop.select --help
           )
 
       - name: Test docker build

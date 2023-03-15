@@ -109,7 +109,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             libnvml.nvmlInit()
         except libnvml.NVMLError as ex:
             raise ValueError(
-                'Cannot use the GpuStatsLogger callback because the NVIDIA driver is not installed.'
+                'Cannot use the GpuStatsLogger callback because the NVIDIA driver is not installed.',
             ) from ex
 
         if isinstance(gpus, (list, tuple)):
@@ -126,7 +126,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         except (libnvml.NVMLError, RuntimeError) as ex:
             raise ValueError(
                 f'Cannot use GpuStatsLogger callback because devices unavailable. '
-                f'Received: `gpus={gpu_ids}`'
+                f'Received: `gpus={gpu_ids}`',
             ) from ex
 
         self._memory_utilization = memory_utilization

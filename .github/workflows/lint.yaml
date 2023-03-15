@@ -49,6 +49,14 @@ jobs:
         run: |
           python -m pip install -r requirements.txt
 
+      - name: Import tests
+        run: |
+          python -c 'import nvitop'
+          python -m nvitop --version
+          python -m nvitop --help
+          python -m nvitop.select --version
+          python -m nvitop.select --help
+
       - name: Install linters
         run: |
           python -m pip install --upgrade pre-commit pylint[spelling]

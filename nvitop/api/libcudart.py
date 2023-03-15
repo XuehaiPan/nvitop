@@ -295,7 +295,7 @@ class cudaError(Exception):
         try:
             if self.value not in cudaError._errcode_to_string:
                 cudaError._errcode_to_string[self.value] = '{}.'.format(
-                    cuGetErrorString(self.value).rstrip('.').capitalize()
+                    cuGetErrorString(self.value).rstrip('.').capitalize(),
                 )
             if self.value not in cudaError._errcode_to_name:
                 cudaError._errcode_to_name[self.value] = cudaGetErrorName(self.value)
@@ -353,8 +353,7 @@ def _extract_cuda_errors_as_classes() -> None:
 
         def gen_new(value):
             def new(cls):
-                obj = cudaError.__new__(cls, value)
-                return obj
+                return cudaError.__new__(cls, value)
 
             return new
 
@@ -368,9 +367,7 @@ def _extract_cuda_errors_as_classes() -> None:
                 err_val,
             )
         else:
-            new_error_class.__doc__ = 'CUDA Error with code :data:`{}` ({})'.format(
-                err_name, err_val
-            )
+            new_error_class.__doc__ = f'CUDA Error with code :data:`{err_name}` ({err_val})'
         setattr(this_module, class_name, new_error_class)
         cudaError._value_class_mapping[err_val] = new_error_class
         cudaError._errcode_to_name[err_val] = err_name
@@ -464,7 +461,7 @@ def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
                                         [
                                             _os.path.join(cuda_path, f'lib{bits}', lib_filename),
                                             _os.path.join(cuda_path, 'lib', lib_filename),
-                                        ]
+                                        ],
                                     )
                     else:
                         candidate_dirs = _os.getenv('PATH', '').split(_os.path.pathsep)
@@ -476,18 +473,18 @@ def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
                                         _os.path.join(cuda_path, 'bin'),
                                         _os.path.join(cuda_path, f'lib{bits}'),
                                         _os.path.join(cuda_path, 'lib'),
-                                    ]
+                                    ],
                                 )
                         for candidate_dir in candidate_dirs:
                             candidate_paths.extend(
-                                _glob.iglob(_os.path.join(candidate_dir, f'cudart{bits}*.dll'))
+                                _glob.iglob(_os.path.join(candidate_dir, f'cudart{bits}*.dll')),
                             )
 
                     # Normalize paths and remove duplicates
                     candidate_paths = list(
                         dict.fromkeys(
                             _os.path.normpath(_os.path.normcase(p)) for p in candidate_paths
-                        )
+                        ),
                     )
                     for lib_filename in candidate_paths:
                         try:

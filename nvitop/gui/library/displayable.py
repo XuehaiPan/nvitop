@@ -55,7 +55,7 @@ class Displayable(CursesShortcuts):  # pylint: disable=too-many-instance-attribu
         self.parent = None
 
     def __contains__(self, item):
-        """Checks if item is inside the boundaries.
+        """Check if item is inside the boundaries.
 
         item can be an iterable like [y, x] or an object with x and y methods.
         """
@@ -77,8 +77,7 @@ class Displayable(CursesShortcuts):  # pylint: disable=too-many-instance-attribu
         return (self.x <= x < self.x + self.width) and (self.y <= y < self.y + self.height)
 
     def poke(self):
-        """Called before drawing, even if invisible"""
-
+        """Called before drawing, even if invisible."""
         if self._old_visible != self.visible:
             self._old_visible = self.visible
             self.need_redraw = True
@@ -92,7 +91,6 @@ class Displayable(CursesShortcuts):  # pylint: disable=too-many-instance-attribu
         Called on every main iteration if visible. Containers should call draw()
         on their contained objects here. Override this!
         """
-
         self.need_redraw = False
 
     def finalize(self):
@@ -100,12 +98,10 @@ class Displayable(CursesShortcuts):  # pylint: disable=too-many-instance-attribu
 
         Override this!
         """
-
         self.need_redraw = False
 
     def destroy(self):
         """Called when the object is destroyed."""
-
         self.win = None
         self.root = None
 
@@ -184,15 +180,13 @@ class DisplayableContainer(Displayable):
     # extended or overridden methods
 
     def poke(self):
-        """Recursively called on objects in container"""
-
+        """Recursively called on objects in container."""
         super().poke()
         for displayable in self.container:
             displayable.poke()
 
     def draw(self):
-        """Recursively called on visible objects in container"""
-
+        """Recursively called on visible objects in container."""
         for displayable in self.container:
             if self.need_redraw:
                 displayable.need_redraw = True
@@ -202,22 +196,19 @@ class DisplayableContainer(Displayable):
         self.need_redraw = False
 
     def finalize(self):
-        """Recursively called on visible objects in container"""
-
+        """Recursively called on visible objects in container."""
         for displayable in self.container:
             if displayable.visible:
                 displayable.finalize()
 
     def destroy(self):
-        """Recursively called on objects in container"""
-
+        """Recursively called on objects in container."""
         for displayable in self.container:
             displayable.destroy()
         super().destroy()
 
     def press(self, key):
-        """Recursively called on objects in container"""
-
+        """Recursively called on objects in container."""
         focused_obj = self.get_focused_obj()
 
         if focused_obj:
@@ -226,8 +217,7 @@ class DisplayableContainer(Displayable):
         return False
 
     def click(self, event):
-        """Recursively called on objects in container"""
-
+        """Recursively called on objects in container."""
         focused_obj = self.get_focused_obj()
         if focused_obj and focused_obj.click(event):
             return True
@@ -241,7 +231,6 @@ class DisplayableContainer(Displayable):
 
     def add_child(self, obj):
         """Add the objects to the container."""
-
         if obj.parent is not None:
             obj.parent.remove_child(obj)
         self.container.append(obj)
@@ -250,14 +239,12 @@ class DisplayableContainer(Displayable):
 
     def replace_child(self, old_obj, new_obj):
         """Replace the old object with the new instance in the container."""
-
         self.container[self.container.index(old_obj)] = new_obj
         new_obj.parent = self
         new_obj.root = self.root
 
     def remove_child(self, obj):
         """Remove the object from the container."""
-
         try:
             self.container.remove(obj)
         except ValueError:

@@ -39,7 +39,7 @@ class MouseEvent:
     CTRL_SCROLLWHEEL_MULTIPLIER = 5
 
     def __init__(self, state):
-        """Creates a MouseEvent object from the result of win.getmouse()"""
+        """Create a MouseEvent object from the result of win.getmouse()."""
         _, self.x, self.y, _, self.bstate = state
 
         # x-values above ~220 suddenly became negative, apparently
@@ -51,35 +51,35 @@ class MouseEvent:
             self.y += 0xFF
 
     def pressed(self, n):
-        """Returns whether the mouse key n is pressed"""
+        """Return whether the mouse key n is pressed."""
         try:
             return (self.bstate & MouseEvent.PRESSED[n]) != 0
         except IndexError:
             return False
 
     def released(self, n):
-        """Returns whether the mouse key n is released"""
+        """Return whether the mouse key n is released."""
         try:
             return (self.bstate & MouseEvent.RELEASED[n]) != 0
         except IndexError:
             return False
 
     def clicked(self, n):
-        """Returns whether the mouse key n is clicked"""
+        """Return whether the mouse key n is clicked."""
         try:
             return (self.bstate & MouseEvent.CLICKED[n]) != 0
         except IndexError:
             return False
 
     def double_clicked(self, n):
-        """Returns whether the mouse key n is double clicked"""
+        """Return whether the mouse key n is double clicked."""
         try:
             return (self.bstate & MouseEvent.DOUBLE_CLICKED[n]) != 0
         except IndexError:
             return False
 
     def wheel_direction(self):
-        """Returns the direction of the scroll action, 0 if there was none"""
+        """Return the direction of the scroll action, 0 if there was none."""
         # If the bstate > ALL_MOUSE_EVENTS, it's an invalid mouse button.
         # I interpret invalid buttons as "scroll down" because all tested
         # systems have a broken curses implementation and this is a workaround.

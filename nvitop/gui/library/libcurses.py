@@ -36,7 +36,7 @@ TRUE_COLORS = dict(
         ('bright cyan', 14),
         ('bright white', 15),
     ]
-    + [(f'preserved {i:02d}', i) for i in range(16, 64)]
+    + [(f'preserved {i:02d}', i) for i in range(16, 64)],
 )
 
 
@@ -44,8 +44,7 @@ BASE_ATTR = 0
 
 
 def _init_color_theme(light_theme=False):
-    """Sets the default fg/bg colors."""
-
+    """Set the default fg/bg colors."""
     global LIGHT_THEME, DEFAULT_FOREGROUND, DEFAULT_BACKGROUND  # pylint: disable=global-statement
 
     LIGHT_THEME = light_theme
@@ -76,8 +75,7 @@ def _get_true_color(rgb):
 
 
 def _get_color(fg, bg):
-    """Returns the curses color pair for the given fg/bg combination."""
-
+    """Return the curses color pair for the given fg/bg combination."""
     global COLOR_PAIRS  # pylint: disable=global-statement,global-variable-not-assigned
 
     if isinstance(fg, str):
@@ -185,8 +183,8 @@ class CursesShortcuts:
     """
 
     ASCII_TRANSTABLE = str.maketrans(
-        '═' + '─╴' + '╒╤╕╪╘╧╛┌┬┐┼└┴┘' + '│╞╡├┤▏▎▍▌▋▊▉█░' + '▲▼' + '␤' + GRAPH_SYMBOLS,
-        '=' + '--' + '++++++++++++++' + '||||||||||||||' + '^v' + '?' + '=' * len(GRAPH_SYMBOLS),
+        '═─╴╒╤╕╪╘╧╛┌┬┐┼└┴┘│╞╡├┤▏▎▍▌▋▊▉█░▲▼␤' + GRAPH_SYMBOLS,
+        '=--++++++++++++++||||||||||||||^v?' + '=' * len(GRAPH_SYMBOLS),
     )
     TERM_256COLOR = False
 
@@ -232,17 +230,14 @@ class CursesShortcuts:
 
     def color(self, fg=-1, bg=-1, attr=0):
         """Change the colors from now on."""
-
         return self.set_fg_bg_attr(fg, bg, attr)
 
     def color_reset(self):
-        """Change the colors to the default colors"""
-
+        """Change the colors to the default colors."""
         return self.color()
 
     def color_at(self, y, x, width, *args, **kwargs):
-        """Change the colors at the specified position"""
-
+        """Change the colors at the specified position."""
         try:
             self.win.chgat(y, x, width, self.get_fg_bg_attr(*args, **kwargs))
         except curses.error:
@@ -250,8 +245,7 @@ class CursesShortcuts:
 
     @staticmethod
     def get_fg_bg_attr(fg=-1, bg=-1, attr=0):
-        """Returns the curses attribute for the given fg/bg/attr combination."""
-
+        """Return the curses attribute for the given fg/bg/attr combination."""
         if fg == -1 and bg == -1 and attr == 0:
             return BASE_ATTR
 
@@ -283,10 +277,11 @@ class CursesShortcuts:
         return attr
 
     def update_size(self, termsize=None):
-        if termsize is None:
-            self.update_lines_cols()
-            termsize = self.win.getmaxyx()
-        return termsize
+        if termsize is not None:
+            return termsize
+
+        self.update_lines_cols()
+        return self.win.getmaxyx()
 
     @staticmethod
     def update_lines_cols():

@@ -173,7 +173,7 @@ def take_snapshots(
         else:
             leaf_devices = devices = list(devices)
         gpu_processes = list(
-            itertools.chain.from_iterable(device.processes().values() for device in leaf_devices)
+            itertools.chain.from_iterable(device.processes().values() for device in leaf_devices),
         )
 
     devices = [device.as_snapshot() for device in devices]
@@ -430,7 +430,9 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self._tags = set()
 
         self._daemon = threading.Thread(
-            name='gpu_metric_collector_daemon', target=self._target, daemon=True
+            name='gpu_metric_collector_daemon',
+            target=self._target,
+            daemon=True,
         )
         self._daemon_running = threading.Event()
 
@@ -489,7 +491,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 tag = self._metric_buffer.tag
             elif tag not in self._tags:
                 raise RuntimeError(
-                    f'Resource metric collector has not been started with tag "{tag}".'
+                    f'Resource metric collector has not been started with tag "{tag}".',
                 )
 
             buffer = self._metric_buffer
@@ -568,7 +570,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 tag = self._metric_buffer.tag
             elif tag not in self._tags:
                 raise RuntimeError(
-                    f'Resource metric collector has not been started with tag "{tag}".'
+                    f'Resource metric collector has not been started with tag "{tag}".',
                 )
 
             buffer = self._metric_buffer
@@ -707,7 +709,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 'host/memory_percent (%)': host.memory_percent(),
                 'host/swap_percent (%)': host.swap_percent(),
                 'host/memory_used (GiB)': host.virtual_memory().used / GiB,
-            }
+            },
         )
         load_average = host.load_average()
         if load_average is not None:
@@ -716,7 +718,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                     'host/load_average (%) (1 min)': load_average[0],
                     'host/load_average (%) (5 min)': load_average[1],
                     'host/load_average (%) (15 min)': load_average[2],
-                }
+                },
             )
 
         device_identifiers = {}
@@ -755,7 +757,10 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
 class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function-docstring,too-many-instance-attributes
     def __init__(
-        self, tag: str, collector: ResourceMetricCollector, prev: _MetricBuffer | None = None
+        self,
+        tag: str,
+        collector: ResourceMetricCollector,
+        prev: _MetricBuffer | None = None,
     ) -> None:
         self.collector = collector
         self.prev = prev
@@ -800,9 +805,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             if key.endswith('host/running_time (min)/max'):
                 metrics[key[:-4]] = metrics[key]
                 del metrics[key]
-            elif key.endswith('host/running_time (min)/mean') or key.endswith(
-                'host/running_time (min)/min'
-            ):
+            elif key.endswith(('host/running_time (min)/mean', 'host/running_time (min)/min')):
                 del metrics[key]
         metrics[f'{self.key_prefix}/duration (s)'] = timer() - self.start_timestamp
         metrics[f'{self.key_prefix}/timestamp'] = time.time()

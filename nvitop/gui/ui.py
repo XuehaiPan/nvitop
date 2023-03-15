@@ -41,7 +41,12 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.device_count = len(self.devices)
 
         self.main_screen = MainScreen(
-            self.devices, filters, ascii=ascii, mode=mode, win=win, root=self
+            self.devices,
+            filters,
+            ascii=ascii,
+            mode=mode,
+            win=win,
+            root=self,
         )
         self.main_screen.visible = True
         self.main_screen.focused = False
@@ -193,8 +198,7 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.main_screen.print()
 
     def handle_mouse(self):
-        """Handles mouse input"""
-
+        """Handle mouse input."""
         try:
             event = MouseEvent(curses.getmouse())
         except curses.error:
@@ -202,8 +206,7 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         super().click(event)
 
     def handle_key(self, key):
-        """Handles key input"""
-
+        """Handle key input."""
         if key < 0:
             self.keybuffer.clear()
         elif not super().press(key):

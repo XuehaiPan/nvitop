@@ -127,7 +127,8 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
             n_items = len(self.environ)
             old_scroll_offset = self.scroll_offset
             self.scroll_offset = max(
-                0, min(self.scroll_offset + direction, n_items - self.display_height)
+                0,
+                min(self.scroll_offset + direction, n_items - self.display_height),
             )
             direction -= self.scroll_offset - old_scroll_offset
             self._y_offset += self.scroll_offset - old_scroll_offset
@@ -146,12 +147,13 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
 
         if isinstance(self.process, GpuProcess):
             process_type = 'GPU: ' + self.process.type.replace('C', 'Compute').replace(
-                'G', 'Graphics'
+                'G',
+                'Graphics',
             )
         else:
             process_type = 'Host'
         header_prefix = WideString(
-            f'Environment of process {self.process.pid} ({self.username}@{process_type}): '
+            f'Environment of process {self.process.pid} ({self.username}@{process_type}): ',
         )
         offset = max(0, min(self.x_offset, len(self.command) + len(header_prefix) - self.width))
         header = str((header_prefix + self.command[offset:]).ljust(self.width)[: self.width])

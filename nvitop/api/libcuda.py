@@ -244,7 +244,7 @@ class CUDAError(Exception):
         try:
             if self.value not in CUDAError._errcode_to_string:
                 CUDAError._errcode_to_string[self.value] = '{}.'.format(
-                    cuGetErrorString(self.value).rstrip('.').capitalize()
+                    cuGetErrorString(self.value).rstrip('.').capitalize(),
                 )
             if self.value not in CUDAError._errcode_to_name:
                 CUDAError._errcode_to_name[self.value] = cuGetErrorName(self.value)
@@ -299,8 +299,7 @@ def _extract_cuda_errors_as_classes() -> None:
 
         def gen_new(value):
             def new(cls):
-                obj = CUDAError.__new__(cls, value)
-                return obj
+                return CUDAError.__new__(cls, value)
 
             return new
 
@@ -314,9 +313,7 @@ def _extract_cuda_errors_as_classes() -> None:
                 err_val,
             )
         else:
-            new_error_class.__doc__ = 'CUDA Error with code :data:`{}` ({})'.format(
-                err_name, err_val
-            )
+            new_error_class.__doc__ = f'CUDA Error with code :data:`{err_name}` ({err_val})'
         setattr(this_module, class_name, new_error_class)
         CUDAError._value_class_mapping[err_val] = new_error_class
         CUDAError._errcode_to_name[err_val] = err_name
@@ -395,7 +392,7 @@ def __LoadCudaLibrary() -> None:
                     ]
                     # Also add libraries with version suffix `.1`
                     lib_filenames = list(
-                        _itertools.chain.from_iterable((f'{lib}.1', lib) for lib in lib_filenames)
+                        _itertools.chain.from_iterable((f'{lib}.1', lib) for lib in lib_filenames),
                     )
                 elif system == 'Windows':
                     bits = _platform.architecture()[0].replace('bit', '')  # e.g., '64' or '32'
