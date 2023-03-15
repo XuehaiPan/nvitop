@@ -17,12 +17,12 @@
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
-from typing import Dict, List
+from __future__ import annotations
 
 from nvitop.api import CudaDevice, Device, MiB
 
 
-def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> List[CudaDevice]:
+def get_devices_by_logical_ids(device_ids: list[int], unique: bool = True) -> list[CudaDevice]:
     cuda_devices = CudaDevice.from_indices(device_ids)
 
     devices = []
@@ -37,12 +37,12 @@ def get_devices_by_logical_ids(device_ids: List[int], unique: bool = True) -> Li
 
 
 def get_gpu_stats(
-    devices: List[Device],
+    devices: list[Device],
     memory_utilization: bool = True,
     gpu_utilization: bool = True,
     fan_speed: bool = False,
     temperature: bool = False,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """Get the GPU status from NVML queries."""
     stats = {}
     for device in devices:

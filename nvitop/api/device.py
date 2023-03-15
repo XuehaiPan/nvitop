@@ -101,13 +101,15 @@ Examples:
 
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import contextlib
 import multiprocessing as mp
 import os
 import re
 import threading
 from collections import OrderedDict
-from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Type, Union
+from typing import Any, Callable, Iterable, NamedTuple
 
 from cachetools.func import ttl_cache
 
@@ -130,16 +132,16 @@ __all__ = [
 
 
 class MemoryInfo(NamedTuple):  # in bytes # pylint: disable=missing-class-docstring
-    total: Union[int, NaType]
-    free: Union[int, NaType]
-    used: Union[int, NaType]
+    total: int | NaType
+    free: int | NaType
+    used: int | NaType
 
 
 class ClockInfos(NamedTuple):  # in MHz # pylint: disable=missing-class-docstring
-    graphics: Union[int, NaType]
-    sm: Union[int, NaType]
-    memory: Union[int, NaType]
-    video: Union[int, NaType]
+    graphics: int | NaType
+    sm: int | NaType
+    memory: int | NaType
+    video: int | NaType
 
 
 class ClockSpeedInfos(NamedTuple):  # pylint: disable=missing-class-docstring
@@ -148,10 +150,10 @@ class ClockSpeedInfos(NamedTuple):  # pylint: disable=missing-class-docstring
 
 
 class UtilizationRates(NamedTuple):  # in percentage # pylint: disable=missing-class-docstring
-    gpu: Union[int, NaType]
-    memory: Union[int, NaType]
-    encoder: Union[int, NaType]
-    decoder: Union[int, NaType]
+    gpu: int | NaType
+    memory: int | NaType
+    encoder: int | NaType
+    decoder: int | NaType
 
 
 _VALUE_OMITTED = object()
@@ -252,7 +254,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return False
 
     @staticmethod
-    def driver_version() -> Union[str, NaType]:
+    def driver_version() -> str | NaType:
         """The version of the installed NVIDIA display driver. This is an alphanumeric string.
 
         Command line equivalent:
@@ -273,7 +275,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return libnvml.nvmlQuery('nvmlSystemGetDriverVersion')
 
     @staticmethod
-    def cuda_driver_version() -> Union[str, NaType]:
+    def cuda_driver_version() -> str | NaType:
         """The maximum CUDA version supported by the NVIDIA display driver. This is an alphanumeric string.
 
         This can be different from the version of the CUDA Runtime. See also :meth:`cuda_runtime_version`.
@@ -303,7 +305,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     max_cuda_version = cuda_driver_version
 
     @staticmethod
-    def cuda_runtime_version() -> Union[str, NaType]:
+    def cuda_runtime_version() -> str | NaType:
         """The CUDA Runtime version. This is an alphanumeric string.
 
         This can be different from the CUDA driver version. See also :meth:`cuda_driver_version`.
@@ -341,14 +343,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return libnvml.nvmlQuery('nvmlDeviceGetCount', default=0)
 
     @classmethod
-    def all(cls) -> List['PhysicalDevice']:
+    def all(cls) -> list[PhysicalDevice]:
         """Return a list of all physical devices in the system."""
         return cls.from_indices()
 
     @classmethod
     def from_indices(
-        cls, indices: Optional[Union[int, Iterable[Union[int, Tuple[int, int]]]]] = None
-    ) -> List[Union['PhysicalDevice', 'MigDevice']]:
+        cls, indices: int | Iterable[int | tuple[int, int]] | None = None
+    ) -> list[PhysicalDevice | MigDevice]:
         """Return a list of devices of the given indices.
 
         Args:
@@ -386,7 +388,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return list(map(cls, indices))
 
     @staticmethod
-    def from_cuda_visible_devices() -> List['CudaDevice']:
+    def from_cuda_visible_devices() -> list[CudaDevice]:
         """Return a list of all CUDA visible devices.
 
         The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
@@ -410,9 +412,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return cuda_devices
 
     @staticmethod
-    def from_cuda_indices(
-        cuda_indices: Optional[Union[int, Iterable[int]]] = None
-    ) -> List['CudaDevice']:
+    def from_cuda_indices(cuda_indices: int | Iterable[int] | None = None) -> list[CudaDevice]:
         """Return a list of CUDA devices of the given CUDA indices.
 
         The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
@@ -460,8 +460,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @staticmethod
     def parse_cuda_visible_devices(
-        cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
-    ) -> Union[List[int], List[Tuple[int, int]]]:
+        cuda_visible_devices: str | None = _VALUE_OMITTED,
+    ) -> list[int] | list[tuple[int, int]]:
         """Parse the given ``CUDA_VISIBLE_DEVICES`` value into a list of NVML device indices.
 
         This is a alias of :func:`parse_cuda_visible_devices`.
@@ -486,7 +486,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return parse_cuda_visible_devices(cuda_visible_devices)
 
     @staticmethod
-    def normalize_cuda_visible_devices(cuda_visible_devices: Optional[str] = _VALUE_OMITTED) -> str:
+    def normalize_cuda_visible_devices(cuda_visible_devices: str | None = _VALUE_OMITTED) -> str:
         """Parse the given ``CUDA_VISIBLE_DEVICES`` value and convert it into a comma-separated string of UUIDs.
 
         This is an alias of :func:`normalize_cuda_visible_devices`.
@@ -511,11 +511,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def __new__(
         cls,
-        index: Optional[Union[int, Tuple[int, int], str]] = None,
+        index: int | tuple[int, int] | str | None = None,
         *,
-        uuid: Optional[str] = None,
-        bus_id: Optional[str] = None,
-    ) -> 'Device':
+        uuid: str | None = None,
+        bus_id: str | None = None,
+    ) -> Device:
         """Create a new instance of Device.
 
         The type of the result is determined by the given argument.
@@ -576,10 +576,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def __init__(
         self,
-        index: Optional[Union[int, str]] = None,
+        index: int | str | None = None,
         *,
-        uuid: Optional[str] = None,
-        bus_id: Optional[str] = None,
+        uuid: str | None = None,
+        bus_id: str | None = None,
     ) -> None:
         """Initialize the instance created by :meth:`__new__()`.
 
@@ -672,7 +672,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._hash = hash(self._ident)
         return self._hash
 
-    def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
+    def __getattr__(self, name: str) -> Any | Callable[..., Any]:
         """Get the object attribute.
 
         If the attribute is not defined, make a method from ``pynvml.nvmlDeviceGet<AttributeName>(handle)``.
@@ -734,12 +734,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             setattr(self, name, attribute)
             return attribute
 
-    def __reduce__(self) -> Tuple[Type['Device'], Tuple[Union[int, Tuple[int, int]]]]:
+    def __reduce__(self) -> tuple[type[Device], tuple[int | tuple[int, int]]]:
         """Return state information for pickling."""
         return self.__class__, (self._nvml_index,)
 
     @property
-    def index(self) -> Union[int, Tuple[int, int]]:
+    def index(self) -> int | tuple[int, int]:
         """The NVML index of the device.
 
         Returns: Union[int, Tuple[int, int]]
@@ -748,7 +748,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self._nvml_index
 
     @property
-    def nvml_index(self) -> Union[int, Tuple[int, int]]:
+    def nvml_index(self) -> int | tuple[int, int]:
         """The NVML index of the device.
 
         Returns: Union[int, Tuple[int, int]]
@@ -793,7 +793,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return self._cuda_index
 
-    def name(self) -> Union[str, NaType]:
+    def name(self) -> str | NaType:
         """The official product name of the GPU. This is an alphanumeric string. For all products.
 
         Returns: Union[str, NaType]
@@ -809,7 +809,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._name = libnvml.nvmlQuery('nvmlDeviceGetName', self.handle)
         return self._name
 
-    def uuid(self) -> Union[str, NaType]:
+    def uuid(self) -> str | NaType:
         """This value is the globally unique immutable alphanumeric identifier of the GPU.
 
         It does not correspond to any physical label on the board.
@@ -827,7 +827,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._uuid = libnvml.nvmlQuery('nvmlDeviceGetUUID', self.handle)
         return self._uuid
 
-    def bus_id(self) -> Union[str, NaType]:
+    def bus_id(self) -> str | NaType:
         """PCI bus ID as "domain:bus:device.function", in hex.
 
         Returns: Union[str, NaType]
@@ -845,7 +845,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
         return self._bus_id
 
-    def serial(self) -> Union[str, NaType]:
+    def serial(self) -> str | NaType:
         """This number matches the serial number physically printed on each board.
 
         It is a globally unique immutable alphanumeric value.
@@ -874,7 +874,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return MemoryInfo(total=memory_info.total, free=memory_info.free, used=memory_info.used)
         return MemoryInfo(total=NA, free=NA, used=NA)
 
-    def memory_total(self) -> Union[int, NaType]:  # in bytes
+    def memory_total(self) -> int | NaType:  # in bytes
         """Total installed GPU memory in bytes.
 
         Returns: Union[int, NaType]
@@ -890,7 +890,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._memory_total = self.memory_info().total
         return self._memory_total
 
-    def memory_used(self) -> Union[int, NaType]:  # in bytes
+    def memory_used(self) -> int | NaType:  # in bytes
         """Total memory allocated by active contexts in bytes.
 
         Returns: Union[int, NaType]
@@ -904,7 +904,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.memory_info().used
 
-    def memory_free(self) -> Union[int, NaType]:  # in bytes
+    def memory_free(self) -> int | NaType:  # in bytes
         """Total free memory in bytes.
 
         Returns: Union[int, NaType]
@@ -918,7 +918,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.memory_info().free
 
-    def memory_total_human(self) -> Union[str, NaType]:  # in human readable
+    def memory_total_human(self) -> str | NaType:  # in human readable
         """Total installed GPU memory in human readable format.
 
         Returns: Union[str, NaType]
@@ -928,7 +928,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._memory_total_human = bytes2human(self.memory_total())
         return self._memory_total_human
 
-    def memory_used_human(self) -> Union[str, NaType]:  # in human readable
+    def memory_used_human(self) -> str | NaType:  # in human readable
         """Total memory allocated by active contexts in human readable format.
 
         Returns: Union[int, NaType]
@@ -936,7 +936,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return bytes2human(self.memory_used())
 
-    def memory_free_human(self) -> Union[str, NaType]:  # in human readable
+    def memory_free_human(self) -> str | NaType:  # in human readable
         """Total free memory in human readable format.
 
         Returns: Union[int, NaType]
@@ -944,7 +944,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return bytes2human(self.memory_free())
 
-    def memory_percent(self) -> Union[float, NaType]:  # in percentage
+    def memory_percent(self) -> float | NaType:  # in percentage
         """The percentage of used memory over total memory (``0 <= p <= 100``).
 
         Returns: Union[float, NaType]
@@ -980,7 +980,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
         return MemoryInfo(total=NA, free=NA, used=NA)
 
-    def bar1_memory_total(self) -> Union[int, NaType]:  # in bytes
+    def bar1_memory_total(self) -> int | NaType:  # in bytes
         """Total BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
@@ -988,7 +988,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.bar1_memory_info().total
 
-    def bar1_memory_used(self) -> Union[int, NaType]:  # in bytes
+    def bar1_memory_used(self) -> int | NaType:  # in bytes
         """Total used BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
@@ -996,7 +996,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.bar1_memory_info().used
 
-    def bar1_memory_free(self) -> Union[int, NaType]:  # in bytes
+    def bar1_memory_free(self) -> int | NaType:  # in bytes
         """Total free BAR1 memory in bytes.
 
         Returns: Union[int, NaType]
@@ -1004,7 +1004,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.bar1_memory_info().free
 
-    def bar1_memory_total_human(self) -> Union[str, NaType]:  # in human readable
+    def bar1_memory_total_human(self) -> str | NaType:  # in human readable
         """Total BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
@@ -1012,7 +1012,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return bytes2human(self.bar1_memory_total())
 
-    def bar1_memory_used_human(self) -> Union[str, NaType]:  # in human readable
+    def bar1_memory_used_human(self) -> str | NaType:  # in human readable
         """Total used BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
@@ -1020,7 +1020,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return bytes2human(self.bar1_memory_used())
 
-    def bar1_memory_free_human(self) -> Union[str, NaType]:  # in human readable
+    def bar1_memory_free_human(self) -> str | NaType:  # in human readable
         """Total free BAR1 memory in human readable format.
 
         Returns: Union[int, NaType]
@@ -1028,7 +1028,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return bytes2human(self.bar1_memory_free())
 
-    def bar1_memory_percent(self) -> Union[float, NaType]:  # in percentage
+    def bar1_memory_percent(self) -> float | NaType:  # in percentage
         """The percentage of used BAR1 memory over total BAR1 memory (0 <= p <= 100).
 
         Returns: Union[float, NaType]
@@ -1073,7 +1073,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         return UtilizationRates(gpu=gpu, memory=memory, encoder=encoder, decoder=decoder)
 
-    def gpu_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_utilization(self) -> int | NaType:  # in percentage
         """Percent of time over the past sample period during which one or more kernels was executing on the GPU.
 
         The sample period may be between 1 second and 1/6 second depending on the product.
@@ -1091,7 +1091,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     gpu_percent = gpu_utilization  # in percentage
 
-    def memory_utilization(self) -> Union[float, NaType]:  # in percentage
+    def memory_utilization(self) -> float | NaType:  # in percentage
         """Percent of time over the past sample period during which global (device) memory was being read or written.
 
         The sample period may be between 1 second and 1/6 second depending on the product.
@@ -1107,7 +1107,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.utilization_rates().memory
 
-    def encoder_utilization(self) -> Union[float, NaType]:  # in percentage
+    def encoder_utilization(self) -> float | NaType:  # in percentage
         """The encoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
@@ -1115,7 +1115,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.utilization_rates().encoder
 
-    def decoder_utilization(self) -> Union[float, NaType]:  # in percentage\
+    def decoder_utilization(self) -> float | NaType:  # in percentage\
         """The decoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
@@ -1173,7 +1173,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return ClockSpeedInfos(current=self.clock_infos(), max=self.max_clock_infos())
 
-    def graphics_clock(self) -> Union[int, NaType]:  # in MHz
+    def graphics_clock(self) -> int | NaType:  # in MHz
         """Current frequency of graphics (shader) clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1187,7 +1187,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.clock_infos().graphics
 
-    def sm_clock(self) -> Union[int, NaType]:  # in MHz
+    def sm_clock(self) -> int | NaType:  # in MHz
         """Current frequency of SM (Streaming Multiprocessor) clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1201,7 +1201,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.clock_infos().sm
 
-    def memory_clock(self) -> Union[int, NaType]:  # in MHz
+    def memory_clock(self) -> int | NaType:  # in MHz
         """Current frequency of memory clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1215,7 +1215,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.clock_infos().memory
 
-    def video_clock(self) -> Union[int, NaType]:  # in MHz
+    def video_clock(self) -> int | NaType:  # in MHz
         """Current frequency of video encoder/decoder clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1229,7 +1229,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.clock_infos().video
 
-    def max_graphics_clock(self) -> Union[int, NaType]:  # in MHz
+    def max_graphics_clock(self) -> int | NaType:  # in MHz
         """Maximum frequency of graphics (shader) clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1243,7 +1243,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.max_clock_infos().graphics
 
-    def max_sm_clock(self) -> Union[int, NaType]:  # in MHz
+    def max_sm_clock(self) -> int | NaType:  # in MHz
         """Maximum frequency of SM (Streaming Multiprocessor) clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1257,7 +1257,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.max_clock_infos().sm
 
-    def max_memory_clock(self) -> Union[int, NaType]:  # in MHz
+    def max_memory_clock(self) -> int | NaType:  # in MHz
         """Maximum frequency of memory clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1271,7 +1271,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.max_clock_infos().memory
 
-    def max_video_clock(self) -> Union[int, NaType]:  # in MHz
+    def max_video_clock(self) -> int | NaType:  # in MHz
         """Maximum frequency of video encoder/decoder clock in MHz.
 
         Returns: Union[int, NaType]
@@ -1286,7 +1286,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self.max_clock_infos().video
 
     @ttl_cache(ttl=5.0)
-    def fan_speed(self) -> Union[int, NaType]:  # in percentage
+    def fan_speed(self) -> int | NaType:  # in percentage
         """The fan speed value is the percent of the product's maximum noise tolerance fan speed that the device's fan is currently intended to run at.
 
         This value may exceed 100% in certain cases. Note: The reported speed is the intended fan
@@ -1306,7 +1306,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return libnvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
 
     @ttl_cache(ttl=5.0)
-    def temperature(self) -> Union[int, NaType]:  # in Celsius
+    def temperature(self) -> int | NaType:  # in Celsius
         """Core GPU temperature in degrees C.
 
         Returns: Union[int, NaType]
@@ -1324,7 +1324,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @memoize_when_activated
     @ttl_cache(ttl=5.0)
-    def power_usage(self) -> Union[int, NaType]:  # in milliwatts (mW)
+    def power_usage(self) -> int | NaType:  # in milliwatts (mW)
         """The last measured power draw for the entire board in milliwatts.
 
         Returns: Union[int, NaType]
@@ -1342,7 +1342,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     @memoize_when_activated
     @ttl_cache(ttl=60.0)
-    def power_limit(self) -> Union[int, NaType]:  # in milliwatts (mW)
+    def power_limit(self) -> int | NaType:  # in milliwatts (mW)
         """The software power limit in milliwatts.
 
         Set by software like nvidia-smi.
@@ -1373,7 +1373,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return f'{power_usage} / {power_limit}'
 
     @ttl_cache(ttl=60.0)
-    def display_active(self) -> Union[str, NaType]:
+    def display_active(self) -> str | NaType:
         """A flag that indicates whether a display is initialized on the GPU's (e.g. memory is allocated on the device for display).
 
         Display can be active even when no monitor is physically attached. "Enabled" indicates an
@@ -1395,7 +1395,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         )
 
     @ttl_cache(ttl=60.0)
-    def display_mode(self) -> Union[str, NaType]:
+    def display_mode(self) -> str | NaType:
         """A flag that indicates whether a physical display (e.g. monitor) is currently connected to any of the GPU's connectors.
 
         "Enabled" indicates an attached display. "Disabled" indicates otherwise.
@@ -1416,7 +1416,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         )
 
     @ttl_cache(ttl=60.0)
-    def current_driver_model(self) -> Union[str, NaType]:
+    def current_driver_model(self) -> str | NaType:
         """The driver model currently in use.
 
         Always "N/A" on Linux. On Windows, the TCC (WDM) and WDDM driver models are supported. The
@@ -1443,7 +1443,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     driver_model = current_driver_model
 
     @ttl_cache(ttl=60.0)
-    def persistence_mode(self) -> Union[str, NaType]:
+    def persistence_mode(self) -> str | NaType:
         """A flag that indicates whether persistence mode is enabled for the GPU. Value is either "Enabled" or "Disabled".
 
         When persistence mode is enabled the NVIDIA driver remains loaded even when no active
@@ -1466,7 +1466,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         )
 
     @ttl_cache(ttl=5.0)
-    def performance_state(self) -> Union[str, NaType]:
+    def performance_state(self) -> str | NaType:
         """The current performance state for the GPU. States range from P0 (maximum performance) to P12 (minimum performance).
 
         Returns: Union[str, NaType]
@@ -1484,7 +1484,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return performance_state
 
     @ttl_cache(ttl=5.0)
-    def total_volatile_uncorrected_ecc_errors(self) -> Union[int, NaType]:
+    def total_volatile_uncorrected_ecc_errors(self) -> int | NaType:
         """Total errors detected across entire chip.
 
         Returns: Union[int, NaType]
@@ -1504,7 +1504,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         )
 
     @ttl_cache(ttl=60.0)
-    def compute_mode(self) -> Union[str, NaType]:
+    def compute_mode(self) -> str | NaType:
         """The compute mode flag indicates whether individual or multiple compute applications may run on the GPU.
 
         Returns: Union[str, NaType]
@@ -1527,7 +1527,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             libnvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
         }.get(libnvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
 
-    def cuda_compute_capability(self) -> Union[Tuple[int, int], NaType]:
+    def cuda_compute_capability(self) -> tuple[int, int] | NaType:
         """The CUDA compute capability for the device.
 
         Returns: Union[Tuple[int, int], NaType]
@@ -1558,7 +1558,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self._is_mig_device
 
     @ttl_cache(ttl=60.0)
-    def mig_mode(self) -> Union[str, NaType]:
+    def mig_mode(self) -> str | NaType:
         """The MIG mode that the GPU is currently operating under.
 
         Returns: Union[str, NaType]
@@ -1594,7 +1594,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return 0  # implemented in PhysicalDevice
 
-    def mig_devices(self) -> List['MigDevice']:
+    def mig_devices(self) -> list[MigDevice]:
         """Return a list of children MIG devices of the current device.
 
         This method will return an empty list if the MIG mode is disabled or the device does not
@@ -1610,7 +1610,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.is_mig_device() or not self.is_mig_mode_enabled()
 
-    def to_leaf_devices(self) -> List[Union['PhysicalDevice', 'MigDevice', 'CudaDevice']]:
+    def to_leaf_devices(self) -> list[PhysicalDevice | MigDevice | CudaDevice]:
         """Return a list of leaf devices.
 
         Note that a CUDA device is always a leaf device.
@@ -1620,7 +1620,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self.mig_devices()
 
     @ttl_cache(ttl=2.0)
-    def processes(self) -> Dict[int, GpuProcess]:
+    def processes(self) -> dict[int, GpuProcess]:
         """Return a dictionary of processes running on the GPU.
 
         Returns: Dict[int, GpuProcess]
@@ -1808,7 +1808,7 @@ class PhysicalDevice(Device):
         )
 
     @ttl_cache(ttl=60.0)
-    def mig_device(self, mig_index: int) -> 'MigDevice':
+    def mig_device(self, mig_index: int) -> MigDevice:
         """Return a child MIG device of the given index.
 
         Raises:
@@ -1819,7 +1819,7 @@ class PhysicalDevice(Device):
             return MigDevice(index=(self.index, mig_index))
 
     @ttl_cache(ttl=60.0)
-    def mig_devices(self) -> List['MigDevice']:
+    def mig_devices(self) -> list[MigDevice]:
         """Return a list of children MIG devices of the current device.
 
         This method will return an empty list if the MIG mode is disabled or the device does not
@@ -1850,7 +1850,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         return len(cls.all())
 
     @classmethod
-    def all(cls) -> List['MigDevice']:
+    def all(cls) -> list[MigDevice]:
         """Return a list of MIG devices aggregated over all physical devices."""
         mig_devices = []
         for device in PhysicalDevice.all():
@@ -1859,8 +1859,8 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def from_indices(  # pylint: disable=signature-differs
-        cls, indices: Iterable[Tuple[int, int]]
-    ) -> List['MigDevice']:
+        cls, indices: Iterable[tuple[int, int]]
+    ) -> list[MigDevice]:
         """Return a list of MIG devices of the given indices.
 
         Args:
@@ -1885,7 +1885,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
     # pylint: disable-next=super-init-not-called
     def __init__(
-        self, index: Optional[Union[Tuple[int, int], str]] = None, *, uuid: Optional[str] = None
+        self, index: tuple[int, int] | str | None = None, *, uuid: str | None = None
     ) -> None:
         """Initialize the instance created by :meth:`__new__()`.
 
@@ -1962,7 +1962,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         self._hash = None
 
     @property
-    def index(self) -> Tuple[int, int]:
+    def index(self) -> tuple[int, int]:
         """The index of the MIG device. This is a tuple of two integers."""
         return self._nvml_index
 
@@ -1981,7 +1981,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         """The parent physical device."""
         return self._parent
 
-    def gpu_instance_id(self) -> Union[int, NaType]:
+    def gpu_instance_id(self) -> int | NaType:
         """The gpu instance ID of the MIG device.
 
         Returns: Union[int, NaType]
@@ -1995,7 +1995,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
                 self._gpu_instance_id = NA
         return self._gpu_instance_id
 
-    def compute_instance_id(self) -> Union[int, NaType]:
+    def compute_instance_id(self) -> int | NaType:
         """The compute instance ID of the MIG device.
 
         Returns: Union[int, NaType]
@@ -2105,7 +2105,7 @@ class CudaDevice(Device):
             return 0
 
     @classmethod
-    def all(cls) -> List['CudaDevice']:
+    def all(cls) -> list[CudaDevice]:
         """All CUDA visible devices.
 
         Note:
@@ -2114,9 +2114,7 @@ class CudaDevice(Device):
         return cls.from_indices()
 
     @classmethod
-    def from_indices(
-        cls, indices: Optional[Union[int, Iterable[int]]] = None
-    ) -> List['CudaDevice']:
+    def from_indices(cls, indices: int | Iterable[int] | None = None) -> list[CudaDevice]:
         """Return a list of CUDA devices of the given CUDA indices.
 
         The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
@@ -2147,11 +2145,11 @@ class CudaDevice(Device):
 
     def __new__(
         cls,
-        cuda_index: Optional[int] = None,
+        cuda_index: int | None = None,
         *,
-        nvml_index: Optional[Union[int, Tuple[int, int]]] = None,
-        uuid: Optional[str] = None,
-    ) -> 'Device':
+        nvml_index: int | tuple[int, int] | None = None,
+        uuid: str | None = None,
+    ) -> Device:
         """Create a new instance of CudaDevice.
 
         The type of the result is determined by the given argument.
@@ -2189,10 +2187,10 @@ class CudaDevice(Device):
 
     def __init__(
         self,
-        cuda_index: Optional[int] = None,
+        cuda_index: int | None = None,
         *,
-        nvml_index: Optional[Union[int, Tuple[int, int]]] = None,
-        uuid: Optional[str] = None,
+        nvml_index: int | tuple[int, int] | None = None,
+        uuid: str | None = None,
     ) -> None:
         """Initialize the instance created by :meth:`__new__()`.
 
@@ -2238,7 +2236,7 @@ class CudaDevice(Device):
 
     __repr__ = __str__
 
-    def __reduce__(self) -> Tuple[Type['CudaDevice'], Tuple[int]]:
+    def __reduce__(self) -> tuple[type[CudaDevice], tuple[int]]:
         """Return state information for pickling."""
         return self.__class__, (self._cuda_index,)
 
@@ -2261,7 +2259,7 @@ class CudaMigDevice(CudaDevice, MigDevice):
     """Class for CUDA devices that are MIG devices."""
 
 
-def is_mig_device_uuid(uuid: Optional[str]) -> bool:
+def is_mig_device_uuid(uuid: str | None) -> bool:
     """Return :data:`True` if the argument is a MIG device UUID, otherwise, return :data:`False`."""
     if isinstance(uuid, str):
         match = Device.UUID_PATTERN.match(uuid)
@@ -2271,8 +2269,8 @@ def is_mig_device_uuid(uuid: Optional[str]) -> bool:
 
 
 def parse_cuda_visible_devices(
-    cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
-) -> Union[List[int], List[Tuple[int, int]]]:
+    cuda_visible_devices: str | None = _VALUE_OMITTED,
+) -> list[int] | list[tuple[int, int]]:
     """Parse the given ``CUDA_VISIBLE_DEVICES`` value into a list of NVML device indices.
 
     This function is aliased by :meth:`Device.parse_cuda_visible_devices`.
@@ -2329,7 +2327,7 @@ def parse_cuda_visible_devices(
     return _parse_cuda_visible_devices(cuda_visible_devices, format='index')
 
 
-def normalize_cuda_visible_devices(cuda_visible_devices: Optional[str] = _VALUE_OMITTED) -> str:
+def normalize_cuda_visible_devices(cuda_visible_devices: str | None = _VALUE_OMITTED) -> str:
     """Parse the given ``CUDA_VISIBLE_DEVICES`` value and convert it into a comma-separated string of UUIDs.
 
     This function is aliased by :meth:`Device.normalize_cuda_visible_devices`.
@@ -2400,7 +2398,7 @@ _GLOBAL_PHYSICAL_DEVICE = None
 _GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
 
 
-def _get_all_physical_device_attrs() -> Dict[str, _PhysicalDeviceAttrs]:
+def _get_all_physical_device_attrs() -> dict[str, _PhysicalDeviceAttrs]:
     global _PHYSICAL_DEVICE_ATTRS  # pylint: disable=global-statement
 
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
@@ -2422,14 +2420,14 @@ def _get_all_physical_device_attrs() -> Dict[str, _PhysicalDeviceAttrs]:
         return _PHYSICAL_DEVICE_ATTRS
 
 
-def _does_any_device_support_mig_mode(uuids: Optional[Iterable[str]] = None) -> bool:
+def _does_any_device_support_mig_mode(uuids: Iterable[str] | None = None) -> bool:
     physical_device_attrs = _get_all_physical_device_attrs()
     uuids = uuids or physical_device_attrs.keys()
     return any(physical_device_attrs[uuid].support_mig_mode for uuid in uuids)
 
 
 @contextlib.contextmanager
-def _global_physical_device(device: 'PhysicalDevice') -> 'PhysicalDevice':
+def _global_physical_device(device: PhysicalDevice) -> PhysicalDevice:
     global _GLOBAL_PHYSICAL_DEVICE  # pylint: disable=global-statement
 
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
@@ -2440,16 +2438,16 @@ def _global_physical_device(device: 'PhysicalDevice') -> 'PhysicalDevice':
             _GLOBAL_PHYSICAL_DEVICE = None
 
 
-def _get_global_physical_device() -> 'PhysicalDevice':
+def _get_global_physical_device() -> PhysicalDevice:
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
         return _GLOBAL_PHYSICAL_DEVICE
 
 
 @ttl_cache(ttl=300.0)
 def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
-    cuda_visible_devices: Optional[str] = None,
+    cuda_visible_devices: str | None = None,
     format: str = 'index',  # pylint: disable=redefined-builtin
-) -> Union[List[int], List[Tuple[int, int]], List[str]]:
+) -> list[int] | list[tuple[int, int]] | list[str]:
     """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
     assert format in ('index', 'uuid')
 
@@ -2477,7 +2475,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     if cuda_visible_devices is None:
         cuda_visible_devices = ','.join(physical_device_attrs.keys())
 
-    def from_index_or_uuid(index_or_uuid: Union[int, str]) -> 'Device':
+    def from_index_or_uuid(index_or_uuid: int | str) -> Device:
         nonlocal use_integer_identifiers
 
         if isinstance(index_or_uuid, str):
@@ -2549,9 +2547,9 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
 
 
 def _parse_cuda_visible_devices_to_uuids(
-    cuda_visible_devices: Optional[str] = _VALUE_OMITTED,
+    cuda_visible_devices: str | None = _VALUE_OMITTED,
     verbose: bool = True,
-) -> List[str]:
+) -> list[str]:
     """Parse the given ``CUDA_VISIBLE_DEVICES`` environment variable in a separate process and return a list of device UUIDs.
 
     The UUIDs do not have a prefix ``GPU-`` or ``MIG-``.

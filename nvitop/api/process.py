@@ -18,6 +18,8 @@
 
 # pylint: disable=too-many-lines
 
+from __future__ import annotations
+
 import contextlib
 import datetime
 import functools
@@ -25,7 +27,7 @@ import os
 import threading
 from abc import ABCMeta
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable
 from weakref import WeakValueDictionary
 
 from nvitop.api import host, libnvml
@@ -85,7 +87,7 @@ else:
         return '"{}"'.format(s.replace('\n', r'\n'))
 
 
-def command_join(cmdline: List[str]) -> str:
+def command_join(cmdline: list[str]) -> str:
     """Return a shell-escaped string from command line arguments."""
     if len(cmdline) == 1 and not (
         # May be modified by `setproctitle`
@@ -111,7 +113,7 @@ def auto_garbage_clean(
 
     def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapped(self: 'GpuProcess', *args, **kwargs):
+        def wrapped(self: GpuProcess, *args, **kwargs):
             try:
                 return func(self, *args, **kwargs)
             except host.PsutilError as ex:
@@ -183,7 +185,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     INSTANCE_LOCK = threading.RLock()
     INSTANCES = WeakValueDictionary()
 
-    def __new__(cls, pid: Optional[int] = None) -> 'HostProcess':
+    def __new__(cls, pid: int | None = None) -> HostProcess:
         """Return the cached instance of :class:`HostProcess`."""
         if pid is None:
             pid = os.getpid()
@@ -211,7 +213,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             return instance
 
     # pylint: disable-next=unused-argument,super-init-not-called
-    def __init__(self, pid: Optional[int] = None) -> None:
+    def __init__(self, pid: int | None = None) -> None:
         """Initialize the instance."""
 
     @property
@@ -234,7 +236,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
 
     __repr__ = __str__
 
-    def __reduce__(self) -> Tuple[Type['HostProcess'], Tuple[int]]:
+    def __reduce__(self) -> tuple[type[HostProcess], tuple[int]]:
         """Return state information for pickling."""
         return self.__class__, (self.pid,)
 
@@ -277,7 +279,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             return self._username
 
     @memoize_when_activated
-    def cmdline(self) -> List[str]:
+    def cmdline(self) -> list[str]:
         """The command line this process has been called with.
 
         Raises:
@@ -351,7 +353,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         """
         return self.memory_info().rss
 
-    def parent(self) -> Optional['HostProcess']:
+    def parent(self) -> HostProcess | None:
         """Return the parent process as a :class:`HostProcess` instance or :data:`None` if there is no parent.
 
         Raises:
@@ -365,7 +367,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
             return HostProcess(parent.pid)
         return None
 
-    def children(self, recursive: bool = False) -> List['HostProcess']:
+    def children(self, recursive: bool = False) -> list[HostProcess]:
         """Return the children of this process as a list of :class:`HostProcess` instances.
 
         If *recursive* is :data:`True` return all the descendants.
@@ -414,7 +416,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                         self.running_time.cache_deactivate(self)
 
     def as_snapshot(
-        self, attrs: Optional[Iterable[str]] = None, ad_value: Optional[Any] = None
+        self, attrs: Iterable[str] | None = None, ad_value: Any | None = None
     ) -> Snapshot:
         """Return a onetime snapshot of the process."""
         with self.oneshot():
@@ -447,14 +449,14 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def __new__(
         cls,
         pid: int,
-        device: 'Device',
+        device: Device,
         # pylint: disable=unused-argument
-        gpu_memory: Optional[Union[int, NaType]] = None,
-        gpu_instance_id: Optional[Union[int, NaType]] = None,
-        compute_instance_id: Optional[Union[int, NaType]] = None,
-        type: Optional[Union[str, NaType]] = None,  # pylint: disable=redefined-builtin
+        gpu_memory: int | NaType | None = None,
+        gpu_instance_id: int | NaType | None = None,
+        compute_instance_id: int | NaType | None = None,
+        type: str | NaType | None = None,  # pylint: disable=redefined-builtin
         # pylint: enable=unused-argument
-    ) -> 'GpuProcess':
+    ) -> GpuProcess:
         """Return the cached instance of :class:`GpuProcess`."""
         if pid is None:
             pid = os.getpid()
@@ -485,11 +487,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def __init__(
         self,
         pid: int,  # pylint: disable=unused-argument
-        device: 'Device',
-        gpu_memory: Optional[Union[int, NaType]] = None,
-        gpu_instance_id: Optional[Union[int, NaType]] = None,
-        compute_instance_id: Optional[Union[int, NaType]] = None,
-        type: Optional[Union[str, NaType]] = None,  # pylint: disable=redefined-builtin
+        device: Device,
+        gpu_memory: int | NaType | None = None,
+        gpu_instance_id: int | NaType | None = None,
+        compute_instance_id: int | NaType | None = None,
+        type: str | NaType | None = None,  # pylint: disable=redefined-builtin
     ) -> None:
         """Initialize the instance returned by :meth:`__new__()`."""
         if gpu_memory is None and not hasattr(self, '_gpu_memory'):
@@ -542,7 +544,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self._hash = hash(self._ident)  # pylint: disable=attribute-defined-outside-init
         return self._hash
 
-    def __getattr__(self, name: str) -> Union[Any, Callable[..., Any]]:
+    def __getattr__(self, name: str) -> Any | Callable[..., Any]:
         """Get a member from the instance or fallback to the host process instance if missing.
 
         Raises:
@@ -576,7 +578,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._host
 
     @property
-    def device(self) -> 'Device':
+    def device(self) -> Device:
         """The GPU device the process running on.
 
         The same host process can use multiple GPU devices. The :class:`GpuProcess` instances
@@ -584,43 +586,43 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """
         return self._device
 
-    def gpu_instance_id(self) -> Union[int, NaType]:
+    def gpu_instance_id(self) -> int | NaType:
         """The GPU instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_instance_id
 
-    def compute_instance_id(self) -> Union[int, NaType]:
+    def compute_instance_id(self) -> int | NaType:
         """The compute instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
         return self._compute_instance_id
 
-    def gpu_memory(self) -> Union[int, NaType]:  # in bytes
+    def gpu_memory(self) -> int | NaType:  # in bytes
         """The used GPU memory in bytes, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory
 
-    def gpu_memory_human(self) -> Union[str, NaType]:  # in human readable
+    def gpu_memory_human(self) -> str | NaType:  # in human readable
         """The used GPU memory in human readable format, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_human
 
-    def gpu_memory_percent(self) -> Union[float, NaType]:  # in percentage
+    def gpu_memory_percent(self) -> float | NaType:  # in percentage
         """The percentage of used GPU memory by the process, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_percent
 
-    def gpu_sm_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_sm_utilization(self) -> int | NaType:  # in percentage
         """The utilization rate of SM (Streaming Multiprocessor), or :const:`nvitop.NA` if not applicable."""
         return self._gpu_sm_utilization
 
-    def gpu_memory_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_memory_utilization(self) -> int | NaType:  # in percentage
         """The utilization rate of GPU memory bandwidth, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_utilization
 
-    def gpu_encoder_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_encoder_utilization(self) -> int | NaType:  # in percentage
         """The utilization rate of the encoder, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_encoder_utilization
 
-    def gpu_decoder_utilization(self) -> Union[int, NaType]:  # in percentage
+    def gpu_decoder_utilization(self) -> int | NaType:  # in percentage
         """The utilization rate of the decoder, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_decoder_utilization
 
-    def set_gpu_memory(self, value: Union[int, NaType]) -> None:
+    def set_gpu_memory(self, value: int | NaType) -> None:
         """Set the used GPU memory in bytes."""
         # pylint: disable=attribute-defined-outside-init
         self._gpu_memory = memory_used = value
@@ -633,10 +635,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     def set_gpu_utilization(
         self,
-        gpu_sm_utilization: Optional[int] = None,
-        gpu_memory_utilization: Optional[int] = None,
-        gpu_encoder_utilization: Optional[int] = None,
-        gpu_decoder_utilization: Optional[int] = None,
+        gpu_sm_utilization: int | None = None,
+        gpu_memory_utilization: int | None = None,
+        gpu_encoder_utilization: int | None = None,
+        gpu_decoder_utilization: int | None = None,
     ) -> None:
         """Set the GPU utilization rates."""
         # pylint: disable=attribute-defined-outside-init
@@ -649,7 +651,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         if gpu_decoder_utilization is not None:
             self._gpu_decoder_utilization = gpu_decoder_utilization
 
-    def update_gpu_status(self) -> Union[int, NaType]:
+    def update_gpu_status(self) -> int | NaType:
         """Update the GPU consumption status from a new NVML query."""
         self.set_gpu_memory(NA)
         self.set_gpu_utilization(NA, NA, NA, NA)
@@ -658,7 +660,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.gpu_memory()
 
     @property
-    def type(self) -> Union[str, NaType]:
+    def type(self) -> str | NaType:
         """The type of the GPU context.
 
         The type is one of the following:
@@ -670,7 +672,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._type
 
     @type.setter
-    def type(self, value: Union[str, NaType]) -> None:
+    def type(self, value: str | NaType) -> None:
         if 'C' in value and 'G' in value:
             self._type = 'C+G'
         elif 'C' in value:
@@ -702,7 +704,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.status()
 
     @auto_garbage_clean(fallback=NA)
-    def create_time(self) -> Union[float, NaType]:
+    def create_time(self) -> float | NaType:
         """The process creation time as a floating point number expressed in seconds since the epoch.
 
         Raises:
@@ -718,7 +720,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.create_time()
 
     @auto_garbage_clean(fallback=NA)
-    def running_time(self) -> Union[datetime.timedelta, NaType]:
+    def running_time(self) -> datetime.timedelta | NaType:
         """The elapsed time this process has been running in :class:`datetime.timedelta`.
 
         Raises:
@@ -733,7 +735,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """
         return self.host.running_time()
 
-    def running_time_human(self) -> Union[str, NaType]:
+    def running_time_human(self) -> str | NaType:
         """The elapsed time this process has been running in human readable format.
 
         Raises:
@@ -748,7 +750,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """
         return timedelta2human(self.running_time())
 
-    def running_time_in_seconds(self) -> Union[float, NaType]:
+    def running_time_in_seconds(self) -> float | NaType:
         """The elapsed time this process has been running in seconds.
 
         Raises:
@@ -771,7 +773,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     elapsed_time_in_seconds = running_time_in_seconds
 
     @auto_garbage_clean(fallback=NA)
-    def username(self) -> Union[str, NaType]:
+    def username(self) -> str | NaType:
         """The name of the user that owns the process.
 
         Raises:
@@ -789,7 +791,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._username
 
     @auto_garbage_clean(fallback=NA)
-    def name(self) -> Union[str, NaType]:
+    def name(self) -> str | NaType:
         """The process name.
 
         Raises:
@@ -805,7 +807,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.name()
 
     @auto_garbage_clean(fallback=NA)
-    def cpu_percent(self) -> Union[float, NaType]:  # in percentage
+    def cpu_percent(self) -> float | NaType:  # in percentage
         """Return a float representing the current process CPU utilization as a percentage.
 
         Raises:
@@ -821,7 +823,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.cpu_percent()
 
     @auto_garbage_clean(fallback=NA)
-    def memory_percent(self) -> Union[float, NaType]:  # in percentage
+    def memory_percent(self) -> float | NaType:  # in percentage
         """Compare process RSS memory to total physical system memory and calculate process memory utilization as a percentage.
 
         Raises:
@@ -839,7 +841,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     host_memory_percent = memory_percent  # in percentage
 
     @auto_garbage_clean(fallback=NA)
-    def host_memory(self) -> Union[int, NaType]:  # in bytes
+    def host_memory(self) -> int | NaType:  # in bytes
         """The used resident set size (RSS) memory of the process in bytes.
 
         Raises:
@@ -854,7 +856,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """
         return self.host.rss_memory()
 
-    def host_memory_human(self) -> Union[str, NaType]:
+    def host_memory_human(self) -> str | NaType:
         """The used resident set size (RSS) memory of the process in human readable format.
 
         Raises:
@@ -873,7 +875,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     # For `AccessDenied` error the fallback value is `['No Permissions']`
     @auto_garbage_clean(fallback=('No Such Process',))
-    def cmdline(self) -> List[str]:
+    def cmdline(self) -> list[str]:
         """The command line this process has been called with.
 
         Raises:
@@ -931,7 +933,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=_RAISE)
     def as_snapshot(
-        self, *, host_process_snapshot_cache: Optional[Dict[int, Snapshot]] = None
+        self, *, host_process_snapshot_cache: dict[int, Snapshot] | None = None
     ) -> Snapshot:
         """Return a onetime snapshot of the process on the GPU device.
 
@@ -981,8 +983,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @classmethod
     def take_snapshots(  # batched version of `as_snapshot`
-        cls, gpu_processes: Iterable['GpuProcess'], *, failsafe: bool = False
-    ) -> List[Snapshot]:
+        cls, gpu_processes: Iterable[GpuProcess], *, failsafe: bool = False
+    ) -> list[Snapshot]:
         """Take snapshots for a list of :class:`GpuProcess` instances.
 
         If *failsafe* is :data:`True`, then if any method fails, the fallback value in

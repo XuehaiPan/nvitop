@@ -18,6 +18,8 @@
 
 # pylint: disable=invalid-name
 
+from __future__ import annotations
+
 import ctypes as _ctypes
 import glob as _glob
 import os as _os
@@ -25,8 +27,6 @@ import platform as _platform
 import sys as _sys
 import threading as _threading
 from typing import Any as _Any
-from typing import Tuple as _Tuple
-from typing import Type as _Type
 
 
 _cudaError_t = _ctypes.c_int
@@ -280,7 +280,7 @@ class cudaError(Exception):
     }  # fmt:skip
     _errcode_to_name = {}
 
-    def __new__(cls, value: int) -> 'cudaError':
+    def __new__(cls, value: int) -> cudaError:
         """Map value to a proper subclass of :class:`cudaError`."""
         if cls is cudaError:
             # pylint: disable-next=self-cls-assignment
@@ -315,12 +315,12 @@ class cudaError(Exception):
             return NotImplemented
         return self.value == other.value  # pylint: disable=no-member
 
-    def __reduce__(self) -> _Tuple[_Type['cudaError'], _Tuple[int]]:
+    def __reduce__(self) -> tuple[type[cudaError], tuple[int]]:
         """Return state information for pickling."""
         return cudaError, (self.value,)  # pylint: disable=no-member
 
 
-def cudaExceptionClass(cudaErrorCode: int) -> _Type[cudaError]:
+def cudaExceptionClass(cudaErrorCode: int) -> type[cudaError]:
     """Map value to a proper subclass of :class:`cudaError`.
 
     Raises:

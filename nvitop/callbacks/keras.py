@@ -18,9 +18,10 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
+from __future__ import annotations
+
 import re
 import time
-from typing import Dict, List, Tuple, Union
 
 from tensorflow.python.keras.callbacks import (  # pylint: disable=import-error,no-name-in-module
     Callback,
@@ -94,7 +95,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        gpus: Union[int, Union[List[Union[int, str]], Tuple[Union[int, str], ...]]],
+        gpus: int | list[int | str] | tuple[int | str, ...],
         memory_utilization: bool = True,
         gpu_utilization: bool = True,
         intra_step_time: bool = False,
@@ -166,7 +167,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
                 time.monotonic() - self._snap_intra_step_time
             )
 
-    def _get_gpu_stats(self) -> Dict[str, float]:
+    def _get_gpu_stats(self) -> dict[str, float]:
         """Get the gpu status from NVML queries."""
         return get_gpu_stats(
             devices=self._devices,

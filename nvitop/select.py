@@ -54,13 +54,15 @@ Python API:
     )
 """  # pylint: disable=line-too-long
 
+from __future__ import annotations
+
 import argparse
 import getpass
 import math
 import os
 import sys
 import warnings
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable
 
 from nvitop.api import Device, GpuProcess, colored, human2bytes, libnvml
 from nvitop.version import __version__
@@ -82,16 +84,16 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
     format: str = 'index',  # pylint: disable=redefined-builtin
     force_index: bool = False,
     min_count: int = 0,
-    max_count: Optional[int] = None,
-    min_free_memory: Optional[Union[int, str]] = None,  # in bytes or human readable
-    min_total_memory: Optional[Union[int, str]] = None,  # in bytes or human readable
-    max_gpu_utilization: Optional[int] = None,  # in percentage
-    max_memory_utilization: Optional[int] = None,  # in percentage
+    max_count: int | None = None,
+    min_free_memory: int | str | None = None,  # in bytes or human readable
+    min_total_memory: int | str | None = None,  # in bytes or human readable
+    max_gpu_utilization: int | None = None,  # in percentage
+    max_memory_utilization: int | None = None,  # in percentage
     tolerance: int = 0,  # in percentage
-    free_accounts: List[str] = None,
+    free_accounts: list[str] = None,
     sort: bool = True,
     **kwargs: Any,
-) -> Union[List[int], List[Tuple[int, int]], List[str]]:
+) -> list[int] | list[tuple[int, int]] | list[str]:
     """Select a subset of devices satisfying the specified criteria.
 
     Note:

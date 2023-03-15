@@ -18,6 +18,8 @@
 
 # pylint: disable=invalid-name
 
+from __future__ import annotations
+
 import ctypes as _ctypes
 import functools as _functools
 import inspect as _inspect
@@ -26,15 +28,10 @@ import os as _os
 import re as _re
 import sys as _sys
 import threading as _threading
-from collections import OrderedDict as _OrderedDict
 from types import FunctionType as _FunctionType
 from types import ModuleType as _ModuleType
 from typing import Any as _Any
 from typing import Callable as _Callable
-from typing import Optional as _Optional
-from typing import Tuple as _Tuple
-from typing import Type as _Type
-from typing import Union as _Union
 
 # Python Bindings for the NVIDIA Management Library (NVML)
 # https://pypi.org/project/nvidia-ml-py
@@ -334,7 +331,7 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
 
 
 def nvmlQuery(
-    func: _Union[_Callable[..., _Any], str],
+    func: _Callable[..., _Any] | str,
     *args,
     default: _Any = NA,
     ignore_errors: bool = True,
@@ -419,9 +416,7 @@ def nvmlQuery(
     return retval
 
 
-def nvmlCheckReturn(
-    retval: _Any, types: _Optional[_Union[_Type, _Tuple[_Type, ...]]] = None
-) -> bool:
+def nvmlCheckReturn(retval: _Any, types: type | tuple[type, ...] | None = None) -> bool:
     """Check whether the return value is not :const:`nvitop.NA` and is one of the given types."""
     if types is None:
         return retval != NA
@@ -690,14 +685,14 @@ class _CustomModule(_ModuleType):
         ... # The NVML context has been shutdown
     """
 
-    def __getattribute__(self, name: str) -> _Union[_Any, _Callable[..., _Any]]:
+    def __getattribute__(self, name: str) -> _Any | _Callable[..., _Any]:
         """Get a member from the current module. Fallback to the original package if missing."""
         try:
             return super().__getattribute__(name)
         except AttributeError:
             return getattr(_pynvml, name)
 
-    def __enter__(self) -> '_CustomModule':  # noqa: F405
+    def __enter__(self) -> _CustomModule:  # noqa: F405
         """Entry of the context manager for ``with`` statement."""
         _lazy_init()
         return self
@@ -718,8 +713,3 @@ class _CustomModule(_ModuleType):
 __modself = _sys.modules[__name__]
 __modself.__class__ = _CustomModule
 del _CustomModule
-
-# Delete imported references
-del _logging, _os, _re, _sys, _threading
-del _OrderedDict, _FunctionType, _ModuleType
-del _Tuple, _Callable, _Type, _Union, _Optional, _Any

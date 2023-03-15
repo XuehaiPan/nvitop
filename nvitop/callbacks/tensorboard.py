@@ -17,7 +17,9 @@
 
 # pylint: disable=missing-module-docstring
 
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -33,11 +35,11 @@ if TYPE_CHECKING:
 
 
 def add_scalar_dict(
-    writer: 'SummaryWriter',
+    writer: SummaryWriter,
     main_tag: str,
-    tag_scalar_dict: Dict[str, Union[int, float, 'np.floating']],
-    global_step: Optional[Union[int, 'np.integer']] = None,
-    walltime: Optional[float] = None,
+    tag_scalar_dict: dict[str, int | float | np.floating],
+    global_step: int | np.integer | None = None,
+    walltime: float | None = None,
 ) -> None:
     """Add a batch of scalars to the writer.
 

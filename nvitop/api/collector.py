@@ -17,6 +17,8 @@
 
 """Resource metrics collectors."""
 
+from __future__ import annotations
+
 import contextlib
 import itertools
 import math
@@ -24,7 +26,7 @@ import os
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from typing import Callable, Dict, Hashable, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Hashable, Iterable, NamedTuple
 from weakref import WeakSet
 
 from nvitop.api import host
@@ -37,22 +39,22 @@ __all__ = ['take_snapshots', 'collect_in_background', 'ResourceMetricCollector']
 
 
 class SnapshotResult(NamedTuple):  # pylint: disable=missing-class-docstring
-    devices: List[Snapshot]
-    gpu_processes: List[Snapshot]
+    devices: list[Snapshot]
+    gpu_processes: list[Snapshot]
 
 
 timer = time.monotonic
 
 
-def _unique(iterable: Iterable[Hashable]) -> List[Hashable]:
+def _unique(iterable: Iterable[Hashable]) -> list[Hashable]:
     return list(OrderedDict.fromkeys(iterable).keys())
 
 
 # pylint: disable-next=too-many-branches
 def take_snapshots(
-    devices: Optional[Union[Device, Iterable[Device]]] = None,
+    devices: Device | Iterable[Device] | None = None,
     *,
-    gpu_processes: Optional[Union[bool, GpuProcess, Iterable[GpuProcess]]] = None,
+    gpu_processes: bool | GpuProcess | Iterable[GpuProcess] | None = None,
 ) -> SnapshotResult:
     """Retrieve status of demanded devices and GPU processes.
 
@@ -182,12 +184,12 @@ def take_snapshots(
 
 # pylint: disable-next=too-many-arguments
 def collect_in_background(
-    on_collect: Callable[[Dict[str, float]], bool],
-    collector: Optional['ResourceMetricCollector'] = None,
-    interval: Optional[float] = None,
+    on_collect: Callable[[dict[str, float]], bool],
+    collector: ResourceMetricCollector | None = None,
+    interval: float | None = None,
     *,
-    on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
-    on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
+    on_start: Callable[[ResourceMetricCollector], None] | None = None,
+    on_stop: Callable[[ResourceMetricCollector], None] | None = None,
     tag: str = 'metrics-daemon',
     start: bool = True,
 ) -> threading.Thread:
@@ -389,9 +391,9 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,
-        devices: Optional[Iterable[Device]] = None,
-        root_pids: Optional[Iterable[int]] = None,
-        interval: Union[int, float] = 1.0,
+        devices: Iterable[Device] | None = None,
+        root_pids: Iterable[int] | None = None,
+        interval: int | float = 1.0,
     ) -> None:
         """Initialize the resource metric collector."""
         if isinstance(interval, (int, float)) and interval > 0:
@@ -432,7 +434,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         )
         self._daemon_running = threading.Event()
 
-    def activate(self, tag: str) -> 'ResourceMetricCollector':
+    def activate(self, tag: str) -> ResourceMetricCollector:
         """Start a new metric collection with the given tag.
 
         Args:
@@ -467,7 +469,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     start = activate
 
-    def deactivate(self, tag: Optional[str] = None) -> 'ResourceMetricCollector':
+    def deactivate(self, tag: str | None = None) -> ResourceMetricCollector:
         """Stop the current collection with the given tag and remove all sub-tags.
 
         If the tag is not specified, deactivate the current active collection. For nested
@@ -506,7 +508,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     stop = deactivate
 
     @contextlib.contextmanager
-    def context(self, tag: str) -> 'ResourceMetricCollector':
+    def context(self, tag: str) -> ResourceMetricCollector:
         """A context manager for starting and stopping resource metric collection.
 
         Args:
@@ -529,7 +531,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     __call__ = context  # alias for `with collector(tag='<tag>')`
 
-    def clear(self, tag: Optional[str] = None) -> None:
+    def clear(self, tag: str | None = None) -> None:
         """Reset the metric collection with the given tag.
 
         If the tag is not specified, reset the current active collection. For nested collections,
@@ -576,7 +578,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                     break
                 buffer = buffer.prev
 
-    def collect(self) -> Dict[str, float]:
+    def collect(self) -> dict[str, float]:
         """Get the average resource consumption during collection."""
         with self._lock:
             if self._metric_buffer is None:
@@ -589,11 +591,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def daemonize(
         self,
-        on_collect: Callable[[Dict[str, float]], bool],
-        interval: Optional[float] = None,
+        on_collect: Callable[[dict[str, float]], bool],
+        interval: float | None = None,
         *,
-        on_start: Optional[Callable[['ResourceMetricCollector'], None]] = None,
-        on_stop: Optional[Callable[['ResourceMetricCollector'], None]] = None,
+        on_start: Callable[[ResourceMetricCollector], None] | None = None,
+        on_stop: Callable[[ResourceMetricCollector], None] | None = None,
         tag: str = 'metrics-daemon',
         start: bool = True,
     ) -> threading.Thread:
@@ -753,7 +755,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
 class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function-docstring,too-many-instance-attributes
     def __init__(
-        self, tag: str, collector: 'ResourceMetricCollector', prev: Optional['_MetricBuffer'] = None
+        self, tag: str, collector: ResourceMetricCollector, prev: _MetricBuffer | None = None
     ) -> None:
         self.collector = collector
         self.prev = prev
@@ -769,7 +771,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
 
         self.len = 0
 
-    def add(self, metrics: Dict[str, float], timestamp: Optional[float] = None) -> None:
+    def add(self, metrics: dict[str, float], timestamp: float | None = None) -> None:
         if timestamp is None:
             timestamp = timer()
 
@@ -788,7 +790,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
         self.buffer.clear()
         self.len = 0
 
-    def collect(self) -> Dict[str, float]:
+    def collect(self) -> dict[str, float]:
         metrics = {
             f'{self.key_prefix}/{key}/{name}': value
             for key, stats in self.buffer.items()
@@ -820,7 +822,7 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
         self.max_value = None
         self.has_nan = False
 
-    def add(self, value: float, timestamp: Optional[float] = None) -> None:
+    def add(self, value: float, timestamp: float | None = None) -> None:
         if timestamp is None:
             timestamp = timer()
 
@@ -859,7 +861,7 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
             return math.nan
         return self.max_value
 
-    def items(self) -> Iterable[Tuple[str, float]]:
+    def items(self) -> Iterable[tuple[str, float]]:
         yield ('mean', self.mean())
         yield ('min', self.min())
         yield ('max', self.max())

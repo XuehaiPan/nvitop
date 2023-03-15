@@ -18,8 +18,9 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
+from __future__ import annotations
+
 import time
-from typing import Dict
 
 from pytorch_lightning.callbacks import Callback  # pylint: disable=import-error
 from pytorch_lightning.utilities import rank_zero_only  # pylint: disable=import-error
@@ -161,7 +162,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
         trainer.logger.log_metrics(logs, step=trainer.global_step)
 
-    def _get_gpu_stats(self) -> Dict[str, float]:
+    def _get_gpu_stats(self) -> dict[str, float]:
         """Get the gpu status from NVML queries."""
         return get_gpu_stats(
             devices=self._devices,
