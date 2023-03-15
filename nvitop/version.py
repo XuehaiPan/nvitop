@@ -32,7 +32,7 @@ if not __release__:
                 ['git', 'describe', '--abbrev=7'],
                 cwd=os.path.dirname(os.path.abspath(__file__)),
                 stderr=subprocess.DEVNULL,
-                universal_newlines=True,
+                text=True,
             )
             .strip()
             .lstrip('v')

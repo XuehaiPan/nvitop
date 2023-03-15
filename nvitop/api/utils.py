@@ -18,6 +18,8 @@
 
 # pylint: disable=invalid-name
 
+from __future__ import annotations
+
 import datetime
 import functools
 import math
@@ -25,7 +27,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, Iterable, Optional, Tuple, Union
+from typing import Any, Callable, Iterable
 
 from psutil import WINDOWS
 
@@ -66,8 +68,8 @@ except ImportError:
 
     def _colored(  # pylint: disable=unused-argument
         text: str,
-        color: Optional[str] = None,
-        on_color: Optional[str] = None,
+        color: str | None = None,
+        on_color: str | None = None,
         attrs: Iterable[str] = None,
     ) -> str:
         return text
@@ -90,8 +92,8 @@ def set_color(value: bool) -> None:
 
 def colored(
     text: str,
-    color: Optional[str] = None,
-    on_color: Optional[str] = None,
+    color: str | None = None,
+    on_color: str | None = None,
     attrs: Iterable[str] = None,
 ) -> str:
     """Colorize text with ANSI color escape codes.
@@ -144,7 +146,7 @@ class NaType(str):
         nan
     """
 
-    def __new__(cls) -> 'NaType':
+    def __new__(cls) -> NaType:
         """Get the singleton instance (:const:`nvitop.NA`)."""
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
@@ -176,7 +178,7 @@ class NaType(str):
         """
         return math.nan
 
-    def __add__(self, other: object) -> Union[str, float]:
+    def __add__(self, other: object) -> str | float:
         """Return :data:`math.nan` if the operand is a number or uses string concatenation if the operand is a string (``NA + other``).
 
         A special case is when the operand is :const:`nvitop.NA` itself, the result is
@@ -195,7 +197,7 @@ class NaType(str):
             return float(self) + other
         return super().__add__(other)
 
-    def __radd__(self, other: object) -> Union[str, float]:
+    def __radd__(self, other: object) -> str | float:
         """Return :data:`math.nan` if the operand is a number or uses string concatenation if the operand is a string (``other + NA``).
 
         >>> 'str' + NA
@@ -351,7 +353,7 @@ class NaType(str):
             return other % float(self)
         return NotImplemented
 
-    def __divmod__(self, other: object) -> Tuple[float, float]:
+    def __divmod__(self, other: object) -> tuple[float, float]:
         """The pair ``(NA // other, NA % other)`` (``divmod(NA, other)``).
 
         >>> divmod(NA, 1024)
@@ -365,7 +367,7 @@ class NaType(str):
         """
         return (self // other, self % other)
 
-    def __rdivmod__(self, other: object) -> Tuple[float, float]:
+    def __rdivmod__(self, other: object) -> tuple[float, float]:
         """The pair ``(other // NA, other % NA)`` (``divmod(other, NA)``).
 
         >>> divmod(1024, NA)
@@ -399,7 +401,7 @@ class NaType(str):
         """
         return abs(float(self))
 
-    def __round__(self, ndigits: Optional[int] = None) -> Union[int, float]:
+    def __round__(self, ndigits: int | None = None) -> int | float:
         """Round :const:`nvitop.NA` to ``ndigits`` decimal places, defaulting to :const:`0`.
 
         If ``ndigits`` is omitted or :data:`None`, returns :const:`0`, otherwise returns :data:`math.nan`.
@@ -494,7 +496,7 @@ SIZE_PATTERN = re.compile(
 """The regex pattern for human readable size."""
 
 
-def bytes2human(b: Union[int, float, NaType]) -> str:  # pylint: disable=too-many-return-statements
+def bytes2human(b: int | float | NaType) -> str:  # pylint: disable=too-many-return-statements
     """Convert bytes to a human readable string."""
     if b == NA:
         return NA
@@ -524,7 +526,7 @@ def bytes2human(b: Union[int, float, NaType]) -> str:  # pylint: disable=too-man
     return f'{round(b / PiB, 1):.1f}PiB'
 
 
-def human2bytes(s: Union[int, str]) -> int:
+def human2bytes(s: int | str) -> int:
     """Convert a human readable size string (*case insensitive*) to bytes.
 
     Raises:
@@ -558,7 +560,7 @@ def human2bytes(s: Union[int, str]) -> int:
     return int(float(size) * SIZE_UNITS[unit])
 
 
-def timedelta2human(dt: Union[int, float, datetime.timedelta, NaType]) -> str:
+def timedelta2human(dt: int | float | datetime.timedelta | NaType) -> str:
     """Convert a number in seconds or a :class:`datetime.timedelta` instance to a human readable string."""
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
@@ -575,7 +577,7 @@ def timedelta2human(dt: Union[int, float, datetime.timedelta, NaType]) -> str:
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
-def utilization2string(utilization: Union[int, float, NaType]) -> str:
+def utilization2string(utilization: int | float | NaType) -> str:
     """Convert a utilization rate to string."""
     if utilization != NA:
         if isinstance(utilization, int):
