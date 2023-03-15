@@ -50,19 +50,19 @@ jobs:
         id: py
         uses: actions/setup-python@v4
         with:
-          python-version: "3.6 - 3.11"
+          python-version: "3.7 - 3.11"
           update-environment: true
 
-      - name: Set up Python 3.6
-        id: py36
+      - name: Set up Python 3.7
+        id: py37
         uses: actions/setup-python@v4
         with:
-          python-version: "3.6"
+          python-version: "3.7"
           update-environment: false
 
-      - name: Check syntax (Python 3.6)
+      - name: Check syntax (Python 3.7)
         run: |
-          "${{ steps.py36.outputs.python-path }}" -m compileall nvitop
+          "${{ steps.py37.outputs.python-path }}" -m compileall nvitop
 
       - name: Upgrade build dependencies
         run: python -m pip install --upgrade pip setuptools wheel build
@@ -123,7 +123,7 @@ jobs:
         uses: actions/setup-python@v4
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          python-version: "3.6 - 3.11"
+          python-version: "3.7 - 3.11"
           update-environment: true
 
       - name: Set __release__

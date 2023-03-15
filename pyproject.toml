@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "nvitop"
 description = "An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management."
 readme = "README.md"
-requires-python = ">= 3.6"
+requires-python = ">= 3.7"
 authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
 license = { text = "Apache License, Version 2.0 (Apache-2.0) & GNU General Public License, Version 3 (GPL-3.0)" }
 keywords = [
@@ -24,7 +24,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -72,7 +71,7 @@ include = ["nvitop", "nvitop.*"]
 safe = true
 line-length = 100
 skip-string-normalization = true
-target-version = ["py36", "py37", "py38", "py39", "py310", "py311"]
+target-version = ["py37", "py38", "py39", "py310", "py311"]
 
 [tool.isort]
 atomic = true
