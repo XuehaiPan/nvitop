@@ -23,6 +23,7 @@ utilization (CPU, memory, disks, network, sensors) in Python.
 from __future__ import annotations
 
 import os as _os
+import time as _time
 from typing import Callable as _Callable
 
 import psutil as _psutil
@@ -32,6 +33,7 @@ from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wild
 
 __all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [
     'load_average',
+    'uptime',
     'memory_percent',
     'swap_percent',
     'ppid_map',
@@ -61,6 +63,11 @@ except AttributeError:
     def load_average() -> None:
         """Get the system load average."""
         return
+
+
+def uptime() -> float:
+    """Get the system uptime."""
+    return _time.time() - _psutil.boot_time()
 
 
 def memory_percent() -> float:

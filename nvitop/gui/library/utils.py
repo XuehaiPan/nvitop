@@ -33,7 +33,7 @@ def cut_string(s, maxlen, padstr='...', align='left'):
 
 
 # pylint: disable=disallowed-name
-def make_bar(prefix, percent, width):
+def make_bar(prefix, percent, width, *, extra_text=''):
     bar = f'{prefix}: '
     if percent != NA and not (isinstance(percent, float) and not math.isfinite(percent)):
         if isinstance(percent, str) and percent.endswith('%'):
@@ -45,12 +45,15 @@ def make_bar(prefix, percent, width):
         if remainder > 0:
             bar += ' ▏▎▍▌▋▊▉'[remainder]
         if isinstance(percent, float) and len(f'{bar} {percent:.1f}%') <= width:
-            bar += f' {percent:.1f}%'
+            text = f'{percent:.1f}%'
         else:
-            bar += f' {min(round(percent), 100):d}%'.replace('100%', 'MAX')
+            text = f'{min(round(percent), 100):d}%'.replace('100%', 'MAX')
     else:
-        bar += '░' * (width - len(bar) - 4) + ' N/A'
-    return bar.ljust(width)
+        bar += '░' * (width - len(bar) - 4)
+        text = 'N/A'
+    if extra_text and len(f'{bar} {text} {extra_text}') <= width:
+        return f'{bar} {text}'.ljust(width - len(extra_text) - 1) + f' {extra_text}'
+    return f'{bar} {text}'.ljust(width)
 
 
 try:
