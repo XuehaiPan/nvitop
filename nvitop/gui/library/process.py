@@ -4,12 +4,21 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 
-from nvitop.api import NA
+from nvitop.api import NA, GiB
 from nvitop.api import GpuProcess as GpuProcessBase
-from nvitop.api import HostProcess, Snapshot, bytes2human, host, utilization2string
+from nvitop.api import HostProcess, Snapshot, bytes2human, host, timedelta2human, utilization2string
 
 
-__all__ = ['host', 'HostProcess', 'GpuProcess', 'NA', 'Snapshot', 'bytes2human']
+__all__ = [
+    'host',
+    'HostProcess',
+    'GpuProcess',
+    'NA',
+    'Snapshot',
+    'bytes2human',
+    'GiB',
+    'timedelta2human',
+]
 
 
 class GpuProcess(GpuProcessBase):

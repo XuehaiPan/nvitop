@@ -497,7 +497,12 @@ SIZE_PATTERN = re.compile(
 """The regex pattern for human readable size."""
 
 
-def bytes2human(b: int | float | NaType) -> str:  # pylint: disable=too-many-return-statements
+# pylint: disable-next=too-many-return-statements
+def bytes2human(
+    b: int | float | NaType,
+    *,
+    min_unit: int = 1,
+) -> str:
     """Convert bytes to a human readable string."""
     if b == NA:
         return NA
@@ -508,19 +513,19 @@ def bytes2human(b: int | float | NaType) -> str:  # pylint: disable=too-many-ret
         except ValueError:
             return NA
 
-    if b < KiB:
+    if b < KiB and min_unit < KiB:
         return f'{b}B'
-    if b < MiB:
+    if b < MiB and min_unit <= KiB:
         return f'{round(b / KiB)}KiB'
-    if b <= 20 * GiB:
+    if b <= 20 * GiB and min_unit <= MiB:
         return f'{round(b / MiB)}MiB'
-    if b < 100 * GiB:
+    if b < 100 * GiB and min_unit <= GiB:
         return f'{round(b / GiB, 2):.2f}GiB'
-    if b < 1000 * GiB:
+    if b < 1000 * GiB and min_unit <= GiB:
         return f'{round(b / GiB, 1):.1f}GiB'
-    if b < 100 * TiB:
+    if b < 100 * TiB and min_unit <= TiB:
         return f'{round(b / TiB, 2):.2f}TiB'
-    if b < 1000 * TiB:
+    if b < 1000 * TiB and min_unit <= TiB:
         return f'{round(b / TiB, 1):.1f}TiB'
     if b < 100 * PiB:
         return f'{round(b / PiB, 2):.2f}PiB'
@@ -561,7 +566,11 @@ def human2bytes(s: int | str) -> int:
     return int(float(size) * SIZE_UNITS[unit])
 
 
-def timedelta2human(dt: int | float | datetime.timedelta | NaType) -> str:
+def timedelta2human(
+    dt: int | float | datetime.timedelta | NaType,
+    *,
+    round: bool = False,  # pylint: disable=redefined-builtin
+) -> str:
     """Convert a number in seconds or a :class:`datetime.timedelta` instance to a human readable string."""
     if isinstance(dt, (int, float)):
         dt = datetime.timedelta(seconds=dt)
@@ -569,7 +578,7 @@ def timedelta2human(dt: int | float | datetime.timedelta | NaType) -> str:
     if not isinstance(dt, datetime.timedelta):
         return NA
 
-    if dt.days >= 4:
+    if dt.days >= 4 or (round and dt.days >= 1):
         return f'{dt.days + dt.seconds / 86400:.1f} days'
 
     hours, seconds = divmod(86400 * dt.days + dt.seconds, 3600)

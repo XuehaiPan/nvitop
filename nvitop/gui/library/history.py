@@ -97,6 +97,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         )
         self.reversed_history = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
         self._max_value_maintainer = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
+        self.last_retval = None
 
         self.graph = []
         self.last_graph = []
@@ -281,7 +282,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     def hook(self, func, get_value=None):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            retval = value = func(*args, **kwargs)
+            self.last_retval = retval = value = func(*args, **kwargs)
             if get_value is not None:
                 value = get_value(retval)
             self.add(value)

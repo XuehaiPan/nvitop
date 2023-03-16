@@ -19,7 +19,15 @@ from nvitop.gui.library.keybinding import (
 from nvitop.gui.library.libcurses import libcurses, setlocale_utf8
 from nvitop.gui.library.messagebox import MessageBox, send_signal
 from nvitop.gui.library.mouse import MouseEvent
-from nvitop.gui.library.process import GpuProcess, HostProcess, Snapshot, bytes2human, host
+from nvitop.gui.library.process import (
+    GiB,
+    GpuProcess,
+    HostProcess,
+    Snapshot,
+    bytes2human,
+    host,
+    timedelta2human,
+)
 from nvitop.gui.library.selection import Selection
 from nvitop.gui.library.utils import (
     HOSTNAME,
