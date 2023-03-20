@@ -289,7 +289,7 @@ class cudaError(Exception):
         obj.value = value
         return obj
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the error."""
         # pylint: disable=no-member
         try:
@@ -306,8 +306,6 @@ class cudaError(Exception):
             )
         except cudaError:
             return f'CUDA Error with code {self.value}.'
-
-    __repr__ = __str__
 
     def __eq__(self, other: object) -> bool:
         """Test equality to other object."""

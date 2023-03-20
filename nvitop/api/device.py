@@ -661,7 +661,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._ident = (self.index, self.uuid())
         self._hash = None
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the device."""
         return '{}(index={}, name="{}", total_memory={})'.format(
             self.__class__.__name__,
@@ -669,8 +669,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self.name(),
             self.memory_total_human(),
         )
-
-    __repr__ = __str__
 
     def __eq__(self, other: object) -> bool:
         """Test equality to other object."""
@@ -2281,7 +2279,7 @@ class CudaDevice(Device):
 
         self._ident = ((self._cuda_index, self.index), self.uuid())
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the CUDA device."""
         return '{}(cuda_index={}, nvml_index={}, name="{}", total_memory={})'.format(
             self.__class__.__name__,
@@ -2290,8 +2288,6 @@ class CudaDevice(Device):
             self.name(),
             self.memory_total_human(),
         )
-
-    __repr__ = __str__
 
     def __reduce__(self) -> tuple[type[CudaDevice], tuple[int]]:
         """Return state information for pickling."""

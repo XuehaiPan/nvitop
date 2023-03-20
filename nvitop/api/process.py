@@ -229,11 +229,9 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                     pass
         self._super_gone = value
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the process."""
-        return super().__str__().replace(self.__class__.__module__ + '.', '', 1)
-
-    __repr__ = __str__
+        return super().__repr__().replace(self.__class__.__module__ + '.', '', 1)
 
     def __reduce__(self) -> tuple[type[HostProcess], tuple[int]]:
         """Return state information for pickling."""
@@ -520,7 +518,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             if not hasattr(self, f'_gpu_{util}_utilization'):
                 setattr(self, f'_gpu_{util}_utilization', NA)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the GPU process."""
         return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
             self.__class__.__name__,
@@ -530,8 +528,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self.device,
             self.host,
         )
-
-    __repr__ = __str__
 
     def __eq__(self, other: object) -> bool:
         """Test equality to other object."""

@@ -624,7 +624,7 @@ class Snapshot:
         for key, value in items.items():
             setattr(self, key, value)
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         """Return a string representation of the snapshot."""
         keys = set(self.__dict__.keys()).difference({'real', 'timestamp'})
         keys = ['real', *sorted(keys)]
@@ -640,8 +640,6 @@ class Snapshot:
             self.__class__.__name__,
             ',\n    '.join(keyvals),
         )
-
-    __repr__ = __str__
 
     def __hash__(self) -> int:
         """Return a hash value of the snapshot."""
