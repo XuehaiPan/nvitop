@@ -79,7 +79,7 @@ TTY = sys.stdout.isatty()
 
 
 def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument
-    devices: Iterable[Device] = None,
+    devices: Iterable[Device] | None = None,
     *,
     format: str = 'index',  # pylint: disable=redefined-builtin
     force_index: bool = False,
