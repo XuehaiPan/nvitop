@@ -32,7 +32,7 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     def posint(argstring: str) -> int:
-        num = int(argstring)
+        num = float(argstring)
         if num <= 0:
             raise ValueError
         return num
