@@ -59,6 +59,12 @@ repos:
           (?x)(
             ^docs/source/conf.py$
           )
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.2.4
+    hooks:
+    - id: codespell
+      additional_dependencies: [".[toml]"]
+      stages: [commit, push, manual]
   - repo: local
     hooks:
       - id: pylint
