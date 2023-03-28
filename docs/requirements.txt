@@ -5,4 +5,4 @@ sphinx-copybutton
 sphinx-rtd-theme
 
 pytorch-lightning >= 1.5.0
-tensorflow-cpu >= 2.0
+tensorflow-cpu >= 2.0.0, < 2.12.0a0
