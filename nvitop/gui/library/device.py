@@ -3,6 +3,8 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from cachetools.func import ttl_cache
+
 from nvitop.api import NA
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
@@ -78,19 +80,19 @@ class Device(DeviceBase):
             self.as_snapshot()
         return self._snapshot
 
-    def mig_devices(self):
-        mig_devices = []
-
-        if self.is_mig_mode_enabled():
-            for mig_index in range(self.max_mig_device_count()):
-                try:
-                    mig_device = MigDevice(index=(self.index, mig_index))
-                except libnvml.NVMLError:
-                    break
-                else:
-                    mig_devices.append(mig_device)
-
-        return mig_devices
+    fan_speed = ttl_cache(ttl=5.0)(DeviceBase.fan_speed)
+    temperature = ttl_cache(ttl=5.0)(DeviceBase.temperature)
+    power_usage = ttl_cache(ttl=5.0)(DeviceBase.power_usage)
+    display_active = ttl_cache(ttl=5.0)(DeviceBase.display_active)
+    display_mode = ttl_cache(ttl=5.0)(DeviceBase.display_mode)
+    current_driver_model = ttl_cache(ttl=5.0)(DeviceBase.current_driver_model)
+    persistence_mode = ttl_cache(ttl=5.0)(DeviceBase.persistence_mode)
+    performance_state = ttl_cache(ttl=5.0)(DeviceBase.performance_state)
+    total_volatile_uncorrected_ecc_errors = ttl_cache(ttl=5.0)(
+        DeviceBase.total_volatile_uncorrected_ecc_errors,
+    )
+    compute_mode = ttl_cache(ttl=5.0)(DeviceBase.compute_mode)
+    mig_mode = ttl_cache(ttl=5.0)(DeviceBase.mig_mode)
 
     def memory_percent_string(self):  # in percentage
         return utilization2string(self.memory_percent())

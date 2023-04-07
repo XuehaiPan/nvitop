@@ -104,14 +104,13 @@ Examples:
 from __future__ import annotations
 
 import contextlib
+import functools
 import multiprocessing as mp
 import os
 import re
 import threading
 from collections import OrderedDict
 from typing import Any, Callable, Iterable, NamedTuple
-
-from cachetools.func import ttl_cache
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
@@ -730,7 +729,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 )
                 func = getattr(libnvml, 'nvmlDeviceGet' + pascal_case + suffix)
 
-            @ttl_cache(ttl=1.0)
             def attribute(*args: Any, **kwargs: Any) -> Any:
                 try:
                     return libnvml.nvmlQuery(
@@ -877,7 +875,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return libnvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
 
     @memoize_when_activated
-    @ttl_cache(ttl=1.0)
     def memory_info(self) -> MemoryInfo:  # in bytes
         """Return a named tuple with memory information (in bytes) for the device.
 
@@ -982,7 +979,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return f'{self.memory_used_human()} / {self.memory_total_human()}'
 
     @memoize_when_activated
-    @ttl_cache(ttl=1.0)
     def bar1_memory_info(self) -> MemoryInfo:  # in bytes
         """Return a named tuple with BAR1 memory information (in bytes) for the device.
 
@@ -1069,7 +1065,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return f'{self.bar1_memory_used_human()} / {self.bar1_memory_total_human()}'
 
     @memoize_when_activated
-    @ttl_cache(ttl=1.0)
     def utilization_rates(self) -> UtilizationRates:  # in percentage
         """Return a named tuple with GPU utilization rates (in percentage) for the device.
 
@@ -1143,7 +1138,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self.utilization_rates().decoder
 
     @memoize_when_activated
-    @ttl_cache(ttl=5.0)
     def clock_infos(self) -> ClockInfos:  # in MHz
         """Return a named tuple with current clock speeds (in MHz) for the device.
 
@@ -1168,7 +1162,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     clocks = clock_infos
 
     @memoize_when_activated
-    @ttl_cache(ttl=5.0)
     def max_clock_infos(self) -> ClockInfos:  # in MHz
         """Return a named tuple with maximum clock speeds (in MHz) for the device.
 
@@ -1309,7 +1302,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.max_clock_infos().video
 
-    @ttl_cache(ttl=5.0)
     def fan_speed(self) -> int | NaType:  # in percentage
         """The fan speed value is the percent of the product's maximum noise tolerance fan speed that the device's fan is currently intended to run at.
 
@@ -1329,7 +1321,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return libnvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
 
-    @ttl_cache(ttl=5.0)
     def temperature(self) -> int | NaType:  # in Celsius
         """Core GPU temperature in degrees C.
 
@@ -1349,7 +1340,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         )
 
     @memoize_when_activated
-    @ttl_cache(ttl=5.0)
     def power_usage(self) -> int | NaType:  # in milliwatts (mW)
         """The last measured power draw for the entire board in milliwatts.
 
@@ -1367,7 +1357,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     power_draw = power_usage  # in milliwatts (mW)
 
     @memoize_when_activated
-    @ttl_cache(ttl=60.0)
     def power_limit(self) -> int | NaType:  # in milliwatts (mW)
         """The software power limit in milliwatts.
 
@@ -1398,7 +1387,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             power_limit = f'{round(power_limit / 1000.0)}W'
         return f'{power_usage} / {power_limit}'
 
-    @ttl_cache(ttl=60.0)
     def display_active(self) -> str | NaType:
         """A flag that indicates whether a display is initialized on the GPU's (e.g. memory is allocated on the device for display).
 
@@ -1421,7 +1409,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             NA,
         )
 
-    @ttl_cache(ttl=60.0)
     def display_mode(self) -> str | NaType:
         """A flag that indicates whether a physical display (e.g. monitor) is currently connected to any of the GPU's connectors.
 
@@ -1443,7 +1430,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             NA,
         )
 
-    @ttl_cache(ttl=60.0)
     def current_driver_model(self) -> str | NaType:
         """The driver model currently in use.
 
@@ -1471,7 +1457,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     driver_model = current_driver_model
 
-    @ttl_cache(ttl=60.0)
     def persistence_mode(self) -> str | NaType:
         """A flag that indicates whether persistence mode is enabled for the GPU. Value is either "Enabled" or "Disabled".
 
@@ -1495,7 +1480,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             NA,
         )
 
-    @ttl_cache(ttl=5.0)
     def performance_state(self) -> str | NaType:
         """The current performance state for the GPU. States range from P0 (maximum performance) to P12 (minimum performance).
 
@@ -1513,7 +1497,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             performance_state = 'P' + str(performance_state)
         return performance_state
 
-    @ttl_cache(ttl=5.0)
     def total_volatile_uncorrected_ecc_errors(self) -> int | NaType:
         """Total errors detected across entire chip.
 
@@ -1533,7 +1516,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             libnvml.NVML_VOLATILE_ECC,
         )
 
-    @ttl_cache(ttl=60.0)
     def compute_mode(self) -> str | NaType:
         """The compute mode flag indicates whether individual or multiple compute applications may run on the GPU.
 
@@ -1588,7 +1570,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             self._is_mig_device = bool(is_mig_device)  # nvmlDeviceIsMigDeviceHandle returns c_uint
         return self._is_mig_device
 
-    @ttl_cache(ttl=60.0)
     def mig_mode(self) -> str | NaType:
         """The MIG mode that the GPU is currently operating under.
 
@@ -1653,7 +1634,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return [self]
         return self.mig_devices()
 
-    @ttl_cache(ttl=2.0)
     def processes(self) -> dict[int, GpuProcess]:
         """Return a dictionary of processes running on the GPU.
 
@@ -1834,7 +1814,6 @@ class PhysicalDevice(Device):
         """
         return self._nvml_index
 
-    @ttl_cache(ttl=60.0)
     def max_mig_device_count(self) -> int:
         """Return the maximum number of MIG instances the device supports.
 
@@ -1847,7 +1826,6 @@ class PhysicalDevice(Device):
             ignore_function_not_found=True,
         )
 
-    @ttl_cache(ttl=60.0)
     def mig_device(self, mig_index: int) -> MigDevice:
         """Return a child MIG device of the given index.
 
@@ -1858,7 +1836,6 @@ class PhysicalDevice(Device):
         with _global_physical_device(self):
             return MigDevice(index=(self.index, mig_index))
 
-    @ttl_cache(ttl=60.0)
     def mig_devices(self) -> list[MigDevice]:
         """Return a list of children MIG devices of the current device.
 
@@ -2496,7 +2473,7 @@ def _get_global_physical_device() -> PhysicalDevice:
         return _GLOBAL_PHYSICAL_DEVICE
 
 
-@ttl_cache(ttl=300.0)
+@functools.lru_cache()
 def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
     cuda_visible_devices: str | None = None,
     format: str = 'index',  # pylint: disable=redefined-builtin

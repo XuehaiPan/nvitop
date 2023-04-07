@@ -652,7 +652,6 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """Update the GPU consumption status from a new NVML query."""
         self.set_gpu_memory(NA)
         self.set_gpu_utilization(NA, NA, NA, NA)
-        self.device.processes.cache_clear()
         self.device.processes()
         return self.gpu_memory()
 
