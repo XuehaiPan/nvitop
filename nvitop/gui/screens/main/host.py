@@ -165,6 +165,13 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             format=lambda x: f'{prefix}GPU UTL: {percentage(x)}',
         )
 
+    @classmethod
+    def set_snapshot_interval(cls, interval):
+        assert interval > 0.0
+        interval = float(interval)
+
+        cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 0.5)
+
     def take_snapshots(self):
         host.cpu_percent()
         host.virtual_memory()

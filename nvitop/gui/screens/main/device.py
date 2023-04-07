@@ -14,7 +14,7 @@ from nvitop.version import __version__
 
 class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'device'
-    SNAPSHOT_INTERVAL = 0.67
+    SNAPSHOT_INTERVAL = 0.5
 
     def __init__(self, devices, compact, win, root):
         super().__init__(win, root)
@@ -126,6 +126,16 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
     def snapshots(self, snapshots):
         with self.snapshot_lock:
             self._snapshots = snapshots
+
+    @classmethod
+    def set_snapshot_interval(cls, interval):
+        assert interval > 0.0
+        interval = float(interval)
+
+        cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
+        cls.take_snapshots = ttl_cache(ttl=interval)(
+            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
+        )
 
     @ttl_cache(ttl=1.0)
     def take_snapshots(self):

@@ -77,6 +77,11 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.add_child(self.help_screen)
 
             if interval is not None:
+                if interval < 1.0:
+                    self.main_screen.device_panel.set_snapshot_interval(interval)
+                    self.main_screen.host_panel.set_snapshot_interval(interval)
+                if interval < 0.5:
+                    self.process_metrics_screen.set_snapshot_interval(interval)
                 self.main_screen.process_panel.set_snapshot_interval(interval)
                 self.treeview_screen.set_snapshot_interval(interval)
 
@@ -190,7 +195,7 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
                 self.redraw()
                 self.handle_input()
                 if time.monotonic() - self.last_input_time > 1.0:
-                    time.sleep(0.25)
+                    time.sleep(0.2)
             except BreakLoop:
                 break
 

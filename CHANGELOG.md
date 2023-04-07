@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Support float number as snapshot interval that >= 0.25s by [@XuehaiPan](https://github.com/XuehaiPan) in [#67](https://github.com/XuehaiPan/nvitop/pull/67).
 - Show more host metrics (e.g., used virtual memory, uptime) in CLI by [@XuehaiPan](https://github.com/XuehaiPan) in [#59](https://github.com/XuehaiPan/nvitop/pull/59).
 
 ### Changed
