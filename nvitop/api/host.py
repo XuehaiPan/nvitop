@@ -27,7 +27,6 @@ import time as _time
 from typing import Callable as _Callable
 
 import psutil as _psutil
-from cachetools.func import ttl_cache as _ttl_cache
 from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
 
 
@@ -48,17 +47,18 @@ PsutilError = Error  # make alias # noqa: F405
 del Error  # noqa: F821 # pylint: disable=undefined-variable
 
 
-cpu_percent = _ttl_cache(ttl=0.25)(_psutil.cpu_percent)
-virtual_memory = _ttl_cache(ttl=0.25)(_psutil.virtual_memory)
-swap_memory = _ttl_cache(ttl=0.25)(_psutil.swap_memory)
+cpu_percent = _psutil.cpu_percent
+virtual_memory = _psutil.virtual_memory
+swap_memory = _psutil.swap_memory
 
 
-try:
-    load_average: _Callable[[], tuple[float, float, float]] = _ttl_cache(ttl=2.0)(
-        _psutil.getloadavg,
-    )
-    load_average.__doc__ = """Get the system load average."""
-except AttributeError:
+if hasattr(_psutil, 'getloadavg'):
+
+    def load_average() -> tuple[float, float, float]:
+        """Get the system load average."""
+        return _psutil.getloadavg()
+
+else:
 
     def load_average() -> None:
         """Get the system load average."""
