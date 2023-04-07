@@ -34,7 +34,7 @@ Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', '
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'process'
-    SNAPSHOT_INTERVAL = 0.67
+    SNAPSHOT_INTERVAL = 0.5
 
     ORDERS = {
         'natural': Order(

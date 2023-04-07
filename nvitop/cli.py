@@ -31,13 +31,13 @@ def parse_arguments() -> argparse.Namespace:
         colored('heavy', 'red'),
     )
 
-    def posint(argstring: str) -> int:
-        num = int(argstring)
+    def posfloat(argstring: str) -> float:
+        num = float(argstring)
         if num <= 0:
             raise ValueError
         return num
 
-    posint.__name__ = 'positive integer'
+    posfloat.__name__ = 'positive float'
 
     parser = argparse.ArgumentParser(
         prog='nvitop',
@@ -88,7 +88,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         '--interval',
         dest='interval',
-        type=posint,
+        type=posfloat,
         default=None,
         metavar='SEC',
         help='Process status update interval in seconds. (default: 2)',
@@ -222,6 +222,12 @@ def parse_arguments() -> argparse.Namespace:
     )
 
     args = parser.parse_args()
+
+    if args.interval is not None and args.interval < 0.25:
+        parser.error(
+            f'the interval {args.interval:0.2g}s is too short, which may cause performance issues. '
+            f'Expected 1/4 or higher.',
+        )
 
     if not args.colorful:
         args.colorful = 'colorful' in NVITOP_MONITOR_MODE and 'plain' not in NVITOP_MONITOR_MODE

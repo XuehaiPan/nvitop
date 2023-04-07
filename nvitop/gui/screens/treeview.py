@@ -216,7 +216,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
 
 class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'treeview'
-    SNAPSHOT_INTERVAL = 0.67
+    SNAPSHOT_INTERVAL = 0.5
 
     def __init__(self, win, root):
         super().__init__(win, root)

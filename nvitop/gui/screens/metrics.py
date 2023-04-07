@@ -269,6 +269,13 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         self.selection.process = value
         self.enable()
 
+    @classmethod
+    def set_snapshot_interval(cls, interval):
+        assert interval > 0.0
+        interval = float(interval)
+
+        cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
+
     def take_snapshots(self):
         with self.snapshot_lock:
             if not self.selection.is_set() or not self.enabled:
