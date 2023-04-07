@@ -57,6 +57,16 @@ jobs:
           python -m nvitop.select --version
           python -m nvitop.select --help
 
+      - name: Import tests (Python 3.7)
+        run: |
+          "${{ steps.py37.outputs.python-path }}" -m pip install --upgrade pip setuptools
+          "${{ steps.py37.outputs.python-path }}" -m pip install -r requirements.txt
+          "${{ steps.py37.outputs.python-path }}" -c 'import nvitop'
+          "${{ steps.py37.outputs.python-path }}" -m nvitop --version
+          "${{ steps.py37.outputs.python-path }}" -m nvitop --help
+          "${{ steps.py37.outputs.python-path }}" -m nvitop.select --version
+          "${{ steps.py37.outputs.python-path }}" -m nvitop.select --help
+
       - name: Install linters
         run: |
           python -m pip install --upgrade pre-commit pylint[spelling]
