@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import atexit as _atexit
 import ctypes as _ctypes
 import functools as _functools
 import inspect as _inspect
@@ -220,6 +221,7 @@ def _lazy_init() -> None:
         if __initialized:
             return
     nvmlInit()
+    _atexit.register(nvmlShutdown)
 
 
 def nvmlInit() -> None:  # pylint: disable=function-redefined
