@@ -80,6 +80,20 @@ class Device(DeviceBase):
             self.as_snapshot()
         return self._snapshot
 
+    def mig_devices(self):
+        mig_devices = []
+
+        if self.is_mig_mode_enabled():
+            for mig_index in range(self.max_mig_device_count()):
+                try:
+                    mig_device = MigDevice(index=(self.index, mig_index))
+                except libnvml.NVMLError:
+                    break
+                else:
+                    mig_devices.append(mig_device)
+
+        return mig_devices
+
     fan_speed = ttl_cache(ttl=5.0)(DeviceBase.fan_speed)
     temperature = ttl_cache(ttl=5.0)(DeviceBase.temperature)
     power_usage = ttl_cache(ttl=5.0)(DeviceBase.power_usage)
