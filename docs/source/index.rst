@@ -68,6 +68,7 @@ Install the latest version from GitHub (|Commit Count|):
 
 .. code:: bash
 
+    pip3 install --upgrade pip setuptools
     pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 
 Or, clone this repo and install manually:

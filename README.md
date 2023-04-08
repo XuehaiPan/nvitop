@@ -161,6 +161,7 @@ conda install -c conda-forge nvitop
 Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.1.1)):
 
 ```bash
+pip3 install --upgrade pip setuptools
 pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 ```
 
