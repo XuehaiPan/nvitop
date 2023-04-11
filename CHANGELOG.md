@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Further isolate the `CUDA_VISIBLE_DEVICE` parser in a subprocess by [@XuehaiPan](https://github.com/XuehaiPan) in [#70](https://github.com/XuehaiPan/nvitop/pull/70).
+-
 
 ### Removed
 
@@ -29,7 +29,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-## [1.1.0] - 2023-04-07
+## [1.1.2] - 2023-04-11
+
+### Fixed
+
+- Further isolate the `CUDA_VISIBLE_DEVICE` parser in a subprocess by [@XuehaiPan](https://github.com/XuehaiPan) in [#70](https://github.com/XuehaiPan/nvitop/pull/70).
+
+------
+
+## [1.1.1] - 2023-04-07
 
 ### Fixed
 
@@ -66,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.2
 [1.1.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.1
 [1.1.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.0
 [1.0.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.0.0
