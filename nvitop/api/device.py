@@ -108,6 +108,9 @@ import functools
 import multiprocessing as mp
 import os
 import re
+import subprocess
+import sys
+import textwrap
 import threading
 from collections import OrderedDict
 from typing import Any, Callable, Iterable, NamedTuple
@@ -2488,8 +2491,32 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     gpu_uuids = set(physical_device_attrs)
 
     try:
-        raw_uuids = _parse_cuda_visible_devices_to_uuids(cuda_visible_devices, verbose=False)
-    except libcuda.CUDAError:
+        raw_uuids = (
+            subprocess.check_output(
+                [
+                    sys.executable,
+                    '-c',
+                    textwrap.dedent(
+                        f"""
+                        import nvitop.api.device
+
+                        print(
+                            ','.join(
+                                nvitop.api.device._parse_cuda_visible_devices_to_uuids(
+                                    {cuda_visible_devices!r},
+                                    verbose=False,
+                                ),
+                            ),
+                        )
+                        """,
+                    ),
+                ],
+            )
+            .decode('utf-8')
+            .strip()
+            .split(',')
+        )
+    except subprocess.CalledProcessError:
         pass
     else:
         uuids = [
