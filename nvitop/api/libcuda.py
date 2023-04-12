@@ -655,7 +655,7 @@ def cuDeviceGetUuid(device: _c_CUdevice_t) -> str:
     """
     try:
         fn = __cudaGetFunctionPointer('cuDeviceGetUuid_v2')
-    except AttributeError:
+    except CUDAError_NotFound:  # noqa: F821 # pylint: disable=undefined-variable
         fn = __cudaGetFunctionPointer('cuDeviceGetUuid')
 
     ubyte_array = _ctypes.c_ubyte * 16
