@@ -57,7 +57,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/202362811-34f2c01d-97c8-49d2-b19b-0d7da648f2d5.png" alt="Filter">
   <br/>
-  Process filtering and more colorful interface.
+  Process filtering and a more colorful interface.
 </p>
 
 <p align="center">
@@ -111,7 +111,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 - termcolor
 - curses<sup>[*](#curses)</sup> (with `libncursesw`)
 
-**NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
+**NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of the NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
 
 This repository contains a Bash script to install/upgrade the NVIDIA drivers for Ubuntu Linux. For example:
 
@@ -191,7 +191,7 @@ pip3 install .
 Query the device and process status. The output is similar to `nvidia-smi`, but has been enriched and colorized.
 
 ```bash
-# Query status of all devices
+# Query the status of all devices
 $ nvitop -1  # or use `python3 -m nvitop -1`
 
 # Specify query devices (by integer indices)
@@ -274,7 +274,7 @@ docker build --tag nvitop:latest .  # build the Docker image
 docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest  # run the Docker container
 ```
 
-The [`Dockerfile`](Dockerfile) has a optional build argument `basetag` (default: `450-signed-ubuntu22.04`) for the tag of image [`nvcr.io/nvidia/driver`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/driver/tags).
+The [`Dockerfile`](Dockerfile) has an optional build argument `basetag` (default: `450-signed-ubuntu22.04`) for the tag of image [`nvcr.io/nvidia/driver`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/driver/tags).
 
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
 
@@ -816,7 +816,7 @@ In [6]: with collector(tag='<tag>'):
 }
 ```
 
-The results can be easily logged into [TensorBoard](https://github.com/tensorflow/tensorboard) or to CSV file. For example:
+The results can be easily logged into [TensorBoard](https://github.com/tensorflow/tensorboard) or a CSV file. For example:
 
 ```python
 import os
@@ -863,7 +863,7 @@ for epoch in range(num_epoch):
                         global_step=epoch)
 ```
 
-Another example for logging to CSV file:
+Another example for logging into a CSV file:
 
 ```python
 import datetime
@@ -890,7 +890,7 @@ df.insert(0, 'time', df['resources/timestamp'].map(datetime.datetime.fromtimesta
 df.to_csv('results.csv', index=False)
 ```
 
-You can also daemonize the collector in background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.collect_in_background) or [`ResourceMetricCollector.daemonize`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.ResourceMetricCollector.daemonize) with callback functions.
+You can also daemonize the collector in the background using [`collect_in_background`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.collect_in_background) or [`ResourceMetricCollector.daemonize`](https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.ResourceMetricCollector.daemonize) with callback functions.
 
 ```python
 from nvitop import Device, ResourceMetricCollector, collect_in_background
@@ -907,7 +907,7 @@ def on_stop(collector):  # will be called only once at stop
     if not logger.is_closed():
         logger.close()  # cleanup
 
-# Record metrics to the logger in background every 5 seconds.
+# Record metrics to the logger in the background every 5 seconds.
 # It will collect 5-second mean/min/max for each metric.
 collect_in_background(
     on_collect,
@@ -1114,7 +1114,7 @@ In [19]: nvidia1_snapshot.bar1_memory_info  # snapshot will automatically retrie
 Out[19]: MemoryInfo(total=268435456, free=257622016, used=10813440)
 ```
 
-**NOTE:** Some entry values may be `'N/A'` (type: [`NaType`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NaType), subclass of `str`) when the corresponding resources are not applicable. The [`NA`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NA) value supports arithmetic operations. It acts like `math.nan: float`.
+**NOTE:** Some entry values may be `'N/A'` (type: [`NaType`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NaType), a subclass of `str`) when the corresponding resources are not applicable. The [`NA`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NA) value supports arithmetic operations. It acts like `math.nan: float`.
 
 ```python
 >>> from nvitop import NA
@@ -1367,7 +1367,7 @@ Tree-view screen (shortcut: <kbd>t</kbd>) for GPU processes and their ancestors:
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/123914889-7b3e0400-d9b2-11eb-9b71-a48971617c2a.png" alt="Tree-view">
 </p>
 
-**NOTE:** The process tree is built in backward (recursively back to the tree root). Only GPU processes along with their children and ancestors (parents and grandparents ...) will be shown. Not all running processes will be displayed.
+**NOTE:** The process tree is built in backward order (recursively back to the tree root). Only GPU processes along with their children and ancestors (parents and grandparents ...) will be shown. Not all running processes will be displayed.
 
 Environment variable screen (shortcut: <kbd>e</kbd>):
 
@@ -1392,7 +1392,7 @@ See [CHANGELOG.md](https://github.com/XuehaiPan/nvitop/blob/HEAD/CHANGELOG.md).
 
 ## License
 
-The source code of `nvitop` is dual-licensed by the **Apache License, Version 2.0 (Apache-2.0)** and **GNU General Public License, Version 3 (GPL-3.0)** . The `nvitop` CLI is released under the **GPL-3.0** license while the remaining part of `nvitop` is released under the **Apache-2.0** license. The license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE) (Apache-2.0) and [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) (GPL-3.0).
+The source code of `nvitop` is dual-licensed by the **Apache License, Version 2.0 (Apache-2.0)** and **GNU General Public License, Version 3 (GPL-3.0)**. The `nvitop` CLI is released under the **GPL-3.0** license while the remaining part of `nvitop` is released under the **Apache-2.0** license. The license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE) (Apache-2.0) and [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) (GPL-3.0).
 
 The source code is organized as:
 

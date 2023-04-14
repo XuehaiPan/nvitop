@@ -233,7 +233,7 @@ def collect_in_background(
                 if not logger.is_closed():
                     logger.close()  # cleanup
 
-            # Record metrics to the logger in background every 5 seconds.
+            # Record metrics to the logger in the background every 5 seconds.
             # It will collect 5-second mean/min/max for each metric.
             collect_in_background(
                 on_collect,
@@ -638,7 +638,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                     if not logger.is_closed():
                         logger.close()  # cleanup
 
-                # Record metrics to the logger in background every 5 seconds.
+                # Record metrics to the logger in the background every 5 seconds.
                 # It will collect 5-second mean/min/max for each metric.
                 ResourceMetricCollector(Device.cuda.all()).daemonize(
                     on_collect,
