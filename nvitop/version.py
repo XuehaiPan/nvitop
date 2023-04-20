@@ -29,7 +29,7 @@ if not __release__:
     try:
         prefix, sep, suffix = (
             subprocess.check_output(
-                ['git', 'describe', '--abbrev=7'],
+                ['git', 'describe', '--abbrev=7'],  # noqa: S603,S607
                 cwd=os.path.dirname(os.path.abspath(__file__)),
                 stderr=subprocess.DEVNULL,
                 text=True,

@@ -2493,7 +2493,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     try:
         raw_uuids = (
             subprocess.check_output(
-                [
+                [  # noqa: S603
                     sys.executable,
                     '-c',
                     textwrap.dedent(
