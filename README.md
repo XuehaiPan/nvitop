@@ -965,11 +965,11 @@ The [device module](https://nvitop.readthedocs.io/en/latest/api/device.html) pro
     </tr>
     <tr class="row-even">
       <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.parse_cuda_visible_devices" title="nvitop.parse_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_cuda_visible_devices</span></code></a>([...])</p></td>
-      <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value into a list of NVML device indices.</p></td>
+      <td><p>Parse the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value into a list of NVML device indices.</p></td>
     </tr>
     <tr class="row-odd">
       <td><p><a href="https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.normalize_cuda_visible_devices" title="nvitop.normalize_cuda_visible_devices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize_cuda_visible_devices</span></code></a>([...])</p></td>
-      <td><p>Parses the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value and convert it into a comma-separated string of UUIDs.</p></td>
+      <td><p>Parse the given <code class="docutils literal notranslate"><span class="pre">CUDA_VISIBLE_DEVICES</span></code> value and convert it into a comma-separated string of UUIDs.</p></td>
     </tr>
   </tbody>
 </table>
@@ -1033,7 +1033,7 @@ In [9]: nvidia0 = Device(0)  # from device index (or `Device(index=0)`)
    ...: nvidia0
 Out[9]: PhysicalDevice(index=0, name="GeForce RTX 2080 Ti", total_memory=11019MiB)
 
-In [10]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # from UUID string (or just`Device('GPU-xxxxxxxx-...')`)
+In [10]: nvidia1 = Device(uuid='GPU-01234567-89ab-cdef-0123-456789abcdef')  # from UUID string (or just `Device('GPU-xxxxxxxx-...')`)
     ...: nvidia2 = Device(bus_id='00000000:06:00.0')                        # from PCI bus ID
     ...: nvidia1
 Out[10]: PhysicalDevice(index=1, name="GeForce RTX 2080 Ti", total_memory=11019MiB)

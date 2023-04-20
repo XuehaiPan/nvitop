@@ -460,7 +460,7 @@ def cuGetErrorName(error: int) -> str:
     ret = fn(_CUresult_t(error), _ctypes.byref(p_name))
     _cudaCheckReturn(ret)
     name = _ctypes.string_at(p_name)
-    return name.decode('UTF-8', errors='replace')
+    return name.decode('utf-8', errors='replace')
 
 
 def cuGetErrorString(error: int) -> str:
@@ -478,7 +478,7 @@ def cuGetErrorString(error: int) -> str:
     ret = fn(_CUresult_t(error), _ctypes.byref(p_name))
     _cudaCheckReturn(ret)
     name = _ctypes.string_at(p_name)
-    return name.decode('UTF-8', errors='replace')
+    return name.decode('utf-8', errors='replace')
 
 
 def cuDriverGetVersion() -> str:
@@ -581,7 +581,7 @@ def cuDeviceGetByPCIBusId(pciBusId: str) -> _c_CUdevice_t:
     fn = __cudaGetFunctionPointer('cuDeviceGetByPCIBusId')
 
     device = _c_CUdevice_t()
-    ret = fn(_ctypes.byref(device), _ctypes.c_char_p(pciBusId.encode('UTF-8')))
+    ret = fn(_ctypes.byref(device), _ctypes.c_char_p(pciBusId.encode('utf-8')))
     _cudaCheckReturn(ret)
     return device
 
@@ -609,7 +609,7 @@ def cuDeviceGetPCIBusId(device: _c_CUdevice_t) -> str:
     pciBusId = _ctypes.create_string_buffer(256)
     ret = fn(pciBusId, _ctypes.c_int(256), device)
     _cudaCheckReturn(ret)
-    return pciBusId.value.decode('UTF-8', errors='replace')
+    return pciBusId.value.decode('utf-8', errors='replace')
 
 
 def cuDeviceGetName(device: _c_CUdevice_t) -> str:
@@ -636,7 +636,7 @@ def cuDeviceGetName(device: _c_CUdevice_t) -> str:
     name = _ctypes.create_string_buffer(256)
     ret = fn(name, _ctypes.c_int(256), device)
     _cudaCheckReturn(ret)
-    return name.value.decode('UTF-8', errors='replace')
+    return name.value.decode('utf-8', errors='replace')
 
 
 def cuDeviceGetUuid(device: _c_CUdevice_t) -> str:
