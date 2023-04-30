@@ -80,6 +80,7 @@ def take_snapshots(
     Examples:
         >>> from nvitop import take_snapshots, Device
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'
 
         >>> take_snapshots()  # equivalent to `take_snapshots(Device.all())`
@@ -306,6 +307,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
         >>> from nvitop import ResourceMetricCollector, Device

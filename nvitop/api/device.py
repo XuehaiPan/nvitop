@@ -69,6 +69,7 @@ Examples:
     )
 
     >>> import os
+    >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
     >>> CudaDevice.count()                     # number of NVIDIA GPUs visible to CUDA applications
@@ -2090,6 +2091,7 @@ class CudaDevice(Device):
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
         >>> CudaDevice.count()                     # number of NVIDIA GPUs visible to CUDA applications
@@ -2355,6 +2357,7 @@ def parse_cuda_visible_devices(
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
         >>> parse_cuda_visible_devices()        # parse the `CUDA_VISIBLE_DEVICES` environment variable to NVML indices
         [6, 5]
@@ -2411,6 +2414,7 @@ def normalize_cuda_visible_devices(cuda_visible_devices: str | None = _VALUE_OMI
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
         >>> normalize_cuda_visible_devices()        # normalize the `CUDA_VISIBLE_DEVICES` environment variable to UUID strings
         'GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1'

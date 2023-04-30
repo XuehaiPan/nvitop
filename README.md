@@ -686,6 +686,7 @@ for device in devices:
 ```python
 In [1]: from nvitop import take_snapshots, Device
    ...: import os
+   ...: os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '1,0'  # comma-separated integers or UUID strings
 
 In [2]: take_snapshots()  # equivalent to `take_snapshots(Device.all())`
@@ -763,6 +764,7 @@ Please refer to section [Low-level APIs](#low-level-apis) for more information.
 ```python
 In [1]: from nvitop import ResourceMetricCollector, Device
    ...: import os
+   ...: os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'  # comma-separated integers or UUID strings
 
 In [2]: collector = ResourceMetricCollector()                                   # log all devices and descendant processes of the current process on the GPUs
@@ -983,6 +985,7 @@ In [1]: from nvitop import (
    ...:     NA,
    ...: )
    ...: import os
+   ...: os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
    ...: os.environ['CUDA_VISIBLE_DEVICES'] = '9,8,7,6'  # comma-separated integers or UUID strings
 
 In [2]: Device.driver_version()
