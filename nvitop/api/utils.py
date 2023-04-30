@@ -27,7 +27,7 @@ import os
 import re
 import sys
 import time
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Generator, Iterable, Iterator
 
 from psutil import WINDOWS
 
@@ -70,12 +70,15 @@ except ImportError:
         text: str,
         color: str | None = None,
         on_color: str | None = None,
-        attrs: Iterable[str] = None,
+        attrs: Iterable[str] | None = None,
+        *,
+        no_color: bool | None = None,
+        force_color: bool | None = None,
     ) -> str:
         return text
 
 
-COLOR = sys.stdout.isatty()
+COLOR: bool = sys.stdout.isatty()
 
 
 def set_color(value: bool) -> None:
@@ -94,7 +97,7 @@ def colored(
     text: str,
     color: str | None = None,
     on_color: str | None = None,
-    attrs: Iterable[str] = None,
+    attrs: Iterable[str] | None = None,
 ) -> str:
     """Colorize text with ANSI color escape codes.
 
@@ -178,7 +181,7 @@ class NaType(str):
         """
         return math.nan
 
-    def __add__(self, other: object) -> str | float:
+    def __add__(self, other: object) -> str | float:  # type: ignore[override]
         """Return :data:`math.nan` if the operand is a number or uses string concatenation if the operand is a string (``NA + other``).
 
         A special case is when the operand is :const:`nvitop.NA` itself, the result is
@@ -193,9 +196,11 @@ class NaType(str):
         >>> NA + 1.0
         nan
         """  # pylint: disable=line-too-long
-        if isinstance(other, (int, float)) or other is NA:
+        if isinstance(other, (int, float)):
             return float(self) + other
-        return super().__add__(other)
+        if other is NA:
+            return float(self)
+        return super().__add__(other)  # type: ignore[operator]
 
     def __radd__(self, other: object) -> str | float:
         """Return :data:`math.nan` if the operand is a number or uses string concatenation if the operand is a string (``other + NA``).
@@ -223,8 +228,10 @@ class NaType(str):
         >>> NA + 1.0
         nan
         """
-        if isinstance(other, (int, float)) or other is NA:
+        if isinstance(other, (int, float)):
             return float(self) - other
+        if other is NA:
+            return float(self)
         return NotImplemented
 
     def __rsub__(self, other: object) -> float:
@@ -241,7 +248,7 @@ class NaType(str):
             return other - float(self)
         return NotImplemented
 
-    def __mul__(self, other: object) -> float:
+    def __mul__(self, other: object) -> float:  # type: ignore[override]
         """Return :data:`math.nan` if the operand is a number (``NA * other``).
 
         A special case is when the operand is :const:`nvitop.NA` itself, the result is also :data:`math.nan`.
@@ -253,11 +260,13 @@ class NaType(str):
         >>> NA * NA
         nan
         """
-        if isinstance(other, (int, float)) or other is NA:
+        if isinstance(other, (int, float)):
             return float(self) * other
+        if other is NA:
+            return float(self)
         return NotImplemented
 
-    def __rmul__(self, other: object) -> float:
+    def __rmul__(self, other: object) -> float:  # type: ignore[override]
         """Return :data:`math.nan` if the operand is a number (``other * NA``).
 
         >>> 1024 * NA
@@ -280,9 +289,13 @@ class NaType(str):
         ZeroDivisionError: float division by zero
         >>> NA / 0.0
         ZeroDivisionError: float division by zero
+        >>> NA / NA
+        nan
         """
         if isinstance(other, (int, float)):
             return float(self) / other
+        if other is NA:
+            return float(self)
         return NotImplemented
 
     def __rtruediv__(self, other: object) -> float:
@@ -308,9 +321,13 @@ class NaType(str):
         ZeroDivisionError: float division by zero
         >>> NA / 0.0
         ZeroDivisionError: float division by zero
+        >>> NA // NA
+        nan
         """
         if isinstance(other, (int, float)):
             return float(self) // other
+        if other is NA:
+            return float(self)
         return NotImplemented
 
     def __rfloordiv__(self, other: object) -> float:
@@ -325,7 +342,7 @@ class NaType(str):
             return other // float(self)
         return NotImplemented
 
-    def __mod__(self, other: object) -> float:
+    def __mod__(self, other: object) -> float:  # type: ignore[override]
         """Return :data:`math.nan` if the operand is a number (``NA % other``).
 
         >>> NA % 1024
@@ -339,6 +356,8 @@ class NaType(str):
         """
         if isinstance(other, (int, float)):
             return float(self) % other
+        if other is NA:
+            return float(self)
         return NotImplemented
 
     def __rmod__(self, other: object) -> float:
@@ -421,25 +440,25 @@ class NaType(str):
         """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return False
-        return super().__lt__(x)
+        return super().__lt__(x)  # type: ignore[operator]
 
     def __le__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return False
-        return super().__le__(x)
+        return super().__le__(x)  # type: ignore[operator]
 
     def __gt__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return True
-        return super().__gt__(x)
+        return super().__gt__(x)  # type: ignore[operator]
 
     def __ge__(self, x: object) -> bool:
         """The :const:`nvitop.NA` is always greater than any number, or uses the dictionary order for string."""
         if isinstance(x, (int, float)):
             return True
-        return super().__ge__(x)
+        return super().__ge__(x)  # type: ignore[operator]
 
     def __format__(self, format_spec: str) -> str:
         """Format :const:`nvitop.NA` according to ``format_spec``."""
@@ -459,22 +478,22 @@ NA.__doc__ = """The singleton instance of :class:`NaType`. The actual value is :
 
 NotApplicable = NA
 
-KiB = 1 << 10
+KiB: int = 1 << 10
 """Kibibyte (1024)"""
 
-MiB = 1 << 20
+MiB: int = 1 << 20
 """Mebibyte (1024 * 1024)"""
 
-GiB = 1 << 30
+GiB: int = 1 << 30
 """Gibibyte (1024 * 1024 * 1024)"""
 
-TiB = 1 << 40
+TiB: int = 1 << 40
 """Tebibyte (1024 * 1024 * 1024 * 1024)"""
 
-PiB = 1 << 50
+PiB: int = 1 << 50
 """Pebibyte (1024 * 1024 * 1024 * 1024 * 1024)"""
 
-SIZE_UNITS = {
+SIZE_UNITS: dict[str | None, int] = {
     None: 1,
     '': 1,
     'B': 1,
@@ -490,7 +509,7 @@ SIZE_UNITS = {
     'PB': 1000**4,
 }
 """Units of storage and memory measurements."""
-SIZE_PATTERN = re.compile(
+SIZE_PATTERN: re.Pattern = re.compile(
     r'^\s*\+?\s*(?P<size>\d+(?:\.\d+)?)\s*(?P<unit>[KMGTP]i?B?|B?)\s*$',
     flags=re.IGNORECASE,
 )
@@ -651,7 +670,7 @@ class Snapshot:
         If the attribute is not defined, fetches from the original object and makes a function call.
         """
         try:
-            return super().__getattr__(name)
+            return super().__getattr__(name)  # type: ignore[misc]
         except AttributeError:
             attribute = getattr(self.real, name)
             if callable(attribute):
@@ -671,17 +690,17 @@ class Snapshot:
         """Support ``snapshot['name'] = value`` syntax."""
         setattr(self, name, value)
 
-    def __iter__(self) -> Iterable[str]:
+    def __iter__(self) -> Iterator[str]:
         """Support ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
 
-        def gen() -> str:
+        def gen() -> Generator[str, None, None]:
             for name in self.__dict__:
                 if name not in ('real', 'timestamp'):
                     yield name
 
         return gen()
 
-    def keys(self) -> Iterable[str]:
+    def keys(self) -> Iterator[str]:
         # pylint: disable-next=line-too-long
         """Support ``**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and ``dict(snapshot)`` dictionary conversion."""
         return iter(self)
@@ -730,6 +749,6 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
         except AttributeError:
             pass
 
-    wrapped.cache_activate = cache_activate
-    wrapped.cache_deactivate = cache_deactivate
+    wrapped.cache_activate = cache_activate  # type: ignore[attr-defined]
+    wrapped.cache_deactivate = cache_deactivate  # type: ignore[attr-defined]
     return wrapped

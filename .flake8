@@ -20,6 +20,7 @@ per-file-ignores =
     # F401: module imported but unused
     # intentionally unused imports
     __init__.py: F401
+    nvitop/api/host.py: F401
     # SIM113: use enumarate
     # false positive
     nvitop/gui/screens/main/process.py: SIM113

@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
 """Resource metrics collectors."""
 
 from __future__ import annotations
@@ -26,7 +25,7 @@ import os
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from typing import Callable, Hashable, Iterable, NamedTuple
+from typing import Callable, Generator, Iterable, NamedTuple, TypeVar
 from weakref import WeakSet
 
 from nvitop.api import host
@@ -46,7 +45,10 @@ class SnapshotResult(NamedTuple):  # pylint: disable=missing-class-docstring
 timer = time.monotonic
 
 
-def _unique(iterable: Iterable[Hashable]) -> list[Hashable]:
+_T = TypeVar('_T')
+
+
+def _unique(iterable: Iterable[_T]) -> list[_T]:
     return list(OrderedDict.fromkeys(iterable).keys())
 
 
@@ -145,8 +147,8 @@ def take_snapshots(
     if isinstance(gpu_processes, GpuProcess):
         gpu_processes = [gpu_processes]
 
-    if gpu_processes is not None:
-        if gpu_processes:  # is not False or is a non-empty list/tuple
+    if gpu_processes is not None and gpu_processes is not True:
+        if gpu_processes:  # is a non-empty list/tuple
             gpu_processes = list(gpu_processes)
             process_devices = _unique(process.device for process in gpu_processes)
             for device in process_devices:
@@ -161,7 +163,7 @@ def take_snapshots(
         if devices is None:
             physical_devices = Device.all()
             devices = []
-            leaf_devices = []
+            leaf_devices: list[Device] = []
             for physical_device in physical_devices:
                 devices.append(physical_device)
                 mig_devices = physical_device.mig_devices()
@@ -176,7 +178,7 @@ def take_snapshots(
             itertools.chain.from_iterable(device.processes().values() for device in leaf_devices),
         )
 
-    devices = [device.as_snapshot() for device in devices]
+    devices = [device.as_snapshot() for device in devices]  # type: ignore[union-attr]
     gpu_processes = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
 
     return SnapshotResult(devices, gpu_processes)
@@ -254,22 +256,22 @@ def collect_in_background(
 
     def target() -> None:
         if on_start is not None:
-            on_start(collector)
+            on_start(collector)  # type: ignore[arg-type]
         try:
-            with collector(tag):
+            with collector(tag):  # type: ignore[misc]
                 try:
-                    next_snapshot = timer() + interval
-                    while on_collect(collector.collect()):
+                    next_snapshot = timer() + interval  # type: ignore[operator]
+                    while on_collect(collector.collect()):  # type: ignore[union-attr]
                         time.sleep(max(0.0, next_snapshot - timer()))
-                        next_snapshot += interval
+                        next_snapshot += interval  # type: ignore[operator]
                 except KeyboardInterrupt:
                     pass
         finally:
             if on_stop is not None:
-                on_stop(collector)
+                on_stop(collector)  # type: ignore[arg-type]
 
     daemon = threading.Thread(target=target, name=tag, daemon=True)
-    daemon.collector = collector
+    daemon.collector = collector  # type: ignore[attr-defined]
     if start:
         daemon.start()
     return daemon
@@ -404,13 +406,13 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         if devices is None:
             devices = Device.all()
 
-        root_pids = {os.getpid()} if root_pids is None else set(root_pids)
+        root_pids: set[int] = {os.getpid()} if root_pids is None else set(root_pids)
 
-        self.interval = interval
+        self.interval: float = interval
 
-        self.devices = list(devices)
-        self.all_devices = []
-        self.leaf_devices = []
+        self.devices: list[Device] = list(devices)
+        self.all_devices: list[Device] = []
+        self.leaf_devices: list[Device] = []
         for device in self.devices:
             self.all_devices.append(device)
             mig_devices = device.mig_devices()
@@ -420,21 +422,23 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             else:
                 self.leaf_devices.append(device)
 
-        self.root_pids = root_pids
-        self._positive_processes = WeakSet(HostProcess(pid) for pid in self.root_pids)
-        self._negative_processes = WeakSet()
+        self.root_pids: set[int] = root_pids
+        self._positive_processes: WeakSet[HostProcess] = WeakSet(
+            HostProcess(pid) for pid in self.root_pids
+        )
+        self._negative_processes: WeakSet[HostProcess] = WeakSet()
 
-        self._last_timestamp = timer() - 2.0 * self.interval
-        self._lock = threading.RLock()
-        self._metric_buffer = None
-        self._tags = set()
+        self._last_timestamp: float = timer() - 2.0 * self.interval
+        self._lock: threading.RLock = threading.RLock()
+        self._metric_buffer: _MetricBuffer | None = None
+        self._tags: set[str] = set()
 
-        self._daemon = threading.Thread(
+        self._daemon: threading.Thread = threading.Thread(
             name='gpu_metric_collector_daemon',
             target=self._target,
             daemon=True,
         )
-        self._daemon_running = threading.Event()
+        self._daemon_running: threading.Event = threading.Event()
 
     def activate(self, tag: str) -> ResourceMetricCollector:
         """Start a new metric collection with the given tag.
@@ -500,7 +504,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 if buffer.tag == tag:
                     self._metric_buffer = buffer.prev
                     break
-                buffer = buffer.prev
+                buffer = buffer.prev  # type: ignore[assignment]
 
             if self._metric_buffer is None:
                 self._daemon_running.clear()
@@ -510,7 +514,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     stop = deactivate
 
     @contextlib.contextmanager
-    def context(self, tag: str) -> ResourceMetricCollector:
+    def context(self, tag: str) -> Generator[ResourceMetricCollector, None, None]:
         """A context manager for starting and stopping resource metric collection.
 
         Args:
@@ -578,7 +582,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 buffer.clear()
                 if buffer.tag == tag:
                     break
-                buffer = buffer.prev
+                buffer = buffer.prev  # type: ignore[assignment]
 
     def collect(self) -> dict[str, float]:
         """Get the average resource consumption during collection."""
@@ -665,7 +669,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     def take_snapshots(self) -> SnapshotResult:
         """Take snapshots of the current resource metrics and update the metric buffer."""
         if len(self.root_pids) > 0:
-            all_gpu_processes = []
+            all_gpu_processes: list[GpuProcess] = []
             for device in self.leaf_devices:
                 all_gpu_processes.extend(device.processes().values())
 
@@ -685,7 +689,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                             positive = True
                             break
                         try:
-                            p = p.parent()
+                            p = p.parent()  # type: ignore[assignment]
                         except host.PsutilError:
                             break
                     if positive:
@@ -700,8 +704,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         timestamp = timer()
         metrics = {}
-        devices = [device.as_snapshot() for device in self.all_devices]
-        gpu_processes = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
+        device_snapshots = [device.as_snapshot() for device in self.all_devices]
+        gpu_process_snapshots = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
 
         metrics.update(
             {
@@ -722,23 +726,23 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             )
 
         device_identifiers = {}
-        for device in devices:
-            identifier = f'gpu:{device.index}'
-            if isinstance(device.real, CudaDevice):
-                identifier = f'cuda:{device.cuda_index} ({identifier})'
-            device_identifiers[device.real] = identifier
+        for device_snapshot in device_snapshots:
+            identifier = f'gpu:{device_snapshot.index}'
+            if isinstance(device_snapshot.real, CudaDevice):
+                identifier = f'cuda:{device_snapshot.cuda_index} ({identifier})'
+            device_identifiers[device_snapshot.real] = identifier
 
             for attr, name, unit in self.DEVICE_METRICS:
-                value = float(getattr(device, attr)) / unit
+                value = float(getattr(device_snapshot, attr)) / unit
                 metrics[f'{identifier}/{name}'] = value
 
-        for process in gpu_processes:
-            device_identifier = device_identifiers[process.device]
-            identifier = f'pid:{process.pid}'
+        for process_snapshot in gpu_process_snapshots:
+            device_identifier = device_identifiers[process_snapshot.device]
+            identifier = f'pid:{process_snapshot.pid}'
 
             for attr, scope, name, unit in self.PROCESS_METRICS:
                 scope = scope or device_identifier
-                value = float(getattr(process, attr)) / unit
+                value = float(getattr(process_snapshot, attr)) / unit
                 metrics[f'{identifier}/{scope}/{name}'] = value
 
         with self._lock:
@@ -746,7 +750,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 self._metric_buffer.add(metrics, timestamp=timestamp)
                 self._last_timestamp = timestamp
 
-        return SnapshotResult(devices, gpu_processes)
+        return SnapshotResult(device_snapshots, gpu_process_snapshots)
 
     def _target(self) -> None:
         self._daemon_running.wait()
@@ -762,17 +766,20 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
         collector: ResourceMetricCollector,
         prev: _MetricBuffer | None = None,
     ) -> None:
-        self.collector = collector
-        self.prev = prev
+        self.collector: ResourceMetricCollector = collector
+        self.prev: _MetricBuffer | None = prev
 
-        self.tag = tag
+        self.tag: str = tag
+        self.key_prefix: str
         if self.prev is not None:
             self.key_prefix = f'{self.prev.key_prefix}/{self.tag}'
         else:
             self.key_prefix = self.tag
 
         self.last_timestamp = self.start_timestamp = timer()
-        self.buffer = defaultdict(lambda: _StatisticsMaintainer(self.last_timestamp))
+        self.buffer: defaultdict[str, _StatisticsMaintainer] = defaultdict(
+            lambda: _StatisticsMaintainer(self.last_timestamp),
+        )
 
         self.len = 0
 
@@ -817,13 +824,13 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
 
 class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-function-docstring
     def __init__(self, timestamp: float) -> None:
-        self.start_timestamp = timestamp
-        self.last_timestamp = None
-        self.integral = None
-        self.last_value = None
-        self.min_value = None
-        self.max_value = None
-        self.has_nan = False
+        self.start_timestamp: float = timestamp
+        self.last_timestamp: float = math.nan
+        self.integral: float | None = None
+        self.last_value: float | None = None
+        self.min_value: float | None = None
+        self.max_value: float | None = None
+        self.has_nan: bool = False
 
     def add(self, value: float, timestamp: float | None = None) -> None:
         if timestamp is None:
@@ -837,10 +844,11 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
             self.integral = value * (timestamp - self.start_timestamp)
             self.last_value = self.min_value = self.max_value = value
         else:
-            self.integral += (value + self.last_value) * (timestamp - self.last_timestamp) / 2.0
+            # pylint: disable-next=line-too-long
+            self.integral += (value + self.last_value) * (timestamp - self.last_timestamp) / 2.0  # type: ignore[operator]
             self.last_value = value
-            self.min_value = min(self.min_value, value)
-            self.max_value = max(self.max_value, value)
+            self.min_value = min(self.min_value, value)  # type: ignore[type-var]
+            self.max_value = max(self.max_value, value)  # type: ignore[type-var]
 
         self.last_timestamp = timestamp
 
@@ -851,16 +859,16 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
             return self.integral / (self.last_timestamp - self.start_timestamp)
 
         timestamp = timer()
-        integral = self.integral + self.last_value * (timestamp - self.last_timestamp)
+        integral = self.integral + self.last_value * (timestamp - self.last_timestamp)  # type: ignore[operator]
         return integral / (timestamp - self.start_timestamp)
 
     def min(self) -> float:
-        if self.has_nan and self.min_value is None:
+        if self.has_nan or self.min_value is None:
             return math.nan
         return self.min_value
 
     def max(self) -> float:
-        if self.has_nan and self.max_value is None:
+        if self.has_nan or self.max_value is None:
             return math.nan
         return self.max_value
 

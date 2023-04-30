@@ -58,8 +58,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         MisconfigurationException:
             If NVIDIA driver is not installed, not running on GPUs, or ``Trainer`` has no logger.
 
-    Example::
-
+    Examples:
         >>> from pytorch_lightning import Trainer
         >>> from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
         >>> gpu_stats = GpuStatsLogger()

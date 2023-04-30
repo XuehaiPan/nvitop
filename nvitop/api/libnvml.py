@@ -31,6 +31,7 @@ import sys as _sys
 import threading as _threading
 from types import FunctionType as _FunctionType
 from types import ModuleType as _ModuleType
+from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
 from typing import Callable as _Callable
 
@@ -38,9 +39,14 @@ from typing import Callable as _Callable
 # https://pypi.org/project/nvidia-ml-py
 import pynvml as _pynvml
 from pynvml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
+from pynvml import nvmlDeviceGetPciInfo  # appease mypy # noqa: F401 # pylint: disable=unused-import
 
 from nvitop.api.utils import NA
 from nvitop.api.utils import colored as __colored
+
+
+if _TYPE_CHECKING:
+    from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 
 
 __all__ = [  # will be updated in below
@@ -63,10 +69,10 @@ if not callable(getattr(_pynvml, 'nvmlInitWithFlags', None)):
 
 # Members from `pynvml` ############################################################################
 
-NVMLError = _pynvml.NVMLError
+NVMLError: type[_pynvml.NVMLError] = _pynvml.NVMLError
 NVMLError.__doc__ = """Base exception class for NVML query errors."""
 NVMLError.__new__.__doc__ = """Map value to a proper subclass of :class:`NVMLError`."""
-nvmlExceptionClass = _pynvml.nvmlExceptionClass
+nvmlExceptionClass: _Callable[[int], type[_pynvml.NVMLError]] = _pynvml.nvmlExceptionClass
 nvmlExceptionClass.__doc__ = """Map value to a proper subclass of :class:`NVMLError`."""
 
 # Load members from module `pynvml` and register them in `__all__` and globals.
@@ -161,26 +167,40 @@ del (
     _sphinx_doc,
 )
 
+
 # 5. Add explicit references to appease linters
 # pylint: disable=no-member
-c_nvmlDevice_t = _pynvml.c_nvmlDevice_t
-NVMLError_FunctionNotFound = _pynvml.NVMLError_FunctionNotFound
-NVMLError_GpuIsLost = _pynvml.NVMLError_GpuIsLost
-NVMLError_InvalidArgument = _pynvml.NVMLError_InvalidArgument
-NVMLError_LibraryNotFound = _pynvml.NVMLError_LibraryNotFound
-NVMLError_NoPermission = _pynvml.NVMLError_NoPermission
-NVMLError_NotFound = _pynvml.NVMLError_NotFound
-NVMLError_NotSupported = _pynvml.NVMLError_NotSupported
-NVMLError_Unknown = _pynvml.NVMLError_Unknown
+c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t
+NVMLError_FunctionNotFound: _TypeAlias = _pynvml.NVMLError_FunctionNotFound
+NVMLError_GpuIsLost: _TypeAlias = _pynvml.NVMLError_GpuIsLost
+NVMLError_InvalidArgument: _TypeAlias = _pynvml.NVMLError_InvalidArgument
+NVMLError_LibraryNotFound: _TypeAlias = _pynvml.NVMLError_LibraryNotFound
+NVMLError_NoPermission: _TypeAlias = _pynvml.NVMLError_NoPermission
+NVMLError_NotFound: _TypeAlias = _pynvml.NVMLError_NotFound
+NVMLError_NotSupported: _TypeAlias = _pynvml.NVMLError_NotSupported
+NVMLError_Unknown: _TypeAlias = _pynvml.NVMLError_Unknown
+NVML_CLOCK_GRAPHICS: int = _pynvml.NVML_CLOCK_GRAPHICS
+NVML_CLOCK_SM: int = _pynvml.NVML_CLOCK_SM
+NVML_CLOCK_MEM: int = _pynvml.NVML_CLOCK_MEM
+NVML_CLOCK_VIDEO: int = _pynvml.NVML_CLOCK_VIDEO
+NVML_TEMPERATURE_GPU: int = _pynvml.NVML_TEMPERATURE_GPU
+NVML_DRIVER_WDDM: int = _pynvml.NVML_DRIVER_WDDM
+NVML_DRIVER_WDM: int = _pynvml.NVML_DRIVER_WDM
+NVML_MEMORY_ERROR_TYPE_UNCORRECTED: int = _pynvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED
+NVML_VOLATILE_ECC: int = _pynvml.NVML_VOLATILE_ECC
+NVML_COMPUTEMODE_DEFAULT: int = _pynvml.NVML_COMPUTEMODE_DEFAULT
+NVML_COMPUTEMODE_EXCLUSIVE_THREAD: int = _pynvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD
+NVML_COMPUTEMODE_PROHIBITED: int = _pynvml.NVML_COMPUTEMODE_PROHIBITED
+NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: int = _pynvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS
 # pylint: enable=no-member
 
 # New members in `libnvml` #########################################################################
 
-__flags = []
-__initialized = False
-__lock = _threading.Lock()
+__flags: list[int] = []
+__initialized: bool = False
+__lock: _threading.Lock = _threading.Lock()
 
-LOGGER = _logging.getLogger(__name__)
+LOGGER: _logging.Logger = _logging.getLogger(__name__)
 try:
     LOGGER.setLevel(_os.getenv('LOGLEVEL', default='WARNING').upper())
 except (ValueError, TypeError):
@@ -197,9 +217,9 @@ if not LOGGER.hasHandlers() and LOGGER.isEnabledFor(_logging.DEBUG):
     LOGGER.addHandler(_file_handler)
     del _formatter, _stream_handler, _file_handler
 
-UNKNOWN_FUNCTIONS = {}
-UNKNOWN_FUNCTIONS_CACHE_SIZE = 1024
-VERSIONED_PATTERN = _re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
+UNKNOWN_FUNCTIONS: dict[str, tuple[_Callable | str, NVMLError_FunctionNotFound]] = {}
+UNKNOWN_FUNCTIONS_CACHE_SIZE: int = 1024
+VERSIONED_PATTERN: _re.Pattern = _re.compile(r'^(?P<name>\w+)(?P<suffix>_v(\d)+)$')
 
 
 def _lazy_init() -> None:
@@ -389,10 +409,14 @@ def nvmlQuery(
             except AttributeError as e1:
                 raise NVMLError_FunctionNotFound from e1
 
-        retval = func(*args, **kwargs)
+        retval = func(*args, **kwargs)  # type: ignore[operator]
     except NVMLError_FunctionNotFound as e2:
         if not ignore_function_not_found:
-            identifier = _inspect.getsource(func) if func.__name__ == '<lambda>' else repr(func)
+            identifier = (
+                func
+                if isinstance(func, str)
+                else (_inspect.getsource(func) if func.__name__ == '<lambda>' else repr(func))
+            )
             with __lock:
                 if (
                     identifier not in UNKNOWN_FUNCTIONS
@@ -431,7 +455,7 @@ def nvmlCheckReturn(
 
 
 # Patch layers for backward compatibility ##########################################################
-__patched_backward_compatibility_layers = False
+__patched_backward_compatibility_layers: bool = False
 
 
 def __patch_backward_compatibility_layers() -> None:
@@ -441,9 +465,9 @@ def __patch_backward_compatibility_layers() -> None:
         return
 
     function_name_mapping_lock = _threading.Lock()
-    function_name_mapping = {}
+    function_name_mapping: dict[str, str] = {}
 
-    def function_mapping_update(mapping):
+    def function_mapping_update(mapping: dict[str, str]) -> dict[str, str]:
         with function_name_mapping_lock:
             mapping = dict(mapping)
             for name, mapped_name in function_name_mapping.items():
@@ -452,10 +476,12 @@ def __patch_backward_compatibility_layers() -> None:
             function_name_mapping.update(mapping)
         return mapping
 
-    def with_mapped_function_name():
-        def wrapper(nvmlGetFunctionPointer):
+    def with_mapped_function_name() -> None:
+        def wrapper(
+            nvmlGetFunctionPointer: _Callable[[str], _ctypes._CFuncPtr],  # type: ignore[name-defined]
+        ) -> _Callable[[str], _ctypes._CFuncPtr]:  # type: ignore[name-defined]
             @_functools.wraps(nvmlGetFunctionPointer)
-            def wrapped(name):
+            def wrapped(name: str) -> _ctypes._CFuncPtr:  # type: ignore[name-defined]
                 mapped_name = function_name_mapping.get(name, name)
                 return nvmlGetFunctionPointer(mapped_name)
 
@@ -467,10 +493,18 @@ def __patch_backward_compatibility_layers() -> None:
             ),
         )
 
-    def patch_function_pointers_when_fail(names, callback):
-        def wrapper(nvmlGetFunctionPointer):
+    def patch_function_pointers_when_fail(
+        names: set[str],
+        callback: _Callable[[str, set[str], Exception, _ModuleType, _ModuleType], str],
+    ) -> _Callable[  # type: ignore[name-defined]
+        [_Callable[[str], _ctypes._CFuncPtr]],
+        _Callable[[str], _ctypes._CFuncPtr],
+    ]:
+        def wrapper(
+            nvmlGetFunctionPointer: _Callable[[str], _ctypes._CFuncPtr],  # type: ignore[name-defined]
+        ) -> _Callable[[str], _ctypes._CFuncPtr]:  # type: ignore[name-defined]
             @_functools.wraps(nvmlGetFunctionPointer)
-            def wrapped(name):
+            def wrapped(name: str) -> _ctypes._CFuncPtr:  # type: ignore[name-defined]
                 try:
                     return nvmlGetFunctionPointer(name)
                 except NVMLError_FunctionNotFound as ex:
@@ -483,12 +517,12 @@ def __patch_backward_compatibility_layers() -> None:
 
         return wrapper
 
-    def patch_process_info():
+    def patch_process_info() -> None:
         # pylint: disable-next=protected-access,no-member
         PrintableStructure = _pynvml._PrintableStructure
 
         # pylint: disable-next=missing-class-docstring,too-few-public-methods
-        class c_nvmlProcessInfo_v1_t(PrintableStructure):
+        class c_nvmlProcessInfo_v1_t(PrintableStructure):  # type: ignore[misc,valid-type]
             _fields_ = [
                 ('pid', _ctypes.c_uint),
                 ('usedGpuMemory', _ctypes.c_ulonglong),
@@ -498,7 +532,7 @@ def __patch_backward_compatibility_layers() -> None:
             }
 
         # pylint: disable-next=missing-class-docstring,too-few-public-methods
-        class c_nvmlProcessInfo_v2_t(PrintableStructure):
+        class c_nvmlProcessInfo_v2_t(PrintableStructure):  # type: ignore[misc,valid-type]
             _fields_ = [
                 ('pid', _ctypes.c_uint),
                 ('usedGpuMemory', _ctypes.c_ulonglong),
@@ -521,12 +555,12 @@ def __patch_backward_compatibility_layers() -> None:
         }
 
         def patch_process_info_callback(
-            name,
-            names,  # pylint: disable=unused-argument
-            exception,
-            pynvml,
-            modself,
-        ):
+            name: str,
+            names: set[str],  # pylint: disable=unused-argument
+            exception: Exception,
+            pynvml: _ModuleType,
+            modself: _ModuleType,
+        ) -> str:
             if name in nvmlDeviceGetRunningProcesses_v3_v2:
                 mapping = nvmlDeviceGetRunningProcesses_v3_v2
                 struct_type = c_nvmlProcessInfo_v2_t
@@ -570,16 +604,20 @@ def __patch_backward_compatibility_layers() -> None:
     __patched_backward_compatibility_layers = True
 
 
-_pynvml_installation_corrupted = not callable(getattr(_pynvml, '_nvmlGetFunctionPointer', None))
+_pynvml_installation_corrupted: bool = not callable(
+    getattr(_pynvml, '_nvmlGetFunctionPointer', None),
+)
 
 if not _pynvml_installation_corrupted:
     __patch_backward_compatibility_layers()
 del __patch_backward_compatibility_layers
 
 
-_pynvml_memory_v2_available = hasattr(_pynvml, 'nvmlMemory_v2')
-_pynvml_get_memory_info_v2_available = _pynvml_memory_v2_available
-_driver_get_memory_info_v2_available = None if not _pynvml_installation_corrupted else False
+_pynvml_memory_v2_available: bool = hasattr(_pynvml, 'nvmlMemory_v2')
+_pynvml_get_memory_info_v2_available: bool = _pynvml_memory_v2_available
+_driver_get_memory_info_v2_available: bool | None = (
+    None if not _pynvml_installation_corrupted else False
+)
 
 
 # pylint: disable-next=function-redefined,too-many-branches

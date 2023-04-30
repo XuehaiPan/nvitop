@@ -62,10 +62,14 @@ import math
 import os
 import sys
 import warnings
-from typing import Any, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, overload
 
-from nvitop.api import Device, GpuProcess, colored, human2bytes, libnvml
+from nvitop.api import Device, GpuProcess, Snapshot, colored, human2bytes, libnvml
 from nvitop.version import __version__
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal  # Python 3.8+
 
 
 __all__ = ['select_devices']
@@ -78,10 +82,70 @@ except ModuleNotFoundError:
 TTY = sys.stdout.isatty()
 
 
+@overload
+def select_devices(
+    devices: Iterable[Device] | None,
+    *,
+    format: Literal['index'],  # pylint: disable=redefined-builtin
+    force_index: bool,
+    min_count: int,
+    max_count: int | None,
+    min_free_memory: int | str | None,
+    min_total_memory: int | str | None,
+    max_gpu_utilization: int | None,
+    max_memory_utilization: int | None,
+    tolerance: int,
+    free_accounts: list[str] | None,
+    sort: bool,
+    **kwargs: Any,
+) -> list[int] | list[tuple[int, int]]:
+    ...
+
+
+@overload
+def select_devices(
+    devices: Iterable[Device] | None,
+    *,
+    format: Literal['uuid'],  # pylint: disable=redefined-builtin
+    force_index: bool,
+    min_count: int,
+    max_count: int | None,
+    min_free_memory: int | str | None,
+    min_total_memory: int | str | None,
+    max_gpu_utilization: int | None,
+    max_memory_utilization: int | None,
+    tolerance: int,
+    free_accounts: list[str] | None,
+    sort: bool,
+    **kwargs: Any,
+) -> list[int] | list[tuple[int, int]]:
+    ...
+
+
+@overload
+def select_devices(
+    devices: Iterable[Device] | None,
+    *,
+    format: Literal['device'],  # pylint: disable=redefined-builtin
+    force_index: bool,
+    min_count: int,
+    max_count: int | None,
+    min_free_memory: int | str | None,
+    min_total_memory: int | str | None,
+    max_gpu_utilization: int | None,
+    max_memory_utilization: int | None,
+    tolerance: int,
+    free_accounts: list[str] | None,
+    sort: bool,
+    **kwargs: Any,
+) -> list[Device]:
+    ...
+
+
 def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument
     devices: Iterable[Device] | None = None,
     *,
-    format: str = 'index',  # pylint: disable=redefined-builtin
+    format: Literal['index', 'uuid', 'device'] = 'index',  # pylint: disable=redefined-builtin
     force_index: bool = False,
     min_count: int = 0,
     max_count: int | None = None,
@@ -90,10 +154,10 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
     max_gpu_utilization: int | None = None,  # in percentage
     max_memory_utilization: int | None = None,  # in percentage
     tolerance: int = 0,  # in percentage
-    free_accounts: list[str] = None,
+    free_accounts: list[str] | None = None,
     sort: bool = True,
     **kwargs: Any,
-) -> list[int] | list[tuple[int, int]] | list[str]:
+) -> list[int] | list[tuple[int, int]] | list[str] | list[Device]:
     """Select a subset of devices satisfying the specified criteria.
 
     Note:
@@ -151,7 +215,7 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
 
     if max_count is not None:
         if max_count == 0:
-            return []
+            return []  # type: ignore[return-value]
         assert max_count >= min_count >= 0
 
     free_accounts = set(free_accounts or [])
@@ -164,11 +228,11 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
     if isinstance(min_total_memory, str):
         min_total_memory = human2bytes(min_total_memory)
 
-    available_devices = []
+    available_devices: list[Snapshot] = []
     for device in devices:
         available_devices.extend(dev.as_snapshot() for dev in device.to_leaf_devices())
     for device in available_devices:
-        device.loosen_constraints = 0
+        device.loosen_constraints = 0  # type: ignore[attr-defined]
 
     if len(free_accounts) > 0:
         with GpuProcess.failsafe():
@@ -177,61 +241,53 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
                 for process in device.real.processes().values():
                     if process.username() in free_accounts:
                         as_free_memory += process.gpu_memory()
-                device.memory_free += as_free_memory
-                device.memory_used -= as_free_memory
+                device.memory_free += as_free_memory  # type: ignore[attr-defined]
+                device.memory_used -= as_free_memory  # type: ignore[attr-defined]
+
+    def filter_func(
+        criteria: Callable[[Snapshot], bool],
+        original_criteria: Callable[[Snapshot], bool],
+    ) -> Callable[[Snapshot], bool]:
+        def wrapped(device: Snapshot) -> bool:
+            device.loosen_constraints += int(not original_criteria(device))  # type: ignore[attr-defined]
+            return criteria(device)
+
+        return wrapped
 
     if min_free_memory is not None:
         loosen_min_free_memory = min_free_memory * (1.0 - tolerance)
-        available_devices = filter(
-            lambda device: (
-                device.memory_free >= loosen_min_free_memory,
-                setattr(
-                    device,
-                    'loosen_constraints',
-                    device.loosen_constraints + int(not device.memory_free >= min_free_memory),
-                ),
-            )[0],
+        available_devices = filter(  # type: ignore[assignment]
+            filter_func(
+                lambda device: device.memory_free >= loosen_min_free_memory,
+                lambda device: device.memory_free >= min_free_memory,
+            ),
             available_devices,
         )
     if min_total_memory is not None:
         loosen_min_total_memory = min_total_memory * (1.0 - tolerance)
-        available_devices = filter(
-            lambda device: (
-                device.memory_total >= loosen_min_total_memory,
-                setattr(
-                    device,
-                    'loosen_constraints',
-                    device.loosen_constraints + int(not device.memory_total >= min_total_memory),
-                ),
-            )[0],
+        available_devices = filter(  # type: ignore[assignment]
+            filter_func(
+                lambda device: device.memory_total >= loosen_min_total_memory,
+                lambda device: device.memory_total >= min_total_memory,
+            ),
             available_devices,
         )
     if max_gpu_utilization is not None:
         loosen_max_gpu_utilization = max_gpu_utilization + 100.0 * tolerance
-        available_devices = filter(
-            lambda device: (
-                device.gpu_utilization <= loosen_max_gpu_utilization,
-                setattr(
-                    device,
-                    'loosen_constraints',
-                    device.loosen_constraints
-                    + int(not device.gpu_utilization <= max_gpu_utilization),
-                ),
-            )[0],
+        available_devices = filter(  # type: ignore[assignment]
+            filter_func(
+                lambda device: device.gpu_utilization <= loosen_max_gpu_utilization,
+                lambda device: device.gpu_utilization <= max_gpu_utilization,
+            ),
             available_devices,
         )
     if max_memory_utilization is not None:
         loosen_max_memory_utilization = max_memory_utilization + 100.0 * tolerance
-        available_devices = filter(
-            lambda device: (
-                device.memory_utilization <= loosen_max_memory_utilization,
-                setattr(
-                    device,
-                    'loosen_constraints',
-                    device.loosen_constraints
-                    + int(not device.memory_utilization <= max_memory_utilization),
-                ),
-            )[0],
+        available_devices = filter(  # type: ignore[assignment]
+            filter_func(
+                lambda device: device.memory_utilization <= loosen_max_memory_utilization,
+                lambda device: device.memory_utilization <= max_memory_utilization,
+            ),
             available_devices,
         )
 
@@ -486,10 +542,11 @@ def parse_arguments() -> argparse.Namespace:
     return args
 
 
-def main() -> None:
+def main() -> int:
     """Main function for ``nvisel`` CLI."""
     args = parse_arguments()
 
+    devices: Sequence[Device]
     try:
         if hasattr(args, 'inherit'):
             if args.inherit is not None:

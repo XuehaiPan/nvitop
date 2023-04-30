@@ -140,3 +140,4 @@ noqa
 uptime
 ot
 oT
+mypy
