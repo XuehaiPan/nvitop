@@ -2141,7 +2141,9 @@ class CudaDevice(Device):
             If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
     """  # pylint: disable=line-too-long
 
-    _nvml_index: int | tuple[int, int]
+    _nvml_index: int
+    index: int
+    nvml_index: int
 
     @classmethod
     def is_available(cls) -> bool:
@@ -2317,9 +2319,9 @@ Device.cuda = CudaDevice
 class CudaMigDevice(CudaDevice, MigDevice):  # type: ignore[misc]
     """Class for CUDA devices that are MIG devices."""
 
-    _nvml_index: tuple[int, int]
-    index: tuple[int, int]
-    nvml_index: tuple[int, int]
+    _nvml_index: tuple[int, int]  # type: ignore[assignment]
+    index: tuple[int, int]  # type: ignore[assignment]
+    nvml_index: tuple[int, int]  # type: ignore[assignment]
 
 
 def is_mig_device_uuid(uuid: str | None) -> bool:
