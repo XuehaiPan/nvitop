@@ -27,7 +27,7 @@ import os
 import threading
 from abc import ABCMeta
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable
 from weakref import WeakValueDictionary
 
 from nvitop.api import host, libnvml
@@ -181,8 +181,14 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         )
     """
 
-    INSTANCE_LOCK = threading.RLock()
-    INSTANCES = WeakValueDictionary()
+    INSTANCE_LOCK: threading.RLock = threading.RLock()
+    INSTANCES: WeakValueDictionary[int, HostProcess] = WeakValueDictionary()
+
+    _pid: int
+    _super_gone: bool
+    _username: str | None
+    _ident: tuple
+    _lock: threading.RLock
 
     def __new__(cls, pid: int | None = None) -> HostProcess:
         """Return the cached instance of :class:`HostProcess`."""
@@ -378,7 +384,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
     @contextlib.contextmanager
-    def oneshot(self) -> contextlib.AbstractContextManager:
+    def oneshot(self) -> Generator[None, None, None]:
         """A utility context manager which considerably speeds up the retrieval of multiple process information at the same time.
 
         Internally different process info (e.g. name, ppid, uids, gids, ...) may be fetched by using
@@ -405,12 +411,12 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                 with super().oneshot():
                     # pylint: disable=no-member
                     try:
-                        self.cmdline.cache_activate(self)
-                        self.running_time.cache_activate(self)
+                        self.cmdline.cache_activate(self)  # type: ignore[attr-defined]
+                        self.running_time.cache_activate(self)  # type: ignore[attr-defined]
                         yield
                     finally:
-                        self.cmdline.cache_deactivate(self)
-                        self.running_time.cache_deactivate(self)
+                        self.cmdline.cache_deactivate(self)  # type: ignore[attr-defined]
+                        self.running_time.cache_deactivate(self)  # type: ignore[attr-defined]
 
     def as_snapshot(
         self,
@@ -441,13 +447,20 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     representing the same PID on the host but different GPU devices are different.
     """
 
-    INSTANCE_LOCK = threading.RLock()
-    INSTANCES = WeakValueDictionary()
+    INSTANCE_LOCK: threading.RLock = threading.RLock()
+    INSTANCES: WeakValueDictionary[tuple[int, Device], GpuProcess] = WeakValueDictionary()
+
+    _pid: int
+    _host: HostProcess
+    _device: Device
+    _username: str | None
+    _ident: tuple
+    _hash: int | None
 
     # pylint: disable-next=too-many-arguments
     def __new__(
         cls,
-        pid: int,
+        pid: int | None,
         device: Device,
         # pylint: disable=unused-argument
         gpu_memory: int | NaType | None = None,
@@ -485,7 +498,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
-        pid: int,  # pylint: disable=unused-argument
+        pid: int | None,  # pylint: disable=unused-argument
         device: Device,
         gpu_memory: int | NaType | None = None,
         gpu_instance_id: int | NaType | None = None,
@@ -553,7 +566,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
                 If the user do not have read privilege to the process' status file.
         """
         try:
-            return super().__getattr__(name)
+            return super().__getattr__(name)  # type: ignore[misc]
         except AttributeError:
             if name == '_cache':
                 raise
@@ -627,7 +640,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         memory_total = self.device.memory_total()
         gpu_memory_percent = NA
         if libnvml.nvmlCheckReturn(memory_used, int) and libnvml.nvmlCheckReturn(memory_total, int):
-            gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)
+            gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)  # type: ignore[assignment]
         self._gpu_memory_percent = gpu_memory_percent
 
     def set_gpu_utilization(
@@ -651,7 +664,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def update_gpu_status(self) -> int | NaType:
         """Update the GPU consumption status from a new NVML query."""
         self.set_gpu_memory(NA)
-        self.set_gpu_utilization(NA, NA, NA, NA)
+        self.set_gpu_utilization(NA, NA, NA, NA)  # type: ignore[arg-type]
         self.device.processes()
         return self.gpu_memory()
 
@@ -989,8 +1002,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         If *failsafe* is :data:`True`, then if any method fails, the fallback value in
         :func:`auto_garbage_clean` will be used.
         """
-        cache = {}
-        context = cls.failsafe if failsafe else contextlib.nullcontext
+        cache: dict[int, Snapshot] = {}
+        context: Callable[[], contextlib.AbstractContextManager[None]] = (
+            cls.failsafe if failsafe else contextlib.nullcontext  # type: ignore[assignment]
+        )
         with context():
             return [
                 process.as_snapshot(host_process_snapshot_cache=cache) for process in gpu_processes
@@ -998,7 +1013,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @classmethod
     @contextlib.contextmanager
-    def failsafe(cls) -> contextlib.AbstractContextManager:
+    def failsafe(cls) -> Generator[None, None, None]:
         """A context manager that enables fallback values for methods that fail.
 
         Examples:

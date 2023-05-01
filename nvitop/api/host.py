@@ -43,13 +43,21 @@ __all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [
 __all__[__all__.index('Error')] = 'PsutilError'
 
 
-PsutilError = Error  # make alias # noqa: F405
-del Error  # noqa: F821 # pylint: disable=undefined-variable
+PsutilError = Error = _psutil.Error  # make alias
+del Error
 
 
 cpu_percent = _psutil.cpu_percent
 virtual_memory = _psutil.virtual_memory
 swap_memory = _psutil.swap_memory
+Process = _psutil.Process
+NoSuchProcess = _psutil.NoSuchProcess
+ZombieProcess = _psutil.ZombieProcess
+AccessDenied = _psutil.AccessDenied
+POSIX = _psutil.POSIX
+WINDOWS = _psutil.WINDOWS
+LINUX = _psutil.LINUX
+MACOS = _psutil.MACOS
 
 
 if hasattr(_psutil, 'getloadavg'):
@@ -60,7 +68,7 @@ if hasattr(_psutil, 'getloadavg'):
 
 else:
 
-    def load_average() -> None:
+    def load_average() -> None:  # type: ignore[misc]
         """Get the system load average."""
         return
 
@@ -95,7 +103,7 @@ def reverse_ppid_map() -> dict[int, list[int]]:  # pylint: disable=function-rede
     return tree
 
 
-if LINUX:  # noqa: F405
+if LINUX:
     WSL = _os.getenv('WSL_DISTRO_NAME', default=None)
     if WSL is not None and WSL == '':
         WSL = 'WSL'

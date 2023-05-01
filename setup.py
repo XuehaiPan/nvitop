@@ -51,6 +51,8 @@ try:
                 'black >= 22.6.0',
                 'isort',
                 'pylint[spelling] >= 2.16.0',
+                'mypy',
+                'typing-extensions',
                 'pre-commit',
             ],
             'cuda10': ['nvidia-ml-py == 11.450.51'],

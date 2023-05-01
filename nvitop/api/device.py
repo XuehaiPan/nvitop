@@ -69,6 +69,7 @@ Examples:
     )
 
     >>> import os
+    >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
     >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
     >>> CudaDevice.count()                     # number of NVIDIA GPUs visible to CUDA applications
@@ -113,11 +114,15 @@ import sys
 import textwrap
 import threading
 from collections import OrderedDict
-from typing import Any, Callable, Iterable, NamedTuple
+from typing import TYPE_CHECKING, Any, Callable, Generator, Hashable, Iterable, NamedTuple, overload
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
 from nvitop.api.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Literal  # Python 3.8+
 
 
 __all__ = [
@@ -158,7 +163,7 @@ class UtilizationRates(NamedTuple):  # in percentage # pylint: disable=missing-c
     decoder: int | NaType
 
 
-_VALUE_OMITTED = object()
+_VALUE_OMITTED: str = object()  # type: ignore[assignment]
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -226,7 +231,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     # GPU UUID        : `GPU-<GPU-UUID>`
     # MIG UUID        : `MIG-GPU-<GPU-UUID>/<GPU instance ID>/<compute instance ID>`
     # MIG UUID (R470+): `MIG-<MIG-UUID>`
-    UUID_PATTERN = re.compile(
+    UUID_PATTERN: re.Pattern = re.compile(
         r"""^  # full match
         (?:(?P<MigMode>MIG)-)?                                 # prefix for MIG UUID
         (?:(?P<GpuUuid>GPU)-)?                                 # prefix for GPU UUID
@@ -243,9 +248,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         flags=re.VERBOSE,
     )
 
-    GPU_PROCESS_CLASS = GpuProcess
-    cuda = None  # defined in below
+    GPU_PROCESS_CLASS: type[GpuProcess] = GpuProcess
+    cuda: type[CudaDevice] = None  # type: ignore[assignment] # defined in below
     """Shortcut for class :class:`CudaDevice`."""
+
+    _nvml_index: int | tuple[int, int]
 
     @classmethod
     def is_available(cls) -> bool:
@@ -347,7 +354,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     @classmethod
     def all(cls) -> list[PhysicalDevice]:
         """Return a list of all physical devices in the system."""
-        return cls.from_indices()
+        return cls.from_indices()  # type: ignore[return-value]
 
     @classmethod
     def from_indices(
@@ -388,7 +395,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if isinstance(indices, int):
             indices = [indices]
 
-        return list(map(cls, indices))
+        return list(map(cls, indices))  # type: ignore[arg-type]
 
     @staticmethod
     def from_cuda_visible_devices() -> list[CudaDevice]:
@@ -408,8 +415,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         visible_device_indices = Device.parse_cuda_visible_devices()
 
-        cuda_devices = []
-        for cuda_index, device_index in enumerate(visible_device_indices):
+        device_index: int | tuple[int, int]
+        cuda_devices: list[CudaDevice] = []
+        for cuda_index, device_index in enumerate(visible_device_indices):  # type: ignore[assignment]
             cuda_devices.append(CudaDevice(cuda_index, nvml_index=device_index))
 
         return cuda_devices
@@ -552,7 +560,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if cls is not Device:
             return super().__new__(cls)
 
-        match = None
+        match: re.Match | None = None
         if isinstance(index, str):
             match = cls.UUID_PATTERN.match(index)
             if match is not None:  # passed by UUID
@@ -608,17 +616,17 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             arg.encode() if isinstance(arg, str) else arg for arg in (index, uuid, bus_id)
         )
 
-        self._name = NA
-        self._uuid = NA
-        self._bus_id = NA
-        self._memory_total = NA
-        self._memory_total_human = NA
-        self._is_mig_device = None
-        self._cuda_index = None
-        self._cuda_compute_capability = None
+        self._name: str = NA
+        self._uuid: str = NA
+        self._bus_id: str = NA
+        self._memory_total: int | NaType = NA
+        self._memory_total_human: str = NA
+        self._is_mig_device: bool | None = None
+        self._cuda_index: int | None = None
+        self._cuda_compute_capability: tuple[int, int] | NaType | None = None
 
         if index is not None:
-            self._nvml_index = index
+            self._nvml_index = index  # type: ignore[assignment]
             try:
                 self._handle = libnvml.nvmlQuery(
                     'nvmlDeviceGetHandleByIndex',
@@ -647,21 +655,21 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     )
             except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
-                self._nvml_index = NA
+                self._nvml_index = NA  # type: ignore[assignment]
                 self._name = 'ERROR: GPU is Lost'
             except libnvml.NVMLError_Unknown:
                 self._handle = None
-                self._nvml_index = NA
+                self._nvml_index = NA  # type: ignore[assignment]
                 self._name = 'ERROR: Unknown'
             else:
                 self._nvml_index = libnvml.nvmlQuery('nvmlDeviceGetIndex', self._handle)
 
-        self._max_clock_infos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
-        self._timestamp = 0
-        self._lock = threading.RLock()
+        self._max_clock_infos: ClockInfos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
+        self._timestamp: int = 0
+        self._lock: threading.RLock = threading.RLock()
 
-        self._ident = (self.index, self.uuid())
-        self._hash = None
+        self._ident: tuple[Hashable, str] = (self.index, self.uuid())
+        self._hash: int | None = None
 
     def __repr__(self) -> str:
         """Return a string representation of the device."""
@@ -709,7 +717,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             (8, 6)
         """  # pylint: disable=line-too-long
         try:
-            return super().__getattr__(name)
+            return super().__getattr__(name)  # type: ignore[misc]
         except AttributeError:
             if name == '_cache':
                 raise
@@ -779,7 +787,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             An int for the physical device index. For MIG devices, returns the index of the parent
             physical device.
         """
-        return self._nvml_index  # will be overridden in MigDevice
+        return self._nvml_index  # type: ignore[return-value] # will be overridden in MigDevice
 
     @property
     def handle(self) -> libnvml.c_nvmlDevice_t:
@@ -800,7 +808,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if self._cuda_index is None:
             visible_device_indices = self.parse_cuda_visible_devices()
             try:
-                self._cuda_index = visible_device_indices.index(self.index)
+                self._cuda_index = visible_device_indices.index(self.index)  # type: ignore[arg-type]
             except ValueError as ex:
                 raise RuntimeError(
                     f'CUDA Error: Device(index={self.index}) is not visible to CUDA applications',
@@ -1628,13 +1636,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.is_mig_device() or not self.is_mig_mode_enabled()
 
-    def to_leaf_devices(self) -> list[PhysicalDevice | MigDevice | CudaDevice]:
+    def to_leaf_devices(
+        self,
+    ) -> list[PhysicalDevice] | list[MigDevice] | list[CudaDevice] | list[CudaMigDevice]:
         """Return a list of leaf devices.
 
         Note that a CUDA device is always a leaf device.
         """
         if isinstance(self, CudaDevice) or self.is_leaf_device():
-            return [self]
+            return [self]  # type: ignore[return-value]
         return self.mig_devices()
 
     def processes(self) -> dict[int, GpuProcess]:
@@ -1656,7 +1666,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 else:
                     # Used GPU memory is `N/A` on Windows Display Driver Model (WDDM)
                     # or on MIG-enabled GPUs
-                    gpu_memory = NA
+                    gpu_memory = NA  # type: ignore[assignment]
                     found_na = True
                 proc = processes[p.pid] = self.GPU_PROCESS_CLASS(
                     pid=p.pid,
@@ -1740,7 +1750,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     # Modified from psutil (https://github.com/giampaolo/psutil)
     @contextlib.contextmanager
-    def oneshot(self) -> contextlib.AbstractContextManager:
+    def oneshot(self) -> Generator[None, None, None]:
         """A utility context manager which considerably speeds up the retrieval of multiple device information at the same time.
 
         Internally different device info (e.g. memory_info, utilization_rates, ...) may be fetched
@@ -1781,22 +1791,22 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 yield
             else:
                 try:
-                    self.memory_info.cache_activate(self)
-                    self.bar1_memory_info.cache_activate(self)
-                    self.utilization_rates.cache_activate(self)
-                    self.clock_infos.cache_activate(self)
-                    self.max_clock_infos.cache_activate(self)
-                    self.power_usage.cache_activate(self)
-                    self.power_limit.cache_activate(self)
+                    self.memory_info.cache_activate(self)  # type: ignore[attr-defined]
+                    self.bar1_memory_info.cache_activate(self)  # type: ignore[attr-defined]
+                    self.utilization_rates.cache_activate(self)  # type: ignore[attr-defined]
+                    self.clock_infos.cache_activate(self)  # type: ignore[attr-defined]
+                    self.max_clock_infos.cache_activate(self)  # type: ignore[attr-defined]
+                    self.power_usage.cache_activate(self)  # type: ignore[attr-defined]
+                    self.power_limit.cache_activate(self)  # type: ignore[attr-defined]
                     yield
                 finally:
-                    self.memory_info.cache_deactivate(self)
-                    self.bar1_memory_info.cache_deactivate(self)
-                    self.utilization_rates.cache_deactivate(self)
-                    self.clock_infos.cache_deactivate(self)
-                    self.max_clock_infos.cache_deactivate(self)
-                    self.power_usage.cache_deactivate(self)
-                    self.power_limit.cache_deactivate(self)
+                    self.memory_info.cache_deactivate(self)  # type: ignore[attr-defined]
+                    self.bar1_memory_info.cache_deactivate(self)  # type: ignore[attr-defined]
+                    self.utilization_rates.cache_deactivate(self)  # type: ignore[attr-defined]
+                    self.clock_infos.cache_deactivate(self)  # type: ignore[attr-defined]
+                    self.max_clock_infos.cache_deactivate(self)  # type: ignore[attr-defined]
+                    self.power_usage.cache_deactivate(self)  # type: ignore[attr-defined]
+                    self.power_limit.cache_deactivate(self)  # type: ignore[attr-defined]
 
 
 class PhysicalDevice(Device):
@@ -1804,6 +1814,10 @@ class PhysicalDevice(Device):
 
     This is the real GPU installed in the system.
     """
+
+    _nvml_index: int
+    index: int
+    nvml_index: int
 
     @property
     def physical_index(self) -> int:
@@ -1864,13 +1878,16 @@ class PhysicalDevice(Device):
 class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
     """Class for MIG devices."""
 
+    _nvml_index: tuple[int, int]
+    nvml_index: tuple[int, int]
+
     @classmethod
     def count(cls) -> int:
         """The number of total MIG devices aggregated over all physical devices."""
         return len(cls.all())
 
     @classmethod
-    def all(cls) -> list[MigDevice]:
+    def all(cls) -> list[MigDevice]:  # type: ignore[override]
         """Return a list of MIG devices aggregated over all physical devices."""
         mig_devices = []
         for device in PhysicalDevice.all():
@@ -1878,7 +1895,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         return mig_devices
 
     @classmethod
-    def from_indices(  # pylint: disable=signature-differs
+    def from_indices(  # type: ignore[override] # pylint: disable=signature-differs
         cls,
         indices: Iterable[tuple[int, int]],
     ) -> list[MigDevice]:
@@ -1929,19 +1946,19 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
         index, uuid = (arg.encode() if isinstance(arg, str) else arg for arg in (index, uuid))
 
-        self._name = NA
-        self._uuid = NA
-        self._bus_id = NA
-        self._memory_total = NA
-        self._memory_total_human = NA
-        self._gpu_instance_id = NA
-        self._compute_instance_id = NA
-        self._is_mig_device = True
-        self._cuda_index = None
-        self._cuda_compute_capability = None
+        self._name: str = NA
+        self._uuid: str = NA
+        self._bus_id: str = NA
+        self._memory_total: int | NaType = NA
+        self._memory_total_human: str = NA
+        self._gpu_instance_id: int | NaType = NA
+        self._compute_instance_id: int | NaType = NA
+        self._is_mig_device: bool = True
+        self._cuda_index: int | None = None
+        self._cuda_compute_capability: tuple[int, int] | NaType | None = None
 
         if index is not None:
-            self._nvml_index = index
+            self._nvml_index = index  # type: ignore[assignment]
             self._handle = None
 
             parent = _get_global_physical_device()
@@ -2047,7 +2064,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         The attributes are defined in :attr:`SNAPSHOT_KEYS`.
         """
         snapshot = super().as_snapshot()
-        snapshot.mig_index = self.mig_index
+        snapshot.mig_index = self.mig_index  # type: ignore[attr-defined]
 
         return snapshot
 
@@ -2074,6 +2091,7 @@ class CudaDevice(Device):
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '3,2,1,0'
 
         >>> CudaDevice.count()                     # number of NVIDIA GPUs visible to CUDA applications
@@ -2123,6 +2141,10 @@ class CudaDevice(Device):
             If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
     """  # pylint: disable=line-too-long
 
+    _nvml_index: int
+    index: int
+    nvml_index: int
+
     @classmethod
     def is_available(cls) -> bool:
         """Test whether there are any CUDA-capable devices available."""
@@ -2137,7 +2159,7 @@ class CudaDevice(Device):
             return 0
 
     @classmethod
-    def all(cls) -> list[CudaDevice]:
+    def all(cls) -> list[CudaDevice]:  # type: ignore[override]
         """All CUDA visible devices.
 
         Note:
@@ -2146,7 +2168,7 @@ class CudaDevice(Device):
         return cls.from_indices()
 
     @classmethod
-    def from_indices(
+    def from_indices(  # type: ignore[override]
         cls,
         indices: int | Iterable[int] | None = None,
     ) -> list[CudaDevice]:
@@ -2184,7 +2206,7 @@ class CudaDevice(Device):
         *,
         nvml_index: int | tuple[int, int] | None = None,
         uuid: str | None = None,
-    ) -> Device:
+    ) -> CudaDevice:
         """Create a new instance of CudaDevice.
 
         The type of the result is determined by the given argument.
@@ -2209,16 +2231,22 @@ class CudaDevice(Device):
             RuntimeError:
                 If the index is out of range for the given ``CUDA_VISIBLE_DEVICES`` environment variable.
         """
+        if nvml_index is not None and uuid is not None:
+            raise TypeError(
+                f'CudaDevice(cuda_index=None, nvml_index=None, uuid=None) takes 1 non-None arguments '
+                f'but (cuda_index, nvml_index, uuid) = {(cuda_index, nvml_index, uuid)!r} were given',
+            )
+
         if cuda_index is not None and nvml_index is None and uuid is None:
             cuda_visible_devices = cls.parse_cuda_visible_devices()
             if not isinstance(cuda_index, int) or not 0 <= cuda_index < len(cuda_visible_devices):
                 raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             nvml_index = cuda_visible_devices[cuda_index]
 
-        if not isinstance(nvml_index, int) or is_mig_device_uuid(uuid):
-            return super().__new__(CudaMigDevice, index=nvml_index, uuid=uuid)
+        if (nvml_index is not None and not isinstance(nvml_index, int)) or is_mig_device_uuid(uuid):
+            return super().__new__(CudaMigDevice, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
 
-        return super().__new__(cls, index=nvml_index, uuid=uuid)
+        return super().__new__(cls, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
 
     def __init__(
         self,
@@ -2251,13 +2279,13 @@ class CudaDevice(Device):
                 raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             nvml_index = cuda_visible_devices[cuda_index]
 
-        super().__init__(index=nvml_index, uuid=uuid)
+        super().__init__(index=nvml_index, uuid=uuid)  # type: ignore[arg-type]
 
         if cuda_index is None:
             cuda_index = super().cuda_index
-        self._cuda_index = cuda_index
+        self._cuda_index: int = cuda_index
 
-        self._ident = ((self._cuda_index, self.index), self.uuid())
+        self._ident: tuple[Hashable, str] = ((self._cuda_index, self.index), self.uuid())
 
     def __repr__(self) -> str:
         """Return a string representation of the CUDA device."""
@@ -2279,7 +2307,7 @@ class CudaDevice(Device):
         The attributes are defined in :attr:`SNAPSHOT_KEYS`.
         """
         snapshot = super().as_snapshot()
-        snapshot.cuda_index = self.cuda_index
+        snapshot.cuda_index = self.cuda_index  # type: ignore[attr-defined]
 
         return snapshot
 
@@ -2288,8 +2316,12 @@ Device.cuda = CudaDevice
 """Shortcut for class :class:`CudaDevice`."""
 
 
-class CudaMigDevice(CudaDevice, MigDevice):
+class CudaMigDevice(CudaDevice, MigDevice):  # type: ignore[misc]
     """Class for CUDA devices that are MIG devices."""
+
+    _nvml_index: tuple[int, int]  # type: ignore[assignment]
+    index: tuple[int, int]  # type: ignore[assignment]
+    nvml_index: tuple[int, int]  # type: ignore[assignment]
 
 
 def is_mig_device_uuid(uuid: str | None) -> bool:
@@ -2327,6 +2359,7 @@ def parse_cuda_visible_devices(
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
         >>> parse_cuda_visible_devices()        # parse the `CUDA_VISIBLE_DEVICES` environment variable to NVML indices
         [6, 5]
@@ -2383,6 +2416,7 @@ def normalize_cuda_visible_devices(cuda_visible_devices: str | None = _VALUE_OMI
 
     Examples:
         >>> import os
+        >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
         >>> normalize_cuda_visible_devices()        # normalize the `CUDA_VISIBLE_DEVICES` environment variable to UUID strings
         'GPU-849d5a8d-610e-eeea-1fd4-81ff44a23794,GPU-18ef14e9-dec6-1d7e-1284-3010c6ce98b1'
@@ -2420,7 +2454,7 @@ def normalize_cuda_visible_devices(cuda_visible_devices: str | None = _VALUE_OMI
 
 
 class _PhysicalDeviceAttrs(NamedTuple):
-    index: int
+    index: int  # type: ignore[assignment]
     name: str
     uuid: str
     support_mig_mode: bool
@@ -2460,7 +2494,7 @@ def _does_any_device_support_mig_mode(uuids: Iterable[str] | None = None) -> boo
 
 
 @contextlib.contextmanager
-def _global_physical_device(device: PhysicalDevice) -> PhysicalDevice:
+def _global_physical_device(device: PhysicalDevice) -> Generator[PhysicalDevice, None, None]:
     global _GLOBAL_PHYSICAL_DEVICE  # pylint: disable=global-statement
 
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
@@ -2473,13 +2507,29 @@ def _global_physical_device(device: PhysicalDevice) -> PhysicalDevice:
 
 def _get_global_physical_device() -> PhysicalDevice:
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
-        return _GLOBAL_PHYSICAL_DEVICE
+        return _GLOBAL_PHYSICAL_DEVICE  # type: ignore[return-value]
+
+
+@overload
+def _parse_cuda_visible_devices(
+    cuda_visible_devices: str | None,
+    format: Literal['index'],  # pylint: disable=redefined-builtin
+) -> list[int] | list[tuple[int, int]]:
+    ...
+
+
+@overload
+def _parse_cuda_visible_devices(
+    cuda_visible_devices: str | None,
+    format: Literal['uuid'],  # pylint: disable=redefined-builtin
+) -> list[str]:
+    ...
 
 
 @functools.lru_cache()
 def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
     cuda_visible_devices: str | None = None,
-    format: str = 'index',  # pylint: disable=redefined-builtin
+    format: Literal['index', 'uuid'] = 'index',  # pylint: disable=redefined-builtin
 ) -> list[int] | list[tuple[int, int]] | list[str]:
     """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
     assert format in ('index', 'uuid')
@@ -2487,7 +2537,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     try:
         physical_device_attrs = _get_all_physical_device_attrs()
     except libnvml.NVMLError:
-        return []
+        return []  # type: ignore[return-value]
     gpu_uuids = set(physical_device_attrs)
 
     try:
@@ -2532,6 +2582,10 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     if cuda_visible_devices is None:
         cuda_visible_devices = ','.join(physical_device_attrs.keys())
 
+    devices: list[Device] = []
+    presented: set[str] = set()
+    use_integer_identifiers: bool | None = None
+
     def from_index_or_uuid(index_or_uuid: int | str) -> Device:
         nonlocal use_integer_identifiers
 
@@ -2562,12 +2616,9 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
             identifier = identifier[:offset]
         return identifier
 
-    devices = []
-    presented = set()
-    use_integer_identifiers = None
     for identifier in map(strip_identifier, cuda_visible_devices.split(',')):
         if identifier in presented:
-            return []  # duplicate identifiers found
+            return []  # type: ignore[return-value] # duplicate identifiers found
 
         try:
             device = from_index_or_uuid(identifier)
@@ -2600,7 +2651,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
 
     if format == 'uuid':
         return [device.uuid() for device in devices]
-    return [device.index for device in devices]
+    return [device.index for device in devices]  # type: ignore[return-value]
 
 
 def _parse_cuda_visible_devices_to_uuids(
@@ -2655,7 +2706,7 @@ def _parse_cuda_visible_devices_to_uuids(
 
 
 def _cuda_visible_devices_parser(
-    cuda_visible_devices: str,
+    cuda_visible_devices: str | None,
     queue: mp.SimpleQueue,
     verbose: bool = True,
 ) -> None:

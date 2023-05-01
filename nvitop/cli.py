@@ -237,29 +237,31 @@ def parse_arguments() -> argparse.Namespace:
         args.user.append(USERNAME)
     if args.gpu_util_thresh is None:
         try:
-            gpu_util_thresh = os.getenv('NVITOP_GPU_UTILIZATION_THRESHOLDS', None)
-            gpu_util_thresh = list(map(int, gpu_util_thresh.split(',')))[:2]
+            gpu_util_thresh = list(
+                map(int, os.getenv('NVITOP_GPU_UTILIZATION_THRESHOLDS', '').split(',')),
+            )[:2]
             if (
                 len(gpu_util_thresh) != 2
                 or min(gpu_util_thresh) <= 0
                 or max(gpu_util_thresh) >= 100
             ):
                 raise ValueError
-        except (ValueError, AttributeError):
+        except ValueError:
             pass
         else:
             args.gpu_util_thresh = gpu_util_thresh
     if args.mem_util_thresh is None:
         try:
-            mem_util_thresh = os.getenv('NVITOP_MEMORY_UTILIZATION_THRESHOLDS', None)
-            mem_util_thresh = list(map(int, mem_util_thresh.split(',')))[:2]
+            mem_util_thresh = list(
+                map(int, os.getenv('NVITOP_MEMORY_UTILIZATION_THRESHOLDS', '').split(',')),
+            )[:2]
             if (
                 len(mem_util_thresh) != 2
                 or min(mem_util_thresh) <= 0
                 or max(mem_util_thresh) >= 100
             ):
                 raise ValueError
-        except (ValueError, AttributeError):
+        except ValueError:
             pass
         else:
             args.mem_util_thresh = mem_util_thresh
@@ -268,7 +270,7 @@ def parse_arguments() -> argparse.Namespace:
 
 
 # pylint: disable-next=too-many-branches,too-many-statements,too-many-locals
-def main() -> None:
+def main() -> int:
     """Main function for ``nvitop`` CLI."""
     args = parse_arguments()
 
@@ -307,9 +309,9 @@ def main() -> None:
         return 1
 
     if args.gpu_util_thresh is not None:
-        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
+        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))  # type: ignore[assignment]
     if args.mem_util_thresh is not None:
-        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
+        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))  # type: ignore[assignment]
 
     if args.only is not None:
         indices = set(args.only)
@@ -325,8 +327,8 @@ def main() -> None:
             for index in Device.parse_cuda_visible_devices()
         }
     else:
-        indices = range(device_count)
-    devices = Device.from_indices(sorted(set(indices)))
+        indices = set(range(device_count))
+    devices = Device.from_indices(sorted(indices))
 
     filters = []
     if args.compute:
@@ -366,12 +368,17 @@ def main() -> None:
         ui = UI(devices, filters, ascii=args.ascii)
         if not sys.stdout.isatty():
             parent = HostProcess().parent()
-            grandparent = parent.parent() if parent is not None else None
-            if grandparent is not None and parent.name() == 'sh' and grandparent.name() == 'watch':
-                messages.append(
-                    'HINT: You are running `nvitop` under `watch` command. '
-                    'Please try `nvitop -m` directly.',
-                )
+            if parent is not None:
+                grandparent = parent.parent()
+                if (
+                    grandparent is not None
+                    and parent.name() == 'sh'
+                    and grandparent.name() == 'watch'
+                ):
+                    messages.append(
+                        'HINT: You are running `nvitop` under `watch` command. '
+                        'Please try `nvitop -m` directly.',
+                    )
 
     ui.print()
     ui.destroy()
@@ -383,7 +390,7 @@ def main() -> None:
             else 'ERROR: A FunctionNotFound error occurred while calling:',
         ]
         unknown_function_messages.extend(
-            f'    nvmlQuery({func.__name__!r}, *args, **kwargs)'
+            f'    nvmlQuery({(func.__name__ if not isinstance(func, str) else func)!r}, *args, **kwargs)'
             for func, _ in libnvml.UNKNOWN_FUNCTIONS.values()
         )
         unknown_function_messages.append(

@@ -26,7 +26,13 @@ import platform as _platform
 import string as _string
 import sys as _sys
 import threading as _threading
+from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
+from typing import Callable as _Callable
+
+
+if _TYPE_CHECKING:
+    from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 
 
 # pylint: disable-next=missing-class-docstring,too-few-public-methods
@@ -34,9 +40,9 @@ class _struct_c_CUdevice_t(_ctypes.Structure):
     pass  # opaque handle
 
 
-_c_CUdevice_t = _ctypes.POINTER(_struct_c_CUdevice_t)
+_c_CUdevice_t: _TypeAlias = _ctypes.POINTER(_struct_c_CUdevice_t)  # type: ignore[valid-type]
 
-_CUresult_t = _ctypes.c_uint
+_CUresult_t: _TypeAlias = _ctypes.c_uint
 
 # Error codes #
 # pylint: disable=line-too-long
@@ -215,8 +221,8 @@ CUDA_ERROR_UNKNOWN = 999
 class CUDAError(Exception):
     """Base exception class for CUDA driver query errors."""
 
-    _value_class_mapping = {}
-    _errcode_to_string = {  # List of currently known error codes
+    _value_class_mapping: dict[int, type[CUDAError]] = {}
+    _errcode_to_string: dict[int, str] = {  # List of currently known error codes
         CUDA_ERROR_NOT_INITIALIZED:                'Initialization error.',
         CUDA_ERROR_NOT_FOUND:                      'Named symbol not found.',
         CUDA_ERROR_INVALID_VALUE:                  'Invalid argument.',
@@ -227,7 +233,8 @@ class CUDAError(Exception):
         CUDA_ERROR_COMPAT_NOT_SUPPORTED_ON_DEVICE: 'Forward compatibility was attempted on non supported Hardware.',
         CUDA_ERROR_INVALID_CONTEXT:                'Invalid device context.',
     }  # fmt:skip
-    _errcode_to_name = {}
+    _errcode_to_name: dict[int, str] = {}
+    value: int
 
     def __new__(cls, value: int) -> CUDAError:
         """Map value to a proper subclass of :class:`CUDAError`."""
@@ -295,8 +302,8 @@ def _extract_cuda_errors_as_classes() -> None:
         class_name = f'CUDAError_{pascal_case}'
         err_val = getattr(this_module, err_name)
 
-        def gen_new(value):
-            def new(cls):
+        def gen_new(value: int) -> _Callable[[type[CUDAError]], CUDAError]:
+            def new(cls: type[CUDAError]) -> CUDAError:
                 return CUDAError.__new__(cls, value)
 
             return new
@@ -317,6 +324,24 @@ def _extract_cuda_errors_as_classes() -> None:
         CUDAError._errcode_to_name[err_val] = err_name
 
 
+# Add explicit references to appease linters
+class __CUDAError(CUDAError):
+    value: int
+
+    def __new__(cls) -> CUDAError:  # type: ignore[misc,empty-body]
+        ...
+
+
+CUDAError_NotInitialized: type[__CUDAError]
+CUDAError_NotFound: type[__CUDAError]
+CUDAError_InvalidValue: type[__CUDAError]
+CUDAError_NoDevice: type[__CUDAError]
+CUDAError_InvalidDevice: type[__CUDAError]
+CUDAError_SystemDriverMismatch: type[__CUDAError]
+CUDAError_Deinitialized: type[__CUDAError]
+CUDAError_CompatNotSupportedOnDevice: type[__CUDAError]
+CUDAError_InvalidContext: type[__CUDAError]
+
 _extract_cuda_errors_as_classes()
 del _extract_cuda_errors_as_classes
 
@@ -328,14 +353,14 @@ def _cudaCheckReturn(ret: _Any) -> _Any:
 
 
 # Function access #
-__cudaLib = None
-__initialized = False
-__libLoadLock = _threading.Lock()
+__cudaLib: _ctypes.CDLL | None = None
+__initialized: bool = False
+__libLoadLock: _threading.Lock = _threading.Lock()
 # Function pointers are cached to prevent unnecessary libLoadLock locking
-__cudaGetFunctionPointer_cache = {}
+__cudaGetFunctionPointer_cache: dict[str, _ctypes._CFuncPtr] = {}  # type: ignore[name-defined]
 
 
-def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
+def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:  # type: ignore[name-defined]
     """Get the function pointer from the CUDA driver library.
 
     Raises:
@@ -658,11 +683,10 @@ def cuDeviceGetUuid(device: _c_CUdevice_t) -> str:
     except CUDAError_NotFound:  # noqa: F821 # pylint: disable=undefined-variable
         fn = __cudaGetFunctionPointer('cuDeviceGetUuid')
 
-    ubyte_array = _ctypes.c_ubyte * 16
-    uuid = ubyte_array()
+    uuid = _ctypes.create_string_buffer(16)
     ret = fn(uuid, device)
     _cudaCheckReturn(ret)
-    uuid = ''.join(map('{:02x}'.format, uuid))
+    uuid = ''.join(map('{:02x}'.format, uuid.value))
     return '-'.join((uuid[:8], uuid[8:12], uuid[12:16], uuid[16:20], uuid[20:32]))
 
 
@@ -682,11 +706,10 @@ def cuDeviceGetUuid_v2(device: _c_CUdevice_t) -> str:
     """
     fn = __cudaGetFunctionPointer('cuDeviceGetUuid_v2')
 
-    ubyte_array = _ctypes.c_ubyte * 16
-    uuid = ubyte_array()
+    uuid = _ctypes.create_string_buffer(16)
     ret = fn(uuid, device)
     _cudaCheckReturn(ret)
-    uuid = ''.join(map('{:0x}'.format, uuid.value))
+    uuid = ''.join(map('{:02x}'.format, uuid.value))
     return '-'.join((uuid[:8], uuid[8:12], uuid[12:16], uuid[16:20], uuid[20:32]))
 
 

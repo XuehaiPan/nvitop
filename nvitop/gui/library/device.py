@@ -8,7 +8,7 @@ from cachetools.func import ttl_cache
 from nvitop.api import NA
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
-from nvitop.api import Snapshot, libnvml, utilization2string
+from nvitop.api import libnvml, utilization2string
 from nvitop.gui.library.process import GpuProcess
 
 
@@ -75,7 +75,7 @@ class Device(DeviceBase):
         return self._snapshot
 
     @property
-    def snapshot(self) -> Snapshot:
+    def snapshot(self):
         if self._snapshot is None:
             self.as_snapshot()
         return self._snapshot

@@ -82,6 +82,31 @@ line_length = 100
 lines_after_imports = 2
 multi_line_output = 3
 
+[tool.mypy]
+# Sync with requires-python
+python_version = 3.8  # appease mypy for syntax errors in numpy stubs
+pretty = true
+show_error_codes = true
+show_error_context = true
+show_traceback = true
+allow_redefinition = true
+check_untyped_defs = true
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+ignore_missing_imports = true
+no_implicit_optional = true
+strict_equality = true
+strict_optional = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ['nvitop.callbacks.*', 'nvitop.gui.*']
+ignore_errors= true
+
 [tool.pydocstyle]
 convention = "google"
 match-dir = '^(?!(gui|callbacks|docs))[^\.].*'
@@ -90,6 +115,7 @@ match-dir = '^(?!(gui|callbacks|docs))[^\.].*'
 ignore-words = "docs/source/spelling_wordlist.txt"
 
 [tool.ruff]
+# Sync with requires-python
 target-version = "py37"
 line-length = 100
 show-source = true
@@ -145,7 +171,6 @@ ignore = [
 ]
 "nvitop/api/lib*.py" = [
     "N",     # pep8-naming
-    "ANN",   # flake8-annotations
 ]
 "nvitop/callbacks/*.py" = [
     "ANN",   # flake8-annotations

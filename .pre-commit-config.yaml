@@ -25,7 +25,7 @@ repos:
       - id: debug-statements
       - id: double-quote-string-fixer
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.262
+    rev: v0.0.263
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -38,10 +38,10 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
+    rev: v3.3.2
     hooks:
       - id: pyupgrade
-        args: [--py37-plus]
+        args: [--py37-plus] # sync with requires-python
   - repo: https://github.com/pycqa/flake8
     rev: 6.0.0
     hooks:
@@ -59,8 +59,8 @@ repos:
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.4
     hooks:
-    - id: codespell
-      additional_dependencies: [".[toml]"]
+      - id: codespell
+        additional_dependencies: [".[toml]"]
   - repo: local
     hooks:
       - id: pylint
@@ -80,3 +80,11 @@ repos:
             ^nvitop/callbacks/|
             ^docs/
           )
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy
+        language: system
+        types_or: [python, pyi]
+        require_serial: true

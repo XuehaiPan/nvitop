@@ -57,8 +57,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         ValueError:
             If NVIDIA driver is not installed, or the `gpus` argument does not match available devices.
 
-    Example::
-
+    Examples:
         >>> from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
         >>> from tensorflow.python.keras.callbacks import TensorBoard
         >>> from nvitop.callbacks.keras import GpuStatsLogger

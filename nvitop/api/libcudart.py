@@ -27,6 +27,7 @@ import platform as _platform
 import sys as _sys
 import threading as _threading
 from typing import Any as _Any
+from typing import Callable as _Callable
 
 
 _cudaError_t = _ctypes.c_int
@@ -266,8 +267,8 @@ cudaErrorUnknown = 999
 class cudaError(Exception):
     """Base exception class for CUDA driver query errors."""
 
-    _value_class_mapping = {}
-    _errcode_to_string = {  # List of currently known error codes
+    _value_class_mapping: dict[int, type[cudaError]] = {}
+    _errcode_to_string: dict[int, str] = {  # List of currently known error codes
         cudaErrorInitializationError:        'Initialization error.',
         cudaErrorSymbolNotFound:             'Named symbol not found.',
         cudaErrorInvalidValue:               'Invalid argument.',
@@ -278,7 +279,8 @@ class cudaError(Exception):
         cudaErrorCompatNotSupportedOnDevice: 'Forward compatibility was attempted on non supported Hardware.',
         cudaErrorDeviceUninitialized:        'Invalid device context.',
     }  # fmt:skip
-    _errcode_to_name = {}
+    _errcode_to_name: dict[int, str] = {}
+    value: int
 
     def __new__(cls, value: int) -> cudaError:
         """Map value to a proper subclass of :class:`cudaError`."""
@@ -349,8 +351,8 @@ def _extract_cuda_errors_as_classes() -> None:
         class_name = err_name.replace('cudaError', 'cudaError_')
         err_val = getattr(this_module, err_name)
 
-        def gen_new(value):
-            def new(cls):
+        def gen_new(value: int) -> _Callable[[type[cudaError]], cudaError]:
+            def new(cls: type[cudaError]) -> cudaError:
                 return cudaError.__new__(cls, value)
 
             return new
@@ -371,6 +373,24 @@ def _extract_cuda_errors_as_classes() -> None:
         cudaError._errcode_to_name[err_val] = err_name
 
 
+# Add explicit references to appease linters
+class __cudaError(cudaError):
+    value: int
+
+    def __new__(cls) -> cudaError:  # type: ignore[misc,empty-body]
+        ...
+
+
+cudaError_InitializationError: type[__cudaError]
+cudaError_SymbolNotFound: type[__cudaError]
+cudaError_InvalidValue: type[__cudaError]
+cudaError_NoDevice: type[__cudaError]
+cudaError_InvalidDevice: type[__cudaError]
+cudaError_SystemDriverMismatch: type[__cudaError]
+cudaError_CudartUnloading: type[__cudaError]
+cudaError_CompatNotSupportedOnDevice: type[__cudaError]
+cudaError_DeviceUninitialized: type[__cudaError]
+
 _extract_cuda_errors_as_classes()
 del _extract_cuda_errors_as_classes
 
@@ -382,13 +402,13 @@ def _cudaCheckReturn(ret: _Any) -> _Any:
 
 
 # Function access #
-__cudaLib = None
-__libLoadLock = _threading.Lock()
+__cudaLib: _ctypes.CDLL | None = None
+__libLoadLock: _threading.Lock = _threading.Lock()
 # Function pointers are cached to prevent unnecessary libLoadLock locking
-__cudaGetFunctionPointer_cache = {}
+__cudaGetFunctionPointer_cache: dict[str, _ctypes._CFuncPtr] = {}  # type: ignore[name-defined]
 
 
-def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:
+def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:  # type: ignore[name-defined]
     """Get the function pointer from the CUDA Runtime library.
 
     Raises:
