@@ -855,9 +855,10 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
         self.last_timestamp = timestamp
 
     def mean(self) -> float:
+        if self.integral is None:
+            return math.nan
+
         if self.has_nan:
-            if self.integral is None:
-                return math.nan
             return self.integral / (self.last_timestamp - self.start_timestamp)
 
         timestamp = timer()
@@ -865,12 +866,12 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
         return integral / (timestamp - self.start_timestamp)
 
     def min(self) -> float:
-        if self.has_nan or self.min_value is None:
+        if self.min_value is None:
             return math.nan
         return self.min_value
 
     def max(self) -> float:
-        if self.has_nan or self.max_value is None:
+        if self.max_value is None:
             return math.nan
         return self.max_value
 

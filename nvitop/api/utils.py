@@ -506,7 +506,7 @@ SIZE_UNITS: dict[str | None, int] = {
     'MB': 1000**2,
     'GB': 1000**3,
     'TB': 1000**4,
-    'PB': 1000**4,
+    'PB': 1000**5,
 }
 """Units of storage and memory measurements."""
 SIZE_PATTERN: re.Pattern = re.compile(
@@ -694,9 +694,7 @@ class Snapshot:
         """Support ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
 
         def gen() -> Generator[str, None, None]:
-            for name in self.__dict__:
-                if name not in ('real', 'timestamp'):
-                    yield name
+            yield from (name for name in self.__dict__ if name not in ('real', 'timestamp'))
 
         return gen()
 

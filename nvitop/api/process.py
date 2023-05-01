@@ -452,10 +452,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     _pid: int
     _host: HostProcess
-    _ident: tuple
     _device: Device
-    _hash: int | None
     _username: str | None
+    _ident: tuple
+    _hash: int | None
 
     # pylint: disable-next=too-many-arguments
     def __new__(
