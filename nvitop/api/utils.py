@@ -730,10 +730,11 @@ def memoize_when_activated(method: Method) -> Method:
     """
 
     @functools.wraps(method)
-    def wrapped(self, *args, **kwargs):  # noqa: ANN001,ANN002,ANN003,ANN202
+    def wrapped(self: object, *args: Any, **kwargs: Any) -> Any:
         try:
             # case 1: we previously entered oneshot() ctx
-            ret = self._cache[method]  # pylint: disable=protected-access
+            # pylint: disable-next=protected-access
+            ret = self._cache[method]  # type: ignore[attr-defined]
         except AttributeError:
             # case 2: we never entered oneshot() ctx
             return method(self, *args, **kwargs)
@@ -742,25 +743,28 @@ def memoize_when_activated(method: Method) -> Method:
             # for this entry yet
             ret = method(self, *args, **kwargs)
             try:
-                self._cache[method] = ret  # pylint: disable=protected-access
+                # pylint: disable-next=protected-access
+                self._cache[method] = ret  # type: ignore[attr-defined]
             except AttributeError:
                 # multi-threading race condition, see:
                 # https://github.com/giampaolo/psutil/issues/1948
                 pass
         return ret
 
-    def cache_activate(self):  # noqa: ANN001,ANN202
+    def cache_activate(self: object) -> None:
         """Activate cache.
 
         Expects an instance. Cache will be stored as a "_cache" instance attribute.
         """
         if not hasattr(self, '_cache'):
-            self._cache = {}  # pylint: disable=protected-access
+            # pylint: disable-next=protected-access
+            self._cache = {}  # type: ignore[attr-defined]
 
-    def cache_deactivate(self):  # noqa: ANN001,ANN202
+    def cache_deactivate(self: object) -> None:
         """Deactivate and clear cache."""
         try:
-            del self._cache  # pylint: disable=protected-access
+            # pylint: disable-next=protected-access
+            del self._cache  # type: ignore[attr-defined]
         except AttributeError:
             pass
 

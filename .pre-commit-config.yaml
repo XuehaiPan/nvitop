@@ -88,3 +88,7 @@ repos:
         language: system
         types_or: [python, pyi]
         require_serial: true
+        exclude: |
+          (?x)(
+            ^nvitop-exporter/setup.py$
+          )

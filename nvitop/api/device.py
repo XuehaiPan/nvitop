@@ -1154,7 +1154,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     gpu_percent = gpu_utilization  # in percentage
 
-    def memory_utilization(self) -> float | NaType:  # in percentage
+    def memory_utilization(self) -> int | NaType:  # in percentage
         """Percent of time over the past sample period during which global (device) memory was being read or written.
 
         The sample period may be between 1 second and 1/6 second depending on the product.
@@ -1170,7 +1170,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         return self.utilization_rates().memory
 
-    def encoder_utilization(self) -> float | NaType:  # in percentage
+    def encoder_utilization(self) -> int | NaType:  # in percentage
         """The encoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
@@ -1178,7 +1178,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.utilization_rates().encoder
 
-    def decoder_utilization(self) -> float | NaType:  # in percentage\
+    def decoder_utilization(self) -> int | NaType:  # in percentage
         """The decoder utilization rate  in percentage.
 
         Returns: Union[int, NaType]
