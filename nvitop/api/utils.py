@@ -27,6 +27,7 @@ import os
 import re
 import sys
 import time
+from collections.abc import KeysView
 from typing import Any, Callable, Generator, Iterable, Iterator
 
 from psutil import WINDOWS
@@ -698,10 +699,10 @@ class Snapshot:
 
         return gen()
 
-    def keys(self) -> Iterator[str]:
+    def keys(self) -> Iterable[str]:
         # pylint: disable-next=line-too-long
         """Support ``**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and ``dict(snapshot)`` dictionary conversion."""
-        return iter(self)
+        return KeysView(self)  # type: ignore[arg-type]
 
 
 # Modified from psutil (https://github.com/giampaolo/psutil)
