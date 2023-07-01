@@ -68,6 +68,7 @@ PYNVML_VERSION_CANDIDATES = (
     '11.515.75',
     '11.525.84',
     '11.525.112',
+    '11.525.131',
 )
 """The list of supported ``nvidia-ml-py`` versions.
 See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
