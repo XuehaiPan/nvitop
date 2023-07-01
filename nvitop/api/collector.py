@@ -25,7 +25,7 @@ import os
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from typing import Callable, Generator, Iterable, NamedTuple, TypeVar
+from typing import Callable, ClassVar, Generator, Iterable, NamedTuple, TypeVar
 from weakref import WeakSet
 
 from nvitop.api import host
@@ -362,7 +362,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         }
     """  # pylint: disable=line-too-long
 
-    DEVICE_METRICS = [
+    DEVICE_METRICS: ClassVar[list[tuple[str, str, float | int]]] = [
         # (<attribute>, <name>, <unit>)
         # GPU memory metrics
         ('memory_used', 'memory_used (MiB)', MiB),
@@ -378,7 +378,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         ('power_usage', 'power_usage (W)', 1000.0),
     ]
 
-    PROCESS_METRICS = [
+    PROCESS_METRICS: ClassVar[list[tuple[str, str | None, str, float | int]]] = [
         # (<attribute>, <scope>, <name>, <unit>)
         # Host resource metrics
         ('cpu_percent', 'host', 'cpu_percent (%)', 1.0),

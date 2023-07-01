@@ -24,8 +24,8 @@ repos:
       - id: detect-private-key
       - id: debug-statements
       - id: double-quote-string-fixer
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.271
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.0.275
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -38,7 +38,7 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.4.0
+    rev: v3.7.0
     hooks:
       - id: pyupgrade
         args: [--py37-plus] # sync with requires-python
@@ -57,7 +57,7 @@ repos:
             ^docs/source/conf.py$
           )
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.2.5
     hooks:
       - id: codespell
         additional_dependencies: [".[toml]"]

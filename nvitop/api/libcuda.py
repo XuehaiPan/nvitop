@@ -29,6 +29,7 @@ import threading as _threading
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
 from typing import Callable as _Callable
+from typing import ClassVar as _ClassVar
 
 
 if _TYPE_CHECKING:
@@ -221,8 +222,8 @@ CUDA_ERROR_UNKNOWN = 999
 class CUDAError(Exception):
     """Base exception class for CUDA driver query errors."""
 
-    _value_class_mapping: dict[int, type[CUDAError]] = {}
-    _errcode_to_string: dict[int, str] = {  # List of currently known error codes
+    _value_class_mapping: _ClassVar[dict[int, type[CUDAError]]] = {}
+    _errcode_to_string: _ClassVar[dict[int, str]] = {  # List of currently known error codes
         CUDA_ERROR_NOT_INITIALIZED:                'Initialization error.',
         CUDA_ERROR_NOT_FOUND:                      'Named symbol not found.',
         CUDA_ERROR_INVALID_VALUE:                  'Invalid argument.',
@@ -233,7 +234,7 @@ class CUDAError(Exception):
         CUDA_ERROR_COMPAT_NOT_SUPPORTED_ON_DEVICE: 'Forward compatibility was attempted on non supported Hardware.',
         CUDA_ERROR_INVALID_CONTEXT:                'Invalid device context.',
     }  # fmt:skip
-    _errcode_to_name: dict[int, str] = {}
+    _errcode_to_name: _ClassVar[dict[int, str]] = {}
     value: int
 
     def __new__(cls, value: int) -> CUDAError:

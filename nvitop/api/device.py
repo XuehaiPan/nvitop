@@ -114,7 +114,17 @@ import sys
 import textwrap
 import threading
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Callable, Generator, Hashable, Iterable, NamedTuple, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Generator,
+    Hashable,
+    Iterable,
+    NamedTuple,
+    overload,
+)
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
@@ -1709,7 +1719,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 **{key: getattr(self, key)() for key in self.SNAPSHOT_KEYS},
             )
 
-    SNAPSHOT_KEYS = [
+    SNAPSHOT_KEYS: ClassVar[list[str]] = [
         'name',
         'uuid',
         'bus_id',
@@ -2068,7 +2078,11 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
 
         return snapshot
 
-    SNAPSHOT_KEYS = [*Device.SNAPSHOT_KEYS, 'gpu_instance_id', 'compute_instance_id']
+    SNAPSHOT_KEYS: ClassVar[list[str]] = [
+        *Device.SNAPSHOT_KEYS,
+        'gpu_instance_id',
+        'compute_instance_id',
+    ]
 
 
 class CudaDevice(Device):

@@ -34,6 +34,7 @@ from types import ModuleType as _ModuleType
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
 from typing import Callable as _Callable
+from typing import ClassVar as _ClassVar
 
 # Python Bindings for the NVIDIA Management Library (NVML)
 # https://pypi.org/project/nvidia-ml-py
@@ -523,23 +524,23 @@ def __patch_backward_compatibility_layers() -> None:
 
         # pylint: disable-next=missing-class-docstring,too-few-public-methods
         class c_nvmlProcessInfo_v1_t(PrintableStructure):  # type: ignore[misc,valid-type]
-            _fields_ = [
+            _fields_: _ClassVar[list[tuple[str, type]]] = [
                 ('pid', _ctypes.c_uint),
                 ('usedGpuMemory', _ctypes.c_ulonglong),
             ]
-            _fmt_ = {
+            _fmt_: _ClassVar[dict[str, str]] = {
                 'usedGpuMemory': '%d B',
             }
 
         # pylint: disable-next=missing-class-docstring,too-few-public-methods
         class c_nvmlProcessInfo_v2_t(PrintableStructure):  # type: ignore[misc,valid-type]
-            _fields_ = [
+            _fields_: _ClassVar[list[tuple[str, type]]] = [
                 ('pid', _ctypes.c_uint),
                 ('usedGpuMemory', _ctypes.c_ulonglong),
                 ('gpuInstanceId', _ctypes.c_uint),
                 ('computeInstanceId', _ctypes.c_uint),
             ]
-            _fmt_ = {
+            _fmt_: _ClassVar[dict[str, str]] = {
                 'usedGpuMemory': '%d B',
             }
 
@@ -745,7 +746,7 @@ class _CustomModule(_ModuleType):
         except AttributeError:
             return getattr(_pynvml, name)
 
-    def __enter__(self) -> _CustomModule:  # noqa: F405
+    def __enter__(self) -> _CustomModule:
         """Entry of the context manager for ``with`` statement."""
         _lazy_init()
         return self
@@ -761,4 +762,3 @@ class _CustomModule(_ModuleType):
 # Replace entry in sys.modules for this module with an instance of _CustomModule
 __modself = _sys.modules[__name__]
 __modself.__class__ = _CustomModule
-del _CustomModule

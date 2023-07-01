@@ -28,6 +28,7 @@ import sys as _sys
 import threading as _threading
 from typing import Any as _Any
 from typing import Callable as _Callable
+from typing import ClassVar as _ClassVar
 
 
 _cudaError_t = _ctypes.c_int
@@ -267,8 +268,8 @@ cudaErrorUnknown = 999
 class cudaError(Exception):
     """Base exception class for CUDA driver query errors."""
 
-    _value_class_mapping: dict[int, type[cudaError]] = {}
-    _errcode_to_string: dict[int, str] = {  # List of currently known error codes
+    _value_class_mapping: _ClassVar[dict[int, type[cudaError]]] = {}
+    _errcode_to_string: _ClassVar[dict[int, str]] = {  # List of currently known error codes
         cudaErrorInitializationError:        'Initialization error.',
         cudaErrorSymbolNotFound:             'Named symbol not found.',
         cudaErrorInvalidValue:               'Invalid argument.',
@@ -279,7 +280,7 @@ class cudaError(Exception):
         cudaErrorCompatNotSupportedOnDevice: 'Forward compatibility was attempted on non supported Hardware.',
         cudaErrorDeviceUninitialized:        'Invalid device context.',
     }  # fmt:skip
-    _errcode_to_name: dict[int, str] = {}
+    _errcode_to_name: _ClassVar[dict[int, str]] = {}
     value: int
 
     def __new__(cls, value: int) -> cudaError:
