@@ -320,7 +320,7 @@ def main() -> int:
         if len(invalid_indices) > 1:
             messages.append(f'ERROR: Invalid device indices: {sorted(invalid_indices)}.')
         elif len(invalid_indices) == 1:
-            messages.append(f'ERROR: Invalid device index: {list(invalid_indices)[0]}.')
+            messages.append(f'ERROR: Invalid device index: {next(iter(invalid_indices))}.')
     elif args.only_visible:
         indices = {
             index if isinstance(index, int) else index[0]
@@ -431,19 +431,6 @@ def main() -> int:
                 '',
                 '    pip3 install --upgrade pipx',
                 '    pipx install nvitop',
-                '',
-            ),
-        )
-        messages.append(message)
-
-    # pylint: disable-next=protected-access
-    if libnvml._driver_get_memory_info_v2_available and not libnvml._pynvml_memory_v2_available:
-        message = '\n'.join(
-            (
-                'WARNING: The `nvidia-ml-py` package does not support the NVML memory info version 2 APIs, which would',
-                'get inaccurate results. Please upgrade it via:',
-                '',
-                '    pip3 install --upgrade nvitop nvidia-ml-py',
                 '',
             ),
         )

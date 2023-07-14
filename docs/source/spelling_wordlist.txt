@@ -141,3 +141,5 @@ uptime
 ot
 oT
 mypy
+struct
+MPS

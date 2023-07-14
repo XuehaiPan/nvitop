@@ -33,6 +33,7 @@ from weakref import WeakValueDictionary
 from nvitop.api import host, libnvml
 from nvitop.api.utils import (
     NA,
+    UINT_MAX,
     NaType,
     Snapshot,
     bytes2human,
@@ -517,9 +518,9 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             self.type = type
 
         if gpu_instance_id is not None and compute_instance_id is not None:
-            self._gpu_instance_id = gpu_instance_id if gpu_instance_id != 0xFFFFFFFF else NA
+            self._gpu_instance_id = gpu_instance_id if gpu_instance_id != UINT_MAX else NA
             self._compute_instance_id = (
-                compute_instance_id if compute_instance_id != 0xFFFFFFFF else NA
+                compute_instance_id if compute_instance_id != UINT_MAX else NA
             )
         elif device.is_mig_device():
             self._gpu_instance_id = device.gpu_instance_id()
