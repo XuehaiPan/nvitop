@@ -143,3 +143,6 @@ oT
 mypy
 struct
 MPS
+KMD
+conf
+Unallocated

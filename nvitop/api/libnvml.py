@@ -468,7 +468,11 @@ if not _pynvml_installation_corrupted:
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
     class c_nvmlProcessInfo_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Process ID
             ('pid', _ctypes.c_uint),
+            # Amount of used GPU memory in bytes.
+            # Under WDDM, NVML_VALUE_NOT_AVAILABLE is always reported because Windows KMD manages
+            # all the memory and not the NVIDIA driver.
             ('usedGpuMemory', _ctypes.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {
@@ -478,9 +482,17 @@ if not _pynvml_installation_corrupted:
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
     class c_nvmlProcessInfo_v2_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Process ID
             ('pid', _ctypes.c_uint),
+            # Amount of used GPU memory in bytes.
+            # Under WDDM, NVML_VALUE_NOT_AVAILABLE is always reported because Windows KMD manages
+            # all the memory and not the NVIDIA driver.
             ('usedGpuMemory', _ctypes.c_ulonglong),
+            # If MIG is enabled, stores a valid GPU instance ID. gpuInstanceId is set to 0xFFFFFFFF
+            # otherwise.
             ('gpuInstanceId', _ctypes.c_uint),
+            # If MIG is enabled, stores a valid compute instance ID. computeInstanceId is set to
+            # 0xFFFFFFFF otherwise.
             ('computeInstanceId', _ctypes.c_uint),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {
@@ -490,10 +502,19 @@ if not _pynvml_installation_corrupted:
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
     class c_nvmlProcessInfo_v3_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Process ID
             ('pid', _ctypes.c_uint),
+            # Amount of used GPU memory in bytes.
+            # Under WDDM, NVML_VALUE_NOT_AVAILABLE is always reported because Windows KMD manages
+            # all the memory and not the NVIDIA driver.
             ('usedGpuMemory', _ctypes.c_ulonglong),
+            # If MIG is enabled, stores a valid GPU instance ID. gpuInstanceId is set to 0xFFFFFFFF
+            # otherwise.
             ('gpuInstanceId', _ctypes.c_uint),
+            # If MIG is enabled, stores a valid compute instance ID. computeInstanceId is set to
+            # 0xFFFFFFFF otherwise.
             ('computeInstanceId', _ctypes.c_uint),
+            # Amount of used GPU conf compute protected memory in bytes.
             ('usedGpuCcProtectedMemory', _ctypes.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {
@@ -702,8 +723,12 @@ if not _pynvml_installation_corrupted:
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
     class c_nvmlMemory_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Total physical device memory (in bytes).
             ('total', _pynvml.c_ulonglong),
+            # Unallocated device memory (in bytes).
             ('free', _pynvml.c_ulonglong),
+            # Allocated device memory (in bytes).
+            # Note that the driver/GPU always sets aside a small amount of memory for bookkeeping.
             ('used', _pynvml.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
@@ -711,10 +736,16 @@ if not _pynvml_installation_corrupted:
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
     class c_nvmlMemory_v2_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Structure format version (must be 2).
             ('version', _pynvml.c_uint),
+            # Total physical device memory (in bytes).
             ('total', _pynvml.c_ulonglong),
+            # Device memory (in bytes) reserved for system use (driver or firmware).
             ('reserved', _pynvml.c_ulonglong),
+            # Unallocated device memory (in bytes).
             ('free', _pynvml.c_ulonglong),
+            # Allocated device memory (in bytes).
+            # Note that the driver/GPU always sets aside a small amount of memory for bookkeeping.
             ('used', _pynvml.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
