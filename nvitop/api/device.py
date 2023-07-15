@@ -1692,6 +1692,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     gpu_memory=gpu_memory,
                     gpu_instance_id=getattr(p, 'gpuInstanceId', UINT_MAX),
                     compute_instance_id=getattr(p, 'computeInstanceId', UINT_MAX),
+                    used_gpu_cc_protected_memory=getattr(p, 'usedGpuCcProtectedMemory', NA),
                 )
                 proc.type = proc.type + type
 
