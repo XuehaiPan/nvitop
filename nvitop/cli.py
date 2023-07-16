@@ -402,23 +402,6 @@ def main() -> int:
                 colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',)),
             ),
         )
-        message = '\n'.join(unknown_function_messages)
-        if (
-            'nvmlDeviceGetComputeRunningProcesses' in message
-            or 'nvmlDeviceGetGraphicsRunningProcesses' in message
-        ) and Device.cuda_driver_version().startswith('10.'):
-            message = '\n'.join(
-                (
-                    message,
-                    '',
-                    'You are using CUDA 10.x driver (yours is: @VERSION@) which is too old. Please contact',
-                    'your system admin to update the NVIDIA driver, or reinstall `nvitop` using:',
-                    '',
-                    '    pip3 install "nvitop[cuda10]"',
-                    '',
-                ),
-            ).replace('@VERSION@', Device.driver_version())
-        messages.append(message)
 
     if libnvml._pynvml_installation_corrupted:  # pylint: disable=protected-access
         message = '\n'.join(
