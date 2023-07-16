@@ -781,6 +781,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             self.key_prefix = self.tag
 
         self.last_timestamp = self.start_timestamp = timer()
+        self.last_epoch_timestamp = time.time()
         self.buffer: defaultdict[str, _StatisticsMaintainer] = defaultdict(
             lambda: _StatisticsMaintainer(self.last_timestamp),
         )
@@ -797,12 +798,14 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             self.buffer[key].add(value, timestamp=timestamp)
         self.len += 1
         self.last_timestamp = timestamp
+        self.last_epoch_timestamp = time.time()
 
         if self.prev is not None:
             self.prev.add(metrics, timestamp=timestamp)
 
     def clear(self) -> None:
         self.last_timestamp = self.start_timestamp = timer()
+        self.last_epoch_timestamp = time.time()
         self.buffer.clear()
         self.len = 0
 
@@ -820,6 +823,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
                 del metrics[key]
         metrics[f'{self.key_prefix}/duration (s)'] = timer() - self.start_timestamp
         metrics[f'{self.key_prefix}/timestamp'] = time.time()
+        metrics[f'{self.key_prefix}/last_timestamp'] = self.last_epoch_timestamp
         return metrics
 
     def __len__(self) -> int:
@@ -877,7 +881,13 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
             return math.nan
         return self.max_value
 
+    def last(self) -> float:
+        if self.last_value is None:
+            return math.nan
+        return self.last_value
+
     def items(self) -> Iterable[tuple[str, float]]:
         yield ('mean', self.mean())
         yield ('min', self.min())
         yield ('max', self.max())
+        yield ('last', self.last())
