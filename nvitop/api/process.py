@@ -1017,6 +1017,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             gpu_memory_utilization=self.gpu_memory_utilization(),
             gpu_encoder_utilization=self.gpu_encoder_utilization(),
             gpu_decoder_utilization=self.gpu_decoder_utilization(),
+            gpu_cc_protected_memory=self.gpu_cc_protected_memory(),
+            gpu_cc_protected_memory_human=self.gpu_cc_protected_memory_human(),
         )
 
     @classmethod
