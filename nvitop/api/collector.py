@@ -253,7 +253,6 @@ def collect_in_background(
         interval = collector.interval
     else:
         raise ValueError(f'Invalid argument interval={interval!r}')
-    interval = min(interval, collector.interval)
 
     def target() -> None:
         if on_start is not None:
