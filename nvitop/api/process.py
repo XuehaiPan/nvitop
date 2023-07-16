@@ -468,7 +468,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         gpu_memory: int | NaType | None = None,
         gpu_instance_id: int | NaType | None = None,
         compute_instance_id: int | NaType | None = None,
-        used_gpu_cc_protected_memory: int | NaType | None = None,
+        gpu_cc_protected_memory: int | NaType | None = None,
         type: str | NaType | None = None,  # pylint: disable=redefined-builtin
         # pylint: enable=unused-argument
     ) -> GpuProcess:
@@ -507,7 +507,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         gpu_memory: int | NaType | None = None,
         gpu_instance_id: int | NaType | None = None,
         compute_instance_id: int | NaType | None = None,
-        used_gpu_cc_protected_memory: int | NaType | None = None,
+        gpu_cc_protected_memory: int | NaType | None = None,
         type: str | NaType | None = None,  # pylint: disable=redefined-builtin
     ) -> None:
         """Initialize the instance returned by :meth:`__new__()`."""
@@ -532,13 +532,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         else:
             self._gpu_instance_id = self._compute_instance_id = NA
 
-        if used_gpu_cc_protected_memory is None and not hasattr(
+        if gpu_cc_protected_memory is None and not hasattr(
             self,
-            '_used_gpu_cc_protected_memory',
+            '_gpu_cc_protected_memory',
         ):
-            used_gpu_cc_protected_memory = NA
-        if used_gpu_cc_protected_memory is not None:
-            self.set_used_gpu_cc_protected_memory(used_gpu_cc_protected_memory)
+            gpu_cc_protected_memory = NA
+        if gpu_cc_protected_memory is not None:
+            self.set_gpu_cc_protected_memory(gpu_cc_protected_memory)
 
         for util in ('sm', 'memory', 'encoder', 'decoder'):
             if not hasattr(self, f'_gpu_{util}_utilization'):
@@ -629,14 +629,14 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """The percentage of used GPU memory by the process, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_percent
 
-    def used_gpu_cc_protected_memory(self) -> int | NaType:  # in bytes
+    def gpu_cc_protected_memory(self) -> int | NaType:  # in bytes
         """The used GPU conf compute protected memory in bytes, or :const:`nvitop.NA` if not applicable."""
-        return self._used_gpu_cc_protected_memory
+        return self._gpu_cc_protected_memory
 
-    def used_gpu_cc_protected_memory_human(self) -> str | NaType:  # in human readable
+    def gpu_cc_protected_memory_human(self) -> str | NaType:  # in human readable
         # pylint: disable-next=line-too-long
         """The used GPU conf compute protected memory in human readable format, or :const:`nvitop.NA` if not applicable."""
-        return self._used_gpu_cc_protected_memory_human
+        return self._gpu_cc_protected_memory_human
 
     def gpu_sm_utilization(self) -> int | NaType:  # in percentage
         """The utilization rate of SM (Streaming Multiprocessor), or :const:`nvitop.NA` if not applicable."""
@@ -665,11 +665,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)  # type: ignore[assignment]
         self._gpu_memory_percent = gpu_memory_percent
 
-    def set_used_gpu_cc_protected_memory(self, value: int | NaType) -> None:
+    def set_gpu_cc_protected_memory(self, value: int | NaType) -> None:
         """Set the used GPU conf compute protected memory in bytes."""
         # pylint: disable=attribute-defined-outside-init
-        self._used_gpu_cc_protected_memory = value
-        self._used_gpu_cc_protected_memory_human = bytes2human(self.used_gpu_cc_protected_memory())
+        self._gpu_cc_protected_memory = value
+        self._gpu_cc_protected_memory_human = bytes2human(self.gpu_cc_protected_memory())
 
     def set_gpu_utilization(
         self,
@@ -692,7 +692,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def update_gpu_status(self) -> int | NaType:
         """Update the GPU consumption status from a new NVML query."""
         self.set_gpu_memory(NA)
-        self.set_used_gpu_cc_protected_memory(NA)
+        self.set_gpu_cc_protected_memory(NA)
         self.set_gpu_utilization(NA, NA, NA, NA)
         self.device.processes()
         return self.gpu_memory()
