@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import ctypes
 import datetime
 import functools
 import math
@@ -38,6 +39,8 @@ __all__ = [
     'NaType',
     'NotApplicable',
     'NotApplicableType',
+    'UINT_MAX',
+    'ULONGLONG_MAX',
     'KiB',
     'MiB',
     'GiB',
@@ -478,6 +481,11 @@ NA = NaType()
 NA.__doc__ = """The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""  # pylint: disable=attribute-defined-outside-init
 
 NotApplicable = NA
+
+UINT_MAX: int = ctypes.c_uint(-1).value  # 0xFFFFFFFF
+"""The maximum value of :class:`ctypes.c_uint`."""
+ULONGLONG_MAX: int = ctypes.c_ulonglong(-1).value  # 0XFFFFFFFFFFFFFFFF
+"""The maximum value of :class:`ctypes.c_ulonglong`."""
 
 KiB: int = 1 << 10
 """Kibibyte (1024)"""

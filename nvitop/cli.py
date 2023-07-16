@@ -320,7 +320,7 @@ def main() -> int:
         if len(invalid_indices) > 1:
             messages.append(f'ERROR: Invalid device indices: {sorted(invalid_indices)}.')
         elif len(invalid_indices) == 1:
-            messages.append(f'ERROR: Invalid device index: {list(invalid_indices)[0]}.')
+            messages.append(f'ERROR: Invalid device index: {next(iter(invalid_indices))}.')
     elif args.only_visible:
         indices = {
             index if isinstance(index, int) else index[0]
@@ -402,23 +402,6 @@ def main() -> int:
                 colored('https://github.com/XuehaiPan/nvitop#installation', attrs=('underline',)),
             ),
         )
-        message = '\n'.join(unknown_function_messages)
-        if (
-            'nvmlDeviceGetComputeRunningProcesses' in message
-            or 'nvmlDeviceGetGraphicsRunningProcesses' in message
-        ) and Device.cuda_driver_version().startswith('10.'):
-            message = '\n'.join(
-                (
-                    message,
-                    '',
-                    'You are using CUDA 10.x driver (yours is: @VERSION@) which is too old. Please contact',
-                    'your system admin to update the NVIDIA driver, or reinstall `nvitop` using:',
-                    '',
-                    '    pip3 install "nvitop[cuda10]"',
-                    '',
-                ),
-            ).replace('@VERSION@', Device.driver_version())
-        messages.append(message)
 
     if libnvml._pynvml_installation_corrupted:  # pylint: disable=protected-access
         message = '\n'.join(
@@ -431,19 +414,6 @@ def main() -> int:
                 '',
                 '    pip3 install --upgrade pipx',
                 '    pipx install nvitop',
-                '',
-            ),
-        )
-        messages.append(message)
-
-    # pylint: disable-next=protected-access
-    if libnvml._driver_get_memory_info_v2_available and not libnvml._pynvml_memory_v2_available:
-        message = '\n'.join(
-            (
-                'WARNING: The `nvidia-ml-py` package does not support the NVML memory info version 2 APIs, which would',
-                'get inaccurate results. Please upgrade it via:',
-                '',
-                '    pip3 install --upgrade nvitop nvidia-ml-py',
                 '',
             ),
         )

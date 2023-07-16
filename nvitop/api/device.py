@@ -128,7 +128,15 @@ from typing import (
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
-from nvitop.api.utils import NA, NaType, Snapshot, boolify, bytes2human, memoize_when_activated
+from nvitop.api.utils import (
+    NA,
+    UINT_MAX,
+    NaType,
+    Snapshot,
+    boolify,
+    bytes2human,
+    memoize_when_activated,
+)
 
 
 if TYPE_CHECKING:
@@ -1682,8 +1690,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     pid=p.pid,
                     device=self,
                     gpu_memory=gpu_memory,
-                    gpu_instance_id=getattr(p, 'gpuInstanceId', 0xFFFFFFFF),
-                    compute_instance_id=getattr(p, 'computeInstanceId', 0xFFFFFFFF),
+                    gpu_instance_id=getattr(p, 'gpuInstanceId', UINT_MAX),
+                    compute_instance_id=getattr(p, 'computeInstanceId', UINT_MAX),
+                    gpu_cc_protected_memory=getattr(p, 'usedGpuCcProtectedMemory', NA),
                 )
                 proc.type = proc.type + type
 
@@ -2046,9 +2055,9 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
             self._gpu_instance_id = libnvml.nvmlQuery(
                 'nvmlDeviceGetGpuInstanceId',
                 self.handle,
-                default=0xFFFFFFFF,
+                default=UINT_MAX,
             )
-            if self._gpu_instance_id == 0xFFFFFFFF:
+            if self._gpu_instance_id == UINT_MAX:
                 self._gpu_instance_id = NA
         return self._gpu_instance_id
 
@@ -2062,9 +2071,9 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
             self._compute_instance_id = libnvml.nvmlQuery(
                 'nvmlDeviceGetComputeInstanceId',
                 self.handle,
-                default=0xFFFFFFFF,
+                default=UINT_MAX,
             )
-            if self._compute_instance_id == 0xFFFFFFFF:
+            if self._compute_instance_id == UINT_MAX:
                 self._compute_instance_id = NA
         return self._compute_instance_id
 

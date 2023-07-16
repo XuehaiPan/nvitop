@@ -141,3 +141,8 @@ uptime
 ot
 oT
 mypy
+struct
+MPS
+KMD
+conf
+Unallocated
