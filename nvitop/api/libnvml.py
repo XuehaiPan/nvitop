@@ -522,16 +522,16 @@ if not _pynvml_installation_corrupted:
             'usedGpuCcProtectedMemory': '%d B',
         }
 
-    __get_running_process_version_suffix = None
+    __get_running_processes_version_suffix = None
     c_nvmlProcessInfo_t = c_nvmlProcessInfo_v3_t
 
-    def __determine_get_running_process_version_suffix() -> str:
-        global __get_running_process_version_suffix, c_nvmlProcessInfo_t  # pylint: disable=global-statement
+    def __determine_get_running_processes_version_suffix() -> str:
+        global __get_running_processes_version_suffix, c_nvmlProcessInfo_t  # pylint: disable=global-statement
 
-        if __get_running_process_version_suffix is None:
+        if __get_running_processes_version_suffix is None:
             # pylint: disable-next=protected-access,no-member
             _nvmlGetFunctionPointer = _pynvml._nvmlGetFunctionPointer
-            __get_running_process_version_suffix = '_v3'
+            __get_running_processes_version_suffix = '_v3'
             try:
                 _nvmlGetFunctionPointer('nvmlDeviceGetConfComputeMemSizeInfo')
             except NVMLError_FunctionNotFound:
@@ -544,7 +544,7 @@ if not _pynvml_installation_corrupted:
                 try:
                     _nvmlGetFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v3')
                 except NVMLError_FunctionNotFound:
-                    __get_running_process_version_suffix = '_v2'
+                    __get_running_processes_version_suffix = '_v2'
                     LOGGER.debug(
                         'NVML get running process version 3 API with v2 type struct is not '
                         'available due to incompatible NVIDIA driver. Fallback to use get running '
@@ -554,7 +554,7 @@ if not _pynvml_installation_corrupted:
                         _nvmlGetFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v2')
                     except NVMLError_FunctionNotFound:
                         c_nvmlProcessInfo_t = c_nvmlProcessInfo_v1_t
-                        __get_running_process_version_suffix = ''
+                        __get_running_processes_version_suffix = ''
                         LOGGER.debug(
                             'NVML get running process version 2 API with v2 type struct is not '
                             'available due to incompatible NVIDIA driver. Fallback to use get '
@@ -574,7 +574,7 @@ if not _pynvml_installation_corrupted:
                     'NVML get running process version 3 API with v3 type struct is available.',
                 )
 
-        return __get_running_process_version_suffix
+        return __get_running_processes_version_suffix
 
     def __nvml_device_get_running_processes(
         func: str,
@@ -585,7 +585,7 @@ if not _pynvml_installation_corrupted:
         Modified from function :func:`pynvml.nvmlDeviceGetComputeRunningProcesses` in package
         `nvidia-ml-py <https://pypi.org/project/nvidia-ml-py>`_.
         """
-        version_suffix = __determine_get_running_process_version_suffix()
+        version_suffix = __determine_get_running_processes_version_suffix()
 
         # First call to get the size
         c_count = _ctypes.c_uint(0)
