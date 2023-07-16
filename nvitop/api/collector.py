@@ -490,7 +490,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         with self._lock:
             if self._metric_buffer is None:
                 if tag is not None:
-                    raise RuntimeError('Resource metric collector has not been not started yet.')
+                    raise RuntimeError('Resource metric collector has not been started yet.')
                 return self
 
             if tag is None:
@@ -569,7 +569,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         with self._lock:
             if self._metric_buffer is None:
                 if tag is not None:
-                    raise RuntimeError('Resource metric collector has not been not started yet.')
+                    raise RuntimeError('Resource metric collector has not been started yet.')
                 return
 
             if tag is None:
@@ -590,7 +590,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         """Get the average resource consumption during collection."""
         with self._lock:
             if self._metric_buffer is None:
-                raise RuntimeError('Resource metric collector has not been not started yet.')
+                raise RuntimeError('Resource metric collector has not been started yet.')
 
             if timer() - self._last_timestamp > self.interval:
                 self.take_snapshots()
@@ -757,8 +757,10 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     def _target(self) -> None:
         self._daemon_running.wait()
         while self._daemon_running.is_set():
+            next_snapshot = timer() + self.interval
             self.take_snapshots()
-            time.sleep(self.interval)
+            time.sleep(max(0.0, next_snapshot - timer()))
+            next_snapshot += self.interval
 
 
 class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function-docstring,too-many-instance-attributes
