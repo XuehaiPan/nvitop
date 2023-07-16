@@ -630,8 +630,8 @@ if not _pynvml_installation_corrupted:
 
         Note:
             - In MIG mode, if device handle is provided, the API returns aggregate information, only
-            if the caller has appropriate privileges. Per-instance information can be queried by
-            using specific MIG device handles.
+              if the caller has appropriate privileges. Per-instance information can be queried by
+              using specific MIG device handles.
 
         Raises:
             NVMLError_InvalidArgument:
@@ -659,8 +659,8 @@ if not _pynvml_installation_corrupted:
 
         Note:
             - In MIG mode, if device handle is provided, the API returns aggregate information, only
-            if the caller has appropriate privileges. Per-instance information can be queried by
-            using specific MIG device handles.
+              if the caller has appropriate privileges. Per-instance information can be queried by
+              using specific MIG device handles.
 
         Raises:
             NVMLError_InvalidArgument:
@@ -688,8 +688,8 @@ if not _pynvml_installation_corrupted:
 
         Note:
             - In MIG mode, if device handle is provided, the API returns aggregate information, only
-            if the caller has appropriate privileges. Per-instance information can be queried by
-            using specific MIG device handles.
+              if the caller has appropriate privileges. Per-instance information can be queried by
+              using specific MIG device handles.
 
         Raises:
             NVMLError_InvalidArgument:
@@ -782,10 +782,10 @@ if not _pynvml_installation_corrupted:
 
         Note:
             - The version 2 API adds additional memory information. The reserved amount is supported
-            on version 2 only.
+              on version 2 only.
             - In MIG mode, if device handle is provided, the API returns aggregate information, only
-            if the caller has appropriate privileges. Per-instance information can be queried by
-            using specific MIG device handles.
+              if the caller has appropriate privileges. Per-instance information can be queried by
+              using specific MIG device handles.
 
         Raises:
             NVMLError_InvalidArgument:
