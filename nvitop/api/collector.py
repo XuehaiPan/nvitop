@@ -253,7 +253,6 @@ def collect_in_background(
         interval = collector.interval
     else:
         raise ValueError(f'Invalid argument interval={interval!r}')
-    interval = min(interval, collector.interval)
 
     def target() -> None:
         if on_start is not None:
@@ -436,7 +435,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self._tags: set[str] = set()
 
         self._daemon: threading.Thread = threading.Thread(
-            name='gpu_metric_collector_daemon',
+            name='metrics-collector-daemon',
             target=self._target,
             daemon=True,
         )
@@ -490,7 +489,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         with self._lock:
             if self._metric_buffer is None:
                 if tag is not None:
-                    raise RuntimeError('Resource metric collector has not been not started yet.')
+                    raise RuntimeError('Resource metric collector has not been started yet.')
                 return self
 
             if tag is None:
@@ -569,7 +568,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         with self._lock:
             if self._metric_buffer is None:
                 if tag is not None:
-                    raise RuntimeError('Resource metric collector has not been not started yet.')
+                    raise RuntimeError('Resource metric collector has not been started yet.')
                 return
 
             if tag is None:
@@ -590,9 +589,9 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         """Get the average resource consumption during collection."""
         with self._lock:
             if self._metric_buffer is None:
-                raise RuntimeError('Resource metric collector has not been not started yet.')
+                raise RuntimeError('Resource metric collector has not been started yet.')
 
-            if timer() - self._last_timestamp > self.interval:
+            if timer() - self._last_timestamp > self.interval / 2.0:
                 self.take_snapshots()
             return self._metric_buffer.collect()
 
@@ -705,6 +704,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             gpu_processes = []
 
         timestamp = timer()
+        epoch_timestamp = time.time()
         metrics = {}
         device_snapshots = [device.as_snapshot() for device in self.all_devices]
         gpu_process_snapshots = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
@@ -749,7 +749,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         with self._lock:
             if self._metric_buffer is not None:
-                self._metric_buffer.add(metrics, timestamp=timestamp)
+                self._metric_buffer.add(
+                    metrics,
+                    timestamp=timestamp,
+                    epoch_timestamp=epoch_timestamp,
+                )
                 self._last_timestamp = timestamp
 
         return SnapshotResult(device_snapshots, gpu_process_snapshots)
@@ -757,8 +761,10 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     def _target(self) -> None:
         self._daemon_running.wait()
         while self._daemon_running.is_set():
+            next_snapshot = timer() + self.interval
             self.take_snapshots()
-            time.sleep(self.interval)
+            time.sleep(max(0.0, next_snapshot - timer()))
+            next_snapshot += self.interval
 
 
 class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function-docstring,too-many-instance-attributes
@@ -779,15 +785,23 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             self.key_prefix = self.tag
 
         self.last_timestamp = self.start_timestamp = timer()
+        self.last_epoch_timestamp = time.time()
         self.buffer: defaultdict[str, _StatisticsMaintainer] = defaultdict(
             lambda: _StatisticsMaintainer(self.last_timestamp),
         )
 
         self.len = 0
 
-    def add(self, metrics: dict[str, float], timestamp: float | None = None) -> None:
+    def add(
+        self,
+        metrics: dict[str, float],
+        timestamp: float | None = None,
+        epoch_timestamp: float | None = None,
+    ) -> None:
         if timestamp is None:
             timestamp = timer()
+        if epoch_timestamp is None:
+            epoch_timestamp = time.time()
 
         for key in set(self.buffer).difference(metrics):
             self.buffer[key].add(math.nan, timestamp=timestamp)
@@ -795,12 +809,14 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             self.buffer[key].add(value, timestamp=timestamp)
         self.len += 1
         self.last_timestamp = timestamp
+        self.last_epoch_timestamp = epoch_timestamp
 
         if self.prev is not None:
             self.prev.add(metrics, timestamp=timestamp)
 
     def clear(self) -> None:
         self.last_timestamp = self.start_timestamp = timer()
+        self.last_epoch_timestamp = time.time()
         self.buffer.clear()
         self.len = 0
 
@@ -818,6 +834,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
                 del metrics[key]
         metrics[f'{self.key_prefix}/duration (s)'] = timer() - self.start_timestamp
         metrics[f'{self.key_prefix}/timestamp'] = time.time()
+        metrics[f'{self.key_prefix}/last_timestamp'] = self.last_epoch_timestamp
         return metrics
 
     def __len__(self) -> int:
@@ -875,7 +892,13 @@ class _StatisticsMaintainer:  # pylint: disable=missing-class-docstring,missing-
             return math.nan
         return self.max_value
 
+    def last(self) -> float:
+        if self.last_value is None:
+            return math.nan
+        return self.last_value
+
     def items(self) -> Iterable[tuple[str, float]]:
         yield ('mean', self.mean())
         yield ('min', self.min())
         yield ('max', self.max())
+        yield ('last', self.last())

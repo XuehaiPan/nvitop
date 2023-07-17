@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Include last snapshot metrics in the log results for `ResourceMetricCollector` by [@XuehaiPan](https://github.com/XuehaiPan) in [#80](https://github.com/XuehaiPan/nvitop/pull/80).
 - Add `mypy` integration and update type annotations by [@XuehaiPan](https://github.com/XuehaiPan) in [#73](https://github.com/XuehaiPan/nvitop/pull/73).
 
 ### Changed
@@ -21,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix process info support for NVIDIA R535 driver (CUDA 12.2+) by [@XuehaiPan](https://github.com/XuehaiPan) in [#79](https://github.com/XuehaiPan/nvitop/pull/79).
 - Fix inappropriate exception catching in function `libcuda.cuDeviceGetUuid` by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Removed
