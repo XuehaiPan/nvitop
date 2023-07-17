@@ -435,7 +435,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self._tags: set[str] = set()
 
         self._daemon: threading.Thread = threading.Thread(
-            name='gpu_metric_collector_daemon',
+            name='metrics-collector-daemon',
             target=self._target,
             daemon=True,
         )
@@ -591,7 +591,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             if self._metric_buffer is None:
                 raise RuntimeError('Resource metric collector has not been started yet.')
 
-            if timer() - self._last_timestamp > self.interval:
+            if timer() - self._last_timestamp > self.interval / 2.0:
                 self.take_snapshots()
             return self._metric_buffer.collect()
 
