@@ -704,6 +704,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             gpu_processes = []
 
         timestamp = timer()
+        epoch_timestamp = time.time()
         metrics = {}
         device_snapshots = [device.as_snapshot() for device in self.all_devices]
         gpu_process_snapshots = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
@@ -748,7 +749,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         with self._lock:
             if self._metric_buffer is not None:
-                self._metric_buffer.add(metrics, timestamp=timestamp)
+                self._metric_buffer.add(
+                    metrics,
+                    timestamp=timestamp,
+                    epoch_timestamp=epoch_timestamp,
+                )
                 self._last_timestamp = timestamp
 
         return SnapshotResult(device_snapshots, gpu_process_snapshots)
@@ -787,9 +792,16 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
 
         self.len = 0
 
-    def add(self, metrics: dict[str, float], timestamp: float | None = None) -> None:
+    def add(
+        self,
+        metrics: dict[str, float],
+        timestamp: float | None = None,
+        epoch_timestamp: float | None = None,
+    ) -> None:
         if timestamp is None:
             timestamp = timer()
+        if epoch_timestamp is None:
+            epoch_timestamp = time.time()
 
         for key in set(self.buffer).difference(metrics):
             self.buffer[key].add(math.nan, timestamp=timestamp)
@@ -797,7 +809,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
             self.buffer[key].add(value, timestamp=timestamp)
         self.len += 1
         self.last_timestamp = timestamp
-        self.last_epoch_timestamp = time.time()
+        self.last_epoch_timestamp = epoch_timestamp
 
         if self.prev is not None:
             self.prev.add(metrics, timestamp=timestamp)
