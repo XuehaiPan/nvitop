@@ -120,11 +120,11 @@ _data_docs = []
 _sphinx_doc = None
 for _name in _const_names:
     _attr = _vars_pynvml[_name]
-    _sphinx_doc = """
-.. data:: {}
-    :type: {}
-    :value: {!r}
-""".format(_name, _attr.__class__.__name__, _attr)  # fmt: skip
+    _sphinx_doc = f"""
+.. data:: {_name}
+    :type: {_attr.__class__.__name__}
+    :value: {_attr!r}
+"""
     if _name.startswith('NVML_ERROR_') and _attr in _errcode_to_string:
         _reason = _errcode_to_string[_attr]
         _sphinx_doc += """
