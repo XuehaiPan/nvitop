@@ -1703,8 +1703,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self._timestamp,
                 default=(),
             )
-            self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 2_000_000, 0)
-            for s in samples:
+            self._timestamp = min((s.timeStamp for s in samples), default=self._timestamp)
+            for s in sorted(samples, key=lambda s: s.timeStamp):
                 try:
                     processes[s.pid].set_gpu_utilization(s.smUtil, s.memUtil, s.encUtil, s.decUtil)
                 except KeyError:
