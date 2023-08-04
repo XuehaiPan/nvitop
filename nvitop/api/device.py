@@ -113,6 +113,7 @@ import subprocess
 import sys
 import textwrap
 import threading
+import time
 from collections import OrderedDict
 from typing import (
     TYPE_CHECKING,
@@ -683,7 +684,6 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self._nvml_index = libnvml.nvmlQuery('nvmlDeviceGetIndex', self._handle)
 
         self._max_clock_infos: ClockInfos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
-        self._timestamp: int = 0
         self._lock: threading.RLock = threading.RLock()
 
         self._ident: tuple[Hashable, str] = (self.index, self.uuid())
@@ -1700,11 +1700,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             samples = libnvml.nvmlQuery(
                 'nvmlDeviceGetProcessUtilization',
                 self.handle,
-                self._timestamp,
+                # Only utilization samples that were recorded after this timestamp will be returned.
+                # The CPU timestamp, i.e. absolute Unix epoch timestamp (in microseconds), is used.
+                # Here we use the timestamp 1/4 second ago to ensure the record buffer is not empty.
+                time.time_ns() // 1000 - 250_000,
                 default=(),
             )
-            self._timestamp = max(min((s.timeStamp for s in samples), default=0) - 2_000_000, 0)
-            for s in samples:
+            for s in sorted(samples, key=lambda s: s.timeStamp):
                 try:
                     processes[s.pid].set_gpu_utilization(s.smUtil, s.memUtil, s.encUtil, s.decUtil)
                 except KeyError:
@@ -2019,7 +2021,6 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
                 raise libnvml.NVMLError_NotFound
 
         self._max_clock_infos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
-        self._timestamp = 0
         self._lock = threading.RLock()
 
         self._ident = (self.index, self.uuid())
