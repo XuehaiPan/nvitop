@@ -694,7 +694,19 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self.set_gpu_memory(NA)
         self.set_gpu_cc_protected_memory(NA)
         self.set_gpu_utilization(NA, NA, NA, NA)
-        self.device.processes()
+        processes = self.device.processes()
+        process = processes.get(self.pid, self)
+        if process is not self:
+            # The current process is gone and the instance has been removed from the cache.
+            # Update GPU status from the new instance.
+            self.set_gpu_memory(process.gpu_memory())
+            self.set_gpu_cc_protected_memory(process.gpu_cc_protected_memory())
+            self.set_gpu_utilization(
+                process.gpu_sm_utilization(),
+                process.gpu_memory_utilization(),
+                process.gpu_encoder_utilization(),
+                process.gpu_decoder_utilization(),
+            )
         return self.gpu_memory()
 
     @property
