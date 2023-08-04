@@ -182,6 +182,21 @@ class UtilizationRates(NamedTuple):  # in percentage # pylint: disable=missing-c
     decoder: int | NaType
 
 
+class ThroughputInfo(NamedTuple):  # in KiB/s # pylint: disable=missing-class-docstring
+    tx: int | NaType
+    rx: int | NaType
+
+    @property
+    def transmit(self) -> int | NaType:
+        """Alias of :attr:`tx`."""
+        return self.tx
+
+    @property
+    def receive(self) -> int | NaType:
+        """Alias of :attr:`rx`."""
+        return self.rx
+
+
 _VALUE_OMITTED: str = object()  # type: ignore[assignment]
 
 
@@ -1416,6 +1431,80 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             power_limit = f'{round(power_limit / 1000.0)}W'
         return f'{power_usage} / {power_limit}'
 
+    def pcie_throughput(self) -> ThroughputInfo:  # in KiB/s
+        """The current PCIe throughput in KiB/s.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: ThroughputInfo(tx, rx)
+            A named tuple with current PCIe throughput in KiB/s, the item could be
+            :const:`nvitop.NA` when not applicable.
+        """
+        return ThroughputInfo(tx=self.pcie_tx_throughput(), rx=self.pcie_rx_throughput())
+
+    @memoize_when_activated
+    def pcie_tx_throughput(self) -> int | NaType:  # in KiB/s
+        """The current PCIe transmit throughput in KiB/s.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[int, NaType]
+            The current PCIe transmit throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
+        """
+        return libnvml.nvmlQuery(
+            'nvmlDeviceGetPcieThroughput',
+            self.handle,
+            libnvml.NVML_PCIE_UTIL_RX_BYTES,
+        )
+
+    @memoize_when_activated
+    def pcie_rx_throughput(self) -> int | NaType:  # in KiB/s
+        """The current PCIe receive throughput in KiB/s.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[int, NaType]
+            The current PCIe receive throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
+        """
+        return libnvml.nvmlQuery(
+            'nvmlDeviceGetPcieThroughput',
+            self.handle,
+            libnvml.NVML_PCIE_UTIL_RX_BYTES,
+        )
+
+    def pcie_tx_throughput_human(self) -> str | NaType:  # in human readable
+        """The current PCIe transmit throughput in human readable format.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[str, NaType]
+            The current PCIe transmit throughput in human readable format, or :const:`nvitop.NA`
+            when not applicable.
+        """
+        tx_throughput = self.pcie_tx_throughput()
+        if libnvml.nvmlCheckReturn(tx_throughput, int):
+            return f'{bytes2human(tx_throughput << 10)}/s'
+        return NA
+
+    def pcie_rx_throughput_human(self) -> str | NaType:  # in human readable
+        """The current PCIe receive throughput in human readable format.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[str, NaType]
+            The current PCIe receive throughput in human readable format, or :const:`nvitop.NA` when
+            not applicable.
+        """
+        rx_throughput = self.pcie_rx_throughput()
+        if libnvml.nvmlCheckReturn(rx_throughput, int):
+            return f'{bytes2human(rx_throughput << 10)}/s'
+        return NA
+
     def display_active(self) -> str | NaType:
         """A flag that indicates whether a display is initialized on the GPU's (e.g. memory is allocated on the device for display).
 
@@ -1758,6 +1847,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'power_usage',
         'power_limit',
         'power_status',
+        'pcie_throughput',
+        'pcie_tx_throughput',
+        'pcie_rx_throughput',
+        'pcie_tx_throughput_human',
+        'pcie_rx_throughput_human',
         'display_active',
         'display_mode',
         'current_driver_model',
