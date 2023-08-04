@@ -1537,6 +1537,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             could be :const:`nvitop.NA` when not applicable.
         """
         nvlink_link_count = self.nvlink_link_count()
+        if nvlink_link_count == 0:
+            return []
 
         def query_nvlink_throughput_counters() -> tuple[tuple[int | NaType, int]]:
             return tuple(  # type: ignore[return-value]
