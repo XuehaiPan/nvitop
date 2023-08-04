@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--
+- Use recent timestamp for GPU process utilization query for more accurate per-process GPU usage by [@XuehaiPan](https://github.com/XuehaiPan) in [#85](https://github.com/XuehaiPan/nvitop/pull/85). We extend our heartfelt gratitude to [@2581543189](https://github.com/2581543189) for their invaluable assistance. Their timely comments and comprehensive feedback have greatly contributed to the improvement of this project.
 
 ### Fixed
 
