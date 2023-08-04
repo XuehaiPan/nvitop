@@ -149,3 +149,4 @@ Unallocated
 KiB
 tx
 rx
+ThroughputInfo
