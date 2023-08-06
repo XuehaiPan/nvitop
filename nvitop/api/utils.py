@@ -545,11 +545,11 @@ def bytes2human(
         return f'{b}B'
     if b < MiB and min_unit <= KiB:
         return f'{round(b / KiB)}KiB'
-    if b <= 100 * MiB and min_unit <= MiB:
+    if b < 100 * MiB and min_unit <= MiB:
         return f'{round(b / MiB, 2):.2f}MiB'
-    if b <= 1000 * MiB and min_unit <= MiB:
+    if b < 1000 * MiB and min_unit <= MiB:
         return f'{round(b / MiB, 1):.1f}MiB'
-    if b <= 20 * GiB and min_unit <= MiB:
+    if b < 20 * GiB and min_unit <= MiB:
         return f'{round(b / MiB)}MiB'
     if b < 100 * GiB and min_unit <= GiB:
         return f'{round(b / GiB, 2):.2f}GiB'
