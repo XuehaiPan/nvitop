@@ -29,7 +29,7 @@ import re
 import sys
 import time
 from collections.abc import KeysView
-from typing import Any, Callable, Generator, Iterable, Iterator
+from typing import Any, Callable, Generator, Iterable, Iterator, TypeVar
 
 from psutil import WINDOWS
 
@@ -717,8 +717,11 @@ class Snapshot:
         return KeysView(self)  # type: ignore[arg-type]
 
 
+Method = TypeVar('Method', bound=Callable[..., Any])
+
+
 # Modified from psutil (https://github.com/giampaolo/psutil)
-def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def memoize_when_activated(method: Method) -> Method:
     """A memoize decorator which is disabled by default.
 
     It can be activated and deactivated on request. For efficiency reasons it can be used only
@@ -726,17 +729,17 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
     """
 
     @functools.wraps(method)
-    def wrapped(self):  # noqa: ANN001,ANN202
+    def wrapped(self, *args, **kwargs):  # noqa: ANN001,ANN002,ANN003,ANN202
         try:
             # case 1: we previously entered oneshot() ctx
             ret = self._cache[method]  # pylint: disable=protected-access
         except AttributeError:
             # case 2: we never entered oneshot() ctx
-            return method(self)
+            return method(self, *args, **kwargs)
         except KeyError:
             # case 3: we entered oneshot() ctx but there's no cache
             # for this entry yet
-            ret = method(self)
+            ret = method(self, *args, **kwargs)
             try:
                 self._cache[method] = ret  # pylint: disable=protected-access
             except AttributeError:
@@ -762,4 +765,4 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
 
     wrapped.cache_activate = cache_activate  # type: ignore[attr-defined]
     wrapped.cache_deactivate = cache_deactivate  # type: ignore[attr-defined]
-    return wrapped
+    return wrapped  # type: ignore[return-value]
