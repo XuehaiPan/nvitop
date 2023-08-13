@@ -88,7 +88,7 @@ _errcode_to_string = NVMLError._errcode_to_string  # pylint: disable=protected-a
 
 # 1. Put error classes in `__all__` first
 for _name, _attr in _vars_pynvml.items():
-    if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
+    if _name in {'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'}:
         continue
     if _name.startswith(('NVML_ERROR_', 'NVMLError_')):
         __all__.append(_name)
@@ -98,7 +98,7 @@ for _name, _attr in _vars_pynvml.items():
 
 # 2. Then the remaining members
 for _name, _attr in _vars_pynvml.items():
-    if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
+    if _name in {'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'}:
         continue
     if (_name.startswith('NVML_') and not _name.startswith('NVML_ERROR_')) or (
         _name.startswith('nvml') and isinstance(_attr, _FunctionType)
@@ -170,7 +170,6 @@ del (
     _data_docs,
     _sphinx_doc,
 )
-
 
 # 5. Add explicit references to appease linters
 # pylint: disable=no-member
@@ -780,12 +779,12 @@ if not _pynvml_installation_corrupted:
     class c_nvmlMemory_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Total physical device memory (in bytes).
-            ('total', _pynvml.c_ulonglong),
+            ('total', _ctypes.c_ulonglong),
             # Unallocated device memory (in bytes).
-            ('free', _pynvml.c_ulonglong),
+            ('free', _ctypes.c_ulonglong),
             # Allocated device memory (in bytes).
             # Note that the driver/GPU always sets aside a small amount of memory for bookkeeping.
-            ('used', _pynvml.c_ulonglong),
+            ('used', _ctypes.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
@@ -793,16 +792,16 @@ if not _pynvml_installation_corrupted:
     class c_nvmlMemory_v2_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Structure format version (must be 2).
-            ('version', _pynvml.c_uint),
+            ('version', _ctypes.c_uint),
             # Total physical device memory (in bytes).
-            ('total', _pynvml.c_ulonglong),
+            ('total', _ctypes.c_ulonglong),
             # Device memory (in bytes) reserved for system use (driver or firmware).
-            ('reserved', _pynvml.c_ulonglong),
+            ('reserved', _ctypes.c_ulonglong),
             # Unallocated device memory (in bytes).
-            ('free', _pynvml.c_ulonglong),
+            ('free', _ctypes.c_ulonglong),
             # Allocated device memory (in bytes).
             # Note that the driver/GPU always sets aside a small amount of memory for bookkeeping.
-            ('used', _pynvml.c_ulonglong),
+            ('used', _ctypes.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
