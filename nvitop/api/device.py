@@ -142,6 +142,7 @@ from nvitop.api.utils import (
 
 if TYPE_CHECKING:
     from typing_extensions import Literal  # Python 3.8+
+    from typing_extensions import Self  # Python 3.11+
 
 
 __all__ = [
@@ -180,6 +181,21 @@ class UtilizationRates(NamedTuple):  # in percentage # pylint: disable=missing-c
     memory: int | NaType
     encoder: int | NaType
     decoder: int | NaType
+
+
+class ThroughputInfo(NamedTuple):  # in KiB/s # pylint: disable=missing-class-docstring
+    tx: int | NaType
+    rx: int | NaType
+
+    @property
+    def transmit(self) -> int | NaType:
+        """Alias of :attr:`tx`."""
+        return self.tx
+
+    @property
+    def receive(self) -> int | NaType:
+        """Alias of :attr:`rx`."""
+        return self.rx
 
 
 _VALUE_OMITTED: str = object()  # type: ignore[assignment]
@@ -547,7 +563,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         *,
         uuid: str | None = None,
         bus_id: str | None = None,
-    ) -> Device:
+    ) -> Self:
         """Create a new instance of Device.
 
         The type of the result is determined by the given argument.
@@ -577,8 +593,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
 
         if cls is not Device:
+            # Use the subclass type if the type is explicitly specified
             return super().__new__(cls)
 
+        # Auto subclass type inference logic goes here when `cls` is `Device` (e.g., calls `Device(...)`)
         match: re.Match | None = None
         if isinstance(index, str):
             match = cls.UUID_PATTERN.match(index)
@@ -601,10 +619,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                         f'index for MIG device must be a tuple of two integers '
                         f'but index = {index!r} was given',
                     )
-                return super().__new__(MigDevice)
+                return super().__new__(MigDevice)  # type: ignore[return-value]
         elif uuid is not None and match is not None and match.group('MigMode') is not None:
-            return super().__new__(MigDevice)
-        return super().__new__(PhysicalDevice)
+            return super().__new__(MigDevice)  # type: ignore[return-value]
+        return super().__new__(PhysicalDevice)  # type: ignore[return-value]
 
     def __init__(
         self,
@@ -640,6 +658,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._bus_id: str = NA
         self._memory_total: int | NaType = NA
         self._memory_total_human: str = NA
+        self._nvlink_link_count: int | None = None
+        self._nvlink_throughput_counters: tuple[tuple[int | NaType, int]] | None = None
         self._is_mig_device: bool | None = None
         self._cuda_index: int | None = None
         self._cuda_compute_capability: tuple[int, int] | NaType | None = None
@@ -1411,10 +1431,409 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         power_usage = self.power_usage()
         power_limit = self.power_limit()
         if libnvml.nvmlCheckReturn(power_usage, int):
-            power_usage = f'{round(power_usage / 1000.0)}W'
+            power_usage = f'{round(power_usage / 1000)}W'  # type: ignore[assignment]
         if libnvml.nvmlCheckReturn(power_limit, int):
-            power_limit = f'{round(power_limit / 1000.0)}W'
+            power_limit = f'{round(power_limit / 1000)}W'  # type: ignore[assignment]
         return f'{power_usage} / {power_limit}'
+
+    def pcie_throughput(self) -> ThroughputInfo:  # in KiB/s
+        """The current PCIe throughput in KiB/s.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: ThroughputInfo(tx, rx)
+            A named tuple with current PCIe throughput in KiB/s, the item could be
+            :const:`nvitop.NA` when not applicable.
+        """
+        return ThroughputInfo(tx=self.pcie_tx_throughput(), rx=self.pcie_rx_throughput())
+
+    @memoize_when_activated
+    def pcie_tx_throughput(self) -> int | NaType:  # in KiB/s
+        """The current PCIe transmit throughput in KiB/s.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[int, NaType]
+            The current PCIe transmit throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
+        """
+        return libnvml.nvmlQuery(
+            'nvmlDeviceGetPcieThroughput',
+            self.handle,
+            libnvml.NVML_PCIE_UTIL_RX_BYTES,
+        )
+
+    @memoize_when_activated
+    def pcie_rx_throughput(self) -> int | NaType:  # in KiB/s
+        """The current PCIe receive throughput in KiB/s.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[int, NaType]
+            The current PCIe receive throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
+        """
+        return libnvml.nvmlQuery(
+            'nvmlDeviceGetPcieThroughput',
+            self.handle,
+            libnvml.NVML_PCIE_UTIL_RX_BYTES,
+        )
+
+    def pcie_tx_throughput_human(self) -> str | NaType:  # in human readable
+        """The current PCIe transmit throughput in human readable format.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[str, NaType]
+            The current PCIe transmit throughput in human readable format, or :const:`nvitop.NA`
+            when not applicable.
+        """
+        tx = self.pcie_tx_throughput()
+        if libnvml.nvmlCheckReturn(tx, int):
+            return f'{bytes2human(tx * 1024)}/s'
+        return NA
+
+    def pcie_rx_throughput_human(self) -> str | NaType:  # in human readable
+        """The current PCIe receive throughput in human readable format.
+
+        This function is querying a byte counter over a 20ms interval and thus is the PCIe
+        throughput over that interval.
+
+        Returns: Union[str, NaType]
+            The current PCIe receive throughput in human readable format, or :const:`nvitop.NA` when
+            not applicable.
+        """
+        rx = self.pcie_rx_throughput()
+        if libnvml.nvmlCheckReturn(rx, int):
+            return f'{bytes2human(rx * 1024)}/s'
+        return NA
+
+    def nvlink_link_count(self) -> int:
+        """The number of NVLinks that the GPU has.
+
+        Returns: Union[int, NaType]
+            The number of NVLinks that the GPU has.
+        """
+        if self._nvlink_link_count is None:
+            ((nvlink_link_count, _),) = libnvml.nvmlQueryFieldValues(
+                self.handle,
+                [libnvml.NVML_FI_DEV_NVLINK_LINK_COUNT],
+            )
+            if libnvml.nvmlCheckReturn(nvlink_link_count, int):
+                self._nvlink_link_count = nvlink_link_count  # type: ignore[assignment]
+            else:
+                self._nvlink_link_count = 0
+        return self._nvlink_link_count  # type: ignore[return-value]
+
+    @memoize_when_activated
+    def nvlink_throughput(
+        self,
+        interval: float | None = None,
+    ) -> list[ThroughputInfo]:  # in KiB/s
+        """The current NVLink throughput for each NVLink in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: List[ThroughputInfo(tx, rx)]
+            A list of named tuples with current NVLink throughput for each NVLink in KiB/s, the item
+            could be :const:`nvitop.NA` when not applicable.
+        """
+        nvlink_link_count = self.nvlink_link_count()
+        if nvlink_link_count == 0:
+            return []
+
+        def query_nvlink_throughput_counters() -> tuple[tuple[int | NaType, int]]:
+            return tuple(  # type: ignore[return-value]
+                libnvml.nvmlQueryFieldValues(
+                    self.handle,
+                    [  # type: ignore[arg-type]
+                        (libnvml.NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_TX, i)
+                        for i in range(nvlink_link_count)
+                    ]
+                    + [
+                        (libnvml.NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_RX, i)
+                        for i in range(nvlink_link_count)
+                    ],
+                ),
+            )
+
+        if interval is not None:
+            if not interval >= 0.0:
+                raise ValueError('`interval` must be a non-negative number, got {interval!r}.')
+            if interval > 0.0:
+                self._nvlink_throughput_counters = query_nvlink_throughput_counters()
+                time.sleep(interval)
+
+        if self._nvlink_throughput_counters is None:
+            self._nvlink_throughput_counters = query_nvlink_throughput_counters()
+            time.sleep(0.02)  # 20ms
+
+        old_throughput_counters = self._nvlink_throughput_counters
+        new_throughput_counters = query_nvlink_throughput_counters()
+
+        throughputs: list[int | NaType] = []
+        for (old_counter, old_timestamp), (new_counter, new_timestamp) in zip(
+            old_throughput_counters,
+            new_throughput_counters,
+        ):
+            if (
+                libnvml.nvmlCheckReturn(old_counter, int)
+                and libnvml.nvmlCheckReturn(new_counter, int)
+                and new_timestamp > old_timestamp
+            ):
+                throughputs.append(
+                    round(
+                        1_000_000 * (new_counter - old_counter) / (new_timestamp - old_timestamp),
+                    ),
+                )
+            else:
+                throughputs.append(NA)
+
+        self._nvlink_throughput_counters = new_throughput_counters
+        return [
+            ThroughputInfo(tx=tx, rx=rx)
+            for tx, rx in zip(throughputs[:nvlink_link_count], throughputs[nvlink_link_count:])
+        ]
+
+    def nvlink_mean_throughput(
+        self,
+        interval: float | None = None,
+    ) -> ThroughputInfo:  # in KiB/s
+        """The mean NVLink throughput for all NVLinks in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: ThroughputInfo(tx, rx)
+            A named tuple with the mean NVLink throughput for all NVLinks in KiB/s, the item could
+            be :const:`nvitop.NA` when not applicable.
+        """
+        tx_throughputs = []
+        rx_throughputs = []
+        for tx, rx in self.nvlink_throughput(interval=interval):
+            if libnvml.nvmlCheckReturn(tx, int):
+                tx_throughputs.append(tx)
+            if libnvml.nvmlCheckReturn(rx, int):
+                rx_throughputs.append(rx)
+        return ThroughputInfo(
+            tx=round(sum(tx_throughputs) / len(tx_throughputs)) if tx_throughputs else NA,
+            rx=round(sum(rx_throughputs) / len(rx_throughputs)) if rx_throughputs else NA,
+        )
+
+    def nvlink_tx_throughput(
+        self,
+        interval: float | None = None,
+    ) -> list[int | NaType]:  # in KiB/s
+        """The current NVLink transmit data throughput in KiB/s for each NVLink.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: List[Union[int, NaType]]
+            The current NVLink transmit data throughput in KiB/s for each NVLink, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return [tx for tx, _ in self.nvlink_throughput(interval=interval)]
+
+    def nvlink_mean_tx_throughput(
+        self,
+        interval: float | None = None,
+    ) -> int | NaType:  # in KiB/s
+        """The mean NVLink transmit data throughput for all NVLinks in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[int, NaType]
+            The mean NVLink transmit data throughput for all NVLinks in KiB/s, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return self.nvlink_mean_throughput(interval=interval).tx
+
+    def nvlink_rx_throughput(
+        self,
+        interval: float | None = None,
+    ) -> list[int | NaType]:  # in KiB/s
+        """The current NVLink receive data throughput for each NVLink in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[int, NaType]
+            The current NVLink receive data throughput for each NVLink in KiB/s, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return [rx for _, rx in self.nvlink_throughput(interval=interval)]
+
+    def nvlink_mean_rx_throughput(
+        self,
+        interval: float | None = None,
+    ) -> int | NaType:  # in KiB/s
+        """The mean NVLink receive data throughput for all NVLinks in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[int, NaType]
+            The mean NVLink receive data throughput for all NVLinks in KiB/s, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return self.nvlink_mean_throughput(interval=interval).rx
+
+    def nvlink_tx_throughput_human(
+        self,
+        interval: float | None = None,
+    ) -> list[str | NaType]:  # in human readable
+        """The current NVLink transmit data throughput for each NVLink in human readable format.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[str, NaType]
+            The current NVLink transmit data throughput for each NVLink in human readable format, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return [
+            f'{bytes2human(tx * 1024)}/s' if libnvml.nvmlCheckReturn(tx, int) else NA
+            for tx in self.nvlink_tx_throughput(interval=interval)
+        ]
+
+    def nvlink_mean_tx_throughput_human(
+        self,
+        interval: float | None = None,
+    ) -> str | NaType:  # in human readable
+        """The mean NVLink transmit data throughput for all NVLinks in human readable format.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[str, NaType]
+            The mean NVLink transmit data throughput for all NVLinks in human readable format, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        mean_tx = self.nvlink_mean_tx_throughput(interval=interval)
+        if libnvml.nvmlCheckReturn(mean_tx, int):
+            return f'{bytes2human(mean_tx * 1024)}/s'
+        return NA
+
+    def nvlink_rx_throughput_human(
+        self,
+        interval: float | None = None,
+    ) -> list[str | NaType]:  # in human readable
+        """The current NVLink receive data throughput for each NVLink in human readable format.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[str, NaType]
+            The current NVLink receive data throughput for each NVLink in human readable format, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return [
+            f'{bytes2human(rx * 1024)}/s' if libnvml.nvmlCheckReturn(rx, int) else NA
+            for rx in self.nvlink_rx_throughput(interval=interval)
+        ]
+
+    def nvlink_mean_rx_throughput_human(
+        self,
+        interval: float | None = None,
+    ) -> str | NaType:  # in human readable
+        """The mean NVLink receive data throughput for all NVLinks in human readable format.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[str, NaType]
+            The mean NVLink receive data throughput for all NVLinks in human readable format, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        mean_rx = self.nvlink_mean_rx_throughput(interval=interval)
+        if libnvml.nvmlCheckReturn(mean_rx, int):
+            return f'{bytes2human(mean_rx * 1024)}/s'
+        return NA
 
     def display_active(self) -> str | NaType:
         """A flag that indicates whether a display is initialized on the GPU's (e.g. memory is allocated on the device for display).
@@ -1758,6 +2177,11 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'power_usage',
         'power_limit',
         'power_status',
+        'pcie_throughput',
+        'pcie_tx_throughput',
+        'pcie_rx_throughput',
+        'pcie_tx_throughput_human',
+        'pcie_rx_throughput_human',
         'display_active',
         'display_mode',
         'current_driver_model',
@@ -1974,6 +2398,8 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         self._memory_total_human: str = NA
         self._gpu_instance_id: int | NaType = NA
         self._compute_instance_id: int | NaType = NA
+        self._nvlink_link_count: int | None = None
+        self._nvlink_throughput_counters: tuple[tuple[int | NaType, int]] | None = None
         self._is_mig_device: bool = True
         self._cuda_index: int | None = None
         self._cuda_compute_capability: tuple[int, int] | NaType | None = None
@@ -2230,7 +2656,7 @@ class CudaDevice(Device):
         *,
         nvml_index: int | tuple[int, int] | None = None,
         uuid: str | None = None,
-    ) -> CudaDevice:
+    ) -> Self:
         """Create a new instance of CudaDevice.
 
         The type of the result is determined by the given argument.
@@ -2267,10 +2693,14 @@ class CudaDevice(Device):
                 raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             nvml_index = cuda_visible_devices[cuda_index]
 
+        if cls is not CudaDevice:
+            # Use the subclass type if the type is explicitly specified
+            return super().__new__(cls, index=nvml_index, uuid=uuid)
+
+        # Auto subclass type inference logic goes here when `cls` is `CudaDevice` (e.g., calls `CudaDevice(...)`)
         if (nvml_index is not None and not isinstance(nvml_index, int)) or is_mig_device_uuid(uuid):
             return super().__new__(CudaMigDevice, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
-
-        return super().__new__(cls, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
+        return super().__new__(CudaDevice, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
 
     def __init__(
         self,

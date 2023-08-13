@@ -43,6 +43,8 @@ from nvitop.api.utils import (
 
 
 if TYPE_CHECKING:
+    from typing_extensions import Self  # Python 3.11+
+
     from nvitop.api.device import Device
 
 
@@ -191,7 +193,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     _ident: tuple
     _lock: threading.RLock
 
-    def __new__(cls, pid: int | None = None) -> HostProcess:
+    def __new__(cls, pid: int | None = None) -> Self:
         """Return the cached instance of :class:`HostProcess`."""
         if pid is None:
             pid = os.getpid()
@@ -471,7 +473,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         gpu_cc_protected_memory: int | NaType | None = None,
         type: str | NaType | None = None,  # pylint: disable=redefined-builtin
         # pylint: enable=unused-argument
-    ) -> GpuProcess:
+    ) -> Self:
         """Return the cached instance of :class:`GpuProcess`."""
         if pid is None:
             pid = os.getpid()
@@ -480,7 +482,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             try:
                 instance = cls.INSTANCES[(pid, device)]
                 if instance.is_running():
-                    return instance
+                    return instance  # type: ignore[return-value]
             except KeyError:
                 pass
 

@@ -1095,6 +1095,11 @@ Out[16]: PhysicalDeviceSnapshot(
     memory_utilization=7,               # in percentage (NOTE: this is the utilization rate of GPU memory bandwidth)
     mig_mode='N/A',
     name='GeForce RTX 2080 Ti',
+    pcie_rx_throughput=1000,            # in KiB/s
+    pcie_rx_throughput_human='1000KiB/s',
+    pcie_throughput=ThroughputInfo(tx=1000, rx=1000),  # in KiB/s
+    pcie_tx_throughput=1000,            # in KiB/s
+    pcie_tx_throughput_human='1000KiB/s',
     performance_state='P2',
     persistence_mode='Disabled',
     power_limit=250000,                 # in milliwatts (mW)

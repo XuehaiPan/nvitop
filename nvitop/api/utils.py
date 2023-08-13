@@ -29,7 +29,7 @@ import re
 import sys
 import time
 from collections.abc import KeysView
-from typing import Any, Callable, Generator, Iterable, Iterator
+from typing import Any, Callable, Generator, Iterable, Iterator, TypeVar
 
 from psutil import WINDOWS
 
@@ -153,7 +153,8 @@ class NaType(str):
         nan
     """
 
-    def __new__(cls) -> NaType:
+    # NOTE: Decorate this class with `@final` and remove `noqa` when we drop Python 3.7 support.
+    def __new__(cls) -> NaType:  # noqa: PYI034
         """Get the singleton instance (:const:`nvitop.NA`)."""
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
@@ -525,9 +526,9 @@ SIZE_PATTERN: re.Pattern = re.compile(
 """The regex pattern for human readable size."""
 
 
-# pylint: disable-next=too-many-return-statements
+# pylint: disable-next=too-many-return-statements,too-many-branches
 def bytes2human(
-    b: int | float | NaType,
+    b: int | float | NaType,  # noqa: PYI041
     *,
     min_unit: int = 1,
 ) -> str:
@@ -545,7 +546,11 @@ def bytes2human(
         return f'{b}B'
     if b < MiB and min_unit <= KiB:
         return f'{round(b / KiB)}KiB'
-    if b <= 20 * GiB and min_unit <= MiB:
+    if b < 100 * MiB and min_unit <= MiB:
+        return f'{round(b / MiB, 2):.2f}MiB'
+    if b < 1000 * MiB and min_unit <= MiB:
+        return f'{round(b / MiB, 1):.1f}MiB'
+    if b < 20 * GiB and min_unit <= MiB:
         return f'{round(b / MiB)}MiB'
     if b < 100 * GiB and min_unit <= GiB:
         return f'{round(b / GiB, 2):.2f}GiB'
@@ -595,7 +600,7 @@ def human2bytes(s: int | str) -> int:
 
 
 def timedelta2human(
-    dt: int | float | datetime.timedelta | NaType,
+    dt: int | float | datetime.timedelta | NaType,  # noqa: PYI041
     *,
     round: bool = False,  # pylint: disable=redefined-builtin
 ) -> str:
@@ -615,7 +620,7 @@ def timedelta2human(
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
-def utilization2string(utilization: int | float | NaType) -> str:
+def utilization2string(utilization: int | float | NaType) -> str:  # noqa: PYI041
     """Convert a utilization rate to string."""
     if utilization != NA:
         if isinstance(utilization, int):
@@ -713,8 +718,11 @@ class Snapshot:
         return KeysView(self)  # type: ignore[arg-type]
 
 
+Method = TypeVar('Method', bound=Callable[..., Any])
+
+
 # Modified from psutil (https://github.com/giampaolo/psutil)
-def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]:
+def memoize_when_activated(method: Method) -> Method:
     """A memoize decorator which is disabled by default.
 
     It can be activated and deactivated on request. For efficiency reasons it can be used only
@@ -722,17 +730,17 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
     """
 
     @functools.wraps(method)
-    def wrapped(self):  # noqa: ANN001,ANN202
+    def wrapped(self, *args, **kwargs):  # noqa: ANN001,ANN002,ANN003,ANN202
         try:
             # case 1: we previously entered oneshot() ctx
             ret = self._cache[method]  # pylint: disable=protected-access
         except AttributeError:
             # case 2: we never entered oneshot() ctx
-            return method(self)
+            return method(self, *args, **kwargs)
         except KeyError:
             # case 3: we entered oneshot() ctx but there's no cache
             # for this entry yet
-            ret = method(self)
+            ret = method(self, *args, **kwargs)
             try:
                 self._cache[method] = ret  # pylint: disable=protected-access
             except AttributeError:
@@ -758,4 +766,4 @@ def memoize_when_activated(method: Callable[[Any], Any]) -> Callable[[Any], Any]
 
     wrapped.cache_activate = cache_activate  # type: ignore[attr-defined]
     wrapped.cache_deactivate = cache_deactivate  # type: ignore[attr-defined]
-    return wrapped
+    return wrapped  # type: ignore[return-value]

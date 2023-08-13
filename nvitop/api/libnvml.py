@@ -28,6 +28,7 @@ import os as _os
 import re as _re
 import sys as _sys
 import threading as _threading
+import time as _time
 from types import FunctionType as _FunctionType
 from types import ModuleType as _ModuleType
 from typing import TYPE_CHECKING as _TYPE_CHECKING
@@ -41,11 +42,12 @@ import pynvml as _pynvml
 from pynvml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
 from pynvml import nvmlDeviceGetPciInfo  # appease mypy # noqa: F401 # pylint: disable=unused-import
 
-from nvitop.api.utils import NA, UINT_MAX, ULONGLONG_MAX
+from nvitop.api.utils import NA, UINT_MAX, ULONGLONG_MAX, NaType
 from nvitop.api.utils import colored as __colored
 
 
 if _TYPE_CHECKING:
+    from typing_extensions import Self as _Self  # Python 3.11+
     from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 
 
@@ -55,6 +57,7 @@ __all__ = [  # will be updated in below
     'ULONGLONG_MAX',
     'nvmlCheckReturn',
     'nvmlQuery',
+    'nvmlQueryFieldValues',
     'nvmlInit',
     'nvmlInitWithFlags',
     'nvmlShutdown',
@@ -86,22 +89,22 @@ _errcode_to_string = NVMLError._errcode_to_string  # pylint: disable=protected-a
 
 # 1. Put error classes in `__all__` first
 for _name, _attr in _vars_pynvml.items():
-    if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
+    if _name in {'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'}:
         continue
     if _name.startswith(('NVML_ERROR_', 'NVMLError_')):
-        __all__.append(_name)
+        __all__.append(_name)  # noqa: PYI056
         if _name.startswith('NVML_ERROR_'):
             _errcode_to_name[_attr] = _name
             _const_names.append(_name)
 
 # 2. Then the remaining members
 for _name, _attr in _vars_pynvml.items():
-    if _name in ('nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'):
+    if _name in {'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'}:
         continue
     if (_name.startswith('NVML_') and not _name.startswith('NVML_ERROR_')) or (
         _name.startswith('nvml') and isinstance(_attr, _FunctionType)
     ):
-        __all__.append(_name)
+        __all__.append(_name)  # noqa: PYI056
         if _name.startswith('NVML_'):
             _const_names.append(_name)
 
@@ -169,10 +172,10 @@ del (
     _sphinx_doc,
 )
 
-
 # 5. Add explicit references to appease linters
 # pylint: disable=no-member
-c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t
+c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t  # noqa: PYI042
+c_nvmlFieldValue_t: _TypeAlias = _pynvml.c_nvmlFieldValue_t  # noqa: PYI042
 NVML_SUCCESS: int = _pynvml.NVML_SUCCESS
 NVML_ERROR_INSUFFICIENT_SIZE: int = _pynvml.NVML_ERROR_INSUFFICIENT_SIZE
 NVMLError_FunctionNotFound: _TypeAlias = _pynvml.NVMLError_FunctionNotFound
@@ -196,6 +199,20 @@ NVML_COMPUTEMODE_DEFAULT: int = _pynvml.NVML_COMPUTEMODE_DEFAULT
 NVML_COMPUTEMODE_EXCLUSIVE_THREAD: int = _pynvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD
 NVML_COMPUTEMODE_PROHIBITED: int = _pynvml.NVML_COMPUTEMODE_PROHIBITED
 NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: int = _pynvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS
+NVML_PCIE_UTIL_TX_BYTES: int = _pynvml.NVML_PCIE_UTIL_TX_BYTES
+NVML_PCIE_UTIL_RX_BYTES: int = _pynvml.NVML_PCIE_UTIL_RX_BYTES
+NVML_NVLINK_MAX_LINKS: int = _pynvml.NVML_NVLINK_MAX_LINKS
+NVML_FI_DEV_NVLINK_LINK_COUNT: int = _pynvml.NVML_FI_DEV_NVLINK_LINK_COUNT
+NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_TX: int = _pynvml.NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_TX
+NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_RX: int = _pynvml.NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_RX
+NVML_FI_DEV_NVLINK_THROUGHPUT_RAW_TX: int = _pynvml.NVML_FI_DEV_NVLINK_THROUGHPUT_RAW_TX
+NVML_FI_DEV_NVLINK_THROUGHPUT_RAW_RX: int = _pynvml.NVML_FI_DEV_NVLINK_THROUGHPUT_RAW_RX
+NVML_VALUE_TYPE_DOUBLE: int = getattr(_pynvml, 'NVML_VALUE_TYPE_DOUBLE', 0)
+NVML_VALUE_TYPE_UNSIGNED_INT: int = getattr(_pynvml, 'NVML_VALUE_TYPE_UNSIGNED_INT', 1)
+NVML_VALUE_TYPE_UNSIGNED_LONG: int = getattr(_pynvml, 'NVML_VALUE_TYPE_UNSIGNED_LONG', 2)
+NVML_VALUE_TYPE_UNSIGNED_LONG_LONG: int = getattr(_pynvml, 'NVML_VALUE_TYPE_UNSIGNED_LONG_LONG', 3)
+NVML_VALUE_TYPE_SIGNED_LONG_LONG: int = getattr(_pynvml, 'NVML_VALUE_TYPE_SIGNED_LONG_LONG', 4)
+NVML_VALUE_TYPE_SIGNED_INT: int = getattr(_pynvml, 'NVML_VALUE_TYPE_SIGNED_INT', 5)
 # pylint: enable=no-member
 
 # New members in `libnvml` #########################################################################
@@ -448,6 +465,51 @@ def nvmlQuery(
     return retval
 
 
+def nvmlQueryFieldValues(
+    handle: c_nvmlDevice_t,
+    field_ids: list[int | tuple[int, int]],
+) -> list[tuple[float | int | NaType, int]]:
+    """Query multiple field values from NVML.
+
+    Request values for a list of fields for a device. This API allows multiple fields to be queried
+    at once. If any of the underlying fieldIds are populated by the same driver call, the results
+    for those field IDs will be populated from a single call rather than making a driver call for
+    each fieldId.
+
+    Raises:
+        NVMLError_InvalidArgument:
+            If device or field_ids is invalid.
+    """
+    field_values = nvmlQuery('nvmlDeviceGetFieldValues', handle, field_ids)
+
+    if not nvmlCheckReturn(field_values):
+        timestamp = _time.time_ns() // 1000
+        return [(NA, timestamp) for _ in range(len(field_ids))]
+
+    values_with_timestamps: list[tuple[float | int | NaType, int]] = []
+    for field_value in field_values:
+        timestamp = field_value.timestamp
+        if field_value.nvmlReturn != NVML_SUCCESS:
+            value = NA
+            timestamp = _time.time_ns() // 1000
+        elif field_value.valueType == NVML_VALUE_TYPE_DOUBLE:
+            value = field_value.value.dVal
+        elif field_value.valueType == NVML_VALUE_TYPE_UNSIGNED_INT:
+            value = field_value.value.uiVal
+        elif field_value.valueType == NVML_VALUE_TYPE_UNSIGNED_LONG:
+            value = field_value.value.ulVal
+        elif field_value.valueType == NVML_VALUE_TYPE_UNSIGNED_LONG_LONG:
+            value = field_value.value.ullVal
+        elif field_value.valueType == NVML_VALUE_TYPE_SIGNED_LONG_LONG:
+            value = field_value.value.llVal
+        elif field_value.valueType == NVML_VALUE_TYPE_SIGNED_INT:
+            value = field_value.value.iVal
+        else:
+            value = NA
+        values_with_timestamps.append((value, timestamp))
+    return values_with_timestamps
+
+
 def nvmlCheckReturn(
     retval: _Any,
     types: type | tuple[type, ...] | None = None,
@@ -634,8 +696,6 @@ if not _pynvml_installation_corrupted:
               using specific MIG device handles.
 
         Raises:
-            NVMLError_InvalidArgument:
-                If the library has not been successfully initialized.
             NVMLError_Uninitialized:
                 If NVML was not first initialized with :func:`nvmlInit`.
             NVMLError_NoPermission:
@@ -663,8 +723,6 @@ if not _pynvml_installation_corrupted:
               using specific MIG device handles.
 
         Raises:
-            NVMLError_InvalidArgument:
-                If the library has not been successfully initialized.
             NVMLError_Uninitialized:
                 If NVML was not first initialized with :func:`nvmlInit`.
             NVMLError_NoPermission:
@@ -692,8 +750,6 @@ if not _pynvml_installation_corrupted:
               using specific MIG device handles.
 
         Raises:
-            NVMLError_InvalidArgument:
-                If the library has not been successfully initialized.
             NVMLError_Uninitialized:
                 If NVML was not first initialized with :func:`nvmlInit`.
             NVMLError_NoPermission:
@@ -724,12 +780,12 @@ if not _pynvml_installation_corrupted:
     class c_nvmlMemory_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Total physical device memory (in bytes).
-            ('total', _pynvml.c_ulonglong),
+            ('total', _ctypes.c_ulonglong),
             # Unallocated device memory (in bytes).
-            ('free', _pynvml.c_ulonglong),
+            ('free', _ctypes.c_ulonglong),
             # Allocated device memory (in bytes).
             # Note that the driver/GPU always sets aside a small amount of memory for bookkeeping.
-            ('used', _pynvml.c_ulonglong),
+            ('used', _ctypes.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
@@ -737,16 +793,16 @@ if not _pynvml_installation_corrupted:
     class c_nvmlMemory_v2_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Structure format version (must be 2).
-            ('version', _pynvml.c_uint),
+            ('version', _ctypes.c_uint),
             # Total physical device memory (in bytes).
-            ('total', _pynvml.c_ulonglong),
+            ('total', _ctypes.c_ulonglong),
             # Device memory (in bytes) reserved for system use (driver or firmware).
-            ('reserved', _pynvml.c_ulonglong),
+            ('reserved', _ctypes.c_ulonglong),
             # Unallocated device memory (in bytes).
-            ('free', _pynvml.c_ulonglong),
+            ('free', _ctypes.c_ulonglong),
             # Allocated device memory (in bytes).
             # Note that the driver/GPU always sets aside a small amount of memory for bookkeeping.
-            ('used', _pynvml.c_ulonglong),
+            ('used', _ctypes.c_ulonglong),
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
@@ -788,8 +844,6 @@ if not _pynvml_installation_corrupted:
               using specific MIG device handles.
 
         Raises:
-            NVMLError_InvalidArgument:
-                If the library has not been successfully initialized.
             NVMLError_Uninitialized:
                 If NVML was not first initialized with :func:`nvmlInit`.
             NVMLError_NoPermission:
@@ -852,12 +906,12 @@ class _CustomModule(_ModuleType):
         except AttributeError:
             return getattr(_pynvml, name)
 
-    def __enter__(self) -> _CustomModule:
+    def __enter__(self) -> _Self:
         """Entry of the context manager for ``with`` statement."""
         _lazy_init()
         return self
 
-    def __exit__(self, *args: _Any, **kwargs: _Any) -> None:
+    def __exit__(self, *exc: object) -> None:
         """Shutdown the NVML context in the context manager for ``with`` statement."""
         try:
             nvmlShutdown()

@@ -396,7 +396,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         self,
         devices: Iterable[Device] | None = None,
         root_pids: Iterable[int] | None = None,
-        interval: int | float = 1.0,
+        interval: float = 1.0,
     ) -> None:
         """Initialize the resource metric collector."""
         if isinstance(interval, (int, float)) and interval > 0:
