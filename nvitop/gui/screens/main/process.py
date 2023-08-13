@@ -6,8 +6,8 @@
 import itertools
 import threading
 import time
-from collections import namedtuple
 from operator import attrgetter, xor
+from typing import Any, Callable, NamedTuple
 
 from cachetools.func import ttl_cache
 
@@ -29,7 +29,13 @@ from nvitop.gui.library import (
 )
 
 
-Order = namedtuple('Order', ['key', 'reverse', 'offset', 'column', 'previous', 'next'])
+class Order(NamedTuple):
+    key: Callable[[Any], Any]
+    reverse: bool
+    offset: int
+    column: str
+    previous: str
+    next: str
 
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes

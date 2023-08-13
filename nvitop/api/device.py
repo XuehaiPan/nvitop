@@ -142,6 +142,7 @@ from nvitop.api.utils import (
 
 if TYPE_CHECKING:
     from typing_extensions import Literal  # Python 3.8+
+    from typing_extensions import Self  # Python 3.11+
 
 
 __all__ = [
@@ -562,7 +563,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         *,
         uuid: str | None = None,
         bus_id: str | None = None,
-    ) -> Device:
+    ) -> Self:
         """Create a new instance of Device.
 
         The type of the result is determined by the given argument.
@@ -592,8 +593,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
 
         if cls is not Device:
+            # Use the subclass type if the type is explicitly specified
             return super().__new__(cls)
 
+        # Auto subclass type inference logic goes here when `cls` is `Device` (e.g., calls `Device(...)`)
         match: re.Match | None = None
         if isinstance(index, str):
             match = cls.UUID_PATTERN.match(index)
@@ -616,10 +619,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                         f'index for MIG device must be a tuple of two integers '
                         f'but index = {index!r} was given',
                     )
-                return super().__new__(MigDevice)
+                return super().__new__(MigDevice)  # type: ignore[return-value]
         elif uuid is not None and match is not None and match.group('MigMode') is not None:
-            return super().__new__(MigDevice)
-        return super().__new__(PhysicalDevice)
+            return super().__new__(MigDevice)  # type: ignore[return-value]
+        return super().__new__(PhysicalDevice)  # type: ignore[return-value]
 
     def __init__(
         self,
@@ -1527,7 +1530,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     @memoize_when_activated
     def nvlink_throughput(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> list[ThroughputInfo]:  # in KiB/s
         """The current NVLink throughput for each NVLink in KiB/s.
 
@@ -1536,7 +1539,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1605,7 +1608,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_mean_throughput(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> ThroughputInfo:  # in KiB/s
         """The mean NVLink throughput for all NVLinks in KiB/s.
 
@@ -1614,7 +1617,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1638,7 +1641,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_tx_throughput(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> list[int | NaType]:  # in KiB/s
         """The current NVLink transmit data throughput in KiB/s for each NVLink.
 
@@ -1647,7 +1650,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1661,7 +1664,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_mean_tx_throughput(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> int | NaType:  # in KiB/s
         """The mean NVLink transmit data throughput for all NVLinks in KiB/s.
 
@@ -1670,7 +1673,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1684,7 +1687,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_rx_throughput(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> list[int | NaType]:  # in KiB/s
         """The current NVLink receive data throughput for each NVLink in KiB/s.
 
@@ -1693,7 +1696,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1707,7 +1710,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_mean_rx_throughput(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> int | NaType:  # in KiB/s
         """The mean NVLink receive data throughput for all NVLinks in KiB/s.
 
@@ -1716,7 +1719,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1730,7 +1733,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_tx_throughput_human(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> list[str | NaType]:  # in human readable
         """The current NVLink transmit data throughput for each NVLink in human readable format.
 
@@ -1739,7 +1742,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1756,7 +1759,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_mean_tx_throughput_human(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> str | NaType:  # in human readable
         """The mean NVLink transmit data throughput for all NVLinks in human readable format.
 
@@ -1765,7 +1768,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1782,7 +1785,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_rx_throughput_human(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> list[str | NaType]:  # in human readable
         """The current NVLink receive data throughput for each NVLink in human readable format.
 
@@ -1791,7 +1794,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -1808,7 +1811,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def nvlink_mean_rx_throughput_human(
         self,
-        interval: int | float | None = None,
+        interval: float | None = None,
     ) -> str | NaType:  # in human readable
         """The mean NVLink receive data throughput for all NVLinks in human readable format.
 
@@ -1817,7 +1820,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         the first data counters.
 
         Args:
-            interval (Optional[Union[int, float]]):
+            interval (Optional[float]):
                 The interval in seconds between two calls to get the NVLink throughput. If
                 ``interval`` is a positive number, compares throughput counters before and after the
                 interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
@@ -2653,7 +2656,7 @@ class CudaDevice(Device):
         *,
         nvml_index: int | tuple[int, int] | None = None,
         uuid: str | None = None,
-    ) -> CudaDevice:
+    ) -> Self:
         """Create a new instance of CudaDevice.
 
         The type of the result is determined by the given argument.
@@ -2690,10 +2693,14 @@ class CudaDevice(Device):
                 raise RuntimeError(f'CUDA Error: invalid device ordinal: {cuda_index!r}.')
             nvml_index = cuda_visible_devices[cuda_index]
 
+        if cls is not CudaDevice:
+            # Use the subclass type if the type is explicitly specified
+            return super().__new__(cls, index=nvml_index, uuid=uuid)
+
+        # Auto subclass type inference logic goes here when `cls` is `CudaDevice` (e.g., calls `CudaDevice(...)`)
         if (nvml_index is not None and not isinstance(nvml_index, int)) or is_mig_device_uuid(uuid):
             return super().__new__(CudaMigDevice, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
-
-        return super().__new__(cls, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
+        return super().__new__(CudaDevice, index=nvml_index, uuid=uuid)  # type: ignore[return-value]
 
     def __init__(
         self,

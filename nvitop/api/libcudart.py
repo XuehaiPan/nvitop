@@ -26,9 +26,14 @@ import os as _os
 import platform as _platform
 import sys as _sys
 import threading as _threading
+from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
 from typing import Callable as _Callable
 from typing import ClassVar as _ClassVar
+
+
+if _TYPE_CHECKING:
+    from typing_extensions import Self as _Self  # Python 3.11+
 
 
 _cudaError_t = _ctypes.c_int
@@ -283,11 +288,11 @@ class cudaError(Exception):
     _errcode_to_name: _ClassVar[dict[int, str]] = {}
     value: int
 
-    def __new__(cls, value: int) -> cudaError:
+    def __new__(cls, value: int) -> _Self:
         """Map value to a proper subclass of :class:`cudaError`."""
         if cls is cudaError:
             # pylint: disable-next=self-cls-assignment
-            cls = cudaError._value_class_mapping.get(value, cls)
+            cls = cudaError._value_class_mapping.get(value, cls)  # type: ignore[assignment]
         obj = Exception.__new__(cls)
         obj.value = value
         return obj

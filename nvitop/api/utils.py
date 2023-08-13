@@ -153,7 +153,8 @@ class NaType(str):
         nan
     """
 
-    def __new__(cls) -> NaType:
+    # NOTE: Decorate this class with `@final` and remove `noqa` when we drop Python 3.7 support.
+    def __new__(cls) -> NaType:  # noqa: PYI034
         """Get the singleton instance (:const:`nvitop.NA`)."""
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
@@ -527,7 +528,7 @@ SIZE_PATTERN: re.Pattern = re.compile(
 
 # pylint: disable-next=too-many-return-statements,too-many-branches
 def bytes2human(
-    b: int | float | NaType,
+    b: int | float | NaType,  # noqa: PYI041
     *,
     min_unit: int = 1,
 ) -> str:
@@ -599,7 +600,7 @@ def human2bytes(s: int | str) -> int:
 
 
 def timedelta2human(
-    dt: int | float | datetime.timedelta | NaType,
+    dt: int | float | datetime.timedelta | NaType,  # noqa: PYI041
     *,
     round: bool = False,  # pylint: disable=redefined-builtin
 ) -> str:
@@ -619,7 +620,7 @@ def timedelta2human(
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
-def utilization2string(utilization: int | float | NaType) -> str:
+def utilization2string(utilization: int | float | NaType) -> str:  # noqa: PYI041
     """Convert a utilization rate to string."""
     if utilization != NA:
         if isinstance(utilization, int):

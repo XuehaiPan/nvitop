@@ -33,6 +33,7 @@ from typing import ClassVar as _ClassVar
 
 
 if _TYPE_CHECKING:
+    from typing_extensions import Self as _Self  # Python 3.11+
     from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 
 
@@ -41,7 +42,9 @@ class _struct_c_CUdevice_t(_ctypes.Structure):
     pass  # opaque handle
 
 
-_c_CUdevice_t: _TypeAlias = _ctypes.POINTER(_struct_c_CUdevice_t)  # type: ignore[valid-type]
+_c_CUdevice_t: _TypeAlias = _ctypes.POINTER(  # type: ignore[valid-type] # noqa: PYI042
+    _struct_c_CUdevice_t,
+)
 
 _CUresult_t: _TypeAlias = _ctypes.c_uint
 
@@ -237,11 +240,11 @@ class CUDAError(Exception):
     _errcode_to_name: _ClassVar[dict[int, str]] = {}
     value: int
 
-    def __new__(cls, value: int) -> CUDAError:
+    def __new__(cls, value: int) -> _Self:
         """Map value to a proper subclass of :class:`CUDAError`."""
         if cls is CUDAError:
             # pylint: disable-next=self-cls-assignment
-            cls = CUDAError._value_class_mapping.get(value, cls)
+            cls = CUDAError._value_class_mapping.get(value, cls)  # type: ignore[assignment]
         obj = Exception.__new__(cls)
         obj.value = value
         return obj

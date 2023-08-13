@@ -47,6 +47,7 @@ from nvitop.api.utils import colored as __colored
 
 
 if _TYPE_CHECKING:
+    from typing_extensions import Self as _Self  # Python 3.11+
     from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 
 
@@ -91,7 +92,7 @@ for _name, _attr in _vars_pynvml.items():
     if _name in {'nvmlInit', 'nvmlInitWithFlags', 'nvmlShutdown'}:
         continue
     if _name.startswith(('NVML_ERROR_', 'NVMLError_')):
-        __all__.append(_name)
+        __all__.append(_name)  # noqa: PYI056
         if _name.startswith('NVML_ERROR_'):
             _errcode_to_name[_attr] = _name
             _const_names.append(_name)
@@ -103,7 +104,7 @@ for _name, _attr in _vars_pynvml.items():
     if (_name.startswith('NVML_') and not _name.startswith('NVML_ERROR_')) or (
         _name.startswith('nvml') and isinstance(_attr, _FunctionType)
     ):
-        __all__.append(_name)
+        __all__.append(_name)  # noqa: PYI056
         if _name.startswith('NVML_'):
             _const_names.append(_name)
 
@@ -173,8 +174,8 @@ del (
 
 # 5. Add explicit references to appease linters
 # pylint: disable=no-member
-c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t
-c_nvmlFieldValue_t: _TypeAlias = _pynvml.c_nvmlFieldValue_t
+c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t  # noqa: PYI042
+c_nvmlFieldValue_t: _TypeAlias = _pynvml.c_nvmlFieldValue_t  # noqa: PYI042
 NVML_SUCCESS: int = _pynvml.NVML_SUCCESS
 NVML_ERROR_INSUFFICIENT_SIZE: int = _pynvml.NVML_ERROR_INSUFFICIENT_SIZE
 NVMLError_FunctionNotFound: _TypeAlias = _pynvml.NVMLError_FunctionNotFound
@@ -905,12 +906,12 @@ class _CustomModule(_ModuleType):
         except AttributeError:
             return getattr(_pynvml, name)
 
-    def __enter__(self) -> _CustomModule:
+    def __enter__(self) -> _Self:
         """Entry of the context manager for ``with`` statement."""
         _lazy_init()
         return self
 
-    def __exit__(self, *args: _Any, **kwargs: _Any) -> None:
+    def __exit__(self, *exc: object) -> None:
         """Shutdown the NVML context in the context manager for ``with`` statement."""
         try:
             nvmlShutdown()
