@@ -594,8 +594,18 @@ if not _pynvml_installation_corrupted:
             # pylint: disable-next=protected-access,no-member
             _nvmlGetFunctionPointer = _pynvml._nvmlGetFunctionPointer
             __get_running_processes_version_suffix = '_v3'
+
+            def lookup(symbol: str) -> _Any:
+                try:
+                    ptr = _nvmlGetFunctionPointer(symbol)
+                except NVMLError_FunctionNotFound:
+                    LOGGER.debug('Failed to found symbol `%s`.', symbol)
+                    raise
+                LOGGER.debug('Found symbol `%s`.', symbol)
+                return ptr
+
             try:
-                _nvmlGetFunctionPointer('nvmlDeviceGetConfComputeMemSizeInfo')
+                lookup('nvmlDeviceGetConfComputeMemSizeInfo')
             except NVMLError_FunctionNotFound:
                 c_nvmlProcessInfo_t = c_nvmlProcessInfo_v2_t
                 LOGGER.debug(
@@ -604,7 +614,7 @@ if not _pynvml_installation_corrupted:
                     'version 3 API with v2 type struct.',
                 )
                 try:
-                    _nvmlGetFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v3')
+                    lookup('nvmlDeviceGetComputeRunningProcesses_v3')
                 except NVMLError_FunctionNotFound:
                     __get_running_processes_version_suffix = '_v2'
                     LOGGER.debug(
@@ -613,7 +623,7 @@ if not _pynvml_installation_corrupted:
                         'process version 2 API with v2 type struct.',
                     )
                     try:
-                        _nvmlGetFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v2')
+                        lookup('nvmlDeviceGetComputeRunningProcesses_v2')
                     except NVMLError_FunctionNotFound:
                         c_nvmlProcessInfo_t = c_nvmlProcessInfo_v1_t
                         __get_running_processes_version_suffix = ''
@@ -632,9 +642,20 @@ if not _pynvml_installation_corrupted:
                         'NVML get running process version 3 API with v2 type struct is available.',
                     )
             else:
-                LOGGER.debug(
-                    'NVML get running process version 3 API with v3 type struct is available.',
-                )
+                try:
+                    lookup('nvmlDeviceGetComputeRunningProcesses_v3')
+                except NVMLError_FunctionNotFound:
+                    c_nvmlProcessInfo_t = c_nvmlProcessInfo_v2_t
+                    __get_running_processes_version_suffix = '_v2'
+                    LOGGER.debug(
+                        'NVML get running process version 3 API with v3 type struct is not '
+                        'available due to incompatible NVIDIA driver. Fallback to use get running '
+                        'process version 2 API with v2 type struct.',
+                    )
+                else:
+                    LOGGER.debug(
+                        'NVML get running process version 3 API with v3 type struct is available.',
+                    )
 
         return __get_running_processes_version_suffix
 
@@ -820,6 +841,7 @@ if not _pynvml_installation_corrupted:
             try:
                 _nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo_v2')
             except NVMLError_FunctionNotFound:
+                LOGGER.debug('Failed to found symbol `nvmlDeviceGetMemoryInfo_v2`.')
                 c_nvmlMemory_t = c_nvmlMemory_v1_t
                 __get_memory_info_version_suffix = ''
                 LOGGER.debug(
@@ -827,6 +849,7 @@ if not _pynvml_installation_corrupted:
                     'NVIDIA driver. Fallback to use NVML get memory info version 1 API.',
                 )
             else:
+                LOGGER.debug('Found symbol `nvmlDeviceGetMemoryInfo_v2`.')
                 LOGGER.debug('NVML get memory info version 2 is available.')
 
         return __get_memory_info_version_suffix
