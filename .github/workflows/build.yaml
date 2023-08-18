@@ -72,8 +72,9 @@ jobs:
           python -m venv venv &&
           (
             source venv/bin/activate &&
-            python -m pip install --upgrade pip setuptools pre-commit pylint[spelling] mypy typing-extensions
+            python -m pip install --upgrade pip setuptools pre-commit pylint[spelling] mypy typing-extensions &&
             python -m pip install -r requirements.txt &&
+            python -m pip install -r nvitop-exporter/requirements.txt &&
             python -m pre_commit install --install-hooks &&
             python -m pre_commit run --all-files &&
             python -c 'import nvitop' &&

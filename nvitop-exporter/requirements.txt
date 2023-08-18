@@ -1,3 +1,2 @@
-# Sync with pyproject.toml and nvitop/version.py
-nvitop == 1.2.0
-prometheus-client
+nvitop
+prometheus-client >= 0.4.0
