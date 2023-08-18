@@ -2120,8 +2120,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self.handle,
                 # Only utilization samples that were recorded after this timestamp will be returned.
                 # The CPU timestamp, i.e. absolute Unix epoch timestamp (in microseconds), is used.
-                # Here we use the timestamp 1/4 second ago to ensure the record buffer is not empty.
-                time.time_ns() // 1000 - 250_000,
+                # Here we use the timestamp 1 second ago to ensure the record buffer is not empty.
+                time.time_ns() // 1000 - 1000_000,
                 default=(),
             )
             for s in sorted(samples, key=lambda s: s.timeStamp):
