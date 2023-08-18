@@ -93,12 +93,17 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
           sed -i -E 's/^__release__\s*=.*$/__release__ = True/' nvitop/version.py
+          sed -i -E 's/^__release__\s*=.*$/__release__ = True/' nvitop-exporter/nvitop_exporter/version.py
 
       - name: Print version
-        run: python setup.py --version
+        run: |
+          python setup.py --version
+          python nvitop-exporter/setup.py --version
 
       - name: Build sdist and wheels
-        run: python -m build
+        run: |
+          python -m build --outdir dist .
+          python -m build --outdir dist nvitop-exporter
 
       - name: List built sdist and wheels
         run: ls -lh dist/
@@ -136,15 +141,23 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         run: |
           sed -i -E 's/^__release__\s*=.*$/__release__ = True/' nvitop/version.py
+          sed -i -E 's/^__release__\s*=.*$/__release__ = True/' nvitop-exporter/nvitop_exporter/version.py
 
       - name: Print version
-        run: python setup.py --version
+        run: |
+          python setup.py --version
+          python nvitop-exporter/setup.py --version
 
       - name: Check consistency between the package version and release tag
         if: startsWith(github.ref, 'refs/tags/')
         run: |
-          PACKAGE_VER="v$(python setup.py --version)"
           RELEASE_TAG="${GITHUB_REF#refs/*/}"
+          PACKAGE_VER="v$(python setup.py --version)"
+          if [[ "${PACKAGE_VER}" != "${RELEASE_TAG}" ]]; then
+            echo "package ver. (${PACKAGE_VER}) != release tag. (${RELEASE_TAG})"
+            exit 1
+          fi
+          PACKAGE_VER="v$(python nvitop-exporter/setup.py --version)"
           if [[ "${PACKAGE_VER}" != "${RELEASE_TAG}" ]]; then
             echo "package ver. (${PACKAGE_VER}) != release tag. (${RELEASE_TAG})"
             exit 1
@@ -164,10 +177,10 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.TESTPYPI_UPLOAD_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/
           verbose: true
-          print_hash: true
-          skip_existing: true
+          print-hash: true
+          skip-existing: true
 
       - name: Publish to PyPI
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
@@ -176,5 +189,5 @@ jobs:
           user: __token__
           password: ${{ secrets.PYPI_UPLOAD_TOKEN }}
           verbose: true
-          print_hash: true
-          skip_existing: true
+          print-hash: true
+          skip-existing: true
