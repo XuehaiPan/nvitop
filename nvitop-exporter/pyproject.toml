@@ -26,7 +26,6 @@ keywords = [
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: Apache Software License",
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
@@ -37,8 +36,6 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
     "Environment :: GPU",
     "Environment :: GPU :: NVIDIA CUDA",
-    "Environment :: Console",
-    "Environment :: Console :: Curses",
     "Intended Audience :: Developers",
     "Intended Audience :: End Users/Desktop",
     "Intended Audience :: System Administrators",
