@@ -81,7 +81,13 @@ jobs:
             python -m nvitop --version &&
             python -m nvitop --help &&
             python -m nvitop.select --version &&
-            python -m nvitop.select --help
+            python -m nvitop.select --help &&
+            (
+              cd nvitop-exporter &&
+              python -c 'import nvitop_exporter' &&
+              python -m nvitop_exporter --version &&
+              python -m nvitop_exporter --help
+            )
           )
 
       - name: Test docker build
