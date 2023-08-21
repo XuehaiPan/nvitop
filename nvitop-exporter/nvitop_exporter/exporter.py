@@ -42,18 +42,13 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
         """Initialize the Prometheus exporter."""
         if not isinstance(devices, (list, tuple)):
             raise TypeError(f'Expected a list or tuple of devices, got {type(devices)}')
+        devices = list(devices)
 
         for device in devices:
             if not isinstance(device, (PhysicalDevice, MigDevice)):
                 raise TypeError(f'Expected a PhysicalDevice or MigDevice, got {type(device)}')
 
-        all_devices = []
-        for device in devices:
-            all_devices.append(device)
-            if isinstance(device, PhysicalDevice):
-                all_devices.extend(device.mig_devices())
-
-        self.devices = all_devices
+        self.devices = devices
         self.hostname = hostname or get_ip_address()
         self.registry = registry
         self.interval = interval

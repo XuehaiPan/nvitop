@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from typing import TextIO
 
 from prometheus_client import start_wsgi_server
 
@@ -28,6 +29,23 @@ from nvitop import Device, colored, libnvml
 from nvitop_exporter.exporter import PrometheusExporter
 from nvitop_exporter.utils import get_ip_address
 from nvitop_exporter.version import __version__
+
+
+def cprint(text: str = '', *, file: TextIO | None = None) -> None:
+    """Print colored text to a file."""
+    for prefix, color in (
+        ('INFO: ', 'yellow'),
+        ('WARNING: ', 'yellow'),
+        ('ERROR: ', 'red'),
+        ('NVML ERROR: ', 'red'),
+    ):
+        if text.startswith(prefix):
+            text = text.replace(
+                prefix.rstrip(),
+                colored(prefix.rstrip(), color=color, attrs=('bold',)),
+                1,
+            )
+    print(text, file=file)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -119,38 +137,46 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     except libnvml.NVMLError_LibraryNotFound:
         return 1
     except libnvml.NVMLError as ex:
-        print(
-            '{} {}'.format(colored('NVML ERROR:', color='red', attrs=('bold',)), ex),
-            file=sys.stderr,
-        )
+        cprint(f'NVML ERROR: {ex}', file=sys.stderr)
         return 1
 
     if device_count == 0:
-        print(
-            '{} {}'.format(
-                colored('NVML ERROR:', color='red', attrs=('bold',)),
-                'No NVIDIA devices found.',
-            ),
-            file=sys.stderr,
-        )
+        cprint('NVML ERROR: No NVIDIA devices found.', file=sys.stderr)
         return 1
 
-    devices = Device.from_indices(range(device_count))
-    print(
-        '{} Found {} NVIDIA device(s).'.format(
-            colored('INFO:', color='yellow', attrs=('bold',)),
+    physical_devices = Device.from_indices(range(device_count))
+    mig_devices = []
+    for device in physical_devices:
+        mig_devices.extend(device.mig_devices())
+    cprint(
+        'INFO: Found {}{}.'.format(
             colored(str(device_count), color='green', attrs=('bold',)),
+            (
+                ' physical device(s) and {} MIG device(s)'.format(
+                    colored(str(len(mig_devices)), color='blue', attrs=('bold',)),
+                )
+                if mig_devices
+                else ' device(s)'
+            ),
         ),
         file=sys.stderr,
     )
+
+    devices = sorted(
+        physical_devices + mig_devices,  # type: ignore[operator]
+        key=lambda d: (d.index,) if isinstance(d.index, int) else d.index,
+    )
     for device in devices:
-        print(
-            '{} {}'.format(
-                colored('INFO:', color='yellow', attrs=('bold',)),
-                f'[{device.index}] {device.name()}',
-            ),
-            file=sys.stderr,
-        )
+        name = device.name()
+        uuid = device.uuid()
+        if device.is_mig_device():
+            name = name.rpartition(' ')[-1]
+            cprint(
+                f'INFO:   MIG {name:<11} Device {device.mig_index:>2d}: (UUID: {uuid})',
+                file=sys.stderr,
+            )
+        else:
+            cprint(f'INFO: GPU {device.index}: {name} (UUID: {uuid})', file=sys.stderr)
 
     exporter = PrometheusExporter(devices, hostname=args.hostname, interval=args.interval)
 
@@ -158,46 +184,33 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         start_wsgi_server(port=args.port, addr=args.bind_address)
     except OSError as ex:
         if 'address already in use' in str(ex).lower():
-            print(
-                '{} {}'.format(
-                    colored('ERROR:', color='red', attrs=('bold',)),
-                    'Address {} is already in use.'.format(
-                        colored(
-                            f'http://{args.bind_address}:{args.port}',
-                            color='yellow',
-                            attrs=('bold', 'underline'),
-                        ),
+            cprint(
+                'ERROR: Address {} is already in use.'.format(
+                    colored(
+                        f'http://{args.bind_address}:{args.port}',
+                        color='blue',
+                        attrs=('bold', 'underline'),
                     ),
                 ),
                 file=sys.stderr,
             )
         elif 'cannot assign requested address' in str(ex).lower():
-            print(
-                '{} {}'.format(
-                    colored('ERROR:', color='red', attrs=('bold',)),
-                    'Cannot assign requested address at {}.'.format(
-                        colored(
-                            f'http://{args.bind_address}:{args.port}',
-                            color='yellow',
-                            attrs=('bold', 'underline'),
-                        ),
+            cprint(
+                'ERROR: Cannot assign requested address at {}.'.format(
+                    colored(
+                        f'http://{args.bind_address}:{args.port}',
+                        color='blue',
+                        attrs=('bold', 'underline'),
                     ),
                 ),
                 file=sys.stderr,
             )
         else:
-            print(
-                '{} {}'.format(
-                    colored('ERROR:', color='red', attrs=('bold',)),
-                    ex,
-                ),
-                file=sys.stderr,
-            )
+            cprint(f'ERROR: {ex}', file=sys.stderr)
         return 1
 
-    print(
-        '{} Start the exporter on {} at {}.'.format(
-            colored('INFO:', color='yellow', attrs=('bold',)),
+    cprint(
+        'INFO: Start the exporter on {} at {}.'.format(
             colored(args.hostname, color='magenta', attrs=('bold',)),
             colored(
                 f'http://{args.bind_address}:{args.port}/metrics',
@@ -211,14 +224,8 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     try:
         exporter.collect()
     except KeyboardInterrupt:
-        print(file=sys.stderr)
-        print(
-            '{} {}'.format(
-                colored('INFO:', color='yellow', attrs=('bold',)),
-                'Interrupted by user.',
-            ),
-            file=sys.stderr,
-        )
+        cprint(file=sys.stderr)
+        cprint('INFO: Interrupted by user.', file=sys.stderr)
 
     return 0
 
