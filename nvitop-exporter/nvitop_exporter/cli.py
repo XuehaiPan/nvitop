@@ -185,7 +185,10 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     except OSError as ex:
         if 'address already in use' in str(ex).lower():
             cprint(
-                'ERROR: Address {} is already in use.'.format(
+                (
+                    'ERROR: Address {} is already in use. '
+                    'Please specify a different port via `--port <PORT>`.'
+                ).format(
                     colored(
                         f'http://{args.bind_address}:{args.port}',
                         color='blue',
@@ -196,7 +199,10 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
             )
         elif 'cannot assign requested address' in str(ex).lower():
             cprint(
-                'ERROR: Cannot assign requested address at {}.'.format(
+                (
+                    'ERROR: Cannot assign requested address at {}. '
+                    'Please specify a different address via `--bind-address <ADDRESS>`.'
+                ).format(
                     colored(
                         f'http://{args.bind_address}:{args.port}',
                         color='blue',
