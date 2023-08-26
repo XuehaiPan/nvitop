@@ -16,8 +16,8 @@
 # ==============================================================================
 """Prometheus exporter built on top of ``nvitop``."""
 
-__version__ = '1.2.0'
-__license__ = 'GPLv3'
+__version__ = '1.3.0'
+__license__ = 'Apache-2.0'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
 __release__ = False
