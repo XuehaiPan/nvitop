@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix upstream changes for process info v3 APIs on 535.104.05 driver by [@XuehaiPan](https://github.com/XuehaiPan) in [#94](https://github.com/XuehaiPan/nvitop/pull/94).
 - Fix removal for process info v3 APIs on the upstream 535.98 driver by [@XuehaiPan](https://github.com/XuehaiPan) in [#89](https://github.com/XuehaiPan/nvitop/pull/89).
 
 ### Removed
