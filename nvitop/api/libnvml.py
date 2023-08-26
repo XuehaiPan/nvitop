@@ -695,8 +695,6 @@ if not _pynvml_installation_corrupted:
                 if obj.usedGpuMemory == ULONGLONG_MAX:
                     # Special case for WDDM on Windows, see comment above
                     obj.usedGpuMemory = None
-                if getattr(obj, 'usedGpuCcProtectedMemory', None) == ULONGLONG_MAX:
-                    obj.usedGpuCcProtectedMemory = None
                 processes.append(obj)
 
             return processes
