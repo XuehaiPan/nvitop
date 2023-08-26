@@ -13,6 +13,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+------
+
+## [1.3.0] - 2023-08-27
+
+### Added
+
 - Add Prometheus exporter by [@XuehaiPan](https://github.com/XuehaiPan) in [#92](https://github.com/XuehaiPan/nvitop/pull/92).
 - Add device APIs to query PCIe and NVLink throughput by [@XuehaiPan](https://github.com/XuehaiPan) in [#87](https://github.com/XuehaiPan/nvitop/pull/87).
 
@@ -24,10 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix upstream changes for process info v3 APIs on 535.104.05 driver by [@XuehaiPan](https://github.com/XuehaiPan) in [#94](https://github.com/XuehaiPan/nvitop/pull/94).
 - Fix removal for process info v3 APIs on the upstream 535.98 driver by [@XuehaiPan](https://github.com/XuehaiPan) in [#89](https://github.com/XuehaiPan/nvitop/pull/89).
-
-### Removed
-
--
 
 ------
 
@@ -90,7 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.0
 [1.2.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.2.0
 [1.1.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.2
 [1.1.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.1
