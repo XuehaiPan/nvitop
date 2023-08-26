@@ -24,7 +24,7 @@ NVITOP_MONITOR_MODE = set(
 
 # pylint: disable=too-many-branches,too-many-statements
 def parse_arguments() -> argparse.Namespace:
-    """Parse command-line arguments for ``nvtiop``."""
+    """Parse command-line arguments for ``nvitop``."""
     coloring_rules = '{} < th1 %% <= {} < th2 %% <= {}'.format(
         colored('light', 'green'),
         colored('moderate', 'yellow'),

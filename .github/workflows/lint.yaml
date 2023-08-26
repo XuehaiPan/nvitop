@@ -40,6 +40,10 @@ jobs:
       - name: Check syntax (Python 3.7)
         run: |
           "${{ steps.py37.outputs.python-path }}" -m compileall nvitop
+          (
+            cd nvitop-exporter &&
+            "${{ steps.py37.outputs.python-path }}" -m compileall nvitop_exporter
+          )
 
       - name: Upgrade pip
         run: |
@@ -66,6 +70,29 @@ jobs:
           "${{ steps.py37.outputs.python-path }}" -m nvitop --help
           "${{ steps.py37.outputs.python-path }}" -m nvitop.select --version
           "${{ steps.py37.outputs.python-path }}" -m nvitop.select --help
+
+      - name: Install dependencies for nvitop-exporter
+        run: |
+          python -m pip install -r nvitop-exporter/requirements.txt
+
+      - name: Import tests for nvitop-exporter
+        run: |
+          (
+            cd nvitop-exporter &&
+            python -c 'import nvitop_exporter' &&
+            python -m nvitop_exporter --version &&
+            python -m nvitop_exporter --help
+          )
+
+      - name: Import tests for nvitop-exporter (Python 3.7)
+        run: |
+          (
+            cd nvitop-exporter &&
+            "${{ steps.py37.outputs.python-path }}" -m pip install -r requirements.txt &&
+            "${{ steps.py37.outputs.python-path }}" -c 'import nvitop_exporter' &&
+            "${{ steps.py37.outputs.python-path }}" -m nvitop_exporter --version &&
+            "${{ steps.py37.outputs.python-path }}" -m nvitop_exporter --help
+          )
 
       - name: Install linters
         run: |

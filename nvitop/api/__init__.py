@@ -29,18 +29,37 @@ from nvitop.api.device import (
 )
 from nvitop.api.libnvml import NVMLError, nvmlCheckReturn
 from nvitop.api.process import GpuProcess, HostProcess, command_join
-from nvitop.api.utils import *  # noqa: F403
+from nvitop.api.utils import (  # explicitly export these to appease mypy
+    NA,
+    SIZE_UNITS,
+    UINT_MAX,
+    ULONGLONG_MAX,
+    GiB,
+    KiB,
+    MiB,
+    NaType,
+    NotApplicable,
+    NotApplicableType,
+    PiB,
+    Snapshot,
+    TiB,
+    boolify,
+    bytes2human,
+    colored,
+    human2bytes,
+    set_color,
+    timedelta2human,
+    utilization2string,
+)
 
 
 __all__ = [
-    'take_snapshots',
-    'collect_in_background',
-    'ResourceMetricCollector',
-    'libnvml',
-    'nvmlCheckReturn',
     'NVMLError',
+    'nvmlCheckReturn',
+    'libnvml',
     'libcuda',
     'libcudart',
+    # nvitop.api.device
     'Device',
     'PhysicalDevice',
     'MigDevice',
@@ -48,9 +67,34 @@ __all__ = [
     'CudaMigDevice',
     'parse_cuda_visible_devices',
     'normalize_cuda_visible_devices',
+    # nvitop.api.process
     'host',
     'HostProcess',
     'GpuProcess',
     'command_join',
-    *utils.__all__,
+    # nvitop.api.collector
+    'take_snapshots',
+    'collect_in_background',
+    'ResourceMetricCollector',
+    # nvitop.api.utils
+    'NA',
+    'NaType',
+    'NotApplicable',
+    'NotApplicableType',
+    'UINT_MAX',
+    'ULONGLONG_MAX',
+    'KiB',
+    'MiB',
+    'GiB',
+    'TiB',
+    'PiB',
+    'SIZE_UNITS',
+    'bytes2human',
+    'human2bytes',
+    'timedelta2human',
+    'utilization2string',
+    'colored',
+    'set_color',
+    'boolify',
+    'Snapshot',
 ]

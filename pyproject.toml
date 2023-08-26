@@ -76,7 +76,8 @@ target-version = ["py37", "py38", "py39", "py310", "py311"]
 [tool.isort]
 atomic = true
 profile = "black"
-src_paths = ["nvitop"]
+src_paths = ["nvitop", "nvitop-exporter/nvitop_exporter"]
+known_first_party = ["nvitop", "nvitop_exporter"]
 indent = 4
 line_length = 100
 lines_after_imports = 2
@@ -85,14 +86,16 @@ multi_line_output = 3
 [tool.mypy]
 # Sync with requires-python
 python_version = 3.8  # appease mypy for syntax errors in numpy stubs
+mypy_path = [".", "nvitop-exporter"]
+exclude = ["nvitop-exporter/setup.py"]
 pretty = true
 show_error_codes = true
 show_error_context = true
 show_traceback = true
 allow_redefinition = true
 check_untyped_defs = true
-disallow_incomplete_defs = false
-disallow_untyped_defs = false
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
 ignore_missing_imports = true
 no_implicit_optional = true
 strict_equality = true
@@ -119,7 +122,7 @@ ignore-words = "docs/source/spelling_wordlist.txt"
 target-version = "py37"
 line-length = 100
 show-source = true
-src = ["nvitop"]
+src = ["nvitop", "nvitop-exporter/nvitop_exporter"]
 select = [
     "E", "W",  # pycodestyle
     "F",       # pyflakes
