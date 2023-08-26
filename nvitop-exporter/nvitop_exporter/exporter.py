@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import math
 import time
 from typing import Sequence
 
@@ -525,22 +526,22 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
 
         with device.oneshot():
             for gauge, value in (
-                (self.gpu_utilization, int(device.gpu_utilization())),
-                (self.gpu_memory_utilization, int(device.memory_utilization())),
-                (self.gpu_encoder_utilization, int(device.encoder_utilization())),
-                (self.gpu_decoder_utilization, int(device.decoder_utilization())),
+                (self.gpu_utilization, float(device.gpu_utilization())),
+                (self.gpu_memory_utilization, float(device.memory_utilization())),
+                (self.gpu_encoder_utilization, float(device.encoder_utilization())),
+                (self.gpu_decoder_utilization, float(device.decoder_utilization())),
                 (self.gpu_memory_total, device.memory_total() / MiB),
                 (self.gpu_memory_used, device.memory_used() / MiB),
                 (self.gpu_memory_free, device.memory_free() / MiB),
                 (self.gpu_memory_percent, float(device.memory_percent())),
-                (self.gpu_clock_sm, int(device.clock_infos().sm)),
-                (self.gpu_clock_memory, int(device.clock_infos().memory)),
-                (self.gpu_clock_graphics, int(device.clock_infos().graphics)),
-                (self.gpu_clock_video, int(device.clock_infos().video)),
+                (self.gpu_clock_sm, float(device.clock_infos().sm)),
+                (self.gpu_clock_memory, float(device.clock_infos().memory)),
+                (self.gpu_clock_graphics, float(device.clock_infos().graphics)),
+                (self.gpu_clock_video, float(device.clock_infos().video)),
                 (self.gpu_power_usage, device.power_usage() / 1000.0),
                 (self.gpu_power_limit, device.power_limit() / 1000.0),
-                (self.gpu_temperature, int(device.temperature())),
-                (self.gpu_fan_speed, int(device.fan_speed())),
+                (self.gpu_temperature, float(device.temperature())),
+                (self.gpu_fan_speed, float(device.fan_speed())),
                 (self.gpu_pcie_tx_throughput, device.pcie_tx_throughput() / 1024.0),
                 (self.gpu_pcie_rx_throughput, device.pcie_rx_throughput() / 1024.0),
                 (self.gpu_nvlink_mean_tx_throughput, device.nvlink_mean_tx_throughput() / 1024.0),
@@ -574,7 +575,7 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                     for gauge, value in (
                         (
                             self.process_running_time,
-                            running_time.total_seconds() if running_time else 0.0,
+                            running_time.total_seconds() if running_time else math.nan,
                         ),
                         (self.process_cpu_percent, process.cpu_percent()),
                         (self.process_rss_memory, process.host_memory() / MiB),
@@ -582,19 +583,19 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         (self.process_gpu_memory, process.gpu_memory() / MiB),
                         (
                             self.process_gpu_sm_utilization,
-                            int(process.gpu_sm_utilization()),
+                            float(process.gpu_sm_utilization()),
                         ),
                         (
                             self.process_gpu_memory_utilization,
-                            int(process.gpu_memory_utilization()),
+                            float(process.gpu_memory_utilization()),
                         ),
                         (
                             self.process_gpu_encoder_utilization,
-                            int(process.gpu_encoder_utilization()),
+                            float(process.gpu_encoder_utilization()),
                         ),
                         (
                             self.process_gpu_decoder_utilization,
-                            int(process.gpu_decoder_utilization()),
+                            float(process.gpu_decoder_utilization()),
                         ),
                     ):
                         gauge.labels(
