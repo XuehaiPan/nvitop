@@ -606,9 +606,15 @@ if not _pynvml_installation_corrupted:
 
             if lookup('nvmlDeviceGetConfComputeMemSizeInfo'):
                 if lookup('nvmlDeviceGetComputeRunningProcesses_v3'):
-                    LOGGER.debug(
-                        'NVML get running process version 3 API with v3 type struct is available.',
-                    )
+                    if lookup('nvmlDeviceGetRunningProcessDetailList'):
+                        c_nvmlProcessInfo_t = c_nvmlProcessInfo_v2_t
+                        LOGGER.debug(
+                            'NVML get running process version 3 API with v2 type struct is available.',
+                        )
+                    else:
+                        LOGGER.debug(
+                            'NVML get running process version 3 API with v3 type struct is available.',
+                        )
                 else:
                     c_nvmlProcessInfo_t = c_nvmlProcessInfo_v2_t
                     __get_running_processes_version_suffix = '_v2'
