@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Prometheus exporter by [@XuehaiPan](https://github.com/XuehaiPan) in [#92](https://github.com/XuehaiPan/nvitop/pull/92).
 - Add device APIs to query PCIe and NVLink throughput by [@XuehaiPan](https://github.com/XuehaiPan) in [#87](https://github.com/XuehaiPan/nvitop/pull/87).
 
 ### Changed
