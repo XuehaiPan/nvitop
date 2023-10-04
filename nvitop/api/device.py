@@ -3182,7 +3182,7 @@ def _cuda_visible_devices_parser(
             raise
 
         count = libcuda.cuDeviceGetCount()
-        uuids = list(map(libcuda.cuDeviceGetUuid, map(libcuda.cuDeviceGet, range(count))))
+        uuids = [libcuda.cuDeviceGetUuid(libcuda.cuDeviceGet(i)) for i in range(count)]
         queue.put(uuids)
         return
     except Exception as ex:  # noqa: BLE001 # pylint: disable=broad-except
