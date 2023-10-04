@@ -161,7 +161,7 @@ ignore = [
     # internal use and may never raise at runtime
     "S101",
     # SIM105: use `contextlib.suppress(...)` instead of try-except-pass
-    # reduce unnessary function call
+    # reduce unnecessary function call
     "SIM105",
 ]
 

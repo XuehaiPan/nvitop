@@ -83,7 +83,7 @@ TTY = sys.stdout.isatty()
 
 
 @overload
-def select_devices(
+def select_devices(  # pylint: disable=too-many-arguments
     devices: Iterable[Device] | None,
     *,
     format: Literal['index'],  # pylint: disable=redefined-builtin
@@ -103,7 +103,7 @@ def select_devices(
 
 
 @overload
-def select_devices(
+def select_devices(  # pylint: disable=too-many-arguments
     devices: Iterable[Device] | None,
     *,
     format: Literal['uuid'],  # pylint: disable=redefined-builtin
@@ -123,7 +123,7 @@ def select_devices(
 
 
 @overload
-def select_devices(
+def select_devices(  # pylint: disable=too-many-arguments
     devices: Iterable[Device] | None,
     *,
     format: Literal['device'],  # pylint: disable=redefined-builtin
@@ -142,7 +142,7 @@ def select_devices(
     ...
 
 
-def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument
+def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument,too-many-arguments
     devices: Iterable[Device] | None = None,
     *,
     format: Literal['index', 'uuid', 'device'] = 'index',  # pylint: disable=redefined-builtin
