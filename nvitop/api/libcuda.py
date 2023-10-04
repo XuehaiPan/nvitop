@@ -710,7 +710,7 @@ def cuDeviceGetUuid_v2(device: _c_CUdevice_t) -> str:
     """
     fn = __cudaGetFunctionPointer('cuDeviceGetUuid_v2')
 
-    uuid = (_ctypes.c_byte * 16)()
+    uuid = (_ctypes.c_ubyte * 16)()
     ret = fn(uuid, device)
     _cudaCheckReturn(ret)
     uuid = ''.join(map('{:02x}'.format, uuid))
