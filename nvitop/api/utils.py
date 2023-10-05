@@ -70,7 +70,7 @@ try:
     from termcolor import colored as _colored
 except ImportError:
 
-    def _colored(  # pylint: disable=unused-argument
+    def _colored(  # pylint: disable=unused-argument,too-many-arguments
         text: str,
         color: str | None = None,
         on_color: str | None = None,
