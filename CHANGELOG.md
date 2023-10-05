@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add Python 3.12 classifiers by [@XuehaiPan](https://github.com/XuehaiPan) in [#101](https://github.com/XuehaiPan/nvitop/pull/101).
+-
 
 ### Changed
 
@@ -21,11 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix `libcuda.cuDeviceGetUuid()` when the UUID contains `0x00` by [@XuehaiPan](https://github.com/XuehaiPan) in [#100](https://github.com/XuehaiPan/nvitop/pull/100).
+-
 
 ### Removed
 
 -
+
+------
+
+## [1.3.1] - 2023-10-05
+
+### Added
+
+- Add Python 3.12 classifiers by [@XuehaiPan](https://github.com/XuehaiPan) in [#101](https://github.com/XuehaiPan/nvitop/pull/101).
+
+### Fixed
+
+- Fix `libcuda.cuDeviceGetUuid()` when the UUID contains `0x00` by [@XuehaiPan](https://github.com/XuehaiPan) in [#100](https://github.com/XuehaiPan/nvitop/pull/100).
 
 ------
 
@@ -106,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.1
 [1.3.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.0
 [1.2.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.2.0
 [1.1.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.2
