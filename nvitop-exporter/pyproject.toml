@@ -32,6 +32,7 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux",
     "Environment :: GPU",
@@ -67,7 +68,7 @@ include = ["nvitop_exporter", "nvitop_exporter.*"]
 safe = true
 line-length = 100
 skip-string-normalization = true
-target-version = ["py37", "py38", "py39", "py310", "py311"]
+target-version = ["py37"]
 
 [tool.isort]
 atomic = true
