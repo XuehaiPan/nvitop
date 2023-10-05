@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Add Python 3.12 classifiers by [@XuehaiPan](https://github.com/XuehaiPan) in [#101](https://github.com/XuehaiPan/nvitop/pull/101).
 
 ### Changed
 
