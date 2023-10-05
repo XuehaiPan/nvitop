@@ -687,10 +687,10 @@ def cuDeviceGetUuid(device: _c_CUdevice_t) -> str:
     except CUDAError_NotFound:  # noqa: F821 # pylint: disable=undefined-variable
         fn = __cudaGetFunctionPointer('cuDeviceGetUuid')
 
-    uuid = _ctypes.create_string_buffer(16)
+    uuid = (_ctypes.c_ubyte * 16)()
     ret = fn(uuid, device)
     _cudaCheckReturn(ret)
-    uuid = ''.join(map('{:02x}'.format, uuid.value))
+    uuid = ''.join(map('{:02x}'.format, uuid))
     return '-'.join((uuid[:8], uuid[8:12], uuid[12:16], uuid[16:20], uuid[20:32]))
 
 
