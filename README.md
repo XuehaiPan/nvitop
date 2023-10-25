@@ -408,7 +408,7 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                            |                                                                                      |
 |                                                                        `e` | Show process environment.                                                            |
 |                                                                        `t` | Toggle tree-view screen.                                                             |
-|                                                                  `<Enter>` | Toggle tree-view screen.                                                             |
+|                                                                  `<Enter>` | Show process metrics.                                                                |
 |                                                                            |                                                                                      |
 |                                                                  `,` / `.` | Select the sort column.                                                              |
 |                                                                        `/` | Reverse the sort order.                                                              |
