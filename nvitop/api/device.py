@@ -115,17 +115,8 @@ import textwrap
 import threading
 import time
 from collections import OrderedDict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    ClassVar,
-    Generator,
-    Hashable,
-    Iterable,
-    NamedTuple,
-    overload,
-)
+from collections.abc import Hashable
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generator, Iterable, NamedTuple, overload
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
@@ -2814,16 +2805,16 @@ def parse_cuda_visible_devices(
         >>> import os
         >>> os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
         >>> os.environ['CUDA_VISIBLE_DEVICES'] = '6,5'
-        >>> parse_cuda_visible_devices()        # parse the `CUDA_VISIBLE_DEVICES` environment variable to NVML indices
+        >>> parse_cuda_visible_devices()       # parse the `CUDA_VISIBLE_DEVICES` environment variable to NVML indices
         [6, 5]
 
-        >>> parse_cuda_visible_devices('0,4')     # pass the `CUDA_VISIBLE_DEVICES` value explicitly
+        >>> parse_cuda_visible_devices('0,4')  # pass the `CUDA_VISIBLE_DEVICES` value explicitly
         [0, 4]
 
         >>> parse_cuda_visible_devices('GPU-18ef14e9,GPU-849d5a8d')  # accept abbreviated UUIDs
         [5, 6]
 
-        >>> parse_cuda_visible_devices(None)    # get all devices when the `CUDA_VISIBLE_DEVICES` environment variable unset
+        >>> parse_cuda_visible_devices(None)   # get all devices when the `CUDA_VISIBLE_DEVICES` environment variable unset
         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
         >>> parse_cuda_visible_devices('MIG-d184f67c-c95f-5ef2-a935-195bd0094fbd')           # MIG device support (MIG UUID)
@@ -2833,11 +2824,11 @@ def parse_cuda_visible_devices(
         >>> parse_cuda_visible_devices('MIG-GPU-3eb79704/13/0')                              # MIG device support (abbreviated GPU UUID)
         [(0, 1)]
 
-        >>> parse_cuda_visible_devices('')      # empty string
+        >>> parse_cuda_visible_devices('')     # empty string
         []
-        >>> parse_cuda_visible_devices('0,0')   # invalid `CUDA_VISIBLE_DEVICES` (duplicate device ordinal)
+        >>> parse_cuda_visible_devices('0,0')  # invalid `CUDA_VISIBLE_DEVICES` (duplicate device ordinal)
         []
-        >>> parse_cuda_visible_devices('16')    # invalid `CUDA_VISIBLE_DEVICES` (device ordinal out of range)
+        >>> parse_cuda_visible_devices('16')   # invalid `CUDA_VISIBLE_DEVICES` (device ordinal out of range)
         []
     """  # pylint: disable=line-too-long
     if cuda_visible_devices is _VALUE_OMITTED:
