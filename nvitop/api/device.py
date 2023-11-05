@@ -189,7 +189,14 @@ class ThroughputInfo(NamedTuple):  # in KiB/s # pylint: disable=missing-class-do
         return self.rx
 
 
-_VALUE_OMITTED: str = object()  # type: ignore[assignment]
+# pylint: disable-next=missing-class-docstring,too-few-public-methods
+class ValueOmitted:
+    def __repr__(self) -> str:
+        return '<VALUE OMITTED>'
+
+
+_VALUE_OMITTED: str = ValueOmitted()  # type: ignore[assignment]
+del ValueOmitted
 
 
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
@@ -2904,13 +2911,16 @@ class _PhysicalDeviceAttrs(NamedTuple):
     support_mig_mode: bool
 
 
-_PHYSICAL_DEVICE_ATTRS = None
-_GLOBAL_PHYSICAL_DEVICE = None
-_GLOBAL_PHYSICAL_DEVICE_LOCK = threading.RLock()
+_PHYSICAL_DEVICE_ATTRS: OrderedDict[str, _PhysicalDeviceAttrs] | None = None
+_GLOBAL_PHYSICAL_DEVICE: PhysicalDevice | None = None
+_GLOBAL_PHYSICAL_DEVICE_LOCK: threading.RLock = threading.RLock()
 
 
-def _get_all_physical_device_attrs() -> dict[str, _PhysicalDeviceAttrs]:
+def _get_all_physical_device_attrs() -> OrderedDict[str, _PhysicalDeviceAttrs]:
     global _PHYSICAL_DEVICE_ATTRS  # pylint: disable=global-statement
+
+    if _PHYSICAL_DEVICE_ATTRS is not None:
+        return _PHYSICAL_DEVICE_ATTRS
 
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
         if _PHYSICAL_DEVICE_ATTRS is None:
@@ -3138,10 +3148,7 @@ def _parse_cuda_visible_devices_to_uuids(
         parser.start()
         parser.join()
     finally:
-        try:
-            parser.kill()  # requires Python 3.7+
-        except AttributeError:
-            pass
+        parser.kill()
     result = queue.get()
 
     if isinstance(result, Exception):
