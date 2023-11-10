@@ -460,7 +460,9 @@ for dm in "${DM_SERVICES[@]}"; do
 done
 
 # Disable persistence mode
-exec_cmd "sudo nvidia-smi -pm 0 || true"
+if [[ -n "$(sudo lsmod | grep '^nvidia' | awk '{ print $1 }')" ]]; then
+	exec_cmd "sudo nvidia-smi -pm 0 || true"
+fi
 
 sleep 1 # ensure the processes are stopped
 
