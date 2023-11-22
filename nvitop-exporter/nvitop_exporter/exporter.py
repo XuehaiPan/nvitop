@@ -53,10 +53,13 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
         self.hostname = hostname or get_ip_address()
         self.registry = registry
         self.interval = interval
+        self.alive_pids: dict[Device, set[tuple[int, str]]] = {
+            device: set() for device in self.devices
+        }
 
         self.info = Info(
             'nvitop',
-            documentation='NVITOP.',
+            documentation='NVITOP Prometheus Exporter.',
             labelnames=['hostname'],
             registry=self.registry,
         )
@@ -503,6 +506,7 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                 (self.host_disk_io_write_data, disk_io_counter.write_bytes / MiB),
             ):
                 gauge.labels(hostname=self.hostname, partition=partition).set(value)
+
         for partition in host.disk_partitions():  # type: ignore[attr-defined]
             try:
                 partition_usage = host.disk_usage(partition.mountpoint)  # type: ignore[attr-defined]
@@ -516,7 +520,7 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
             ):
                 gauge.labels(hostname=self.hostname, mountpoint=partition.mountpoint).set(value)
 
-    def update_device(self, device: Device) -> None:
+    def update_device(self, device: Device) -> None:  # pylint: disable=too-many-locals
         """Update metrics for a single device."""
         index = (
             str(device.index) if isinstance(device.index, int) else ':'.join(map(str, device.index))
@@ -567,11 +571,16 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         link=link,
                     ).set(throughput / 1024.0)
 
+        alive_pids = self.alive_pids[device]
+        previous_alive_pids = alive_pids.copy()
+        alive_pids.clear()
+
         with GpuProcess.failsafe():
             for pid, process in device.processes().items():
                 with process.oneshot():
                     username = process.username()
                     running_time = process.running_time()
+                    alive_pids.add((pid, username))
                     for gauge, value in (
                         (
                             self.process_running_time,
@@ -606,3 +615,27 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                             pid=pid,
                             username=username,
                         ).set(value)
+
+        for pid, username in previous_alive_pids.difference(alive_pids):
+            for gauge in (
+                self.process_running_time,
+                self.process_cpu_percent,
+                self.process_rss_memory,
+                self.process_memory_percent,
+                self.process_gpu_memory,
+                self.process_gpu_sm_utilization,
+                self.process_gpu_memory_utilization,
+                self.process_gpu_encoder_utilization,
+                self.process_gpu_decoder_utilization,
+            ):
+                try:
+                    gauge.remove(
+                        self.hostname,
+                        index,
+                        name,
+                        uuid,
+                        pid,
+                        username,
+                    )
+                except KeyError:
+                    pass
