@@ -309,9 +309,9 @@ def main() -> int:
         return 1
 
     if args.gpu_util_thresh is not None:
-        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))  # type: ignore[assignment]
+        Device.GPU_UTILIZATION_THRESHOLDS = tuple(sorted(args.gpu_util_thresh))
     if args.mem_util_thresh is not None:
-        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))  # type: ignore[assignment]
+        Device.MEMORY_UTILIZATION_THRESHOLDS = tuple(sorted(args.mem_util_thresh))
 
     if args.only is not None:
         indices = set(args.only)

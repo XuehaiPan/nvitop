@@ -2991,7 +2991,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     try:
         physical_device_attrs = _get_all_physical_device_attrs()
     except libnvml.NVMLError:
-        return []  # type: ignore[return-value]
+        return []
     gpu_uuids = set(physical_device_attrs)
 
     try:
@@ -3072,7 +3072,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
 
     for identifier in map(strip_identifier, cuda_visible_devices.split(',')):
         if identifier in presented:
-            return []  # type: ignore[return-value] # duplicate identifiers found
+            return []  # duplicate identifiers found
 
         try:
             device = from_index_or_uuid(identifier)

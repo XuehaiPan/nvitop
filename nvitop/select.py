@@ -215,7 +215,7 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
 
     if max_count is not None:
         if max_count == 0:
-            return []  # type: ignore[return-value]
+            return []
         assert max_count >= min_count >= 0
 
     free_accounts = set(free_accounts or [])
