@@ -70,7 +70,7 @@ try:
     from termcolor import colored as _colored
 except ImportError:
 
-    def _colored(  # pylint: disable=unused-argument,too-many-arguments
+    def _colored(  # type: ignore[misc] # pylint: disable=unused-argument,too-many-arguments
         text: str,
         color: str | None = None,
         on_color: str | None = None,
@@ -119,7 +119,7 @@ def colored(
         >>> colored('Hello, World!', 'green')
     """
     if COLOR:
-        return _colored(text, color=color, on_color=on_color, attrs=attrs)
+        return _colored(text, color=color, on_color=on_color, attrs=attrs)  # type: ignore[arg-type]
     return text
 
 
