@@ -22,9 +22,9 @@ from __future__ import annotations
 
 import time
 
-from pytorch_lightning.callbacks import Callback  # pylint: disable=import-error
-from pytorch_lightning.utilities import rank_zero_only  # pylint: disable=import-error
-from pytorch_lightning.utilities.exceptions import (  # pylint: disable=import-error
+from lightning.pytorch.callbacks import Callback  # pylint: disable=import-error
+from lightning.pytorch.utilities import rank_zero_only  # pylint: disable=import-error
+from lightning.pytorch.utilities.exceptions import (  # pylint: disable=import-error
     MisconfigurationException,
 )
 
@@ -59,7 +59,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             If NVIDIA driver is not installed, not running on GPUs, or ``Trainer`` has no logger.
 
     Examples:
-        >>> from pytorch_lightning import Trainer
+        >>> from lightning.pytorch import Trainer
         >>> from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
         >>> gpu_stats = GpuStatsLogger()
         >>> trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
