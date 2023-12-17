@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add separate implementation for `GpuStatsLogger` callback for `lightning` by [@XuehaiPan](https://github.com/XuehaiPan) in [#114](https://github.com/XuehaiPan/nvitop/pull/114).
 - Remove metrics if process is gone in `nvitop-exporter` by [@XuehaiPan](https://github.com/XuehaiPan) in [#107](https://github.com/XuehaiPan/nvitop/pull/107).
 
 ### Changed
