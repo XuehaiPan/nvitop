@@ -21,7 +21,9 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
+import pytorch_lightning as pl  # pylint: disable=import-error
 from pytorch_lightning.callbacks import Callback  # pylint: disable=import-error
 from pytorch_lightning.utilities import rank_zero_only  # pylint: disable=import-error
 from pytorch_lightning.utilities.exceptions import (  # pylint: disable=import-error
@@ -107,7 +109,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         self._fan_speed = fan_speed
         self._temperature = temperature
 
-    def on_train_start(self, trainer, pl_module) -> None:
+    def on_train_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         if not trainer.logger:
             raise MisconfigurationException(
                 'Cannot use GpuStatsLogger callback with Trainer that has no logger.',
@@ -132,12 +134,17 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
                 f'Received: `gpus={device_ids}`',
             ) from ex
 
-    def on_train_epoch_start(self, trainer, pl_module) -> None:
+    def on_train_epoch_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         self._snap_intra_step_time = None
         self._snap_inter_step_time = None
 
     @rank_zero_only
-    def on_train_batch_start(self, trainer, **kwargs) -> None:  # pylint: disable=arguments-differ
+    def on_train_batch_start(  # pylint: disable=arguments-differ
+        self,
+        trainer: pl.Trainer,
+        pl_module: pl.LightningModule,
+        **kwargs: Any,
+    ) -> None:
         if self._intra_step_time:
             self._snap_intra_step_time = time.monotonic()
 
@@ -152,7 +159,12 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         trainer.logger.log_metrics(logs, step=trainer.global_step)
 
     @rank_zero_only
-    def on_train_batch_end(self, trainer, **kwargs) -> None:  # pylint: disable=arguments-differ
+    def on_train_batch_end(  # pylint: disable=arguments-differ
+        self,
+        trainer: pl.Trainer,
+        pl_module: pl.LightningModule,
+        **kwargs: Any,
+    ) -> None:
         if self._inter_step_time:
             self._snap_inter_step_time = time.monotonic()
 

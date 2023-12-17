@@ -153,3 +153,4 @@ ThroughputInfo
 pytorch
 api
 utils
+GpuStatsLogger

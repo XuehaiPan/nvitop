@@ -12,6 +12,14 @@ nvitop.callbacks.keras module
     :undoc-members:
     :show-inheritance:
 
+nvitop.callbacks.lightning module
+---------------------------------
+
+.. automodule:: nvitop.callbacks.lightning
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 nvitop.callbacks.pytorch\_lightning module
 ------------------------------------------
 

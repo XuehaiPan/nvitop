@@ -23,15 +23,14 @@ from __future__ import annotations
 import re
 import time
 
-from tensorflow.python.keras.callbacks import (  # pylint: disable=import-error,no-name-in-module
-    Callback,
-)
+# pylint: disable-next=import-error,no-name-in-module
+from tensorflow.python.keras.callbacks import Callback
 
 from nvitop.api import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
 
 
-# Ported version of .pytorch_lightning.GpuStatsLogger for Keras
+# Ported version of nvitop.callbacks.lightning.GpuStatsLogger for Keras
 class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     """Automatically log GPU stats during training stage. :class:`GpuStatsLogger` is a callback and
     in order to use it you need to assign a TensorBoard callback or a CSVLogger callback to the model.
