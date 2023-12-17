@@ -577,11 +577,11 @@ model.fit(.., callbacks=[gpu_stats, tb_callback])
 
 **NOTE:** Users should assign a `keras.callbacks.TensorBoard` callback or a `keras.callbacks.CSVLogger` callback to the model. And the `GpuStatsLogger` callback should be placed before the `keras.callbacks.TensorBoard` / `keras.callbacks.CSVLogger` callback.
 
-#### Callback for [PyTorch Lightning](https://pytorchlightning.ai)
+#### Callback for [PyTorch Lightning](https://lightning.ai)
 
 ```python
-from pytorch_lightning import Trainer
-from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
+from lightning.pytorch import Trainer
+from nvitop.callbacks.lightning import GpuStatsLogger
 gpu_stats = GpuStatsLogger()
 trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 ```
