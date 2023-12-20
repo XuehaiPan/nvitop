@@ -44,6 +44,8 @@ if [ -z "${BASH_VERSION:-}" ]; then
 	abort "Bash is required to interpret this script."
 fi
 
+export LANGUAGE="C:en"
+
 # shellcheck disable=1091
 if [[ "$(uname -s)" != "Linux" ]] || (source /etc/os-release && [[ "${NAME:-}" != "Ubuntu" ]]); then
 	abort "This script only supports Ubuntu Linux."
