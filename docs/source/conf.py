@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 # -- Project information -----------------------------------------------------
 
 project = 'nvitop: the one-stop solution for GPU process management.'
-copyright = '2021-2023, Xuehai Pan'
+copyright = '2021-2024, Xuehai Pan'
 author = 'Xuehai Pan'
 
 
