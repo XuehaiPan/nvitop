@@ -16,7 +16,7 @@ LARGE_INTEGER = 65536
 
 
 def cut_string(s, maxlen, padstr='...', align='left'):
-    assert align in ('left', 'right')
+    assert align in {'left', 'right'}
 
     if not isinstance(s, str):
         s = str(s)

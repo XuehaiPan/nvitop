@@ -21,9 +21,8 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import pytorch_lightning as pl  # pylint: disable=import-error
 from pytorch_lightning.callbacks import Callback  # pylint: disable=import-error
 from pytorch_lightning.utilities import rank_zero_only  # pylint: disable=import-error
 from pytorch_lightning.utilities.exceptions import (  # pylint: disable=import-error
@@ -32,6 +31,10 @@ from pytorch_lightning.utilities.exceptions import (  # pylint: disable=import-e
 
 from nvitop.api import libnvml
 from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
+
+
+if TYPE_CHECKING:
+    import pytorch_lightning as pl
 
 
 # Modified from pytorch_lightning.callbacks.GPUStatsMonitor

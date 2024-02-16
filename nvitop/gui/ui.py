@@ -190,14 +190,14 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         if self.win is None:
             return
 
-        while True:
-            try:
+        try:
+            while True:
                 self.redraw()
                 self.handle_input()
                 if time.monotonic() - self.last_input_time > 1.0:
                     time.sleep(0.2)
-            except BreakLoop:
-                break
+        except BreakLoop:
+            pass
 
     def print(self):
         self.main_screen.print()

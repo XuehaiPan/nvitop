@@ -7,6 +7,7 @@ import argparse
 import curses
 import os
 import sys
+import textwrap
 
 from nvitop.api import HostProcess, libnvml
 from nvitop.gui import UI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
@@ -240,31 +241,29 @@ def parse_arguments() -> argparse.Namespace:
             gpu_util_thresh = list(
                 map(int, os.getenv('NVITOP_GPU_UTILIZATION_THRESHOLDS', '').split(',')),
             )[:2]
-            if (
-                len(gpu_util_thresh) != 2
-                or min(gpu_util_thresh) <= 0
-                or max(gpu_util_thresh) >= 100
-            ):
-                raise ValueError
         except ValueError:
             pass
         else:
-            args.gpu_util_thresh = gpu_util_thresh
+            if (
+                len(gpu_util_thresh) == 2
+                and min(gpu_util_thresh) > 0
+                and max(gpu_util_thresh) < 100
+            ):
+                args.gpu_util_thresh = gpu_util_thresh
     if args.mem_util_thresh is None:
         try:
             mem_util_thresh = list(
                 map(int, os.getenv('NVITOP_MEMORY_UTILIZATION_THRESHOLDS', '').split(',')),
             )[:2]
-            if (
-                len(mem_util_thresh) != 2
-                or min(mem_util_thresh) <= 0
-                or max(mem_util_thresh) >= 100
-            ):
-                raise ValueError
         except ValueError:
             pass
         else:
-            args.mem_util_thresh = mem_util_thresh
+            if (
+                len(mem_util_thresh) == 2
+                and min(mem_util_thresh) > 0
+                and max(mem_util_thresh) < 100
+            ):
+                args.mem_util_thresh = mem_util_thresh
 
     return args
 
@@ -385,9 +384,11 @@ def main() -> int:
 
     if len(libnvml.UNKNOWN_FUNCTIONS) > 0:
         unknown_function_messages = [
-            'ERROR: Some FunctionNotFound errors occurred while calling:'
-            if len(libnvml.UNKNOWN_FUNCTIONS) > 1
-            else 'ERROR: A FunctionNotFound error occurred while calling:',
+            (
+                'ERROR: Some FunctionNotFound errors occurred while calling:'
+                if len(libnvml.UNKNOWN_FUNCTIONS) > 1
+                else 'ERROR: A FunctionNotFound error occurred while calling:'
+            ),
         ]
         unknown_function_messages.extend(
             f'    nvmlQuery({(func.__name__ if not isinstance(func, str) else func)!r}, *args, **kwargs)'
@@ -404,41 +405,30 @@ def main() -> int:
         )
 
     if libnvml._pynvml_installation_corrupted:  # pylint: disable=protected-access
-        message = '\n'.join(
-            (
-                'WARNING: The `nvidia-ml-py` package is corrupted. Please reinstall it using:',
-                '',
-                '    pip3 install --force-reinstall nvitop nvidia-ml-py',
-                '',
-                'or install `nvitop` in an isolated environment:',
-                '',
-                '    pip3 install --upgrade pipx',
-                '    pipx install nvitop',
-                '',
-            ),
+        message = textwrap.dedent(
+            """
+            WARNING: The `nvidia-ml-py` package is corrupted. Please reinstall it using:
+
+                pip3 install --force-reinstall nvitop nvidia-ml-py
+
+            or install `nvitop` in an isolated environment:
+
+                pip3 install --upgrade pipx
+                pipx run nvitop
+            """,
         )
-        messages.append(message)
+        messages.append(message.strip() + '\n')
 
     if len(messages) > 0:
         for message in messages:
-            if message.startswith('ERROR:'):
-                message = message.replace(
-                    'ERROR:',
-                    colored('ERROR:', color='red', attrs=('bold',)),
-                    1,
-                )
-            elif message.startswith('WARNING:'):
-                message = message.replace(
-                    'WARNING:',
-                    colored('WARNING:', color='yellow', attrs=('bold',)),
-                    1,
-                )
-            elif message.startswith('HINT:'):
-                message = message.replace(
-                    'HINT:',
-                    colored('HINT:', color='green', attrs=('bold',)),
-                    1,
-                )
+            for prefix, color in (('ERROR:', 'red'), ('WARNING:', 'yellow'), ('HINT:', 'green')):
+                if message.startswith(prefix):
+                    message = message.replace(
+                        prefix,
+                        colored(prefix, color=color, attrs=('bold',)),
+                        1,
+                    )
+                    break
             print(message, file=sys.stderr)
         return 1
     return 0

@@ -98,8 +98,7 @@ def select_devices(  # pylint: disable=too-many-arguments
     free_accounts: list[str] | None,
     sort: bool,
     **kwargs: Any,
-) -> list[int] | list[tuple[int, int]]:
-    ...
+) -> list[int] | list[tuple[int, int]]: ...
 
 
 @overload
@@ -118,8 +117,7 @@ def select_devices(  # pylint: disable=too-many-arguments
     free_accounts: list[str] | None,
     sort: bool,
     **kwargs: Any,
-) -> list[int] | list[tuple[int, int]]:
-    ...
+) -> list[int] | list[tuple[int, int]]: ...
 
 
 @overload
@@ -138,8 +136,7 @@ def select_devices(  # pylint: disable=too-many-arguments
     free_accounts: list[str] | None,
     sort: bool,
     **kwargs: Any,
-) -> list[Device]:
-    ...
+) -> list[Device]: ...
 
 
 def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument,too-many-arguments
@@ -209,7 +206,7 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
     Returns:
         A list of the device identifiers.
     """
-    assert format in ('index', 'uuid', 'device')
+    assert format in {'index', 'uuid', 'device'}
     assert tolerance >= 0
     tolerance = tolerance / 100.0
 

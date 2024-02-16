@@ -637,5 +637,5 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         pid,
                         username,
                     )
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass

@@ -115,7 +115,6 @@ import textwrap
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Hashable
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generator, Iterable, NamedTuple, overload
 
 from nvitop.api import libcuda, libcudart, libnvml
@@ -132,6 +131,8 @@ from nvitop.api.utils import (
 
 
 if TYPE_CHECKING:
+    from collections.abc import Hashable
+
     from typing_extensions import Literal  # Python 3.8+
     from typing_extensions import Self  # Python 3.11+
 
@@ -1568,7 +1569,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         if interval is not None:
             if not interval >= 0.0:
-                raise ValueError('`interval` must be a non-negative number, got {interval!r}.')
+                raise ValueError(f'`interval` must be a non-negative number, got {interval!r}.')
             if interval > 0.0:
                 self._nvlink_throughput_counters = query_nvlink_throughput_counters()
                 time.sleep(interval)
@@ -2125,7 +2126,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             for s in sorted(samples, key=lambda s: s.timeStamp):
                 try:
                     processes[s.pid].set_gpu_utilization(s.smUtil, s.memUtil, s.encUtil, s.decUtil)
-                except KeyError:
+                except KeyError:  # noqa: PERF203
                     pass
             if not found_na:
                 for pid in set(processes).difference(s.pid for s in samples):
@@ -2309,7 +2310,7 @@ class PhysicalDevice(Device):
                 for mig_index in range(max_mig_device_count):
                     try:
                         mig_device = MigDevice(index=(self.index, mig_index))
-                    except libnvml.NVMLError:
+                    except libnvml.NVMLError:  # noqa: PERF203
                         break
                     else:
                         mig_devices.append(mig_device)
@@ -2968,16 +2969,14 @@ def _get_global_physical_device() -> PhysicalDevice:
 def _parse_cuda_visible_devices(
     cuda_visible_devices: str | None,
     format: Literal['index'],  # pylint: disable=redefined-builtin
-) -> list[int] | list[tuple[int, int]]:
-    ...
+) -> list[int] | list[tuple[int, int]]: ...
 
 
 @overload
 def _parse_cuda_visible_devices(
     cuda_visible_devices: str | None,
     format: Literal['uuid'],  # pylint: disable=redefined-builtin
-) -> list[str]:
-    ...
+) -> list[str]: ...
 
 
 @functools.lru_cache()
@@ -2986,7 +2985,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
     format: Literal['index', 'uuid'] = 'index',  # pylint: disable=redefined-builtin
 ) -> list[int] | list[tuple[int, int]] | list[str]:
     """The underlining implementation for :meth:`parse_cuda_visible_devices`. The result will be cached."""
-    assert format in ('index', 'uuid')
+    assert format in {'index', 'uuid'}
 
     try:
         physical_device_attrs = _get_all_physical_device_attrs()
@@ -3062,9 +3061,9 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
         identifier = identifier.strip()
         if len(identifier) > 0 and (
             identifier[0].isdigit()
-            or (len(identifier) > 1 and identifier[0] in ('+', '-') and identifier[1].isdigit())
+            or (len(identifier) > 1 and identifier[0] in {'+', '-'} and identifier[1].isdigit())
         ):
-            offset = 1 if identifier[0] in ('+', '-') else 0
+            offset = 1 if identifier[0] in {'+', '-'} else 0
             while offset < len(identifier) and identifier[offset].isdigit():
                 offset += 1
             identifier = identifier[:offset]
@@ -3181,12 +3180,13 @@ def _cuda_visible_devices_parser(
 
         count = libcuda.cuDeviceGetCount()
         uuids = [libcuda.cuDeviceGetUuid(libcuda.cuDeviceGet(i)) for i in range(count)]
-        queue.put(uuids)
-        return
     except Exception as ex:  # noqa: BLE001 # pylint: disable=broad-except
         queue.put(ex)
         if verbose:
-            raise ex
+            raise
+    else:
+        queue.put(uuids)
+        return
     finally:
         # Ensure non-empty queue
         queue.put(libcuda.CUDAError_NotInitialized())  # pylint: disable=no-member

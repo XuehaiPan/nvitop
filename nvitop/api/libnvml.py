@@ -66,7 +66,7 @@ __all__ = [  # will be updated in below
 
 
 if not callable(getattr(_pynvml, 'nvmlInitWithFlags', None)):
-    raise ImportError(
+    raise ImportError(  # noqa: TRY004
         'Your installed package `nvidia-ml-py` is corrupted. Please reinstall package '
         '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
     )
@@ -444,7 +444,7 @@ def nvmlQuery(
                     and len(UNKNOWN_FUNCTIONS) < UNKNOWN_FUNCTIONS_CACHE_SIZE
                 ):
                     UNKNOWN_FUNCTIONS[identifier] = (func, e2)
-                    LOGGER.error(
+                    LOGGER.exception(
                         (
                             'ERROR: A FunctionNotFound error occurred while calling %s.\n'
                             'Please verify whether the `nvidia-ml-py` package is '

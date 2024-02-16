@@ -175,8 +175,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.need_redraw = True
             self._compact = value
             processes = self.snapshots
-            n_processes, n_devices = len(processes), len(
-                {p.device.physical_index for p in processes},
+            n_processes, n_devices = (
+                len(processes),
+                len({p.device.physical_index for p in processes}),
             )
             self.full_height = 1 + max(6, 5 + n_processes + n_devices - 1)
             self.compact_height = 1 + max(6, 5 + n_processes)
@@ -231,7 +232,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.height = height
             self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 39))
 
-        if old_host_offset not in (self.host_offset, LARGE_INTEGER):
+        if old_host_offset not in {self.host_offset, LARGE_INTEGER}:
             self.beep()
 
         if self.selection.is_set():
@@ -398,7 +399,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         column_width = len(column)
         reverse = xor(reverse, self.reverse)
         indicator = '▼' if reverse else '▲'
-        if self.order in ('cpu_percent', 'memory_percent', 'time'):
+        if self.order in {'cpu_percent', 'memory_percent', 'time'}:
             offset -= host_offset
             if self.order == 'time':
                 offset += len(self.host_headers[-2]) - 4

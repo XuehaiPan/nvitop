@@ -155,12 +155,11 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
                         yield keys  # it was no tuple, just an int
                 else:
                     bracket_content.append(char)
+            elif char == '<':
+                in_brackets = True
+                bracket_content = []
             else:
-                if char == '<':
-                    in_brackets = True
-                    bracket_content = []
-                else:
-                    yield ord(char)
+                yield ord(char)
         if in_brackets:
             yield ord('<')
             for char in bracket_content:
@@ -257,13 +256,10 @@ class KeyMaps(dict):
             return
         last_key = keys[-1]
         for key in keys[:-1]:
-            try:
-                if isinstance(pointer[key], dict):
-                    pointer = pointer[key]
-                else:
-                    pointer[key] = pointer = {}
-            except KeyError:
-                pointer[key] = pointer = {}
+            if key in pointer and isinstance(pointer[key], dict):
+                pointer = pointer[key]
+            else:
+                pointer = pointer[key] = {}
         pointer[last_key] = leaf
 
     def copy(self, context, source, target):
@@ -273,7 +269,7 @@ class KeyMaps(dict):
         for key in clean_source:
             try:
                 pointer = pointer[key]
-            except KeyError as ex:
+            except KeyError as ex:  # noqa: PERF203
                 raise KeyError(
                     f'Tried to copy the keybinding `{source}`, but it was not found.',
                 ) from ex

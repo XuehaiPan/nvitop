@@ -132,7 +132,7 @@ def auto_garbage_clean(
                     pass
                 # See also `GpuProcess.failsafe`
                 if fallback is _RAISE or not getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False):
-                    raise ex
+                    raise
                 if isinstance(fallback, tuple):
                     if isinstance(ex, host.AccessDenied) and fallback == ('No Such Process',):
                         return ['No Permissions']
@@ -232,10 +232,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
     def _gone(self, value: bool) -> None:
         if value:
             with self.INSTANCE_LOCK:
-                try:
-                    del self.INSTANCES[self.pid]
-                except KeyError:
-                    pass
+                self.INSTANCES.pop(self.pid, None)
         self._super_gone = value
 
     def __repr__(self) -> str:
@@ -434,7 +431,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
                 for attr in ('command', 'running_time', 'running_time_human'):
                     try:
                         attributes[attr] = getattr(self, attr)()
-                    except (host.AccessDenied, host.ZombieProcess):
+                    except (host.AccessDenied, host.ZombieProcess):  # noqa: PERF203
                         attributes[attr] = ad_value
 
         return Snapshot(real=self, **attributes)

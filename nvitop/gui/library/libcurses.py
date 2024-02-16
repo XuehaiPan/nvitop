@@ -119,7 +119,7 @@ def setlocale_utf8():
     for code in ('C.UTF-8', 'en_US.UTF-8', '', 'C'):
         try:
             code = locale.setlocale(locale.LC_ALL, code)
-        except locale.Error:
+        except locale.Error:  # noqa: PERF203
             continue
         else:
             if 'utf8' in code.lower() or 'utf-8' in code.lower():
@@ -260,7 +260,7 @@ class CursesShortcuts:
             LIGHT_THEME
             and attr & curses.A_REVERSE != 0
             and bg == -1
-            and fg not in (DEFAULT_FOREGROUND, -1)
+            and fg not in {DEFAULT_FOREGROUND, -1}
         ):
             bg = DEFAULT_FOREGROUND
 

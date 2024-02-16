@@ -57,7 +57,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         self.no = no  # pylint: disable=invalid-name
         self.timestamp = time.monotonic()
 
-        self.name_len = max(8, max(len(option.name) for option in options))
+        self.name_len = max(8, *(len(option.name) for option in options))
         for option in self.options:
             option.offset = (self.name_len - len(option.name)) // 2
             option.name = option.name.center(self.name_len)
@@ -259,7 +259,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
 
 
 def send_signal(signal, panel):
-    assert signal in ('terminate', 'kill', 'interrupt')
+    assert signal in {'terminate', 'kill', 'interrupt'}
     default = {'terminate': 0, 'kill': 1, 'interrupt': 2}.get(signal)
     processes = []
     for process in panel.selection.processes():

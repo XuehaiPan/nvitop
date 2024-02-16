@@ -69,7 +69,6 @@ Documentation = "https://nvitop.readthedocs.io"
 include = ["nvitop", "nvitop.*"]
 
 [tool.black]
-safe = true
 line-length = 100
 skip-string-normalization = true
 target-version = ["py37"]
@@ -86,7 +85,7 @@ multi_line_output = 3
 
 [tool.mypy]
 # Sync with requires-python
-python_version = 3.8  # appease mypy for syntax errors in numpy stubs
+python_version = "3.8"  # appease mypy for syntax errors in numpy stubs
 mypy_path = [".", "nvitop-exporter"]
 exclude = ["nvitop-exporter/setup.py"]
 pretty = true
@@ -122,8 +121,10 @@ ignore-words = "docs/source/spelling_wordlist.txt"
 # Sync with requires-python
 target-version = "py37"
 line-length = 100
-show-source = true
+output-format = "full"
 src = ["nvitop", "nvitop-exporter/nvitop_exporter"]
+
+[tool.ruff.lint]
 select = [
     "E", "W",  # pycodestyle
     "F",       # pyflakes
@@ -136,7 +137,10 @@ select = [
     "COM",     # flake8-commas
     "C4",      # flake8-comprehensions
     "EXE",     # flake8-executable
+    "FA",      # flake8-future-annotations
+    "LOG",     # flake8-logging
     "ISC",     # flake8-implicit-str-concat
+    "INP",     # flake8-no-pep420
     "PIE",     # flake8-pie
     "PYI",     # flake8-pyi
     "Q",       # flake8-quotes
@@ -144,6 +148,10 @@ select = [
     "RET",     # flake8-return
     "SIM",     # flake8-simplify
     "TID",     # flake8-tidy-imports
+    "TCH",     # flake8-type-checking
+    "PERF",    # perflint
+    "FURB",    # refurb
+    "TRY",     # tryceratops
     "RUF",     # ruff
 ]
 ignore = [
@@ -164,9 +172,12 @@ ignore = [
     # SIM105: use `contextlib.suppress(...)` instead of try-except-pass
     # reduce unnecessary function call
     "SIM105",
+    # TRY003: avoid specifying long messages outside the exception class
+    # long messages are necessary for clarity
+    "TRY003",
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = [
     "F401",    # unused-import
 ]
@@ -183,14 +194,17 @@ ignore = [
     "ANN",     # flake8-annotations
     "RUF012",  # mutable-class-default
 ]
+"docs/source/conf.py" = [
+    "INP001",  # flake8-no-pep420
+]
 
-[tool.ruff.flake8-annotations]
+[tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
 
-[tool.ruff.flake8-quotes]
+[tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
 multiline-quotes = "double"
 inline-quotes = "single"
 
-[tool.ruff.flake8-tidy-imports]
+[tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"

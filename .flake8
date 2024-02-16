@@ -5,10 +5,11 @@ select = B,C,E,F,W,Y,SIM
 ignore =
     # E203: whitespace before ':'
     # E241: whitespace after ':'
+    # E704: multiple statements on one line (def)
     # W503: line break before binary operator
     # W504: line break after binary operator
     # format by black
-    E203,E241,W503,W504,
+    E203,E241,E704,W503,W504,
     # E501: line too long
     # W505: doc line too long
     # too long docstring due to long example blocks

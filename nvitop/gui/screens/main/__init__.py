@@ -25,7 +25,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
 
         self.width = root.width
 
-        assert mode in ('auto', 'full', 'compact')
+        assert mode in {'auto', 'full', 'compact'}
         compact = mode == 'compact'
         self.mode = mode
         self._compact = compact

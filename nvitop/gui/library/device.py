@@ -87,7 +87,7 @@ class Device(DeviceBase):
             for mig_index in range(self.max_mig_device_count()):
                 try:
                     mig_device = MigDevice(index=(self.index, mig_index))
-                except libnvml.NVMLError:
+                except libnvml.NVMLError:  # noqa: PERF203
                     break
                 else:
                     mig_devices.append(mig_device)

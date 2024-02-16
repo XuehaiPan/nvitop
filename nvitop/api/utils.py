@@ -632,9 +632,9 @@ def utilization2string(utilization: int | float | NaType) -> str:  # noqa: PYI04
 
 def boolify(string: str, default: Any = None) -> bool:
     """Convert the given value, usually a string, to boolean."""
-    if string.lower() in ('true', 'yes', 'on', 'enabled', '1'):
+    if string.lower() in {'true', 'yes', 'on', 'enabled', '1'}:
         return True
-    if string.lower() in ('false', 'no', 'off', 'disabled', '0'):
+    if string.lower() in {'false', 'no', 'off', 'disabled', '0'}:
         return False
     if default is not None:
         return bool(default)
@@ -708,7 +708,7 @@ class Snapshot:
         """Support ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
 
         def gen() -> Generator[str, None, None]:
-            yield from (name for name in self.__dict__ if name not in ('real', 'timestamp'))
+            yield from (name for name in self.__dict__ if name not in {'real', 'timestamp'})
 
         return gen()
 

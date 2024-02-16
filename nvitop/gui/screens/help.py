@@ -65,9 +65,9 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
             14: ('cyan', 'red'),
             15: (None, 'red'),
             16: ('cyan', 'red'),
-            **{dy: ('cyan', 'green') for dy in range(17, 20)},
-            **{dy: ('blue', 'blue') for dy in range(21, 23)},
-            **{dy: ('blue', 'blue') for dy in range(24, 28)},
+            **dict.fromkeys(range(17, 20), ('cyan', 'green')),
+            **dict.fromkeys(range(21, 23), ('blue', 'blue')),
+            **dict.fromkeys(range(24, 28), ('blue', 'blue')),
             28: ('magenta', 'magenta'),
         }
 
