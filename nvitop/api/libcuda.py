@@ -259,10 +259,9 @@ class CUDAError(Exception):
                 )
             if self.value not in CUDAError._errcode_to_name:
                 CUDAError._errcode_to_name[self.value] = cuGetErrorName(self.value)
-            return '{} Code: {} ({}).'.format(
-                CUDAError._errcode_to_string[self.value],
-                CUDAError._errcode_to_name[self.value],
-                self.value,
+            return (
+                f'{CUDAError._errcode_to_string[self.value]} '
+                f'Code: {CUDAError._errcode_to_name[self.value]} ({self.value}).'
             )
         except CUDAError:
             return f'CUDA Error with code {self.value}.'
@@ -316,10 +315,9 @@ def _extract_cuda_errors_as_classes() -> None:
         new_error_class = type(class_name, (CUDAError,), {'__new__': gen_new(err_val)})
         new_error_class.__module__ = __name__
         if err_val in CUDAError._errcode_to_string:
-            new_error_class.__doc__ = 'CUDA Error: {} Code: :data:`{}` ({}).'.format(
-                CUDAError._errcode_to_string[err_val],
-                err_name,
-                err_val,
+            new_error_class.__doc__ = (
+                f'CUDA Error: {CUDAError._errcode_to_string[err_val]} '
+                f'Code: :data:`{err_name}` ({err_val}).'
             )
         else:
             new_error_class.__doc__ = f'CUDA Error with code :data:`{err_name}` ({err_val})'

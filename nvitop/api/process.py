@@ -535,7 +535,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     def __repr__(self) -> str:
         """Return a string representation of the GPU process."""
-        return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(
+        return '{}(pid={}, gpu_memory={}, type={}, device={}, host={})'.format(  # noqa: UP032
             self.__class__.__name__,
             self.pid,
             self.gpu_memory_human(),

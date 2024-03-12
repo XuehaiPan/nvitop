@@ -148,7 +148,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         def format_host_memory(value):
             if value is NA:
                 return f'HOST-MEM: {value}'
-            return 'HOST-MEM: {} ({:.1f}%)'.format(
+            return 'HOST-MEM: {} ({:.1f}%)'.format(  # noqa: UP032
                 bytes2human(value),
                 round(100.0 * value / total_host_memory, 1),
             )
@@ -156,7 +156,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         def format_max_host_memory(value):
             if value is NA:
                 return f'MAX HOST-MEM: {value}'
-            return 'MAX HOST-MEM: {} ({:.1f}%) / {}'.format(
+            return 'MAX HOST-MEM: {} ({:.1f}%) / {}'.format(  # noqa: UP032
                 bytes2human(value),
                 round(100.0 * value / total_host_memory, 1),
                 total_host_memory_human,
@@ -164,7 +164,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         def format_gpu_memory(value):
             if value is not NA and total_gpu_memory is not NA:
-                return 'GPU-MEM: {} ({:.1f}%)'.format(
+                return 'GPU-MEM: {} ({:.1f}%)'.format(  # noqa: UP032
                     bytes2human(value),
                     round(100.0 * value / total_gpu_memory, 1),
                 )
@@ -172,7 +172,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         def format_max_gpu_memory(value):
             if value is not NA and total_gpu_memory is not NA:
-                return 'MAX GPU-MEM: {} ({:.1f}%) / {}'.format(
+                return 'MAX GPU-MEM: {} ({:.1f}%) / {}'.format(  # noqa: UP032
                     bytes2human(value),
                     round(100.0 * value / total_gpu_memory, 1),
                     total_gpu_memory_human,

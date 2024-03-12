@@ -710,7 +710,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def __repr__(self) -> str:
         """Return a string representation of the device."""
-        return '{}(index={}, name="{}", total_memory={})'.format(
+        return '{}(index={}, name={!r}, total_memory={})'.format(  # noqa: UP032
             self.__class__.__name__,
             self.index,
             self.name(),
@@ -2741,7 +2741,7 @@ class CudaDevice(Device):
 
     def __repr__(self) -> str:
         """Return a string representation of the CUDA device."""
-        return '{}(cuda_index={}, nvml_index={}, name="{}", total_memory={})'.format(
+        return '{}(cuda_index={}, nvml_index={}, name="{}", total_memory={})'.format(  # noqa: UP032
             self.__class__.__name__,
             self.cuda_index,
             self.index,
