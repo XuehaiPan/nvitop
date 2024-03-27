@@ -154,3 +154,6 @@ pytorch
 api
 utils
 GpuStatsLogger
+nvml
+rocm
+ROCm
