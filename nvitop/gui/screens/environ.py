@@ -132,7 +132,7 @@ class EnvironScreen(Displayable):  # pylint: disable=too-many-instance-attribute
             )
             direction -= self.scroll_offset - old_scroll_offset
             self._y_offset += self.scroll_offset - old_scroll_offset
-        self.y_offset = self.y_offset + direction
+        self.y_offset += direction
 
     def update_size(self, termsize=None):
         n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
