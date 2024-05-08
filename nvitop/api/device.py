@@ -1605,6 +1605,39 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             for tx, rx in zip(throughputs[:nvlink_link_count], throughputs[nvlink_link_count:])
         ]
 
+    def nvlink_total_throughput(
+        self,
+        interval: float | None = None,
+    ) -> ThroughputInfo:  # in KiB/s
+        """The total NVLink throughput for all NVLinks in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: ThroughputInfo(tx, rx)
+            A named tuple with the total NVLink throughput for all NVLinks in KiB/s, the item could
+            be :const:`nvitop.NA` when not applicable.
+        """
+        tx_throughputs = []
+        rx_throughputs = []
+        for tx, rx in self.nvlink_throughput(interval=interval):
+            if libnvml.nvmlCheckReturn(tx, int):
+                tx_throughputs.append(tx)
+            if libnvml.nvmlCheckReturn(rx, int):
+                rx_throughputs.append(rx)
+        return ThroughputInfo(
+            tx=sum(tx_throughputs) if tx_throughputs else NA,
+            rx=sum(rx_throughputs) if rx_throughputs else NA,
+        )
+
     def nvlink_mean_throughput(
         self,
         interval: float | None = None,
@@ -1684,6 +1717,29 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.nvlink_mean_throughput(interval=interval).tx
 
+    def nvlink_total_tx_throughput(
+        self,
+        interval: float | None = None,
+    ) -> int | NaType:  # in KiB/s
+        """The total NVLink transmit data throughput for all NVLinks in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[int, NaType]
+            The total NVLink transmit data throughput for all NVLinks in KiB/s, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return self.nvlink_total_throughput(interval=interval).tx
+
     def nvlink_rx_throughput(
         self,
         interval: float | None = None,
@@ -1729,6 +1785,29 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             :const:`nvitop.NA` when not applicable.
         """
         return self.nvlink_mean_throughput(interval=interval).rx
+
+    def nvlink_total_rx_throughput(
+        self,
+        interval: float | None = None,
+    ) -> int | NaType:  # in KiB/s
+        """The total NVLink receive data throughput for all NVLinks in KiB/s.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[int, NaType]
+            The total NVLink receive data throughput for all NVLinks in KiB/s, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        return self.nvlink_total_throughput(interval=interval).rx
 
     def nvlink_tx_throughput_human(
         self,
@@ -1782,6 +1861,32 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return f'{bytes2human(mean_tx * 1024)}/s'
         return NA
 
+    def nvlink_total_tx_throughput_human(
+        self,
+        interval: float | None = None,
+    ) -> str | NaType:  # in human readable
+        """The total NVLink transmit data throughput for all NVLinks in human readable format.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[str, NaType]
+            The total NVLink transmit data throughput for all NVLinks in human readable format, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        total_tx = self.nvlink_total_tx_throughput(interval=interval)
+        if libnvml.nvmlCheckReturn(total_tx, int):
+            return f'{bytes2human(total_tx * 1024)}/s'
+        return NA
+
     def nvlink_rx_throughput_human(
         self,
         interval: float | None = None,
@@ -1832,6 +1937,32 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         mean_rx = self.nvlink_mean_rx_throughput(interval=interval)
         if libnvml.nvmlCheckReturn(mean_rx, int):
             return f'{bytes2human(mean_rx * 1024)}/s'
+        return NA
+
+    def nvlink_total_rx_throughput_human(
+        self,
+        interval: float | None = None,
+    ) -> str | NaType:  # in human readable
+        """The total NVLink receive data throughput for all NVLinks in human readable format.
+
+        This function is querying data counters between methods calls and thus is the NVLink
+        throughput over that interval. For the first call, the function is blocking for 20ms to get
+        the first data counters.
+
+        Args:
+            interval (Optional[float]):
+                The interval in seconds between two calls to get the NVLink throughput. If
+                ``interval`` is a positive number, compares throughput counters before and after the
+                interval (blocking). If ``interval`` is :const`0.0` or :data:`None`, compares
+                throughput counters since the last call, returning immediately (non-blocking).
+
+        Returns: Union[str, NaType]
+            The total NVLink receive data throughput for all NVLinks in human readable format, or
+            :const:`nvitop.NA` when not applicable.
+        """
+        total_rx = self.nvlink_total_rx_throughput(interval=interval)
+        if libnvml.nvmlCheckReturn(total_rx, int):
+            return f'{bytes2human(total_rx * 1024)}/s'
         return NA
 
     def display_active(self) -> str | NaType:

@@ -361,6 +361,20 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
             labelnames=['hostname', 'index', 'devicename', 'uuid'],
             registry=self.registry,
         )
+        self.gpu_nvlink_total_tx_throughput = Gauge(
+            name='gpu_nvlink_total_tx_throughput',
+            documentation='GPU total NVLink transmit throughput (MiB/s).',
+            unit='MiBps',
+            labelnames=['hostname', 'index', 'devicename', 'uuid'],
+            registry=self.registry,
+        )
+        self.gpu_nvlink_total_rx_throughput = Gauge(
+            name='gpu_nvlink_total_rx_throughput',
+            documentation='GPU total NVLink receive throughput (MiB/s).',
+            unit='MiBps',
+            labelnames=['hostname', 'index', 'devicename', 'uuid'],
+            registry=self.registry,
+        )
         self.gpu_nvlink_mean_tx_throughput = Gauge(
             name='gpu_nvlink_mean_tx_throughput',
             documentation='GPU mean NVLink transmit throughput (MiB/s).',
@@ -548,6 +562,8 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                 (self.gpu_fan_speed, float(device.fan_speed())),
                 (self.gpu_pcie_tx_throughput, device.pcie_tx_throughput() / 1024.0),
                 (self.gpu_pcie_rx_throughput, device.pcie_rx_throughput() / 1024.0),
+                (self.gpu_nvlink_total_tx_throughput, device.nvlink_total_tx_throughput() / 1024.0),
+                (self.gpu_nvlink_total_rx_throughput, device.nvlink_total_rx_throughput() / 1024.0),
                 (self.gpu_nvlink_mean_tx_throughput, device.nvlink_mean_tx_throughput() / 1024.0),
                 (self.gpu_nvlink_mean_rx_throughput, device.nvlink_mean_rx_throughput() / 1024.0),
             ):
