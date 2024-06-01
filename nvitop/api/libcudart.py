@@ -458,6 +458,8 @@ def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
                     lib_filenames = ['libcudart.so']
                 elif system == 'Windows':
                     lib_filenames = [f'cudart{bits}.dll', 'cudart.dll']
+                else:
+                    lib_filenames = []
 
                 # Open library
                 for lib_filename in lib_filenames:
