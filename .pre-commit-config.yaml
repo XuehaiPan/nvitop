@@ -78,7 +78,8 @@ repos:
           (?x)(
             ^nvitop/gui/|
             ^nvitop/callbacks/|
-            ^docs/
+            ^docs/|
+            ^nvitop/api/rocm/
           )
   - repo: local
     hooks:
