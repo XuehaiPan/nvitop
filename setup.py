@@ -11,46 +11,77 @@
 
 """Setup script for ``nvitop``."""
 
-import pathlib
+from __future__ import annotations
+
+import contextlib
 import re
 import sys
+from importlib.util import module_from_spec, spec_from_file_location
+from pathlib import Path
+from typing import TYPE_CHECKING, Generator
 
 from setuptools import setup
 
 
-HERE = pathlib.Path(__file__).absolute().parent
-VERSION_FILE = HERE / 'nvitop' / 'version.py'
-
-sys.path.insert(0, str(VERSION_FILE.parent))
-# pylint: disable-next=import-error,wrong-import-position
-import version  # noqa
+if TYPE_CHECKING:
+    from types import ModuleType
 
 
-VERSION_CONTENT = None
+HERE = Path(__file__).absolute().parent
 
-try:
-    if not version.__release__:
+
+@contextlib.contextmanager
+def vcs_version(name: str, path: Path | str) -> Generator[ModuleType, None, None]:
+    """Context manager to update version string in a version module."""
+    path = Path(path).absolute()
+    assert path.is_file()
+    module_spec = spec_from_file_location(name=name, location=path)
+    assert module_spec is not None
+    assert module_spec.loader is not None
+    module = sys.modules.get(name)
+    if module is None:
+        module = module_from_spec(module_spec)
+        sys.modules[name] = module
+    module_spec.loader.exec_module(module)
+
+    if module.__release__:
+        yield module
+        return
+
+    content = None
+    try:
         try:
-            VERSION_CONTENT = VERSION_FILE.read_text(encoding='utf-8')
-            VERSION_FILE.write_text(
+            content = path.read_text(encoding='utf-8')
+            path.write_text(
                 data=re.sub(
                     r"""__version__\s*=\s*('[^']+'|"[^"]+")""",
-                    f'__version__ = {version.__version__!r}',
-                    string=VERSION_CONTENT,
+                    f'__version__ = {module.__version__!r}',
+                    string=content,
                 ),
                 encoding='utf-8',
             )
         except OSError:
-            VERSION_CONTENT = None
+            content = None
 
+        yield module
+    finally:
+        if content is not None:
+            with path.open(mode='wt', encoding='utf-8', newline='') as file:
+                file.write(content)
+
+
+with vcs_version(
+    name='nvitop.version',
+    path=HERE / 'nvitop' / 'version.py',
+) as version:
     setup(
         name='nvitop',
         version=version.__version__,
         extras_require={
             'lint': [
-                'black >= 22.6.0',
+                'black >= 24.0.0, < 25.0.0a0',
                 'isort',
-                'pylint[spelling] >= 2.16.0',
+                'pylint[spelling]',
                 'mypy',
                 'typing-extensions',
                 'pre-commit',
@@ -63,7 +94,3 @@ try:
             },
         },
     )
-finally:
-    if VERSION_CONTENT is not None:
-        with VERSION_FILE.open(mode='wt', encoding='utf-8', newline='') as file:
-            file.write(VERSION_CONTENT)

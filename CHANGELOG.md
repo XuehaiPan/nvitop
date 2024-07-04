@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--
+- Refactor setup scripts by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Fixed
 

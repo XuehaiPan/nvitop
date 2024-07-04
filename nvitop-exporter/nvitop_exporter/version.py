@@ -28,8 +28,8 @@ if not __release__:
 
     try:
         prefix, sep, suffix = (
-            subprocess.check_output(
-                ['git', 'describe', '--abbrev=7'],  # noqa: S603,S607
+            subprocess.check_output(  # noqa: S603
+                ['git', 'describe', '--abbrev=7'],  # noqa: S607
                 cwd=os.path.dirname(os.path.abspath(__file__)),
                 stderr=subprocess.DEVNULL,
                 text=True,
@@ -43,7 +43,7 @@ if not __release__:
         if sep:
             version_prefix, dot, version_tail = prefix.rpartition('.')
             prefix = f'{version_prefix}{dot}{int(version_tail) + 1}'
-            __version__ = sep.join((prefix, suffix))
+            __version__ = f'{prefix}{sep}{suffix}'
             del version_prefix, dot, version_tail
         else:
             __version__ = prefix
