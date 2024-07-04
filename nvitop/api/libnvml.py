@@ -461,7 +461,7 @@ def nvmlQuery(
         raise
 
     if isinstance(retval, bytes):
-        retval = retval.decode('utf-8')
+        retval = retval.decode('utf-8', errors='replace')
     return retval
 
 

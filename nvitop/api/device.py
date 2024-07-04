@@ -3146,7 +3146,7 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
                     ),
                 ],
             )
-            .decode('utf-8')
+            .decode('utf-8', errors='replace')
             .strip()
             .split(',')
         )

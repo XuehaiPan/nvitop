@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Gracefully ignore UTF-8 decoding errors by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Removed
 
