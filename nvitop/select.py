@@ -57,7 +57,6 @@ Python API:
 from __future__ import annotations
 
 import argparse
-import getpass
 import math
 import os
 import sys
@@ -75,6 +74,7 @@ if TYPE_CHECKING:
 __all__ = ['select_devices']
 
 try:
+    import getpass
     USERNAME = getpass.getuser()
 except ModuleNotFoundError:
     USERNAME = os.getlogin()
