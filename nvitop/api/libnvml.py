@@ -430,8 +430,11 @@ def nvmlQuery(
             except AttributeError as e1:
                 raise NVMLError_FunctionNotFound from e1
 
-        retval = func(*args, **kwargs)  # type: ignore[operator]
-    except NVMLError_FunctionNotFound as e2:
+        try:
+            retval = func(*args, **kwargs)  # type: ignore[operator]
+        except UnicodeDecodeError as e2:
+            raise NVMLError_Unknown from e2
+    except NVMLError_FunctionNotFound as e3:
         if not ignore_function_not_found:
             identifier = (
                 func
@@ -443,7 +446,7 @@ def nvmlQuery(
                     identifier not in UNKNOWN_FUNCTIONS
                     and len(UNKNOWN_FUNCTIONS) < UNKNOWN_FUNCTIONS_CACHE_SIZE
                 ):
-                    UNKNOWN_FUNCTIONS[identifier] = (func, e2)
+                    UNKNOWN_FUNCTIONS[identifier] = (func, e3)
                     LOGGER.exception(
                         (
                             'ERROR: A FunctionNotFound error occurred while calling %s.\n'
