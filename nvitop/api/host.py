@@ -23,7 +23,6 @@ utilization (CPU, memory, disks, network, sensors) in Python.
 from __future__ import annotations
 
 import os as _os
-import time as _time
 from typing import Callable as _Callable
 
 import psutil as _psutil
@@ -31,6 +30,8 @@ from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wild
 
 
 __all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [
+    'getuser',
+    'hostname',
     'load_average',
     'uptime',
     'memory_percent',
@@ -60,6 +61,23 @@ LINUX = _psutil.LINUX
 MACOS = _psutil.MACOS
 
 
+def getuser() -> str:
+    """Get the current username from the environment or password database."""
+    import getpass  # pylint: disable=import-outside-toplevel
+
+    try:
+        return getpass.getuser()
+    except (ModuleNotFoundError, OSError):
+        return _os.getlogin()
+
+
+def hostname() -> str:
+    """Get the hostname of the machine."""
+    import platform  # pylint: disable=import-outside-toplevel
+
+    return platform.node()
+
+
 if hasattr(_psutil, 'getloadavg'):
 
     def load_average() -> tuple[float, float, float]:
@@ -75,6 +93,8 @@ else:
 
 def uptime() -> float:
     """Get the system uptime."""
+    import time as _time  # pylint: disable=import-outside-toplevel
+
     return _time.time() - _psutil.boot_time()
 
 

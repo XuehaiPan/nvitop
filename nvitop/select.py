@@ -57,14 +57,14 @@ Python API:
 from __future__ import annotations
 
 import argparse
-import getpass
+import contextlib
 import math
 import os
 import sys
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, overload
 
-from nvitop.api import Device, GpuProcess, Snapshot, colored, human2bytes, libnvml
+from nvitop.api import Device, GpuProcess, Snapshot, colored, host, human2bytes, libnvml
 from nvitop.version import __version__
 
 
@@ -74,10 +74,10 @@ if TYPE_CHECKING:
 
 __all__ = ['select_devices']
 
-try:
-    USERNAME = getpass.getuser()
-except ModuleNotFoundError:
-    USERNAME = os.getlogin()
+
+USERNAME = 'N/A'
+with contextlib.suppress(ImportError, OSError):
+    USERNAME = host.getuser()
 
 TTY = sys.stdout.isatty()
 

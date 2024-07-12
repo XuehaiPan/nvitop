@@ -3,10 +3,9 @@
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
-import getpass
+import contextlib
 import math
 import os
-import platform
 
 from nvitop.api import NA, colored, host, set_color  # noqa: F401 # pylint: disable=unused-import
 from nvitop.gui.library.widestring import WideString
@@ -56,25 +55,23 @@ def make_bar(prefix, percent, width, *, extra_text=''):
     return f'{bar} {text}'.ljust(width)
 
 
-try:
-    USERNAME = getpass.getuser()
-except ModuleNotFoundError:
-    USERNAME = os.getlogin()
+USERNAME = 'N/A'
+with contextlib.suppress(ImportError, OSError):
+    USERNAME = host.getuser()
 
-if host.WINDOWS:
-    import ctypes
+SUPERUSER = False
+with contextlib.suppress(AttributeError, OSError):
+    if host.WINDOWS:
+        import ctypes
 
-    SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
-else:
-    try:
-        SUPERUSER = os.geteuid() == 0
-    except AttributeError:
+        SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
+    else:
         try:
-            SUPERUSER = os.getuid() == 0
+            SUPERUSER = os.geteuid() == 0
         except AttributeError:
-            SUPERUSER = False
+            SUPERUSER = os.getuid() == 0
 
-HOSTNAME = platform.node()
+HOSTNAME = host.hostname()
 if host.WSL:
     HOSTNAME = f'{HOSTNAME} (WSL)'
 
