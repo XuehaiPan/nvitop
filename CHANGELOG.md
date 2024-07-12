@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Handle exceptions for function `getpass.getuser()` by [@XuehaiPan](https://github.com/XuehaiPan) in [#130](https://github.com/XuehaiPan/nvitop/pull/130). Issued by [@landgraf](https://github.com/landgraf).
 
 ### Changed
 
