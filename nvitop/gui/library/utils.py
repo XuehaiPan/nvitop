@@ -11,6 +11,29 @@ from nvitop.api import NA, colored, host, set_color  # noqa: F401 # pylint: disa
 from nvitop.gui.library.widestring import WideString
 
 
+USERNAME = 'N/A'
+with contextlib.suppress(ImportError, OSError):
+    USERNAME = host.getuser()
+
+SUPERUSER = False
+with contextlib.suppress(AttributeError, OSError):
+    if host.WINDOWS:
+        import ctypes
+
+        SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
+    else:
+        try:
+            SUPERUSER = os.geteuid() == 0
+        except AttributeError:
+            SUPERUSER = os.getuid() == 0
+
+HOSTNAME = host.hostname()
+if host.WSL:
+    HOSTNAME = f'{HOSTNAME} (WSL)'
+
+USERCONTEXT = f'{USERNAME}@{HOSTNAME}'
+
+
 LARGE_INTEGER = 65536
 
 
@@ -53,26 +76,3 @@ def make_bar(prefix, percent, width, *, extra_text=''):
     if extra_text and len(f'{bar} {text} {extra_text}') <= width:
         return f'{bar} {text}'.ljust(width - len(extra_text) - 1) + f' {extra_text}'
     return f'{bar} {text}'.ljust(width)
-
-
-USERNAME = 'N/A'
-with contextlib.suppress(ImportError, OSError):
-    USERNAME = host.getuser()
-
-SUPERUSER = False
-with contextlib.suppress(AttributeError, OSError):
-    if host.WINDOWS:
-        import ctypes
-
-        SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
-    else:
-        try:
-            SUPERUSER = os.geteuid() == 0
-        except AttributeError:
-            SUPERUSER = os.getuid() == 0
-
-HOSTNAME = host.hostname()
-if host.WSL:
-    HOSTNAME = f'{HOSTNAME} (WSL)'
-
-USERCONTEXT = f'{USERNAME}@{HOSTNAME}'

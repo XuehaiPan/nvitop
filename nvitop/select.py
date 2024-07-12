@@ -75,13 +75,6 @@ if TYPE_CHECKING:
 __all__ = ['select_devices']
 
 
-USERNAME = 'N/A'
-with contextlib.suppress(ImportError, OSError):
-    USERNAME = host.getuser()
-
-TTY = sys.stdout.isatty()
-
-
 @overload
 def select_devices(  # pylint: disable=too-many-arguments
     devices: Iterable[Device] | None,
@@ -534,7 +527,8 @@ def parse_arguments() -> argparse.Namespace:
         args.sep = '\0'
 
     if args.free_accounts is not None and len(args.free_accounts) == 0:
-        args.free_accounts.append(USERNAME)
+        with contextlib.suppress(ImportError, OSError):
+            args.free_accounts.append(host.getuser())
 
     return args
 
@@ -574,7 +568,7 @@ def main() -> int:
     identifiers = list(map(str, identifiers))
     result = args.sep.join(identifiers)
 
-    if not TTY:
+    if not sys.stdout.isatty():
         print('CUDA_VISIBLE_DEVICES="{}"'.format(','.join(identifiers)), file=sys.stderr)
 
     retval = 0
