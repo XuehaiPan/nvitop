@@ -146,6 +146,24 @@ Run `bash install-nvidia-driver.sh --help` for more information.
 pipx run nvitop
 ```
 
+You can also set this command as an alias in your shell startup file, e.g.:
+
+```bash
+# For Bash
+echo 'alias nvitop="pipx run nvitop"' >> ~/.bashrc
+
+# For Zsh
+echo 'alias nvitop="pipx run nvitop"' >> ~/.zshrc
+
+# For Fish
+mkdir -p ~/.config/fish
+echo 'alias nvitop="pipx run nvitop"' >> ~/.config/fish/config.fish
+
+# For PowerShell
+New-Item -Path (Split-Path -Parent -Path $PROFILE.CurrentUserAllHosts) -ItemType Directory -Force
+'Function nvitop { pipx run nvitop @Args }' >> $PROFILE.CurrentUserAllHosts
+```
+
 Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)):
 
 ```bash
