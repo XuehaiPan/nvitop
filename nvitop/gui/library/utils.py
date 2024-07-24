@@ -6,7 +6,8 @@
 import contextlib
 import math
 import os
-import time
+
+from cachetools.func import ttl_cache  # noqa: F401 # pylint: disable=unused-import
 
 from nvitop.api import NA, colored, host, set_color  # noqa: F401 # pylint: disable=unused-import
 from nvitop.gui.library.widestring import WideString
@@ -77,16 +78,3 @@ def make_bar(prefix, percent, width, *, extra_text=''):
     if extra_text and len(f'{bar} {text} {extra_text}') <= width:
         return f'{bar} {text}'.ljust(width - len(extra_text) - 1) + f' {extra_text}'
     return f'{bar} {text}'.ljust(width)
-
-
-def ttl_cache(maxsize=128, ttl=600, timer=time.monotonic, typed=False):
-    """Decorator to wrap a function with a memoizing callable that saves
-    up to `maxsize` results based on a Least Recently Used (LRU)
-    algorithm with a per-item time-to-live (TTL) value.
-    """
-    if maxsize is None:
-        return _cache(_UnboundTTLCache(ttl, timer), None, typed)
-    elif callable(maxsize):
-        return _cache(TTLCache(128, ttl, timer), 128, typed)(maxsize)
-    else:
-        return _cache(TTLCache(maxsize, ttl, timer), maxsize, typed)
