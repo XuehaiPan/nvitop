@@ -3,13 +3,13 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from cachetools.func import ttl_cache
 
 from nvitop.api import NA
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
 from nvitop.api import libnvml, utilization2string
 from nvitop.gui.library.process import GpuProcess
+from nvitop.gui.library.utils import ttl_cache
 
 
 __all__ = ['Device', 'NA']
