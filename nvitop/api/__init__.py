@@ -16,7 +16,18 @@
 # ==============================================================================
 """The core APIs of nvitop."""
 
-from nvitop.api import collector, device, host, libcuda, libcudart, libnvml, process, utils
+from nvitop.api import (
+    caching,
+    collector,
+    device,
+    host,
+    libcuda,
+    libcudart,
+    libnvml,
+    process,
+    utils,
+)
+from nvitop.api.caching import ttl_cache
 from nvitop.api.collector import ResourceMetricCollector, collect_in_background, take_snapshots
 from nvitop.api.device import (
     CudaDevice,
@@ -76,6 +87,8 @@ __all__ = [
     'take_snapshots',
     'collect_in_background',
     'ResourceMetricCollector',
+    # nvitop.api.caching
+    'ttl_cache',
     # nvitop.api.utils
     'NA',
     'NaType',

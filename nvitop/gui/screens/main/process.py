@@ -11,8 +11,6 @@ import time
 from operator import attrgetter, xor
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from cachetools.func import ttl_cache
-
 from nvitop.gui.library import (
     HOSTNAME,
     LARGE_INTEGER,
@@ -27,6 +25,7 @@ from nvitop.gui.library import (
     colored,
     cut_string,
     host,
+    ttl_cache,
     wcslen,
 )
 
