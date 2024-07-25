@@ -14,7 +14,7 @@ insert_final_newline = true
 indent_size = 4
 src_paths=nvitop
 
-[*.{yaml,yml}]
+[*.{yaml,yml,json,xml}]
 indent_size = 2
 
 [*.md]
