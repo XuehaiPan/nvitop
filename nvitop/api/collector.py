@@ -515,7 +515,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     stop = deactivate
 
     @contextlib.contextmanager
-    def context(self, tag: str) -> Generator[ResourceMetricCollector, None, None]:
+    def context(self, tag: str) -> Generator[ResourceMetricCollector]:
         """A context manager for starting and stopping resource metric collection.
 
         Args:

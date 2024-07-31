@@ -384,7 +384,7 @@ class HostProcess(host.Process, metaclass=ABCMeta):
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
     @contextlib.contextmanager
-    def oneshot(self) -> Generator[None, None, None]:
+    def oneshot(self) -> Generator[None]:
         """A utility context manager which considerably speeds up the retrieval of multiple process information at the same time.
 
         Internally different process info (e.g. name, ppid, uids, gids, ...) may be fetched by using
@@ -1026,7 +1026,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @classmethod
     @contextlib.contextmanager
-    def failsafe(cls) -> Generator[None, None, None]:
+    def failsafe(cls) -> Generator[None]:
         """A context manager that enables fallback values for methods that fail.
 
         Examples:

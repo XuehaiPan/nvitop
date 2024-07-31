@@ -22,7 +22,7 @@ HERE = Path(__file__).absolute().parent
 
 
 @contextlib.contextmanager
-def vcs_version(name: str, path: Path | str) -> Generator[ModuleType, None, None]:
+def vcs_version(name: str, path: Path | str) -> Generator[ModuleType]:
     """Context manager to update version string in a version module."""
     path = Path(path).absolute()
     assert path.is_file()
