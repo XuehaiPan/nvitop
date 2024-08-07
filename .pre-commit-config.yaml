@@ -25,7 +25,7 @@ repos:
       - id: debug-statements
       - id: double-quote-string-fixer
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.5
+    rev: v0.5.6
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -34,7 +34,7 @@ repos:
     hooks:
       - id: isort
   - repo: https://github.com/psf/black
-    rev: 24.4.2
+    rev: 24.8.0
     hooks:
       - id: black
   - repo: https://github.com/asottile/pyupgrade
@@ -43,7 +43,7 @@ repos:
       - id: pyupgrade
         args: [--py37-plus] # sync with requires-python
   - repo: https://github.com/pycqa/flake8
-    rev: 7.1.0
+    rev: 7.1.1
     hooks:
       - id: flake8
         additional_dependencies:
