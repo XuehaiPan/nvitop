@@ -108,7 +108,7 @@ warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
 module = ['nvitop.callbacks.*', 'nvitop.gui.*']
-ignore_errors= true
+ignore_errors = true
 
 [tool.pydocstyle]
 convention = "google"

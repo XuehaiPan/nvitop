@@ -707,7 +707,7 @@ class Snapshot:
     def __iter__(self) -> Iterator[str]:
         """Support ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""
 
-        def gen() -> Generator[str, None, None]:
+        def gen() -> Generator[str]:
             yield from (name for name in self.__dict__ if name not in {'real', 'timestamp'})
 
         return gen()

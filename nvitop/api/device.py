@@ -2324,7 +2324,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     # Modified from psutil (https://github.com/giampaolo/psutil)
     @contextlib.contextmanager
-    def oneshot(self) -> Generator[None, None, None]:
+    def oneshot(self) -> Generator[None]:
         """A utility context manager which considerably speeds up the retrieval of multiple device information at the same time.
 
         Internally different device info (e.g. memory_info, utilization_rates, ...) may be fetched
@@ -3080,7 +3080,7 @@ def _does_any_device_support_mig_mode(uuids: Iterable[str] | None = None) -> boo
 
 
 @contextlib.contextmanager
-def _global_physical_device(device: PhysicalDevice) -> Generator[PhysicalDevice, None, None]:
+def _global_physical_device(device: PhysicalDevice) -> Generator[PhysicalDevice]:
     global _GLOBAL_PHYSICAL_DEVICE  # pylint: disable=global-statement
 
     with _GLOBAL_PHYSICAL_DEVICE_LOCK:
