@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix documentation for the `ResourceMetricCollector.clear()` method by [@MyGodItsFull0fStars](https://github.com/MyGodItsFull0fStars) in [#132](https://github.com/XuehaiPan/nvitop/pull/132).
 - Gracefully ignore UTF-8 decoding errors by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Removed
