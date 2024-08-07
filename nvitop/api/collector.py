@@ -586,7 +586,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 buffer = buffer.prev  # type: ignore[assignment]
 
     reset = clear
-    
+
     def collect(self) -> dict[str, float]:
         """Get the average resource consumption during collection."""
         with self._lock:
