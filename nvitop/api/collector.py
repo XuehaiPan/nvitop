@@ -296,7 +296,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
 
         collector.activate(tag='<tag>')  # alias: start
         collector.deactivate()           # alias: stop
-        collector.reset(tag='<tag>')
+        collector.clear(tag='<tag>')
         collector.collect()
 
         with collector(tag='<tag>'):
@@ -539,14 +539,14 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     __call__ = context  # alias for `with collector(tag='<tag>')`
 
     def clear(self, tag: str | None = None) -> None:
-        """Reset the metric collection with the given tag.
+        """Clear the metric collection with the given tag.
 
-        If the tag is not specified, reset the current active collection. For nested collections,
-        the sub-collections will be reset as well.
+        If the tag is not specified, clear the current active collection. For nested collections,
+        the sub-collections will be cleared as well.
 
         Args:
             tag (Optional[str]):
-                The tag to reset. If :data:`None`, the current active collection will be reset.
+                The tag to clear. If :data:`None`, the current active collection will be reset.
 
         Examples:
             >>> collector = ResourceMetricCollector()
@@ -558,12 +558,12 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             ...     time.sleep(5.0)
             ...     collector.collect()               # metrics within the cumulative 10.0s interval
             ...
-            ...     collector.reset()                 # reset the active collection
+            ...     collector.clear()                 # clear the active collection
             ...     time.sleep(5.0)
             ...     collector.collect()               # metrics within the 5.0s interval
             ...
             ...     with collector(tag='batch'):      # key prefix -> 'train/batch'
-            ...         collector.reset(tag='train')  # reset both 'train' and 'train/batch'
+            ...         collector.clear(tag='train')  # clear both 'train' and 'train/batch'
         """
         with self._lock:
             if self._metric_buffer is None:
@@ -584,6 +584,8 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 if buffer.tag == tag:
                     break
                 buffer = buffer.prev  # type: ignore[assignment]
+
+    reset = clear
 
     def collect(self) -> dict[str, float]:
         """Get the average resource consumption during collection."""
