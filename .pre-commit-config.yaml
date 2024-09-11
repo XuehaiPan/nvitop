@@ -25,7 +25,7 @@ repos:
       - id: debug-statements
       - id: double-quote-string-fixer
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.6
+    rev: v0.6.4
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
