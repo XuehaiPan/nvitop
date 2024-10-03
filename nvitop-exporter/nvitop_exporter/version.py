@@ -16,6 +16,8 @@
 # ==============================================================================
 """Prometheus exporter built on top of ``nvitop``."""
 
+# pylint: disable=invalid-name
+
 __version__ = '1.3.2'
 __license__ = 'Apache-2.0'
 __author__ = __maintainer__ = 'Xuehai Pan'

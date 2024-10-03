@@ -89,6 +89,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
+        *,
         memory_utilization: bool = True,
         gpu_utilization: bool = True,
         intra_step_time: bool = False,

@@ -58,6 +58,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         upperbound,
         width,
         height,
+        *,
         format='{:.1f}'.format,  # pylint: disable=redefined-builtin
         max_format=None,
         baseline=0.0,
@@ -301,6 +302,7 @@ class BufferedHistoryGraph(HistoryGraph):
         upperbound,
         width,
         height,
+        *,
         format='{:.1f}'.format,  # pylint: disable=redefined-builtin
         max_format=None,
         baseline=0.0,

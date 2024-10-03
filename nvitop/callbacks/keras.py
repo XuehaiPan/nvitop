@@ -94,6 +94,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     def __init__(  # pylint: disable=too-many-arguments
         self,
         gpus: int | list[int | str] | tuple[int | str, ...],
+        *,
         memory_utilization: bool = True,
         gpu_utilization: bool = True,
         intra_step_time: bool = False,

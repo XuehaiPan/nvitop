@@ -24,6 +24,7 @@ class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self,
         devices,
         filters=(),
+        *,
         ascii=False,  # pylint: disable=redefined-builtin
         mode='auto',
         interval=None,

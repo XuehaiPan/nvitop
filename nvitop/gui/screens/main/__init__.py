@@ -20,7 +20,7 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
     NAME = 'main'
 
     # pylint: disable-next=redefined-builtin,too-many-arguments,too-many-locals,too-many-statements
-    def __init__(self, devices, filters, ascii, mode, win, root):
+    def __init__(self, devices, filters, *, ascii, mode, win, root):
         super().__init__(win, root)
 
         self.width = root.width

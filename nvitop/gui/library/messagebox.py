@@ -19,7 +19,7 @@ from nvitop.gui.library.widestring import WideString
 class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
     class Option:  # pylint: disable=too-few-public-methods
         # pylint: disable-next=too-many-arguments
-        def __init__(self, name, key, callback, keys=(), attrs=()):
+        def __init__(self, name, key, callback, *, keys=(), attrs=()):
             self.name = WideString(name)
             self.offset = 0
             self.key = normalize_keybinding(key)
@@ -31,7 +31,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             return str(self.name)
 
     # pylint: disable-next=too-many-arguments
-    def __init__(self, message, options, default, yes, no, cancel, win, root):
+    def __init__(self, message, options, *, default, yes, no, cancel, win, root):
         super().__init__(win, root)
 
         if default is None:
