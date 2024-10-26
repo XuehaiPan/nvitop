@@ -1017,7 +1017,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         """
         cache: dict[int, Snapshot] = {}
         context: Callable[[], contextlib.AbstractContextManager[None]] = (
-            cls.failsafe if failsafe else contextlib.nullcontext  # type: ignore[assignment]
+            cls.failsafe if failsafe else contextlib.nullcontext
         )
         with context():
             return [
