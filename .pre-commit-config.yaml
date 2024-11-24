@@ -25,7 +25,7 @@ repos:
       - id: debug-statements
       - id: double-quote-string-fixer
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.1
+    rev: v0.8.0
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
@@ -69,17 +69,6 @@ repos:
         language: system
         types: [python]
         require_serial: true
-  - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.3.0
-    hooks:
-      - id: pydocstyle
-        additional_dependencies: [".[toml]"]
-        exclude: |
-          (?x)(
-            ^nvitop/gui/|
-            ^nvitop/callbacks/|
-            ^docs/
-          )
   - repo: local
     hooks:
       - id: mypy

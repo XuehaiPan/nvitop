@@ -62,7 +62,7 @@ import math
 import os
 import sys
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Sequence, overload
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence, overload
 
 from nvitop.api import Device, GpuProcess, Snapshot, colored, host, human2bytes, libnvml
 from nvitop.version import __version__
@@ -90,7 +90,6 @@ def select_devices(  # pylint: disable=too-many-arguments
     tolerance: int,
     free_accounts: list[str] | None,
     sort: bool,
-    **kwargs: Any,
 ) -> list[int] | list[tuple[int, int]]: ...
 
 
@@ -109,7 +108,6 @@ def select_devices(  # pylint: disable=too-many-arguments
     tolerance: int,
     free_accounts: list[str] | None,
     sort: bool,
-    **kwargs: Any,
 ) -> list[int] | list[tuple[int, int]]: ...
 
 
@@ -128,11 +126,11 @@ def select_devices(  # pylint: disable=too-many-arguments
     tolerance: int,
     free_accounts: list[str] | None,
     sort: bool,
-    **kwargs: Any,
 ) -> list[Device]: ...
 
 
-def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals,unused-argument,too-many-arguments
+# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals,unused-argument,too-many-arguments
+def select_devices(
     devices: Iterable[Device] | None = None,
     *,
     format: Literal['index', 'uuid', 'device'] = 'index',  # pylint: disable=redefined-builtin
@@ -146,7 +144,6 @@ def select_devices(  # pylint: disable=too-many-branches,too-many-statements,too
     tolerance: int = 0,  # in percentage
     free_accounts: list[str] | None = None,
     sort: bool = True,
-    **kwargs: Any,
 ) -> list[int] | list[tuple[int, int]] | list[str] | list[Device]:
     """Select a subset of devices satisfying the specified criteria.
 

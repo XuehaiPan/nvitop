@@ -2760,7 +2760,7 @@ class CudaDevice(Device):
             - `CUDA Device Enumeration for MIG Device <https://docs.nvidia.com/datacenter/tesla/mig-user-guide/index.html#cuda-visible-devices>`_
 
         Args:
-            cuda_indices (Iterable[int]):
+            indices (Iterable[int]):
                 The indices of the GPU in CUDA ordinal, if not given, returns all visible CUDA devices.
 
         Returns: List[CudaDevice]
@@ -3251,6 +3251,8 @@ def _parse_cuda_visible_devices_to_uuids(
             The value of the ``CUDA_VISIBLE_DEVICES`` variable. If not given, the value from the
             environment will be used. If explicitly given by :data:`None`, the ``CUDA_VISIBLE_DEVICES``
             environment variable will be unset before parsing.
+        verbose (bool):
+            Whether to raise an exception in the subprocess if failed to parse the ``CUDA_VISIBLE_DEVICES``.
 
     Returns: List[str]
         A list of device UUIDs without ``GPU-`` or ``MIG-`` prefixes.

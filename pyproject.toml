@@ -110,10 +110,6 @@ warn_unused_ignores = true
 module = ['nvitop.callbacks.*', 'nvitop.gui.*']
 ignore_errors = true
 
-[tool.pydocstyle]
-convention = "google"
-match-dir = '^(?!(gui|callbacks|docs))[^\.].*'
-
 [tool.codespell]
 ignore-words = "docs/source/spelling_wordlist.txt"
 
@@ -130,6 +126,7 @@ select = [
     "F",       # pyflakes
     "N",       # pep8-naming
     "UP",      # pyupgrade
+    "D",       # pydocstyle
     "ANN",     # flake8-annotations
     "S",       # flake8-bandit
     "BLE",     # flake8-blind-except
@@ -160,10 +157,6 @@ ignore = [
     # too long docstring due to long example blocks
     "E501",
     "W505",
-    # ANN101: missing type annotation for `self` in method
-    # ANN102: missing type annotation for `cls` in classmethod
-    "ANN101",
-    "ANN102",
     # ANN401: dynamically typed expressions (typing.Any) are disallowed
     "ANN401",
     # S101: use of `assert` detected
@@ -175,6 +168,9 @@ ignore = [
     # TRY003: avoid specifying long messages outside the exception class
     # long messages are necessary for clarity
     "TRY003",
+    # RUF022: `__all__` is not ordered according to an "isort-style" sort
+    # `__all__` contains comments to group names
+    "RUF022",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -182,21 +178,28 @@ ignore = [
     "F401",    # unused-import
 ]
 "setup.py" = [
+    "D",       # pydocstyle
     "ANN",     # flake8-annotations
 ]
 "nvitop/api/lib*.py" = [
     "N",       # pep8-naming
 ]
 "nvitop/callbacks/*.py" = [
+    "D",       # pydocstyle
     "ANN",     # flake8-annotations
 ]
 "nvitop/gui/**/*.py" = [
+    "D",       # pydocstyle
     "ANN",     # flake8-annotations
     "RUF012",  # mutable-class-default
 ]
 "docs/source/conf.py" = [
+    "D",       # pydocstyle
     "INP001",  # flake8-no-pep420
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.flake8-annotations]
 allow-star-arg-any = true
