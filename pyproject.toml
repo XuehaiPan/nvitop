@@ -110,6 +110,14 @@ warn_unused_ignores = true
 module = ['nvitop.callbacks.*', 'nvitop.gui.*']
 ignore_errors = true
 
+[tool.pylint]
+main.py-version = "3.7"
+basic.good-names = ["x", "y", "dx", "dy", "p", "s", "fg", "bg", "n", "ui", "tx", "rx"]
+format.max-line-length = 120
+"messages control".disable = ["consider-using-f-string", "duplicate-code", "wrong-import-order"]
+spelling.spelling-dict = "en_US"
+spelling.spelling-private-dict-file = "docs/source/spelling_wordlist.txt"
+
 [tool.codespell]
 ignore-words = "docs/source/spelling_wordlist.txt"
 
