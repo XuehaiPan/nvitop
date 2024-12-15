@@ -132,9 +132,10 @@ from nvitop.api.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Hashable
-
-    from typing_extensions import Literal  # Python 3.8+
-    from typing_extensions import Self  # Python 3.11+
+    from typing_extensions import (
+        Literal,  # Python 3.8+
+        Self,  # Python 3.11+
+    )
 
 
 __all__ = [

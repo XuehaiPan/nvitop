@@ -80,7 +80,6 @@ with vcs_version(
         extras_require={
             'lint': [
                 'black >= 24.0.0, < 25.0.0a0',
-                'isort',
                 'pylint[spelling]',
                 'mypy',
                 'typing-extensions',

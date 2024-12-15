@@ -5,10 +5,9 @@
 
 from cachetools.func import ttl_cache
 
-from nvitop.api import NA
+from nvitop.api import NA, libnvml, utilization2string
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
-from nvitop.api import libnvml, utilization2string
 from nvitop.gui.library.process import GpuProcess
 
 

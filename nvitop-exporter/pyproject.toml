@@ -70,15 +70,5 @@ line-length = 100
 skip-string-normalization = true
 target-version = ["py37"]
 
-[tool.isort]
-atomic = true
-profile = "black"
-src_paths = ["nvitop_exporter"]
-known_first_party = ["nvitop", "nvitop_exporter"]
-indent = 4
-line_length = 100
-lines_after_imports = 2
-multi_line_output = 3
-
 [tool.ruff]
 extend = "../pyproject.toml"
