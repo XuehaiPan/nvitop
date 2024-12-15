@@ -50,7 +50,7 @@ jobs:
         id: py
         uses: actions/setup-python@v5
         with:
-          python-version: "3.7 - 3.12"
+          python-version: "3.7 - 3.13"
           update-environment: true
 
       - name: Set up Python 3.7
@@ -140,7 +140,7 @@ jobs:
         uses: actions/setup-python@v5
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          python-version: "3.7 - 3.12"
+          python-version: "3.7 - 3.13"
           update-environment: true
 
       - name: Upgrade pip
