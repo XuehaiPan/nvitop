@@ -140,10 +140,12 @@ Run `bash install-nvidia-driver.sh --help` for more information.
 
 ## Installation
 
-**It is highly recommended to install `nvitop` in an isolated virtual environment.** Simple installation and run via [`pipx`](https://pypa.github.io/pipx):
+**It is highly recommended to install `nvitop` in an isolated virtual environment.** Simple installation and run via [`pipx`](https://pypa.github.io/pipx) or [`uvx`](https://docs.astral.sh/uv/guides/tools) (a.k.a. `uv tool run`):
 
 ```bash
 pipx run nvitop
+# or
+uvx nvitop
 ```
 
 You can also set this command as an alias in your shell startup file, e.g.:
@@ -162,6 +164,24 @@ echo 'alias nvitop="pipx run nvitop"' >> ~/.config/fish/config.fish
 # For PowerShell
 New-Item -Path (Split-Path -Parent -Path $PROFILE.CurrentUserAllHosts) -ItemType Directory -Force
 'Function nvitop { pipx run nvitop @Args }' >> $PROFILE.CurrentUserAllHosts
+```
+
+or
+
+```bash
+# For Bash
+echo 'alias nvitop="uvx nvitop"' >> ~/.bashrc
+
+# For Zsh
+echo 'alias nvitop="uvx nvitop"' >> ~/.zshrc
+
+# For Fish
+mkdir -p ~/.config/fish
+echo 'alias nvitop="uvx nvitop"' >> ~/.config/fish/config.fish
+
+# For PowerShell
+New-Item -Path (Split-Path -Parent -Path $PROFILE.CurrentUserAllHosts) -ItemType Directory -Force
+'Function nvitop { uvx nvitop @Args }' >> $PROFILE.CurrentUserAllHosts
 ```
 
 Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)):
