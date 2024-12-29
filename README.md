@@ -28,7 +28,6 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
   A Grafana dashboard built on top of <code>nvitop-exporter</code>.
 </p>
 
-
 ### Table of Contents  <!-- omit in toc --> <!-- markdownlint-disable heading-increment -->
 
 - [Features](#features)
@@ -205,7 +204,7 @@ Install from conda-forge ([![conda-forge](https://img.shields.io/conda/v/conda-f
 conda install -c conda-forge nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.3.2)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.4.0)):
 
 ```bash
 pip3 install --upgrade pip setuptools
