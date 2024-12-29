@@ -20,6 +20,15 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
   (TERM: GNOME Terminal / OS: Ubuntu 16.04 LTS (over SSH) / Locale: <code>en_US.UTF-8</code>)
 </p>
 
+<p align="center">
+  <a href="./nvitop-exporter">
+    <img width="100%" src="https://github.com/user-attachments/assets/c1769a8b-2d06-47c4-8f76-c91dace132e9" alt="Filter">
+  </a>
+  <br/>
+  A Grafana dashboard built on top of <code>nvitop-exporter</code>.
+</p>
+
+
 ### Table of Contents  <!-- omit in toc --> <!-- markdownlint-disable heading-increment -->
 
 - [Features](#features)
