@@ -1,7 +1,67 @@
 {
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__elements": {},
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "11.3.1"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": null,
   "links": [],
   "liveNow": true,
   "panels": [
@@ -13,6 +73,7 @@
         "x": 0,
         "y": 0
       },
+      "id": 1,
       "panels": [],
       "title": "Process",
       "type": "row"
@@ -20,7 +81,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "de7ox5rfcpla8f"
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -160,6 +221,7 @@
         "x": 0,
         "y": 1
       },
+      "id": 2,
       "options": {
         "cellHeight": "sm",
         "footer": {
@@ -184,6 +246,10 @@
       },
       "targets": [
         {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
           "disableTextWrap": false,
           "editorMode": "builder",
           "exemplar": false,
@@ -202,7 +268,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -221,7 +287,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -240,7 +306,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -259,7 +325,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -278,7 +344,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -297,7 +363,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -316,7 +382,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -336,7 +402,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "de7ox5rfcpla8f"
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -518,13 +584,15 @@
         "x": 0,
         "y": 14
       },
+      "id": 3,
       "panels": [],
       "title": "Overview",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
@@ -562,6 +630,7 @@
         "x": 0,
         "y": 15
       },
+      "id": 4,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -580,7 +649,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -590,6 +660,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} CPU (%)",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -598,7 +669,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
@@ -636,6 +708,7 @@
         "x": 3,
         "y": 15
       },
+      "id": 5,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -654,7 +727,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -664,6 +738,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}} (%)",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -672,7 +747,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
@@ -710,6 +786,7 @@
         "x": 14,
         "y": 15
       },
+      "id": 6,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -728,7 +805,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -738,6 +816,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}} (%)",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -746,7 +825,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "description": "",
       "fieldConfig": {
@@ -784,6 +864,7 @@
         "x": 0,
         "y": 24
       },
+      "id": 7,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -802,7 +883,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -812,6 +894,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} MEM (%)",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -826,13 +909,15 @@
         "x": 0,
         "y": 33
       },
+      "id": 8,
       "panels": [],
       "title": "System",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -898,6 +983,7 @@
         "x": 0,
         "y": 34
       },
+      "id": 9,
       "options": {
         "legend": {
           "calcs": [
@@ -920,7 +1006,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -930,6 +1017,7 @@
           "instant": false,
           "legendFormat": "{{hostname}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -938,7 +1026,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1003,6 +1092,7 @@
         "x": 12,
         "y": 34
       },
+      "id": 10,
       "options": {
         "legend": {
           "calcs": [
@@ -1023,7 +1113,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1033,11 +1124,13 @@
           "instant": false,
           "legendFormat": "{{hostname}} (1m)",
           "range": true,
+          "refId": "A",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1048,11 +1141,13 @@
           "instant": false,
           "legendFormat": "{{hostname}} (5m)",
           "range": true,
+          "refId": "B",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1063,6 +1158,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} (15m)",
           "range": true,
+          "refId": "C",
           "useBackend": false
         }
       ],
@@ -1071,7 +1167,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1137,6 +1234,7 @@
         "x": 0,
         "y": 48
       },
+      "id": 11,
       "options": {
         "legend": {
           "calcs": [
@@ -1159,7 +1257,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1169,6 +1268,7 @@
           "instant": false,
           "legendFormat": "{{hostname}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -1177,7 +1277,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1243,6 +1344,7 @@
         "x": 12,
         "y": 48
       },
+      "id": 12,
       "options": {
         "legend": {
           "calcs": [
@@ -1265,7 +1367,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1275,6 +1378,7 @@
           "instant": false,
           "legendFormat": "{{hostname}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -1289,13 +1393,15 @@
         "x": 0,
         "y": 62
       },
+      "id": 13,
       "panels": [],
       "title": "System I/O",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1361,6 +1467,7 @@
         "x": 0,
         "y": 63
       },
+      "id": 14,
       "options": {
         "legend": {
           "calcs": [
@@ -1383,7 +1490,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1394,11 +1502,13 @@
           "instant": false,
           "legendFormat": "{{hostname}} RX",
           "range": true,
+          "refId": "A",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1409,6 +1519,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} TX",
           "range": true,
+          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1417,7 +1528,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1482,6 +1594,7 @@
         "x": 12,
         "y": 63
       },
+      "id": 15,
       "options": {
         "legend": {
           "calcs": [
@@ -1504,7 +1617,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1515,11 +1629,13 @@
           "instant": false,
           "legendFormat": "{{hostname}} Read",
           "range": true,
+          "refId": "A",
           "useBackend": false
         },
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1530,6 +1646,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} Write",
           "range": true,
+          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1544,13 +1661,15 @@
         "x": 0,
         "y": 77
       },
+      "id": 16,
       "panels": [],
       "title": "Accelerator",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1616,6 +1735,7 @@
         "x": 0,
         "y": 78
       },
+      "id": 17,
       "options": {
         "legend": {
           "calcs": [
@@ -1638,7 +1758,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1649,6 +1770,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -1657,7 +1779,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1723,6 +1846,7 @@
         "x": 12,
         "y": 78
       },
+      "id": 18,
       "options": {
         "legend": {
           "calcs": [
@@ -1745,7 +1869,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1756,6 +1881,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -1764,7 +1890,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1830,6 +1957,7 @@
         "x": 0,
         "y": 92
       },
+      "id": 19,
       "options": {
         "legend": {
           "calcs": [
@@ -1852,7 +1980,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1863,6 +1992,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -1871,7 +2001,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1937,6 +2068,7 @@
         "x": 12,
         "y": 92
       },
+      "id": 20,
       "options": {
         "legend": {
           "calcs": [
@@ -1959,7 +2091,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -1970,6 +2103,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -1978,7 +2112,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2044,6 +2179,7 @@
         "x": 0,
         "y": 106
       },
+      "id": 21,
       "options": {
         "legend": {
           "calcs": [
@@ -2066,7 +2202,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -2077,6 +2214,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -2085,7 +2223,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2151,6 +2290,7 @@
         "x": 12,
         "y": 106
       },
+      "id": 22,
       "options": {
         "legend": {
           "calcs": [
@@ -2173,7 +2313,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -2184,6 +2325,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -2192,7 +2334,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2256,6 +2399,7 @@
         "x": 0,
         "y": 120
       },
+      "id": 23,
       "options": {
         "legend": {
           "calcs": [
@@ -2278,7 +2422,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -2289,6 +2434,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -2297,7 +2443,8 @@
     },
     {
       "datasource": {
-        "type": "prometheus"
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
       },
       "fieldConfig": {
         "defaults": {
@@ -2361,6 +2508,7 @@
         "x": 12,
         "y": 120
       },
+      "id": 24,
       "options": {
         "legend": {
           "calcs": [
@@ -2383,7 +2531,8 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus"
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
           },
           "disableTextWrap": false,
           "editorMode": "builder",
@@ -2394,6 +2543,7 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
+          "refId": "A",
           "useBackend": false
         }
       ],
@@ -2401,19 +2551,13 @@
       "type": "timeseries"
     }
   ],
-  "preload": true,
   "refresh": "5s",
   "schemaVersion": 40,
   "tags": [],
   "templating": {
     "list": [
       {
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "definition": "label_values(hostname)",
         "description": "",
         "includeAll": true,
@@ -2429,12 +2573,7 @@
         "type": "query"
       },
       {
-        "current": {
-          "text": "All",
-          "value": [
-            "$__all"
-          ]
-        },
+        "current": {},
         "definition": "label_values(username)",
         "description": "",
         "includeAll": true,
