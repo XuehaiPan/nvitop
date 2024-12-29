@@ -25,9 +25,9 @@ import datetime
 import functools
 import os
 import threading
-from abc import ABCMeta
+from abc import ABC
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Generator, Iterable
+from typing import TYPE_CHECKING, Any
 from weakref import WeakValueDictionary
 
 from nvitop.api import host, libnvml
@@ -43,6 +43,7 @@ from nvitop.api.utils import (
 
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterable
     from typing_extensions import Self  # Python 3.11+
 
     from nvitop.api.device import Device
@@ -122,7 +123,7 @@ def auto_garbage_clean(
             except host.PsutilError as ex:
                 try:
                     with GpuProcess.INSTANCE_LOCK:
-                        del GpuProcess.INSTANCES[(self.pid, self.device)]
+                        del GpuProcess.INSTANCES[self.pid, self.device]
                 except (KeyError, AttributeError):
                     pass
                 try:
@@ -144,7 +145,7 @@ def auto_garbage_clean(
     return wrapper
 
 
-class HostProcess(host.Process, metaclass=ABCMeta):
+class HostProcess(host.Process, ABC):
     """Represent an OS process with the given PID.
 
     If PID is omitted current process PID (:func:`os.getpid`) is used. The instance will be cache
@@ -476,7 +477,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
         with cls.INSTANCE_LOCK:
             try:
-                instance = cls.INSTANCES[(pid, device)]
+                instance = cls.INSTANCES[pid, device]
                 if instance.is_running():
                     return instance  # type: ignore[return-value]
             except KeyError:
@@ -492,7 +493,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             instance._hash = None
             instance._username = None
 
-            cls.INSTANCES[(pid, device)] = instance
+            cls.INSTANCES[pid, device] = instance
 
             return instance
 

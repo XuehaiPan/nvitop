@@ -5,6 +5,7 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import curses
+import string
 import threading
 import time
 from functools import partial
@@ -14,6 +15,9 @@ from nvitop.gui.library.keybinding import normalize_keybinding
 from nvitop.gui.library.process import host
 from nvitop.gui.library.utils import cut_string
 from nvitop.gui.library.widestring import WideString
+
+
+DIGITS = set(string.digits)
 
 
 class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -213,10 +217,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
                 keymaps.copy('messagebox', option.key, key)
 
         keymaps['messagebox'][keymaps.keybuffer.quantifier_key] = 'false'
-        if (
-            len(set('0123456789').intersection(keymaps['messagebox'])) == 0
-            and self.num_options <= 9
-        ):
+        if len(DIGITS.intersection(keymaps['messagebox'])) == 0 and self.num_options <= 9:
             for key_n, option in zip('123456789', self.options):
                 keymaps.copy('messagebox', option.key, key_n)
 

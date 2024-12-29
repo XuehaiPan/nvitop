@@ -23,10 +23,14 @@ utilization (CPU, memory, disks, network, sensors) in Python.
 from __future__ import annotations
 
 import os as _os
-from typing import Callable as _Callable
+from typing import TYPE_CHECKING as _TYPE_CHECKING
 
 import psutil as _psutil
 from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
+
+
+if _TYPE_CHECKING:
+    from collections.abc import Callable as _Callable
 
 
 __all__ = [name for name in _psutil.__all__ if not name.startswith('_')] + [

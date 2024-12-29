@@ -29,9 +29,13 @@ import re
 import sys
 import time
 from collections.abc import KeysView
-from typing import Any, Callable, Generator, Iterable, Iterator, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from psutil import WINDOWS
+
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable, Iterator
 
 
 __all__ = [
@@ -479,9 +483,10 @@ NotApplicableType = NaType
 # NA == 'N/A'         -> True
 # NA is NaType()      -> True (`NaType` is a singleton class)
 NA = NaType()
-NA.__doc__ = """The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""  # pylint: disable=attribute-defined-outside-init
+"""The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""
 
 NotApplicable = NA
+"""The singleton instance of :class:`NaType`. The actual value is :const:`str: 'N/A'`."""
 
 UINT_MAX: int = ctypes.c_uint(-1).value  # 0xFFFFFFFF
 """The maximum value of :class:`ctypes.c_uint`."""

@@ -115,7 +115,7 @@ import textwrap
 import threading
 import time
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generator, Iterable, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, overload
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
@@ -131,7 +131,7 @@ from nvitop.api.utils import (
 
 
 if TYPE_CHECKING:
-    from collections.abc import Hashable
+    from collections.abc import Callable, Generator, Hashable, Iterable
     from typing_extensions import (
         Literal,  # Python 3.8+
         Self,  # Python 3.11+
@@ -458,9 +458,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return cuda_devices
 
     @staticmethod
-    def from_cuda_indices(
-        cuda_indices: int | Iterable[int] | None = None,
-    ) -> list[CudaDevice]:
+    def from_cuda_indices(cuda_indices: int | Iterable[int] | None = None) -> list[CudaDevice]:
         """Return a list of CUDA devices of the given CUDA indices.
 
         The CUDA ordinal will be enumerate from the ``CUDA_VISIBLE_DEVICES`` environment variable.
@@ -1528,10 +1526,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self._nvlink_link_count  # type: ignore[return-value]
 
     @memoize_when_activated
-    def nvlink_throughput(
-        self,
-        interval: float | None = None,
-    ) -> list[ThroughputInfo]:  # in KiB/s
+    def nvlink_throughput(self, interval: float | None = None) -> list[ThroughputInfo]:  # in KiB/s
         """The current NVLink throughput for each NVLink in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1606,10 +1601,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             for tx, rx in zip(throughputs[:nvlink_link_count], throughputs[nvlink_link_count:])
         ]
 
-    def nvlink_total_throughput(
-        self,
-        interval: float | None = None,
-    ) -> ThroughputInfo:  # in KiB/s
+    def nvlink_total_throughput(self, interval: float | None = None) -> ThroughputInfo:  # in KiB/s
         """The total NVLink throughput for all NVLinks in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1639,10 +1631,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             rx=sum(rx_throughputs) if rx_throughputs else NA,
         )
 
-    def nvlink_mean_throughput(
-        self,
-        interval: float | None = None,
-    ) -> ThroughputInfo:  # in KiB/s
+    def nvlink_mean_throughput(self, interval: float | None = None) -> ThroughputInfo:  # in KiB/s
         """The mean NVLink throughput for all NVLinks in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1672,10 +1661,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             rx=round(sum(rx_throughputs) / len(rx_throughputs)) if rx_throughputs else NA,
         )
 
-    def nvlink_tx_throughput(
-        self,
-        interval: float | None = None,
-    ) -> list[int | NaType]:  # in KiB/s
+    def nvlink_tx_throughput(self, interval: float | None = None) -> list[int | NaType]:  # in KiB/s
         """The current NVLink transmit data throughput in KiB/s for each NVLink.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1695,10 +1681,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return [tx for tx, _ in self.nvlink_throughput(interval=interval)]
 
-    def nvlink_mean_tx_throughput(
-        self,
-        interval: float | None = None,
-    ) -> int | NaType:  # in KiB/s
+    def nvlink_mean_tx_throughput(self, interval: float | None = None) -> int | NaType:  # in KiB/s
         """The mean NVLink transmit data throughput for all NVLinks in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1718,10 +1701,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.nvlink_mean_throughput(interval=interval).tx
 
-    def nvlink_total_tx_throughput(
-        self,
-        interval: float | None = None,
-    ) -> int | NaType:  # in KiB/s
+    def nvlink_total_tx_throughput(self, interval: float | None = None) -> int | NaType:  # in KiB/s
         """The total NVLink transmit data throughput for all NVLinks in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1741,10 +1721,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.nvlink_total_throughput(interval=interval).tx
 
-    def nvlink_rx_throughput(
-        self,
-        interval: float | None = None,
-    ) -> list[int | NaType]:  # in KiB/s
+    def nvlink_rx_throughput(self, interval: float | None = None) -> list[int | NaType]:  # in KiB/s
         """The current NVLink receive data throughput for each NVLink in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1764,10 +1741,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return [rx for _, rx in self.nvlink_throughput(interval=interval)]
 
-    def nvlink_mean_rx_throughput(
-        self,
-        interval: float | None = None,
-    ) -> int | NaType:  # in KiB/s
+    def nvlink_mean_rx_throughput(self, interval: float | None = None) -> int | NaType:  # in KiB/s
         """The mean NVLink receive data throughput for all NVLinks in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink
@@ -1787,10 +1761,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """
         return self.nvlink_mean_throughput(interval=interval).rx
 
-    def nvlink_total_rx_throughput(
-        self,
-        interval: float | None = None,
-    ) -> int | NaType:  # in KiB/s
+    def nvlink_total_rx_throughput(self, interval: float | None = None) -> int | NaType:  # in KiB/s
         """The total NVLink receive data throughput for all NVLinks in KiB/s.
 
         This function is querying data counters between methods calls and thus is the NVLink

@@ -33,7 +33,6 @@ from types import FunctionType as _FunctionType
 from types import ModuleType as _ModuleType
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
-from typing import Callable as _Callable
 from typing import ClassVar as _ClassVar
 
 # Python Bindings for the NVIDIA Management Library (NVML)
@@ -47,6 +46,7 @@ from nvitop.api.utils import colored as __colored
 
 
 if _TYPE_CHECKING:
+    from collections.abc import Callable as _Callable
     from typing_extensions import Self as _Self  # Python 3.11+
     from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 
@@ -513,10 +513,7 @@ def nvmlQueryFieldValues(
     return values_with_timestamps
 
 
-def nvmlCheckReturn(
-    retval: _Any,
-    types: type | tuple[type, ...] | None = None,
-) -> bool:
+def nvmlCheckReturn(retval: _Any, types: type | tuple[type, ...] | None = None) -> bool:
     """Check whether the return value is not :const:`nvitop.NA` and is one of the given types."""
     if types is None:
         return retval != NA
@@ -595,12 +592,12 @@ if not _pynvml_installation_corrupted:
 
         if __get_running_processes_version_suffix is None:
             # pylint: disable-next=protected-access,no-member
-            _nvmlGetFunctionPointer = _pynvml._nvmlGetFunctionPointer
+            nvmlGetFunctionPointer = _pynvml._nvmlGetFunctionPointer
             __get_running_processes_version_suffix = '_v3'
 
             def lookup(symbol: str) -> _Any | None:
                 try:
-                    ptr = _nvmlGetFunctionPointer(symbol)
+                    ptr = nvmlGetFunctionPointer(symbol)
                 except NVMLError_FunctionNotFound:
                     LOGGER.debug('Failed to found symbol `%s`.', symbol)
                     return None
@@ -711,10 +708,7 @@ if not _pynvml_installation_corrupted:
             NVMLError_Unknown:
                 On any unexpected error.
         """
-        return __nvml_device_get_running_processes(
-            'nvmlDeviceGetComputeRunningProcesses',
-            handle,
-        )
+        return __nvml_device_get_running_processes('nvmlDeviceGetComputeRunningProcesses', handle)
 
     def nvmlDeviceGetGraphicsRunningProcesses(  # pylint: disable=function-redefined
         handle: c_nvmlDevice_t,
@@ -738,10 +732,7 @@ if not _pynvml_installation_corrupted:
             NVMLError_Unknown:
                 On any unexpected error.
         """
-        return __nvml_device_get_running_processes(
-            'nvmlDeviceGetGraphicsRunningProcesses',
-            handle,
-        )
+        return __nvml_device_get_running_processes('nvmlDeviceGetGraphicsRunningProcesses', handle)
 
     def nvmlDeviceGetMPSComputeRunningProcesses(  # pylint: disable=function-redefined
         handle: c_nvmlDevice_t,
@@ -819,10 +810,10 @@ if not _pynvml_installation_corrupted:
 
         if __get_memory_info_version_suffix is None:
             # pylint: disable-next=protected-access,no-member
-            _nvmlGetFunctionPointer = _pynvml._nvmlGetFunctionPointer
+            nvml_get_function_pointer = _pynvml._nvmlGetFunctionPointer
             __get_memory_info_version_suffix = '_v2'
             try:
-                _nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo_v2')
+                nvml_get_function_pointer('nvmlDeviceGetMemoryInfo_v2')
             except NVMLError_FunctionNotFound:
                 LOGGER.debug('Failed to found symbol `nvmlDeviceGetMemoryInfo_v2`.')
                 c_nvmlMemory_t = c_nvmlMemory_v1_t

@@ -604,9 +604,9 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                     username = process.username()
                     alive_pids.add((pid, username))
                     if (pid, username) not in host_snapshots:  # noqa: SIM401,RUF100
-                        host_snapshot = host_snapshots[(pid, username)] = process.host_snapshot()
+                        host_snapshot = host_snapshots[pid, username] = process.host_snapshot()
                     else:
-                        host_snapshot = host_snapshots[(pid, username)]
+                        host_snapshot = host_snapshots[pid, username]
                     self.process_info.labels(
                         hostname=self.hostname,
                         index=index,

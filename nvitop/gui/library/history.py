@@ -33,11 +33,11 @@ VALUE2SYMBOL_DOWN = {
 SYMBOL2VALUE_UP = {v: k for k, v in VALUE2SYMBOL_UP.items()}
 SYMBOL2VALUE_DOWN = {v: k for k, v in VALUE2SYMBOL_DOWN.items()}
 PAIR2SYMBOL_UP = {
-    (s1, s2): VALUE2SYMBOL_UP[(SYMBOL2VALUE_UP[s1][-1], SYMBOL2VALUE_UP[s2][0])]
+    (s1, s2): VALUE2SYMBOL_UP[SYMBOL2VALUE_UP[s1][-1], SYMBOL2VALUE_UP[s2][0]]
     for s1, s2 in itertools.product(SYMBOL2VALUE_UP, repeat=2)
 }
 PAIR2SYMBOL_DOWN = {
-    (s1, s2): VALUE2SYMBOL_DOWN[(SYMBOL2VALUE_DOWN[s1][-1], SYMBOL2VALUE_DOWN[s2][0])]
+    (s1, s2): VALUE2SYMBOL_DOWN[SYMBOL2VALUE_DOWN[s1][-1], SYMBOL2VALUE_DOWN[s2][0]]
     for s1, s2 in itertools.product(SYMBOL2VALUE_DOWN, repeat=2)
 }
 GRAPH_SYMBOLS = ''.join(
@@ -269,7 +269,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         for h in range(self.height):
             s1 = min(max(round(5 * (value1 - h)), 0), 4)
             s2 = min(max(round(5 * (value2 - h)), 0), 4)
-            bar.append(self.value2symbol[(s1, s2)])
+            bar.append(self.value2symbol[s1, s2])
         if not self.upsidedown:
             bar.reverse()
         return bar

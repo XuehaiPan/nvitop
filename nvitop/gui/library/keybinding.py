@@ -7,10 +7,11 @@
 import copy
 import curses
 import curses.ascii
+import string
 from collections import OrderedDict
 
 
-DIGITS = set(map(ord, '0123456789'))
+DIGITS = set(map(ord, string.digits))
 
 # Arbitrary numbers which are not used with curses.KEY_XYZ
 ANYKEY, PASSIVE_ACTION, ALT_KEY, QUANT_KEY = range(9001, 9005)
@@ -54,7 +55,7 @@ VERY_SPECIAL_KEYS = {
 }
 
 
-def _uncase_special_key(string):
+def _uncase_special_key(key_string):
     """Uncase a special key.
 
     >>> _uncase_special_key('Esc')
@@ -70,9 +71,9 @@ def _uncase_special_key(string):
     >>> _uncase_special_key('A-x')
     'a-x'
     """
-    uncased = string.lower()
+    uncased = key_string.lower()
     if len(uncased) == 3 and (uncased.startswith(('a-', 'm-'))):
-        uncased = f'{uncased[0]}-{string[-1]}'
+        uncased = f'{uncased[0]}-{key_string[-1]}'
     return uncased
 
 
@@ -139,13 +140,13 @@ def parse_keybinding(obj):  # pylint: disable=too-many-branches
             if in_brackets:
                 if char == '>':
                     in_brackets = False
-                    string = ''.join(bracket_content)
+                    key_string = ''.join(bracket_content)
                     try:
-                        keys = SPECIAL_KEYS_UNCASED[_uncase_special_key(string)]
+                        keys = SPECIAL_KEYS_UNCASED[_uncase_special_key(key_string)]
                         yield from keys
                     except KeyError:
-                        if string.isdigit():
-                            yield int(string)
+                        if key_string.isdigit():
+                            yield int(key_string)
                         else:
                             yield ord('<')
                             for bracket_char in bracket_content:
@@ -199,7 +200,7 @@ def construct_keybinding(keys):
             continue
         if alt_key_on:
             try:
-                strings.append(f'<{REVERSED_SPECIAL_KEYS[(ALT_KEY, key)]}>')
+                strings.append(f'<{REVERSED_SPECIAL_KEYS[ALT_KEY, key]}>')
             except KeyError:
                 strings.extend(map(key_to_string, (ALT_KEY, key)))
         else:

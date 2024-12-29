@@ -160,6 +160,9 @@ ignore = [
     "W505",
     # ANN401: dynamically typed expressions (typing.Any) are disallowed
     "ANN401",
+    # FURB189: use the `UserDict`, `UserList`, and `UserString` instead
+    # internally subclassing `dict`, `list`, and `str`
+    "FURB189",
     # S101: use of `assert` detected
     # internal use and may never raise at runtime
     "S101",

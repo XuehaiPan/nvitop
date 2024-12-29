@@ -28,11 +28,11 @@ import sys as _sys
 import threading as _threading
 from typing import TYPE_CHECKING as _TYPE_CHECKING
 from typing import Any as _Any
-from typing import Callable as _Callable
 from typing import ClassVar as _ClassVar
 
 
 if _TYPE_CHECKING:
+    from collections.abc import Callable as _Callable
     from typing_extensions import Self as _Self  # Python 3.11+
     from typing_extensions import TypeAlias as _TypeAlias  # Python 3.10+
 

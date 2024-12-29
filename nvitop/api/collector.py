@@ -25,13 +25,17 @@ import os
 import threading
 import time
 from collections import OrderedDict, defaultdict
-from typing import Callable, ClassVar, Generator, Iterable, NamedTuple, TypeVar
+from typing import TYPE_CHECKING, ClassVar, NamedTuple, TypeVar
 from weakref import WeakSet
 
 from nvitop.api import host
 from nvitop.api.device import CudaDevice, Device
 from nvitop.api.process import GpuProcess, HostProcess
 from nvitop.api.utils import GiB, MiB, Snapshot
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Iterable
 
 
 __all__ = ['take_snapshots', 'collect_in_background', 'ResourceMetricCollector']

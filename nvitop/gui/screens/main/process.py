@@ -3,11 +3,13 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import itertools
 import threading
 import time
 from operator import attrgetter, xor
-from typing import Any, Callable, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from cachetools.func import ttl_cache
 
@@ -27,6 +29,10 @@ from nvitop.gui.library import (
     host,
     wcslen,
 )
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Order(NamedTuple):
