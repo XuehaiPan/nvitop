@@ -612,7 +612,7 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "yellow",
                 "value": 70
               },
               {
@@ -655,12 +655,13 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "host_cpu_percent_Percentage{hostname=~\"$hostname\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "{{hostname}} CPU (%)",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -690,7 +691,7 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "yellow",
                 "value": 70
               },
               {
@@ -733,12 +734,13 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "gpu_utilization_Percentage{hostname=~\"$hostname\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "{{hostname}} GPU {{index}} (%)",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -768,7 +770,7 @@
                 "value": null
               },
               {
-                "color": "#EAB839",
+                "color": "yellow",
                 "value": 70
               },
               {
@@ -811,12 +813,13 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "gpu_memory_percent_Percentage{hostname=~\"$hostname\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "{{hostname}} GPU {{index}} (%)",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
@@ -845,7 +848,7 @@
                 "color": "green"
               },
               {
-                "color": "#EAB839",
+                "color": "yellow",
                 "value": 70
               },
               {
@@ -888,12 +891,13 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
+          "exemplar": false,
           "expr": "host_virtual_memory_percent_Percentage{hostname=~\"$hostname\"}",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
-          "instant": false,
+          "instant": true,
           "legendFormat": "{{hostname}} MEM (%)",
-          "range": true,
+          "range": false,
           "refId": "A",
           "useBackend": false
         }
