@@ -22,7 +22,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 
 <p align="center">
   <a href="./nvitop-exporter">
-    <img width="100%" src="https://github.com/user-attachments/assets/c1769a8b-2d06-47c4-8f76-c91dace132e9" alt="Filter">
+    <img width="100%" src="https://github.com/user-attachments/assets/e4867e64-2ca9-45bc-b524-929053f9673d" alt="Grafana Dashboard">
   </a>
   <br/>
   A Grafana dashboard built on top of <code>nvitop-exporter</code>.
