@@ -1,27 +1,527 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
-  "editable": true,
+  "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
   "links": [],
   "liveNow": true,
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": [],
+      "title": "Process",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "de7ox5rfcpla8f"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "right",
+            "cellOptions": {
+              "type": "auto",
+              "wrapText": false
+            },
+            "filterable": true,
+            "inspect": false,
+            "minWidth": 50
+          },
+          "fieldMinMax": true,
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "/^%.*$/"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "lcd",
+                  "type": "gauge",
+                  "valueDisplayMode": "color"
+                }
+              },
+              {
+                "id": "max",
+                "value": 100
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "RSS MEMORY"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "mbytes"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge",
+                  "valueDisplayMode": "color"
+                }
+              },
+              {
+                "id": "max",
+                "value": 81920
+              },
+              {
+                "id": "custom.minWidth",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "GPU MEMORY"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "mbytes"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "gradient",
+                  "type": "gauge",
+                  "valueDisplayMode": "color"
+                }
+              },
+              {
+                "id": "max",
+                "value": 81920
+              },
+              {
+                "id": "custom.minWidth",
+                "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "TIME"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "COMMAND"
+            },
+            "properties": [
+              {
+                "id": "custom.align",
+                "value": "left"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": false,
+          "fields": [
+            "Value #gpu memory (lastNotNull)"
+          ],
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "frameIndex": 0,
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Hostname"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_cpu_percent_Percentage{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "cpu percent",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_rss_memory_MiB{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "rss memory",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_gpu_memory_MiB{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "gpu memory",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_gpu_sm_utilization_Percentage{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "gpu sm utilization",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_gpu_memory_utilization_Percentage{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "gpu memory bandwidth utilization",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_gpu_encoder_utilization_Percentage{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "gpu encoder utilization",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_gpu_decoder_utilization_Percentage{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "gpu decoder utilization",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_running_time_Second{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "interval": "",
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "running time",
+          "useBackend": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "de7ox5rfcpla8f"
+          },
+          "disableTextWrap": false,
+          "editorMode": "builder",
+          "exemplar": false,
+          "expr": "process_info_info{hostname=~\"$hostname\", username=~\"$username\"}",
+          "format": "table",
+          "fullMetaSearch": false,
+          "hide": false,
+          "includeNullMetadata": true,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "command",
+          "useBackend": false
+        }
+      ],
+      "title": "GPU Processes",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "Row": {
+                "aggregations": [],
+                "operation": "aggregate"
+              },
+              "Value #command": {
+                "aggregations": []
+              },
+              "Value #cpu percent": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #gpu decoder utilization": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #gpu encoder utilization": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #gpu memory": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #gpu memory bandwidth utilization": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #gpu sm utilization": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #rss memory": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "Value #running time": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "command": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "hostname": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "index": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "pid": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "status": {
+                "aggregations": [
+                  "lastNotNull"
+                ],
+                "operation": "aggregate"
+              },
+              "username": {
+                "aggregations": [],
+                "operation": "groupby"
+              },
+              "uuid": {
+                "aggregations": [],
+                "operation": "groupby"
+              }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "Value #gpu memory (lastNotNull)"
+              }
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "uuid": true
+            },
+            "includeByName": {},
+            "indexByName": {
+              "Value #cpu percent (lastNotNull)": 6,
+              "Value #gpu decoder utilization (lastNotNull)": 12,
+              "Value #gpu encoder utilization (lastNotNull)": 11,
+              "Value #gpu memory (lastNotNull)": 8,
+              "Value #gpu memory bandwidth utilization (lastNotNull)": 10,
+              "Value #gpu sm utilization (lastNotNull)": 9,
+              "Value #rss memory (lastNotNull)": 7,
+              "Value #running time (lastNotNull)": 13,
+              "command (lastNotNull)": 14,
+              "hostname": 0,
+              "index": 3,
+              "pid": 1,
+              "status (lastNotNull)": 5,
+              "username": 2,
+              "uuid": 4
+            },
+            "renameByName": {
+              "Value #cpu percent (lastNotNull)": "%CPU",
+              "Value #gpu decoder utilization (lastNotNull)": "%DEC",
+              "Value #gpu encoder utilization (lastNotNull)": "%ENC",
+              "Value #gpu memory (lastNotNull)": "GPU MEMORY",
+              "Value #gpu memory bandwidth utilization (lastNotNull)": "%GMBW",
+              "Value #gpu sm utilization (lastNotNull)": "%SM",
+              "Value #rss memory (lastNotNull)": "RSS MEMORY",
+              "Value #running time (lastNotNull)": "TIME",
+              "command (lastNotNull)": "COMMAND",
+              "hostname": "HOSTNAME",
+              "index": "DEVICE",
+              "pid": "PID",
+              "status (lastNotNull)": "STATUS",
+              "username": "USERNAME"
+            }
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "panels": [],
+      "title": "Overview",
+      "type": "row"
+    },
     {
       "datasource": {
         "type": "prometheus"
@@ -60,9 +560,8 @@
         "h": 9,
         "w": 3,
         "x": 0,
-        "y": 0
+        "y": 15
       },
-      "id": 1,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -91,7 +590,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} CPU (%)",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
@@ -136,9 +634,8 @@
         "h": 18,
         "w": 11,
         "x": 3,
-        "y": 0
+        "y": 15
       },
-      "id": 3,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -167,7 +664,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}} (%)",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
@@ -212,9 +708,8 @@
         "h": 18,
         "w": 10,
         "x": 14,
-        "y": 0
+        "y": 15
       },
-      "id": 4,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -243,7 +738,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}} (%)",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
@@ -288,9 +782,8 @@
         "h": 9,
         "w": 3,
         "x": 0,
-        "y": 9
+        "y": 24
       },
-      "id": 2,
       "options": {
         "minVizHeight": 75,
         "minVizWidth": 75,
@@ -319,12 +812,23 @@
           "instant": false,
           "legendFormat": "{{hostname}} MEM (%)",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
       "title": "Host Virtual Memory",
       "type": "gauge"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 33
+      },
+      "panels": [],
+      "title": "System",
+      "type": "row"
     },
     {
       "datasource": {
@@ -345,7 +849,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 5,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -392,12 +896,15 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 18
+        "y": 34
       },
-      "id": 6,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull",
+            "mean",
+            "max"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
@@ -423,7 +930,6 @@
           "instant": false,
           "legendFormat": "{{hostname}}",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
@@ -449,7 +955,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 5,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -495,12 +1001,13 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 18
+        "y": 34
       },
-      "id": 5,
       "options": {
         "legend": {
-          "calcs": [],
+          "calcs": [
+            "lastNotNull"
+          ],
           "displayMode": "table",
           "placement": "bottom",
           "showLegend": true,
@@ -526,7 +1033,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} (1m)",
           "range": true,
-          "refId": "A",
           "useBackend": false
         },
         {
@@ -542,7 +1048,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} (5m)",
           "range": true,
-          "refId": "B",
           "useBackend": false
         },
         {
@@ -558,7 +1063,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} (15m)",
           "range": true,
-          "refId": "C",
           "useBackend": false
         }
       ],
@@ -584,7 +1088,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 5,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -631,9 +1135,8 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 48
       },
-      "id": 9,
       "options": {
         "legend": {
           "calcs": [
@@ -666,7 +1169,6 @@
           "instant": false,
           "legendFormat": "{{hostname}}",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
@@ -692,7 +1194,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 5,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -739,9 +1241,8 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 48
       },
-      "id": 10,
       "options": {
         "legend": {
           "calcs": [
@@ -774,12 +1275,23 @@
           "instant": false,
           "legendFormat": "{{hostname}}",
           "range": true,
-          "refId": "A",
           "useBackend": false
         }
       ],
       "title": "Host Swap Memory",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 62
+      },
+      "panels": [],
+      "title": "System I/O",
+      "type": "row"
     },
     {
       "datasource": {
@@ -800,7 +1312,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 5,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -847,9 +1359,8 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 46
+        "y": 63
       },
-      "id": 11,
       "options": {
         "legend": {
           "calcs": [
@@ -883,7 +1394,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} RX",
           "range": true,
-          "refId": "A",
           "useBackend": false
         },
         {
@@ -899,7 +1409,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} TX",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -925,7 +1434,7 @@
             "barAlignment": 0,
             "barWidthFactor": 0.6,
             "drawStyle": "line",
-            "fillOpacity": 5,
+            "fillOpacity": 2,
             "gradientMode": "opacity",
             "hideFrom": {
               "legend": false,
@@ -971,9 +1480,8 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 46
+        "y": 63
       },
-      "id": 12,
       "options": {
         "legend": {
           "calcs": [
@@ -1007,7 +1515,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} Read",
           "range": true,
-          "refId": "A",
           "useBackend": false
         },
         {
@@ -1023,12 +1530,23 @@
           "instant": false,
           "legendFormat": "{{hostname}} Write",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
       "title": "Host Disk I/O",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 77
+      },
+      "panels": [],
+      "title": "Accelerator",
+      "type": "row"
     },
     {
       "datasource": {
@@ -1096,9 +1614,8 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 60
+        "y": 78
       },
-      "id": 7,
       "options": {
         "legend": {
           "calcs": [
@@ -1132,7 +1649,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1205,9 +1721,8 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 78
       },
-      "id": 8,
       "options": {
         "legend": {
           "calcs": [
@@ -1241,7 +1756,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1314,9 +1828,8 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 74
+        "y": 92
       },
-      "id": 14,
       "options": {
         "legend": {
           "calcs": [
@@ -1350,7 +1863,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1423,9 +1935,8 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 74
+        "y": 92
       },
-      "id": 13,
       "options": {
         "legend": {
           "calcs": [
@@ -1459,7 +1970,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1532,9 +2042,8 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 88
+        "y": 106
       },
-      "id": 15,
       "options": {
         "legend": {
           "calcs": [
@@ -1568,7 +2077,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1641,9 +2149,8 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 88
+        "y": 106
       },
-      "id": 16,
       "options": {
         "legend": {
           "calcs": [
@@ -1677,7 +2184,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1748,9 +2254,8 @@
         "h": 14,
         "w": 12,
         "x": 0,
-        "y": 102
+        "y": 120
       },
-      "id": 17,
       "options": {
         "legend": {
           "calcs": [
@@ -1784,7 +2289,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1855,9 +2359,8 @@
         "h": 14,
         "w": 12,
         "x": 12,
-        "y": 102
+        "y": 120
       },
-      "id": 18,
       "options": {
         "legend": {
           "calcs": [
@@ -1891,7 +2394,6 @@
           "instant": false,
           "legendFormat": "{{hostname}} GPU {{index}}",
           "range": true,
-          "refId": "B",
           "useBackend": false
         }
       ],
@@ -1907,9 +2409,7 @@
     "list": [
       {
         "current": {
-          "text": [
-            "All"
-          ],
+          "text": "All",
           "value": [
             "$__all"
           ]
@@ -1922,8 +2422,28 @@
         "options": [],
         "query": {
           "qryType": 1,
-          "query": "label_values(hostname)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
+          "query": "label_values(hostname)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "All",
+          "value": [
+            "$__all"
+          ]
+        },
+        "definition": "label_values(username)",
+        "description": "",
+        "includeAll": true,
+        "multi": true,
+        "name": "username",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(username)"
         },
         "refresh": 1,
         "regex": "",
@@ -1932,7 +2452,7 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
