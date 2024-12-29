@@ -58,6 +58,7 @@
       }
     ]
   },
+  "description": "Grafana Dashboard built by `nvitop-exporter`.",
   "editable": false,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -841,8 +842,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "#EAB839",
@@ -964,8 +964,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1073,8 +1072,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1215,8 +1213,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1325,8 +1322,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1448,8 +1444,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1575,8 +1570,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1716,8 +1710,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1827,8 +1820,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1938,8 +1930,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2049,8 +2040,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2160,8 +2150,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2271,8 +2260,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2380,8 +2368,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2489,8 +2476,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -2551,9 +2537,18 @@
       "type": "timeseries"
     }
   ],
+  "preload": true,
   "refresh": "5s",
   "schemaVersion": 40,
-  "tags": [],
+  "tags": [
+    "nvitop",
+    "nvitop-exporter",
+    "prometheus",
+    "nvidia",
+    "gpu",
+    "gpu process",
+    "gpu monitoring"
+  ],
   "templating": {
     "list": [
       {
@@ -2596,7 +2591,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "nvitop-exporter",
+  "title": "nvitop-dashboard",
   "uid": "bdl3vqwxprhtsa",
   "version": 1,
   "weekStart": ""
