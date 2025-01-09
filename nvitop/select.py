@@ -130,7 +130,7 @@ def select_devices(  # pylint: disable=too-many-arguments
 ) -> list[Device]: ...
 
 
-# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals,unused-argument,too-many-arguments
+# pylint: disable-next=too-many-branches,too-many-statements,too-many-locals,too-many-arguments
 def select_devices(
     devices: Iterable[Device] | None = None,
     *,
@@ -562,7 +562,19 @@ def main() -> int:
         )
         return 3
 
-    identifiers = select_devices(devices, **vars(args))
+    identifiers = select_devices(  # type: ignore[call-overload]
+        devices,
+        format=args.format,
+        min_count=args.min_count,
+        max_count=args.max_count,
+        min_free_memory=args.min_free_memory,
+        min_total_memory=args.min_total_memory,
+        max_gpu_utilization=args.max_gpu_utilization,
+        max_memory_utilization=args.max_memory_utilization,
+        tolerance=args.tolerance,
+        free_accounts=args.free_accounts,
+        sort=args.sort,
+    )
     identifiers = list(map(str, identifiers))
     result = args.sep.join(identifiers)
 

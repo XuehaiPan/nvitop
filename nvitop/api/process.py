@@ -458,18 +458,16 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     _ident: tuple
     _hash: int | None
 
-    # pylint: disable-next=too-many-arguments
+    # pylint: disable-next=too-many-arguments,unused-argument
     def __new__(
         cls,
         pid: int | None,
         device: Device,
         *,
-        # pylint: disable=unused-argument
         gpu_memory: int | NaType | None = None,
         gpu_instance_id: int | NaType | None = None,
         compute_instance_id: int | NaType | None = None,
         type: str | NaType | None = None,  # pylint: disable=redefined-builtin
-        # pylint: enable=unused-argument
     ) -> Self:
         """Return the cached instance of :class:`GpuProcess`."""
         if pid is None:
