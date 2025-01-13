@@ -662,6 +662,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._cuda_index: int | None = None
         self._cuda_compute_capability: tuple[int, int] | NaType | None = None
 
+        self._handle: libnvml.c_nvmlDevice_t | None
         if index is not None:
             self._nvml_index = index  # type: ignore[assignment]
             try:
@@ -826,7 +827,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         return self._nvml_index  # type: ignore[return-value] # will be overridden in MigDevice
 
     @property
-    def handle(self) -> libnvml.c_nvmlDevice_t:
+    def handle(self) -> libnvml.c_nvmlDevice_t | None:
         """The NVML device handle."""
         return self._handle
 
@@ -864,8 +865,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=name
         """
-        if self._name is NA:
-            self._name = libnvml.nvmlQuery('nvmlDeviceGetName', self.handle)
+        if self._handle is not None and self._name is NA:
+            self._name = libnvml.nvmlQuery('nvmlDeviceGetName', self._handle)
         return self._name
 
     def uuid(self) -> str | NaType:
@@ -882,8 +883,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=name
         """
-        if self._uuid is NA:
-            self._uuid = libnvml.nvmlQuery('nvmlDeviceGetUUID', self.handle)
+        if self._handle is not None and self._uuid is NA:
+            self._uuid = libnvml.nvmlQuery('nvmlDeviceGetUUID', self._handle)
         return self._uuid
 
     def bus_id(self) -> str | NaType:
@@ -898,10 +899,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=pci.bus_id
         """
-        if self._bus_id is NA:
+        if self._handle is not None and self._bus_id is NA:
             self._bus_id = libnvml.nvmlQuery(
                 lambda handle: libnvml.nvmlDeviceGetPciInfo(handle).busId,
-                self.handle,
+                self._handle,
             )
         return self._bus_id
 
@@ -919,7 +920,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=serial
         """
-        return libnvml.nvmlQuery('nvmlDeviceGetSerial', self.handle)
+        if self._handle is not None:
+            return libnvml.nvmlQuery('nvmlDeviceGetSerial', self._handle)
+        return NA
 
     @memoize_when_activated
     def memory_info(self) -> MemoryInfo:  # in bytes
@@ -928,9 +931,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: MemoryInfo(total, free, used)
             A named tuple with memory information, the item could be :const:`nvitop.NA` when not applicable.
         """
-        memory_info = libnvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self.handle)
-        if libnvml.nvmlCheckReturn(memory_info):
-            return MemoryInfo(total=memory_info.total, free=memory_info.free, used=memory_info.used)
+        if self._handle is not None:
+            memory_info = libnvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self._handle)
+            if libnvml.nvmlCheckReturn(memory_info):
+                return MemoryInfo(
+                    total=memory_info.total,
+                    free=memory_info.free,
+                    used=memory_info.used,
+                )
         return MemoryInfo(total=NA, free=NA, used=NA)
 
     def memory_total(self) -> int | NaType:  # in bytes
@@ -1009,12 +1017,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[float, NaType]
             The percentage of used memory over total memory, or :const:`nvitop.NA` when not applicable.
         """
-        memory_info = self.memory_info()
-        if libnvml.nvmlCheckReturn(memory_info.used, int) and libnvml.nvmlCheckReturn(
-            memory_info.total,
-            int,
-        ):
-            return round(100.0 * memory_info.used / memory_info.total, 1)
+        total, _, used = self.memory_info()
+        if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int):
+            return round(100.0 * used / total, 1)
         return NA
 
     def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
@@ -1032,13 +1037,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: MemoryInfo(total, free, used)
             A named tuple with BAR1 memory information, the item could be :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
-        memory_info = libnvml.nvmlQuery('nvmlDeviceGetBAR1MemoryInfo', self.handle)
-        if libnvml.nvmlCheckReturn(memory_info):
-            return MemoryInfo(
-                total=memory_info.bar1Total,
-                free=memory_info.bar1Free,
-                used=memory_info.bar1Used,
-            )
+        if self._handle is not None:
+            memory_info = libnvml.nvmlQuery('nvmlDeviceGetBAR1MemoryInfo', self._handle)
+            if libnvml.nvmlCheckReturn(memory_info):
+                return MemoryInfo(
+                    total=memory_info.bar1Total,
+                    free=memory_info.bar1Free,
+                    used=memory_info.bar1Used,
+                )
         return MemoryInfo(total=NA, free=NA, used=NA)
 
     def bar1_memory_total(self) -> int | NaType:  # in bytes
@@ -1095,12 +1101,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[float, NaType]
             The percentage of used BAR1 memory over total BAR1 memory, or :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
-        memory_info = self.bar1_memory_info()
-        if libnvml.nvmlCheckReturn(memory_info.used, int) and libnvml.nvmlCheckReturn(
-            memory_info.total,
-            int,
-        ):
-            return round(100.0 * memory_info.used / memory_info.total, 1)
+        total, _, used = self.bar1_memory_info()
+        if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int):
+            return round(100.0 * used / total, 1)
         return NA
 
     def bar1_memory_usage(self) -> str:  # in human readable
@@ -1120,17 +1123,18 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """  # pylint: disable=line-too-long
         gpu, memory, encoder, decoder = NA, NA, NA, NA
 
-        utilization_rates = libnvml.nvmlQuery('nvmlDeviceGetUtilizationRates', self.handle)
-        if libnvml.nvmlCheckReturn(utilization_rates):
-            gpu, memory = utilization_rates.gpu, utilization_rates.memory
+        if self._handle is not None:
+            utilization_rates = libnvml.nvmlQuery('nvmlDeviceGetUtilizationRates', self._handle)
+            if libnvml.nvmlCheckReturn(utilization_rates):
+                gpu, memory = utilization_rates.gpu, utilization_rates.memory
 
-        encoder_utilization = libnvml.nvmlQuery('nvmlDeviceGetEncoderUtilization', self.handle)
-        if libnvml.nvmlCheckReturn(encoder_utilization, list) and len(encoder_utilization) > 0:
-            encoder = encoder_utilization[0]
+            encoder_utilization = libnvml.nvmlQuery('nvmlDeviceGetEncoderUtilization', self._handle)
+            if libnvml.nvmlCheckReturn(encoder_utilization, list) and len(encoder_utilization) > 0:
+                encoder = encoder_utilization[0]
 
-        decoder_utilization = libnvml.nvmlQuery('nvmlDeviceGetDecoderUtilization', self.handle)
-        if libnvml.nvmlCheckReturn(decoder_utilization, list) and len(decoder_utilization) > 0:
-            decoder = decoder_utilization[0]
+            decoder_utilization = libnvml.nvmlQuery('nvmlDeviceGetDecoderUtilization', self._handle)
+            if libnvml.nvmlCheckReturn(decoder_utilization, list) and len(decoder_utilization) > 0:
+                decoder = decoder_utilization[0]
 
         return UtilizationRates(gpu=gpu, memory=memory, encoder=encoder, decoder=decoder)
 
@@ -1191,20 +1195,29 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: ClockInfos(graphics, sm, memory, video)
             A named tuple with current clock speeds (in MHz) for the device, the item could be :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
-        return ClockInfos(
-            graphics=libnvml.nvmlQuery(
+        graphics, sm, memory, video = NA, NA, NA, NA
+        if self._handle is not None:
+            graphics = libnvml.nvmlQuery(
                 'nvmlDeviceGetClockInfo',
-                self.handle,
+                self._handle,
                 libnvml.NVML_CLOCK_GRAPHICS,
-            ),
-            sm=libnvml.nvmlQuery('nvmlDeviceGetClockInfo', self.handle, libnvml.NVML_CLOCK_SM),
-            memory=libnvml.nvmlQuery('nvmlDeviceGetClockInfo', self.handle, libnvml.NVML_CLOCK_MEM),
-            video=libnvml.nvmlQuery(
+            )
+            sm = libnvml.nvmlQuery(
                 'nvmlDeviceGetClockInfo',
-                self.handle,
+                self._handle,
+                libnvml.NVML_CLOCK_SM,
+            )
+            memory = libnvml.nvmlQuery(
+                'nvmlDeviceGetClockInfo',
+                self._handle,
+                libnvml.NVML_CLOCK_MEM,
+            )
+            video = libnvml.nvmlQuery(
+                'nvmlDeviceGetClockInfo',
+                self._handle,
                 libnvml.NVML_CLOCK_VIDEO,
-            ),
-        )
+            )
+        return ClockInfos(graphics=graphics, sm=sm, memory=memory, video=video)
 
     clocks = clock_infos
 
@@ -1215,16 +1228,28 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: ClockInfos(graphics, sm, memory, video)
             A named tuple with maximum clock speeds (in MHz) for the device, the item could be :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
-        clock_infos = self._max_clock_infos._asdict()
-        for name, clock in clock_infos.items():
-            if clock is NA:
-                clock_type = getattr(
-                    libnvml,
-                    'NVML_CLOCK_{}'.format(name.replace('memory', 'mem').upper()),
-                )
-                clock = libnvml.nvmlQuery('nvmlDeviceGetMaxClockInfo', self.handle, clock_type)
-                clock_infos[name] = clock
-        self._max_clock_infos = ClockInfos(**clock_infos)
+        if self._handle is not None:
+            graphics = libnvml.nvmlQuery(
+                'nvmlDeviceGetMaxClockInfo',
+                self._handle,
+                libnvml.NVML_CLOCK_GRAPHICS,
+            )
+            sm = libnvml.nvmlQuery(
+                'nvmlDeviceGetMaxClockInfo',
+                self._handle,
+                libnvml.NVML_CLOCK_SM,
+            )
+            memory = libnvml.nvmlQuery(
+                'nvmlDeviceGetMaxClockInfo',
+                self._handle,
+                libnvml.NVML_CLOCK_MEM,
+            )
+            video = libnvml.nvmlQuery(
+                'nvmlDeviceGetMaxClockInfo',
+                self._handle,
+                libnvml.NVML_CLOCK_VIDEO,
+            )
+            self._max_clock_infos = ClockInfos(graphics=graphics, sm=sm, memory=memory, video=video)
         return self._max_clock_infos
 
     max_clocks = max_clock_infos
@@ -1366,7 +1391,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=fan.speed
         """  # pylint: disable=line-too-long
-        return libnvml.nvmlQuery('nvmlDeviceGetFanSpeed', self.handle)
+        if self._handle is not None:
+            return libnvml.nvmlQuery('nvmlDeviceGetFanSpeed', self._handle)
+        return NA
 
     def temperature(self) -> int | NaType:  # in Celsius
         """Core GPU temperature in degrees C.
@@ -1380,11 +1407,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=temperature.gpu
         """
-        return libnvml.nvmlQuery(
-            'nvmlDeviceGetTemperature',
-            self.handle,
-            libnvml.NVML_TEMPERATURE_GPU,
-        )
+        if self._handle is not None:
+            return libnvml.nvmlQuery(
+                'nvmlDeviceGetTemperature',
+                self._handle,
+                libnvml.NVML_TEMPERATURE_GPU,
+            )
+        return NA
 
     @memoize_when_activated
     def power_usage(self) -> int | NaType:  # in milliwatts (mW)
@@ -1399,7 +1428,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             $(( "$(nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=power.draw)" * 1000 ))
         """
-        return libnvml.nvmlQuery('nvmlDeviceGetPowerUsage', self.handle)
+        if self._handle is not None:
+            return libnvml.nvmlQuery('nvmlDeviceGetPowerUsage', self._handle)
+        return NA
 
     power_draw = power_usage  # in milliwatts (mW)
 
@@ -1418,7 +1449,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             $(( "$(nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=power.limit)" * 1000 ))
         """
-        return libnvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self.handle)
+        if self._handle is not None:
+            return libnvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self._handle)
+        return NA
 
     def power_status(self) -> str:  # string of power usage over power limit in watts (W)
         """The string of power usage over power limit in watts.
@@ -1456,11 +1489,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[int, NaType]
             The current PCIe transmit throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
         """
-        return libnvml.nvmlQuery(
-            'nvmlDeviceGetPcieThroughput',
-            self.handle,
-            libnvml.NVML_PCIE_UTIL_RX_BYTES,
-        )
+        if self._handle is not None:
+            return libnvml.nvmlQuery(
+                'nvmlDeviceGetPcieThroughput',
+                self._handle,
+                libnvml.NVML_PCIE_UTIL_RX_BYTES,
+            )
+        return NA
 
     @memoize_when_activated
     def pcie_rx_throughput(self) -> int | NaType:  # in KiB/s
@@ -1472,11 +1507,13 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[int, NaType]
             The current PCIe receive throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
         """
-        return libnvml.nvmlQuery(
-            'nvmlDeviceGetPcieThroughput',
-            self.handle,
-            libnvml.NVML_PCIE_UTIL_RX_BYTES,
-        )
+        if self._handle is not None:
+            return libnvml.nvmlQuery(
+                'nvmlDeviceGetPcieThroughput',
+                self._handle,
+                libnvml.NVML_PCIE_UTIL_RX_BYTES,
+            )
+        return NA
 
     def pcie_tx_throughput_human(self) -> str | NaType:  # in human readable
         """The current PCIe transmit throughput in human readable format.
@@ -1514,16 +1551,16 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[int, NaType]
             The number of NVLinks that the GPU has.
         """
-        if self._nvlink_link_count is None:
+        if self._handle is not None and self._nvlink_link_count is None:
             ((nvlink_link_count, _),) = libnvml.nvmlQueryFieldValues(
-                self.handle,
+                self._handle,
                 [libnvml.NVML_FI_DEV_NVLINK_LINK_COUNT],
             )
             if libnvml.nvmlCheckReturn(nvlink_link_count, int):
                 self._nvlink_link_count = nvlink_link_count  # type: ignore[assignment]
-            else:
-                self._nvlink_link_count = 0
-        return self._nvlink_link_count  # type: ignore[return-value]
+        if self._nvlink_link_count is None:
+            self._nvlink_link_count = 0
+        return self._nvlink_link_count
 
     @memoize_when_activated
     def nvlink_throughput(self, interval: float | None = None) -> list[ThroughputInfo]:  # in KiB/s
@@ -1544,6 +1581,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             A list of named tuples with current NVLink throughput for each NVLink in KiB/s, the item
             could be :const:`nvitop.NA` when not applicable.
         """
+        if self._handle is None:
+            return []
+
         nvlink_link_count = self.nvlink_link_count()
         if nvlink_link_count == 0:
             return []
@@ -1551,7 +1591,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         def query_nvlink_throughput_counters() -> tuple[tuple[int | NaType, int]]:
             return tuple(  # type: ignore[return-value]
                 libnvml.nvmlQueryFieldValues(
-                    self.handle,
+                    self._handle,
                     [  # type: ignore[arg-type]
                         (libnvml.NVML_FI_DEV_NVLINK_THROUGHPUT_DATA_TX, i)
                         for i in range(nvlink_link_count)
@@ -1954,10 +1994,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=display_active
         """  # pylint: disable=line-too-long
-        return {0: 'Disabled', 1: 'Enabled'}.get(
-            libnvml.nvmlQuery('nvmlDeviceGetDisplayActive', self.handle),
-            NA,
-        )
+        if self._handle is not None:
+            return {
+                0: 'Disabled',
+                1: 'Enabled',
+            }.get(libnvml.nvmlQuery('nvmlDeviceGetDisplayActive', self._handle), NA)
+        return NA
 
     def display_mode(self) -> str | NaType:
         """A flag that indicates whether a physical display (e.g. monitor) is currently connected to any of the GPU's connectors.
@@ -1975,10 +2017,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=display_mode
         """  # pylint: disable=line-too-long
-        return {0: 'Disabled', 1: 'Enabled'}.get(
-            libnvml.nvmlQuery('nvmlDeviceGetDisplayMode', self.handle),
-            NA,
-        )
+        if self._handle is not None:
+            return {
+                0: 'Disabled',
+                1: 'Enabled',
+            }.get(libnvml.nvmlQuery('nvmlDeviceGetDisplayMode', self._handle), NA)
+        return NA
 
     def current_driver_model(self) -> str | NaType:
         """The driver model currently in use.
@@ -2000,10 +2044,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=driver_model.current
         """
-        return {libnvml.NVML_DRIVER_WDDM: 'WDDM', libnvml.NVML_DRIVER_WDM: 'WDM'}.get(
-            libnvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self.handle),
-            NA,
-        )
+        if self._handle is not None:
+            return {
+                libnvml.NVML_DRIVER_WDDM: 'WDDM',
+                libnvml.NVML_DRIVER_WDM: 'WDM',
+            }.get(libnvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self._handle), NA)
+        return NA
 
     driver_model = current_driver_model
 
@@ -2025,10 +2071,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=persistence_mode
         """  # pylint: disable=line-too-long
-        return {0: 'Disabled', 1: 'Enabled'}.get(
-            libnvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self.handle),
-            NA,
-        )
+        if self._handle is not None:
+            return {
+                0: 'Disabled',
+                1: 'Enabled',
+            }.get(libnvml.nvmlQuery('nvmlDeviceGetPersistenceMode', self._handle), NA)
+        return NA
 
     def performance_state(self) -> str | NaType:
         """The current performance state for the GPU. States range from P0 (maximum performance) to P12 (minimum performance).
@@ -2042,10 +2090,12 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=pstate
         """  # pylint: disable=line-too-long
-        performance_state = libnvml.nvmlQuery('nvmlDeviceGetPerformanceState', self.handle)
-        if libnvml.nvmlCheckReturn(performance_state, int):
-            performance_state = 'P' + str(performance_state)
-        return performance_state
+        if self._handle is not None:
+            performance_state = libnvml.nvmlQuery('nvmlDeviceGetPerformanceState', self._handle)
+            if libnvml.nvmlCheckReturn(performance_state, int):
+                performance_state = 'P' + str(performance_state)
+            return performance_state
+        return NA
 
     def total_volatile_uncorrected_ecc_errors(self) -> int | NaType:
         """Total errors detected across entire chip.
@@ -2059,12 +2109,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=ecc.errors.uncorrected.volatile.total
         """  # pylint: disable=line-too-long
-        return libnvml.nvmlQuery(
-            'nvmlDeviceGetTotalEccErrors',
-            self.handle,
-            libnvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
-            libnvml.NVML_VOLATILE_ECC,
-        )
+        if self._handle is not None:
+            return libnvml.nvmlQuery(
+                'nvmlDeviceGetTotalEccErrors',
+                self._handle,
+                libnvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED,
+                libnvml.NVML_VOLATILE_ECC,
+            )
+        return NA
 
     def compute_mode(self) -> str | NaType:
         """The compute mode flag indicates whether individual or multiple compute applications may run on the GPU.
@@ -2082,12 +2134,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_mode
         """  # pylint: disable=line-too-long
-        return {
-            libnvml.NVML_COMPUTEMODE_DEFAULT: 'Default',
-            libnvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD: 'Exclusive Thread',
-            libnvml.NVML_COMPUTEMODE_PROHIBITED: 'Prohibited',
-            libnvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
-        }.get(libnvml.nvmlQuery('nvmlDeviceGetComputeMode', self.handle), NA)
+        if self._handle is not None:
+            return {
+                libnvml.NVML_COMPUTEMODE_DEFAULT: 'Default',
+                libnvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD: 'Exclusive Thread',
+                libnvml.NVML_COMPUTEMODE_PROHIBITED: 'Prohibited',
+                libnvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS: 'Exclusive Process',
+            }.get(libnvml.nvmlQuery('nvmlDeviceGetComputeMode', self._handle), NA)
+        return NA
 
     def cuda_compute_capability(self) -> tuple[int, int] | NaType:
         """The CUDA compute capability for the device.
@@ -2101,24 +2155,31 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_cap
         """
-        if self._cuda_compute_capability is None:
-            self._cuda_compute_capability = libnvml.nvmlQuery(
-                'nvmlDeviceGetCudaComputeCapability',
-                self.handle,
-            )
-        return self._cuda_compute_capability
+        if self._handle is not None:
+            if self._cuda_compute_capability is None:
+                self._cuda_compute_capability = libnvml.nvmlQuery(
+                    'nvmlDeviceGetCudaComputeCapability',
+                    self._handle,
+                )
+            return self._cuda_compute_capability
+        return NA
 
     def is_mig_device(self) -> bool:
         """Return whether or not the device is a MIG device."""
-        if self._is_mig_device is None:
-            is_mig_device = libnvml.nvmlQuery(
-                'nvmlDeviceIsMigDeviceHandle',
-                self.handle,
-                default=False,
-                ignore_function_not_found=True,
-            )
-            self._is_mig_device = bool(is_mig_device)  # nvmlDeviceIsMigDeviceHandle returns c_uint
-        return self._is_mig_device
+        if self._handle is not None:
+            if self._is_mig_device is None:
+                is_mig_device = libnvml.nvmlQuery(
+                    'nvmlDeviceIsMigDeviceHandle',
+                    self._handle,
+                    default=False,
+                    ignore_function_not_found=True,
+                )
+                # nvmlDeviceIsMigDeviceHandle returns c_uint
+                self._is_mig_device = bool(
+                    is_mig_device,
+                )
+            return self._is_mig_device
+        return False
 
     def mig_mode(self) -> str | NaType:
         """The MIG mode that the GPU is currently operating under.
@@ -2134,12 +2195,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=mig.mode.current
         """
+        if self._handle is None:
+            return NA
         if self.is_mig_device():
             return NA
 
         mig_mode, *_ = libnvml.nvmlQuery(
             'nvmlDeviceGetMigMode',
-            self.handle,
+            self._handle,
             default=(NA, NA),
             ignore_function_not_found=True,
         )
@@ -2192,14 +2255,16 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Dict[int, GpuProcess]
             A dictionary mapping PID to GPU process instance.
         """
-        processes = {}
+        if self._handle is None:
+            return {}
 
+        processes = {}
         found_na = False
         for type, func in (  # pylint: disable=redefined-builtin
             ('C', 'nvmlDeviceGetComputeRunningProcesses'),
             ('G', 'nvmlDeviceGetGraphicsRunningProcesses'),
         ):
-            for p in libnvml.nvmlQuery(func, self.handle, default=()):
+            for p in libnvml.nvmlQuery(func, self._handle, default=()):
                 if isinstance(p.usedGpuMemory, int):
                     gpu_memory = p.usedGpuMemory
                 else:
@@ -2219,7 +2284,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if len(processes) > 0:
             samples = libnvml.nvmlQuery(
                 'nvmlDeviceGetProcessUtilization',
-                self.handle,
+                self._handle,
                 # Only utilization samples that were recorded after this timestamp will be returned.
                 # The CPU timestamp, i.e. absolute Unix epoch timestamp (in microseconds), is used.
                 # Here we use the timestamp 1 second ago to ensure the record buffer is not empty.
@@ -2382,12 +2447,14 @@ class PhysicalDevice(Device):
 
         This method will return 0 if the device does not support MIG mode.
         """
-        return libnvml.nvmlQuery(
-            'nvmlDeviceGetMaxMigDeviceCount',
-            self.handle,
-            default=0,
-            ignore_function_not_found=True,
-        )
+        if self._handle is not None:
+            return libnvml.nvmlQuery(
+                'nvmlDeviceGetMaxMigDeviceCount',
+                self._handle,
+                default=0,
+                ignore_function_not_found=True,
+            )
+        return 0
 
     def mig_device(self, mig_index: int) -> MigDevice:
         """Return a child MIG device of the given index.
@@ -2531,7 +2598,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
             self._handle = libnvml.nvmlQuery('nvmlDeviceGetHandleByUUID', uuid, ignore_errors=False)
             parent_handle = libnvml.nvmlQuery(
                 'nvmlDeviceGetDeviceHandleFromMigDeviceHandle',
-                self.handle,
+                self._handle,
                 ignore_errors=False,
             )
             parent_index = libnvml.nvmlQuery(
@@ -2579,10 +2646,10 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         Returns: Union[int, NaType]
             The gpu instance ID of the MIG device, or :const:`nvitop.NA` when not applicable.
         """
-        if self._gpu_instance_id is NA:
+        if self._handle is not None and self._gpu_instance_id is NA:
             self._gpu_instance_id = libnvml.nvmlQuery(
                 'nvmlDeviceGetGpuInstanceId',
-                self.handle,
+                self._handle,
                 default=UINT_MAX,
             )
             if self._gpu_instance_id == UINT_MAX:
@@ -2595,10 +2662,10 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         Returns: Union[int, NaType]
             The compute instance ID of the MIG device, or :const:`nvitop.NA` when not applicable.
         """
-        if self._compute_instance_id is NA:
+        if self._handle is not None and self._compute_instance_id is NA:
             self._compute_instance_id = libnvml.nvmlQuery(
                 'nvmlDeviceGetComputeInstanceId',
-                self.handle,
+                self._handle,
                 default=UINT_MAX,
             )
             if self._compute_instance_id == UINT_MAX:
