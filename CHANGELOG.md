@@ -21,12 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix passing invalid device handle (e.g., GPU is lost) to NVML functions by [@XuehaiPan](https://github.com/XuehaiPan) in [#146](https://github.com/XuehaiPan/nvitop/pull/146).
-- Fix CUDA device selection tool `nvisel` by [@XuehaiPan](https://github.com/XuehaiPan).
+-
 
 ### Removed
 
 -
+
+------
+
+## [1.4.1] - 2025-01-13
+
+### Fixed
+
+- Fix passing invalid device handle (e.g., GPU is lost) to NVML functions by [@XuehaiPan](https://github.com/XuehaiPan) in [#146](https://github.com/XuehaiPan/nvitop/pull/146).
+- Fix CUDA device selection tool `nvisel` by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ------
 
@@ -146,7 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.1
 [1.4.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.0
 [1.3.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.2
 [1.3.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.1
