@@ -24,8 +24,7 @@ from typing import Sequence
 
 from prometheus_client import REGISTRY, CollectorRegistry, Gauge, Info
 
-from nvitop import Device, MiB, MigDevice, PhysicalDevice, host
-from nvitop.api.process import GpuProcess
+from nvitop import Device, GpuProcess, MiB, MigDevice, PhysicalDevice, host
 from nvitop_exporter.utils import get_ip_address
 
 
@@ -602,7 +601,6 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
             for pid, process in device.processes().items():
                 with process.oneshot():
                     username = process.username()
-                    alive_pids.add((pid, username))
                     if (pid, username) not in host_snapshots:  # noqa: SIM401,RUF100
                         host_snapshot = host_snapshots[pid, username] = process.host_snapshot()
                     else:
@@ -659,6 +657,7 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                             username=username,
                         ).set(value)
 
+        alive_pids.update(host_snapshots)
         for pid, username in previous_alive_pids.difference(alive_pids):
             for collector in (
                 self.process_info,
