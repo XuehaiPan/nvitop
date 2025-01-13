@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix passing invalid device handle (e.g., GPU is lost) to NVML functions by [@XuehaiPan](https://github.com/XuehaiPan) in [#146](https://github.com/XuehaiPan/nvitop/pull/146).
 - Fix CUDA device selection tool `nvisel` by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Removed
