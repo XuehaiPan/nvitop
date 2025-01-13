@@ -12,7 +12,7 @@ body:
 
         ```bash
         pip3 install --upgrade pipx
-        pipx run --spec git+https://github.com/XuehaiPan/nvitop.git nvitop
+        PYTHONFAULTHANDLER=1 pipx run --spec git+https://github.com/XuehaiPan/nvitop.git nvitop
         ```
 
   - type: checkboxes
