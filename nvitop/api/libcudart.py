@@ -451,7 +451,7 @@ def __LoadCudaLibrary() -> None:  # pylint: disable=too-many-branches
             if __cudaLib is None:  # pylint: disable=too-many-nested-blocks
                 # Platform specific libcudart location
                 system = _platform.system()
-                bits = _platform.architecture()[0].replace('bit', '')
+                bits = 8 * _ctypes.sizeof(_ctypes.c_void_p)  # 64 or 32
                 if system == 'Darwin':
                     lib_filenames = ['libcudart.dylib']
                 elif system == 'Linux':

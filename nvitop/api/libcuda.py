@@ -420,7 +420,7 @@ def __LoadCudaLibrary() -> None:
                         _itertools.chain.from_iterable((f'{lib}.1', lib) for lib in lib_filenames),
                     )
                 elif system == 'Windows':
-                    bits = _platform.architecture()[0].replace('bit', '')  # e.g., '64' or '32'
+                    bits = 8 * _ctypes.sizeof(_ctypes.c_void_p)  # 64 or 32
                     lib_filenames = [f'nvcuda{bits}.dll', 'nvcuda.dll']
                 # Open library
                 for lib_filename in lib_filenames:
