@@ -7,7 +7,7 @@ from nvitop.gui.library import Device, Displayable, MouseEvent
 from nvitop.version import __version__
 
 
-HELP_TEMPLATE = """nvitop {} - (C) Xuehai Pan, 2021-2024.
+HELP_TEMPLATE = """nvitop {} - (C) Xuehai Pan, 2021-2025.
 Released under the GNU GPLv3 License.
 
 GPU Process Type: C: Compute, G: Graphics, X: Mixed.

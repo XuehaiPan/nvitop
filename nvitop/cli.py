@@ -163,7 +163,7 @@ def parse_arguments() -> argparse.Namespace:
         dest='only',
         type=int,
         nargs='+',
-        metavar='idx',
+        metavar='INDEX',
         help='Only show the specified devices, suppress option `--only-visible`.',
     )
     device_filtering.add_argument(

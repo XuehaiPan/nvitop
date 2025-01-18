@@ -343,7 +343,7 @@ Type `nvitop --help` for more command options:
 usage: nvitop [--help] [--version] [--once | --monitor [{auto,full,compact}]]
               [--interval SEC] [--ascii] [--colorful] [--force-color] [--light]
               [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--only idx [idx ...]] [--only-visible]
+              [--only INDEX [INDEX ...]] [--only-visible]
               [--compute] [--only-compute] [--graphics] [--only-graphics]
               [--user [USERNAME ...]] [--pid PID [PID ...]]
 
@@ -379,7 +379,7 @@ coloring:
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
 
 device filtering:
-  --only idx [idx ...], -o idx [idx ...]
+  --only INDEX [INDEX ...], -o INDEX [INDEX ...]
                         Only show the specified devices, suppress option `--only-visible`.
   --only-visible, -ov   Only show devices in the `CUDA_VISIBLE_DEVICES` environment variable.
 
