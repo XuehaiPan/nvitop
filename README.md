@@ -115,7 +115,6 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 - NVIDIA Management Library (NVML)
 - nvidia-ml-py
 - psutil
-- cachetools
 - termcolor
 - curses<sup>[*](#curses)</sup> (with `libncursesw`)
 
