@@ -204,7 +204,6 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["nvitop", "nvitop_exporter"]
-known-local-folder = ["nvitop", "nvitop-exporter"]
 extra-standard-library = ["typing_extensions"]
 lines-after-imports = 2
 
