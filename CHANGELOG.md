@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
--
+- Remove third-party dependency `cachetools` by [@XuehaiPan](https://github.com/XuehaiPan) in [#147](https://github.com/XuehaiPan/nvitop/pull/147).
 
 ------
 

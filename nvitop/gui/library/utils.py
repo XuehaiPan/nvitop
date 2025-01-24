@@ -7,8 +7,23 @@ import contextlib
 import math
 import os
 
-from nvitop.api import NA, colored, host, set_color  # noqa: F401 # pylint: disable=unused-import
+from nvitop.api import NA, colored, host, set_color, ttl_cache
 from nvitop.gui.library.widestring import WideString
+
+
+__all__ = [
+    'NA',
+    'USERNAME',
+    'HOSTNAME',
+    'SUPERUSER',
+    'USERCONTEXT',
+    'LARGE_INTEGER',
+    'ttl_cache',
+    'colored',
+    'set_color',
+    'cut_string',
+    'make_bar',
+]
 
 
 USERNAME = 'N/A'

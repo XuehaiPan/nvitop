@@ -6,9 +6,16 @@
 import threading
 import time
 
-from cachetools.func import ttl_cache
-
-from nvitop.gui.library import NA, Device, Displayable, colored, cut_string, host, make_bar
+from nvitop.gui.library import (
+    NA,
+    Device,
+    Displayable,
+    colored,
+    cut_string,
+    host,
+    make_bar,
+    ttl_cache,
+)
 from nvitop.version import __version__
 
 

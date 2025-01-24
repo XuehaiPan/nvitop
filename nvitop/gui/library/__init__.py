@@ -39,5 +39,6 @@ from nvitop.gui.library.utils import (
     cut_string,
     make_bar,
     set_color,
+    ttl_cache,
 )
 from nvitop.gui.library.widestring import WideString, wcslen

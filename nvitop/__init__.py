@@ -20,7 +20,17 @@ import sys
 
 from nvitop import api
 from nvitop.api import *  # noqa: F403
-from nvitop.api import collector, device, host, libcuda, libcudart, libnvml, process, utils
+from nvitop.api import (
+    caching,
+    collector,
+    device,
+    host,
+    libcuda,
+    libcudart,
+    libnvml,
+    process,
+    utils,
+)
 from nvitop.select import select_devices
 from nvitop.version import __version__
 
@@ -28,7 +38,7 @@ from nvitop.version import __version__
 __all__ = [*api.__all__, 'select_devices']
 
 # Add submodules to the top-level namespace
-for submodule in (collector, device, host, libcuda, libcudart, libnvml, process, utils):
+for submodule in (caching, collector, device, host, libcuda, libcudart, libnvml, process, utils):
     sys.modules[f'{__name__}.{submodule.__name__.rpartition(".")[-1]}'] = submodule
 
 # Remove the nvitop.select module from sys.modules

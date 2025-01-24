@@ -9,8 +9,6 @@ from collections import deque
 from functools import partial
 from itertools import islice
 
-from cachetools.func import ttl_cache
-
 from nvitop.gui.library import (
     NA,
     SUPERUSER,
@@ -22,6 +20,7 @@ from nvitop.gui.library import (
     WideString,
     host,
     send_signal,
+    ttl_cache,
 )
 
 

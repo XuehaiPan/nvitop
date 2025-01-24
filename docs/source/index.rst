@@ -179,6 +179,7 @@ Please refer to section `More than a Monitor <https://github.com/XuehaiPan/nvito
     api/libnvml
     api/libcuda
     api/libcudart
+    api/caching
     api/utils
     select
     callbacks
