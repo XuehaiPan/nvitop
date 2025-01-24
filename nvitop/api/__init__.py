@@ -25,6 +25,7 @@ from nvitop.api import (
     libcudart,
     libnvml,
     process,
+    termcolor,
     utils,
 )
 from nvitop.api.caching import ttl_cache

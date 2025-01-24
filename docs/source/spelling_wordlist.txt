@@ -158,3 +158,5 @@ hostname
 len
 maxsize
 reentrant
+env
+tty
