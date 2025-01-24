@@ -42,7 +42,7 @@ def cprint(text: str = '', *, file: TextIO | None = None) -> None:
         if text.startswith(prefix):
             text = text.replace(
                 prefix.rstrip(),
-                colored(prefix.rstrip(), color=color, attrs=('bold',)),
+                colored(prefix.rstrip(), color=color, attrs=('bold',)),  # type: ignore[arg-type]
                 1,
             )
     print(text, file=file)

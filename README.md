@@ -115,7 +115,6 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 - NVIDIA Management Library (NVML)
 - nvidia-ml-py
 - psutil
-- termcolor
 - curses<sup>[*](#curses)</sup> (with `libncursesw`)
 
 **NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of the NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).

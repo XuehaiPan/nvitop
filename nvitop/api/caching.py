@@ -29,7 +29,10 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Hashable, Sized
     from collections.abc import Set as AbstractSet
     from typing import TypeVar
-    from typing_extensions import ParamSpec, Self
+    from typing_extensions import (
+        ParamSpec,  # Python 3.10+
+        Self,  # Python 3.11+
+    )
 
     _P = ParamSpec('_P')
     _T = TypeVar('_T')

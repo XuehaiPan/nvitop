@@ -425,7 +425,7 @@ def main() -> int:
                 if message.startswith(prefix):
                     message = message.replace(
                         prefix,
-                        colored(prefix, color=color, attrs=('bold',)),
+                        colored(prefix, color=color, attrs=('bold',)),  # type: ignore[arg-type]
                         1,
                     )
                     break

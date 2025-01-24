@@ -323,7 +323,7 @@ def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
             ('https://developer.nvidia.com/cuda-downloads', None, ('underline',)),
             ('https://docs.nvidia.com/deploy/nvml-api', None, ('underline',)),
         ):
-            message = message.replace(text, __colored(text, color=color, attrs=attrs))
+            message = message.replace(text, __colored(text, color=color, attrs=attrs))  # type: ignore[arg-type]
 
         LOGGER.critical(message)
         raise
@@ -340,7 +340,7 @@ def nvmlInitWithFlags(flags: int) -> None:  # pylint: disable=function-redefined
             ('pynvml', None, ('bold',)),
             ('nvitop', None, ('bold',)),
         ):
-            message = message.replace(text, __colored(text, color=color, attrs=attrs), 1)
+            message = message.replace(text, __colored(text, color=color, attrs=attrs), 1)  # type: ignore[arg-type]
 
         LOGGER.critical(message)
         raise

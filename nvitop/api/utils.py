@@ -31,7 +31,7 @@ import time
 from collections.abc import KeysView
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
-from psutil import WINDOWS
+from nvitop.api import termcolor
 
 
 if TYPE_CHECKING:
@@ -62,30 +62,6 @@ __all__ = [
 ]
 
 
-if WINDOWS:
-    try:
-        from colorama import init
-    except ImportError:
-        pass
-    else:
-        init()
-
-try:
-    from termcolor import colored as _colored
-except ImportError:
-
-    def _colored(  # type: ignore[misc] # pylint: disable=unused-argument,too-many-arguments
-        text: str,
-        color: str | None = None,
-        on_color: str | None = None,
-        attrs: Iterable[str] | None = None,
-        *,
-        no_color: bool | None = None,
-        force_color: bool | None = None,
-    ) -> str:
-        return text
-
-
 COLOR: bool = sys.stdout.isatty()
 
 
@@ -102,10 +78,10 @@ def set_color(value: bool) -> None:
 
 
 def colored(
-    text: str,
-    color: str | None = None,
-    on_color: str | None = None,
-    attrs: Iterable[str] | None = None,
+    text: Any,
+    color: termcolor.Color | None = None,
+    on_color: termcolor.Highlight | None = None,
+    attrs: Iterable[termcolor.Attribute] | None = None,
 ) -> str:
     """Colorize text with ANSI color escape codes.
 
@@ -123,8 +99,8 @@ def colored(
         >>> colored('Hello, World!', 'green')
     """
     if COLOR:
-        return _colored(text, color=color, on_color=on_color, attrs=attrs)  # type: ignore[arg-type]
-    return text
+        return termcolor.colored(text, color=color, on_color=on_color, attrs=attrs)
+    return str(text)
 
 
 class NaType(str):
