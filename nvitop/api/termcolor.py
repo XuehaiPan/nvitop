@@ -51,7 +51,7 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing_extensions import Literal
+    from typing_extensions import Literal  # Python 3.8+
 
     Attribute = Literal[
         'bold',
