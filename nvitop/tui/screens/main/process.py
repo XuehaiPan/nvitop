@@ -11,7 +11,7 @@ import time
 from operator import attrgetter, xor
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from nvitop.gui.library import (
+from nvitop.tui.library import (
     HOSTNAME,
     LARGE_INTEGER,
     SUPERUSER,

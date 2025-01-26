@@ -9,7 +9,7 @@ import threading
 import time
 from collections import OrderedDict
 
-from nvitop.gui.library import (
+from nvitop.tui.library import (
     HOSTNAME,
     NA,
     SUPERUSER,

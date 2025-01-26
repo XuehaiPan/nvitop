@@ -7,8 +7,8 @@ import curses
 import shutil
 import time
 
-from nvitop.gui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent
-from nvitop.gui.screens import (
+from nvitop.tui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent
+from nvitop.tui.screens import (
     BreakLoop,
     EnvironScreen,
     HelpScreen,
@@ -18,7 +18,7 @@ from nvitop.gui.screens import (
 )
 
 
-class UI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
+class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,

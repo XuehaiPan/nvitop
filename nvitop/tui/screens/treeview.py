@@ -9,7 +9,7 @@ from collections import deque
 from functools import partial
 from itertools import islice
 
-from nvitop.gui.library import (
+from nvitop.tui.library import (
     NA,
     SUPERUSER,
     USERNAME,

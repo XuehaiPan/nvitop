@@ -97,7 +97,7 @@ warn_unused_configs = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ['nvitop.callbacks.*', 'nvitop.gui.*']
+module = ['nvitop.callbacks.*', 'nvitop.tui.*']
 ignore_errors = true
 
 [tool.pylint]
@@ -190,7 +190,7 @@ ignore = [
     "D",       # pydocstyle
     "ANN",     # flake8-annotations
 ]
-"nvitop/gui/**/*.py" = [
+"nvitop/tui/**/*.py" = [
     "D",       # pydocstyle
     "ANN",     # flake8-annotations
     "RUF012",  # mutable-class-default

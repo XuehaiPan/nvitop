@@ -3,7 +3,7 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.gui.library import Device, Displayable, MouseEvent
+from nvitop.tui.library import Device, Displayable, MouseEvent
 from nvitop.version import __version__
 
 

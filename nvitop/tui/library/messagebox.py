@@ -10,11 +10,11 @@ import threading
 import time
 from functools import partial
 
-from nvitop.gui.library.displayable import Displayable
-from nvitop.gui.library.keybinding import normalize_keybinding
-from nvitop.gui.library.process import host
-from nvitop.gui.library.utils import cut_string
-from nvitop.gui.library.widestring import WideString
+from nvitop.tui.library.displayable import Displayable
+from nvitop.tui.library.keybinding import normalize_keybinding
+from nvitop.tui.library.process import host
+from nvitop.tui.library.utils import cut_string
+from nvitop.tui.library.widestring import WideString
 
 
 DIGITS = set(string.digits)

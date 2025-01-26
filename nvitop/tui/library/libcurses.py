@@ -10,7 +10,7 @@ import locale
 import os
 import signal
 
-from nvitop.gui.library.history import GRAPH_SYMBOLS
+from nvitop.tui.library.history import GRAPH_SYMBOLS
 
 
 LIGHT_THEME = False

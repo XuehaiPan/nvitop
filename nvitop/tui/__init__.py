@@ -3,7 +3,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.gui.library import (
+from nvitop.tui.library import (
     SUPERUSER,
     USERNAME,
     Device,
@@ -12,4 +12,4 @@ from nvitop.gui.library import (
     set_color,
     setlocale_utf8,
 )
-from nvitop.gui.ui import UI
+from nvitop.tui.tui import TUI

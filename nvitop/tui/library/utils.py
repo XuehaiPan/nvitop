@@ -8,7 +8,7 @@ import math
 import os
 
 from nvitop.api import NA, colored, host, set_color, ttl_cache
-from nvitop.gui.library.widestring import WideString
+from nvitop.tui.library.widestring import WideString
 
 
 __all__ = [

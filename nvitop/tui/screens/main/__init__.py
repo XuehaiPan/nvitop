@@ -6,10 +6,10 @@
 import threading
 from functools import partial
 
-from nvitop.gui.library import LARGE_INTEGER, DisplayableContainer, MouseEvent, send_signal
-from nvitop.gui.screens.main.device import DevicePanel
-from nvitop.gui.screens.main.host import HostPanel
-from nvitop.gui.screens.main.process import ProcessPanel
+from nvitop.tui.library import LARGE_INTEGER, DisplayableContainer, MouseEvent, send_signal
+from nvitop.tui.screens.main.device import DevicePanel
+from nvitop.tui.screens.main.host import HostPanel
+from nvitop.tui.screens.main.process import ProcessPanel
 
 
 class BreakLoop(Exception):  # noqa: N818

@@ -6,7 +6,7 @@
 import threading
 import time
 
-from nvitop.gui.library import (
+from nvitop.tui.library import (
     NA,
     BufferedHistoryGraph,
     Device,

@@ -10,7 +10,7 @@ import sys
 import textwrap
 
 from nvitop.api import HostProcess, libnvml
-from nvitop.gui import UI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
+from nvitop.tui import TUI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
 from nvitop.version import __version__
 
 
@@ -345,11 +345,11 @@ def main() -> int:
         pids = set(args.pid)
         filters.append(lambda process: process.pid in pids)
 
-    ui = None
+    tui = None
     if hasattr(args, 'monitor') and len(devices) > 0:
         try:
             with libcurses(colorful=args.colorful, light_theme=args.light) as win:
-                ui = UI(
+                tui = TUI(
                     devices,
                     filters,
                     ascii=args.ascii,
@@ -357,14 +357,14 @@ def main() -> int:
                     interval=args.interval,
                     win=win,
                 )
-                ui.loop()
+                tui.loop()
         except curses.error as ex:
-            if ui is not None:
+            if tui is not None:
                 raise
             messages.append(f'ERROR: Failed to initialize `curses` ({ex})')
 
-    if ui is None:
-        ui = UI(devices, filters, ascii=args.ascii)
+    if tui is None:
+        tui = TUI(devices, filters, ascii=args.ascii)
         if not sys.stdout.isatty():
             parent = HostProcess().parent()
             if parent is not None:
@@ -379,8 +379,8 @@ def main() -> int:
                         'Please try `nvitop -m` directly.',
                     )
 
-    ui.print()
-    ui.destroy()
+    tui.print()
+    tui.destroy()
 
     if len(libnvml.UNKNOWN_FUNCTIONS) > 0:
         unknown_function_messages = [

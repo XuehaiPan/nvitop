@@ -6,7 +6,7 @@
 from nvitop.api import NA, libnvml, ttl_cache, utilization2string
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
-from nvitop.gui.library.process import GpuProcess
+from nvitop.tui.library.process import GpuProcess
 
 
 __all__ = ['Device', 'NA']
