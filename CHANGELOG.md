@@ -25,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+-
+
+------
+
+## [1.4.2] - 2025-01-27
+
+### Removed
+
 - Vendor third-party dependency `termcolor` by [@XuehaiPan](https://github.com/XuehaiPan) in [#148](https://github.com/XuehaiPan/nvitop/pull/148).
 - Remove third-party dependency `cachetools` by [@XuehaiPan](https://github.com/XuehaiPan) in [#147](https://github.com/XuehaiPan/nvitop/pull/147).
 
@@ -155,7 +163,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.2
 [1.4.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.1
 [1.4.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.0
 [1.3.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.2
