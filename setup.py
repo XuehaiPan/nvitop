@@ -72,7 +72,7 @@ def vcs_version(name: str, path: Path | str) -> Generator[ModuleType]:
 
 extra_requirements = {
     'lint': [
-        'black >= 24.0.0, < 25.0.0a0',
+        'ruff',
         'pylint[spelling]',
         'mypy',
         'typing-extensions',

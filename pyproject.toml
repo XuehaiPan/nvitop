@@ -67,11 +67,6 @@ Documentation = "https://nvitop.readthedocs.io"
 [tool.setuptools.packages.find]
 include = ["nvitop", "nvitop.*"]
 
-[tool.black]
-line-length = 100
-skip-string-normalization = true
-target-version = ["py37"]
-
 [tool.mypy]
 # Sync with requires-python
 python_version = "3.8"  # appease mypy for syntax errors in numpy stubs
@@ -117,6 +112,10 @@ target-version = "py37"
 line-length = 100
 output-format = "full"
 src = ["nvitop", "nvitop-exporter/nvitop_exporter"]
+
+[tool.ruff.format]
+quote-style = "single"
+docstring-code-format = false
 
 [tool.ruff.lint]
 select = [

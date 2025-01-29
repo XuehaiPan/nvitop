@@ -65,11 +65,5 @@ Documentation = "https://nvitop.readthedocs.io"
 [tool.setuptools.packages.find]
 include = ["nvitop_exporter", "nvitop_exporter.*"]
 
-[tool.black]
-safe = true
-line-length = 100
-skip-string-normalization = true
-target-version = ["py37"]
-
 [tool.ruff]
 extend = "../pyproject.toml"

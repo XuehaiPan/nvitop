@@ -95,8 +95,7 @@ def command_join(cmdline: list[str]) -> str:
     """Return a shell-escaped string from command line arguments."""
     if len(cmdline) == 1 and not (
         # May be modified by `setproctitle`
-        os.path.isfile(cmdline[0])
-        and os.path.isabs(cmdline[0])
+        os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0])
     ):
         return cmdline[0]
     return ' '.join(map(add_quotes, cmdline))

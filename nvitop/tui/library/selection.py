@@ -121,13 +121,8 @@ class Selection:  # pylint: disable=too-many-instance-attributes
 
     def interrupt(self):
         try:
-            self.send_signal(
-                (
-                    signal.SIGINT
-                    if not host.WINDOWS
-                    else signal.CTRL_C_EVENT  # pylint: disable=no-member
-                ),
-            )
+            # pylint: disable-next=no-member
+            self.send_signal(signal.SIGINT if not host.WINDOWS else signal.CTRL_C_EVENT)
         except SystemError:
             pass
 
