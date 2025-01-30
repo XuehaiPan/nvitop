@@ -325,7 +325,7 @@ class cudaError(Exception):
         return cudaError, (self.value,)  # pylint: disable=no-member
 
 
-def cudaExceptionClass(cudaErrorCode: int) -> type[cudaError]:
+def cudaExceptionClass(cudaErrorCode: int, /) -> type[cudaError]:
     """Map value to a proper subclass of :class:`cudaError`.
 
     Raises:
@@ -399,7 +399,7 @@ _extract_cuda_errors_as_classes()
 del _extract_cuda_errors_as_classes
 
 
-def _cudaCheckReturn(ret: _Any) -> _Any:
+def _cudaCheckReturn(ret: _Any, /) -> _Any:
     if ret != cudaSuccess:
         raise cudaError(ret)
     return ret
@@ -412,7 +412,7 @@ __libLoadLock: _threading.Lock = _threading.Lock()
 __cudaGetFunctionPointer_cache: dict[str, _ctypes._CFuncPtr] = {}  # type: ignore[name-defined]
 
 
-def __cudaGetFunctionPointer(name: str) -> _ctypes._CFuncPtr:  # type: ignore[name-defined]
+def __cudaGetFunctionPointer(name: str, /) -> _ctypes._CFuncPtr:  # type: ignore[name-defined]
     """Get the function pointer from the CUDA Runtime library.
 
     Raises:

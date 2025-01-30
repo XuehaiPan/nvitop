@@ -1589,6 +1589,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return []
 
         def query_nvlink_throughput_counters() -> tuple[tuple[int | NaType, int]]:
+            assert self._handle is not None
             return tuple(  # type: ignore[return-value]
                 libnvml.nvmlQueryFieldValues(
                     self._handle,

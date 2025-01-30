@@ -114,9 +114,9 @@ def auto_garbage_clean(
     raises an exception when falls.
     """
 
-    def wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
+    def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
         @functools.wraps(func)
-        def wrapped(self: GpuProcess, *args: Any, **kwargs: Any) -> Any:
+        def wrapped(self: GpuProcess, /, *args: Any, **kwargs: Any) -> Any:
             try:
                 return func(self, *args, **kwargs)
             except host.PsutilError as ex:

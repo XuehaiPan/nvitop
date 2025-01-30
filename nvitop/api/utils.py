@@ -79,6 +79,7 @@ def set_color(value: bool) -> None:
 
 def colored(
     text: Any,
+    /,
     color: termcolor.Color | None = None,
     on_color: termcolor.Highlight | None = None,
     attrs: Iterable[termcolor.Attribute] | None = None,
@@ -510,6 +511,7 @@ SIZE_PATTERN: re.Pattern = re.compile(
 # pylint: disable-next=too-many-return-statements,too-many-branches
 def bytes2human(
     b: int | float | NaType,  # noqa: PYI041
+    /,
     *,
     min_unit: int = 1,
 ) -> str:
@@ -546,7 +548,7 @@ def bytes2human(
     return f'{round(b / PiB, 1):.1f}PiB'
 
 
-def human2bytes(s: int | str) -> int:
+def human2bytes(s: int | str, /) -> int:
     """Convert a human readable size string (*case insensitive*) to bytes.
 
     Raises:
@@ -582,6 +584,7 @@ def human2bytes(s: int | str) -> int:
 
 def timedelta2human(
     dt: int | float | datetime.timedelta | NaType,  # noqa: PYI041
+    /,
     *,
     round: bool = False,  # pylint: disable=redefined-builtin
 ) -> str:
@@ -601,7 +604,7 @@ def timedelta2human(
     return '{:d}:{:02d}'.format(*divmod(seconds, 60))
 
 
-def utilization2string(utilization: int | float | NaType) -> str:  # noqa: PYI041
+def utilization2string(utilization: int | float | NaType, /) -> str:  # noqa: PYI041
     """Convert a utilization rate to string."""
     if utilization != NA:
         if isinstance(utilization, int):
@@ -611,7 +614,7 @@ def utilization2string(utilization: int | float | NaType) -> str:  # noqa: PYI04
     return NA
 
 
-def boolify(string: str, default: Any = None) -> bool:
+def boolify(string: str, /, default: Any = None) -> bool:
     """Convert the given value, usually a string, to boolean."""
     if string.lower() in {'true', 'yes', 'on', 'enabled', '1'}:
         return True
@@ -703,7 +706,7 @@ Method = TypeVar('Method', bound=Callable[..., Any])
 
 
 # Modified from psutil (https://github.com/giampaolo/psutil)
-def memoize_when_activated(method: Method) -> Method:
+def memoize_when_activated(method: Method, /) -> Method:
     """A memoize decorator which is disabled by default.
 
     It can be activated and deactivated on request. For efficiency reasons it can be used only
@@ -711,7 +714,7 @@ def memoize_when_activated(method: Method) -> Method:
     """
 
     @functools.wraps(method)
-    def wrapped(self: object, *args: Any, **kwargs: Any) -> Any:
+    def wrapped(self: object, /, *args: Any, **kwargs: Any) -> Any:
         try:
             # case 1: we previously entered oneshot() ctx
             # pylint: disable-next=protected-access

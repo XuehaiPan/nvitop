@@ -209,6 +209,7 @@ def _can_do_color(
 # pylint: disable-next=too-many-arguments
 def colored(
     text: Any,
+    /,
     color: Color | None = None,
     on_color: Highlight | None = None,
     attrs: Iterable[Attribute] | None = None,
@@ -258,6 +259,7 @@ def colored(
 # pylint: disable-next=too-many-arguments
 def cprint(
     text: object,
+    /,
     color: Color | None = None,
     on_color: Highlight | None = None,
     attrs: Iterable[Attribute] | None = None,

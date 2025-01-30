@@ -52,7 +52,7 @@ timer = time.monotonic
 _T = TypeVar('_T')
 
 
-def _unique(iterable: Iterable[_T]) -> list[_T]:
+def _unique(iterable: Iterable[_T], /) -> list[_T]:
     return list(OrderedDict.fromkeys(iterable).keys())
 
 
@@ -399,6 +399,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         devices: Iterable[Device] | None = None,
+        *,
         root_pids: Iterable[int] | None = None,
         interval: float = 1.0,
     ) -> None:
@@ -778,6 +779,7 @@ class _MetricBuffer:  # pylint: disable=missing-class-docstring,missing-function
         self,
         tag: str,
         collector: ResourceMetricCollector,
+        *,
         prev: _MetricBuffer | None = None,
     ) -> None:
         self.collector: ResourceMetricCollector = collector

@@ -277,7 +277,7 @@ class CUDAError(Exception):
         return CUDAError, (self.value,)  # pylint: disable=no-member
 
 
-def cudaExceptionClass(cudaErrorCode: int) -> type[CUDAError]:
+def cudaExceptionClass(cudaErrorCode: int, /) -> type[CUDAError]:
     """Map value to a proper subclass of :class:`CUDAError`.
 
     Raises:
@@ -348,7 +348,7 @@ _extract_cuda_errors_as_classes()
 del _extract_cuda_errors_as_classes
 
 
-def _cudaCheckReturn(ret: _Any) -> _Any:
+def _cudaCheckReturn(ret: _Any, /) -> _Any:
     if ret != CUDA_SUCCESS:
         raise CUDAError(ret)
     return ret
