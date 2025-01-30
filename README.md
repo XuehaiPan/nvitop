@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable html -->
 
-![Python 3.7+](https://img.shields.io/badge/Python-3.7%2B-brightgreen)
+![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-brightgreen)
 [![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)
 [![conda-forge](https://img.shields.io/conda/vn/conda-forge/nvitop?label=conda&logo=condaforge)](https://anaconda.org/conda-forge/nvitop)
 [![Documentation Status](https://img.shields.io/readthedocs/nvitop?label=docs&logo=readthedocs)](https://nvitop.readthedocs.io)
@@ -111,7 +111,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 
 ## Requirements
 
-- Python 3.7+
+- Python 3.8+
 - NVIDIA Management Library (NVML)
 - nvidia-ml-py
 - psutil

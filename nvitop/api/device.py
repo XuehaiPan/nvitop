@@ -3149,7 +3149,7 @@ def _parse_cuda_visible_devices(
 ) -> list[str]: ...
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
     cuda_visible_devices: str | None = None,
     format: Literal['index', 'uuid'] = 'index',  # pylint: disable=redefined-builtin

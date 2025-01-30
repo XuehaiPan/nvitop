@@ -34,7 +34,7 @@ repos:
     rev: v3.19.1
     hooks:
       - id: pyupgrade
-        args: [--py37-plus] # sync with requires-python
+        args: [--py38-plus] # sync with requires-python
   - repo: https://github.com/pycqa/flake8
     rev: 7.1.1
     hooks:

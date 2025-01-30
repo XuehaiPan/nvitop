@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "nvitop-exporter"
 description = "Prometheus exporter built on top of `nvitop`."
 readme = "README.md"
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
 license = { text = "Apache License, Version 2.0 (Apache-2.0)" }
 keywords = [
@@ -27,7 +27,6 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",

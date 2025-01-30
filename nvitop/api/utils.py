@@ -29,7 +29,7 @@ import re
 import sys
 import time
 from collections.abc import KeysView
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, final
 
 from nvitop.api import termcolor
 
@@ -103,6 +103,7 @@ def colored(
     return str(text)
 
 
+@final
 class NaType(str):
     """A singleton (:const:`str: 'N/A'`) class represents a not applicable value.
 
@@ -133,8 +134,7 @@ class NaType(str):
         nan
     """
 
-    # NOTE: Decorate this class with `@final` and remove `noqa` when we drop Python 3.7 support.
-    def __new__(cls) -> NaType:  # noqa: PYI034
+    def __new__(cls) -> NaType:
         """Get the singleton instance (:const:`nvitop.NA`)."""
         if not hasattr(cls, '_instance'):
             cls._instance = super().__new__(cls, 'N/A')
