@@ -22,6 +22,7 @@ __all__ = [
     'USERNAME',
     'Device',
     'colored',
+    'curses',
     'libcurses',
     'set_color',
     'setlocale_utf8',
