@@ -4,7 +4,7 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-import curses
+from nvitop.tui.library import curses
 
 
 class MouseEvent:
