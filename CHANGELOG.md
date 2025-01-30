@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
--
+- Drop Python 3.7 support by [@XuehaiPan](https://github.com/XuehaiPan) in [#150](https://github.com/XuehaiPan/nvitop/pull/150).
 
 ------
 
