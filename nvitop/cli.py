@@ -4,13 +4,12 @@
 """The interactive NVIDIA-GPU process viewer."""
 
 import argparse
-import curses
 import os
 import sys
 import textwrap
 
 from nvitop.api import HostProcess, libnvml
-from nvitop.tui import TUI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
+from nvitop.tui import TUI, USERNAME, Device, colored, curses, libcurses, set_color, setlocale_utf8
 from nvitop.version import __version__
 
 
