@@ -8,6 +8,7 @@ bg
 bool
 boolean
 bstate
+cbreak
 cli
 cmdline
 colorscheme
@@ -49,6 +50,8 @@ gpuprocesssnapshot
 gpus
 gpustatslogger
 hostname
+ignorable
+initscr
 ints
 ipython
 isinstance
@@ -110,9 +113,12 @@ runtime
 rw
 rx
 selectable
+setupterm
+sgi's
 shader
 sm
 smi
+stdscr
 str
 struct
 subclasses
