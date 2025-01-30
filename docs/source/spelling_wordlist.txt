@@ -13,6 +13,7 @@ cmdline
 colorscheme
 conf
 const
+cpython
 csv
 ctrl
 ctx
