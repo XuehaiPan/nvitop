@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "nvitop"
 description = "An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for GPU process management."
 readme = "README.md"
-requires-python = ">= 3.7"
+requires-python = ">= 3.8"
 authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
 license = { text = "Apache License, Version 2.0 (Apache-2.0) & GNU General Public License, Version 3 (GPL-3.0)" }
 keywords = [
@@ -24,7 +24,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -96,7 +95,7 @@ module = ['nvitop.callbacks.*', 'nvitop.tui.*']
 ignore_errors = true
 
 [tool.pylint]
-main.py-version = "3.7"
+main.py-version = "3.8"
 basic.good-names = ["x", "y", "dx", "dy", "p", "s", "fg", "bg", "n", "ui", "tx", "rx"]
 format.max-line-length = 120
 "messages control".disable = ["consider-using-f-string", "duplicate-code", "wrong-import-order"]
@@ -108,7 +107,7 @@ ignore-words = "docs/source/spelling_wordlist.txt"
 
 [tool.ruff]
 # Sync with requires-python
-target-version = "py37"
+target-version = "py38"
 line-length = 100
 output-format = "full"
 src = ["nvitop", "nvitop-exporter/nvitop_exporter"]

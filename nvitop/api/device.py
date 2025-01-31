@@ -1589,6 +1589,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return []
 
         def query_nvlink_throughput_counters() -> tuple[tuple[int | NaType, int]]:
+            assert self._handle is not None
             return tuple(  # type: ignore[return-value]
                 libnvml.nvmlQueryFieldValues(
                     self._handle,
@@ -3149,7 +3150,7 @@ def _parse_cuda_visible_devices(
 ) -> list[str]: ...
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-statements
     cuda_visible_devices: str | None = None,
     format: Literal['index', 'uuid'] = 'index',  # pylint: disable=redefined-builtin

@@ -174,7 +174,14 @@ del (
 
 # 5. Add explicit references to appease linters
 # pylint: disable=no-member
-c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t  # noqa: PYI042
+if _TYPE_CHECKING:
+    # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
+    class c_nvmlDevice_t(_ctypes.c_void_p):
+        pass
+
+else:
+    c_nvmlDevice_t: _TypeAlias = _pynvml.c_nvmlDevice_t  # type: ignore[no-redef] # noqa: PYI042
+
 c_nvmlFieldValue_t: _TypeAlias = _pynvml.c_nvmlFieldValue_t  # noqa: PYI042
 NVML_SUCCESS: int = _pynvml.NVML_SUCCESS
 NVML_ERROR_INSUFFICIENT_SIZE: int = _pynvml.NVML_ERROR_INSUFFICIENT_SIZE
@@ -377,6 +384,7 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
 
 def nvmlQuery(
     func: _Callable[..., _Any] | str,
+    /,
     *args: _Any,
     default: _Any = NA,
     ignore_errors: bool = True,
@@ -513,7 +521,7 @@ def nvmlQueryFieldValues(
     return values_with_timestamps
 
 
-def nvmlCheckReturn(retval: _Any, types: type | tuple[type, ...] | None = None) -> bool:
+def nvmlCheckReturn(retval: _Any, types: type | tuple[type, ...] | None = None, /) -> bool:
     """Check whether the return value is not :const:`nvitop.NA` and is one of the given types."""
     if types is None:
         return retval != NA
@@ -643,6 +651,7 @@ if not _pynvml_installation_corrupted:
 
     def __nvml_device_get_running_processes(
         func: str,
+        /,
         handle: c_nvmlDevice_t,
     ) -> list[c_nvmlProcessInfo_t]:
         """Helper function for :func:`nvmlDeviceGet{Compute,Graphics,MPSCompute}RunningProcesses`.

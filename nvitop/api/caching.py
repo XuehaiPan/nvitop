@@ -123,6 +123,7 @@ class _TTLCacheLink:  # pylint: disable=too-few-public-methods
 @overload
 def ttl_cache(
     maxsize: int | None = 128,
+    *,
     ttl: float = 600.0,
     timer: Callable[[], float] = time.monotonic,
     typed: bool = False,
@@ -132,6 +133,7 @@ def ttl_cache(
 @overload
 def ttl_cache(
     maxsize: Callable[_P, _T],
+    *,
     ttl: float = 600.0,
     timer: Callable[[], float] = time.monotonic,
     typed: bool = False,
@@ -141,6 +143,7 @@ def ttl_cache(
 # pylint: disable-next=too-many-statements
 def ttl_cache(
     maxsize: int | Callable[_P, _T] | None = 128,
+    *,
     ttl: float = 600.0,
     timer: Callable[[], float] = time.monotonic,
     typed: bool = False,
@@ -165,7 +168,7 @@ def ttl_cache(
         return functools.lru_cache(maxsize=maxsize, typed=typed)  # type: ignore[return-value]
 
     # pylint: disable-next=too-many-statements,too-many-locals
-    def wrapper(func: Callable[_P, _T]) -> Callable[_P, _T]:
+    def wrapper(func: Callable[_P, _T], /) -> Callable[_P, _T]:
         cache: dict[Any, _TTLCacheLink] = {}
         cache_get = cache.get  # bound method to lookup a key or return None
         cache_len = cache.__len__  # get cache size without calling len()
