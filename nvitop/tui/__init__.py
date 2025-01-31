@@ -8,6 +8,7 @@ from nvitop.tui.library import (
     USERNAME,
     Device,
     colored,
+    curses,
     libcurses,
     set_color,
     setlocale_utf8,

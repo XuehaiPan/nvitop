@@ -5,10 +5,10 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
 import copy
-import curses
-import curses.ascii
 import string
 from collections import OrderedDict
+
+from nvitop.tui.library import curses
 
 
 DIGITS = set(map(ord, string.digits))
