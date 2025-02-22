@@ -3,11 +3,10 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-import curses
 import shutil
 import time
 
-from nvitop.tui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent
+from nvitop.tui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent, curses
 from nvitop.tui.screens import (
     BreakLoop,
     EnvironScreen,
