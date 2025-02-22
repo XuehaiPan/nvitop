@@ -18,12 +18,13 @@ import re
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 
 from setuptools import setup
 
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from types import ModuleType
 
 
@@ -70,48 +71,45 @@ def vcs_version(name: str, path: Path | str) -> Generator[ModuleType]:
                 file.write(content)
 
 
-extra_requirements = {
-    'lint': [
-        'ruff',
-        'pylint[spelling]',
-        'mypy',
-        'typing-extensions',
-        'pre-commit',
-    ],
-    'cuda10': ['nvidia-ml-py == 11.450.51'],
-}
+if __name__ == '__main__':
+    extra_requirements = {
+        'lint': [
+            'ruff',
+            'pylint[spelling]',
+            'mypy',
+            'typing-extensions',
+            'pre-commit',
+        ],
+        'cuda10': ['nvidia-ml-py == 11.450.51'],
+    }
 
-
-with vcs_version(
-    name='nvitop.version',
-    path=HERE / 'nvitop' / 'version.py',
-) as version:
-    for pynvml_major in sorted(
-        {int(pynvml.partition('.')[0]) for pynvml in version.PYNVML_VERSION_CANDIDATES},
-    ):
-        pynvml_range = [
-            pynvml
-            for pynvml in version.PYNVML_VERSION_CANDIDATES
-            if pynvml.startswith(f'{pynvml_major}.')
-        ]
-        if len(pynvml_range) == 1:
-            extra_requirements[f'cuda{pynvml_major}'] = [
-                f'nvidia-ml-py == {pynvml_range[0]}',
+    with vcs_version(name='nvitop.version', path=HERE / 'nvitop' / 'version.py') as version:
+        for pynvml_major in sorted(
+            {int(pynvml.partition('.')[0]) for pynvml in version.PYNVML_VERSION_CANDIDATES},
+        ):
+            pynvml_range = [
+                pynvml
+                for pynvml in version.PYNVML_VERSION_CANDIDATES
+                if pynvml.startswith(f'{pynvml_major}.')
             ]
-        elif len(pynvml_range) >= 2:
-            extra_requirements[f'cuda{pynvml_major}'] = [
-                f'nvidia-ml-py >= {pynvml_range[0]}, <= {pynvml_range[-1]}',
-            ]
-    extra_requirements.update(
-        {
-            # The identifier could not start with numbers, add a prefix `pynvml-`
-            f'pynvml-{pynvml}': [f'nvidia-ml-py == {pynvml}']
-            for pynvml in version.PYNVML_VERSION_CANDIDATES
-        },
-    )
+            if len(pynvml_range) == 1:
+                extra_requirements[f'cuda{pynvml_major}'] = [
+                    f'nvidia-ml-py == {pynvml_range[0]}',
+                ]
+            elif len(pynvml_range) >= 2:
+                extra_requirements[f'cuda{pynvml_major}'] = [
+                    f'nvidia-ml-py >= {pynvml_range[0]}, <= {pynvml_range[-1]}',
+                ]
+        extra_requirements.update(
+            {
+                # The identifier could not start with numbers, add a prefix `pynvml-`
+                f'pynvml-{pynvml}': [f'nvidia-ml-py == {pynvml}']
+                for pynvml in version.PYNVML_VERSION_CANDIDATES
+            },
+        )
 
-    setup(
-        name='nvitop',
-        version=version.__version__,
-        extras_require=extra_requirements,
-    )
+        setup(
+            name='nvitop',
+            version=version.__version__,
+            extras_require=extra_requirements,
+        )
