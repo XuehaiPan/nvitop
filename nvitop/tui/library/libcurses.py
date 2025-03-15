@@ -3,13 +3,15 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import colorsys
 import contextlib
-import curses
 import locale
 import os
 import signal
 
+from nvitop.tui.library import curses
 from nvitop.tui.library.history import GRAPH_SYMBOLS
 
 
@@ -161,15 +163,16 @@ def libcurses(colorful=False, light_theme=False):
 
     # Push a Ctrl+C (ascii value 3) to the curses getch stack
     def interrupt_handler(signalnum, frame):  # pylint: disable=unused-argument
-        curses.ungetch(3)
+        curses.ungetch(curses.ascii.ETX)
 
     # Simulate a ^C press in curses when an interrupt is caught
-    signal.signal(signal.SIGINT, interrupt_handler)
+    original_interrupt_handler = signal.signal(signal.SIGINT, interrupt_handler)
 
     try:
         yield win
     finally:
         curses.endwin()
+        signal.signal(signal.SIGINT, original_interrupt_handler)
 
 
 class CursesShortcuts:
@@ -189,8 +192,8 @@ class CursesShortcuts:
     TERM_256COLOR = False
 
     def __init__(self):
-        self.win = None  # type: curses._CursesWindow
-        self.ascii = False
+        self.win: curses.CursesWindow | None = None
+        self.ascii: bool = False
 
     def addstr(self, *args, **kwargs):
         if self.ascii:

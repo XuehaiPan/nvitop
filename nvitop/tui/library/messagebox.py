@@ -4,12 +4,12 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-import curses
 import string
 import threading
 import time
 from functools import partial
 
+from nvitop.tui.library import curses
 from nvitop.tui.library.displayable import Displayable
 from nvitop.tui.library.keybinding import normalize_keybinding
 from nvitop.tui.library.process import host
