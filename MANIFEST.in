@@ -1,4 +1,0 @@
-recursive-include nvitop LICENSE
-recursive-include nvitop COPYING
-include LICENSE
-include COPYING

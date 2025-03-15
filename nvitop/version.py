@@ -19,7 +19,7 @@
 # pylint: disable=invalid-name
 
 __version__ = '1.4.2'
-__license__ = 'GPL-3.0-only AND Apache-2.0'
+__license__ = 'Apache-2.0 AND GPL-3.0-only'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
 __release__ = False
