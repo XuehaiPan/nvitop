@@ -115,6 +115,7 @@ src = ["nvitop", "nvitop-exporter/nvitop_exporter"]
 [tool.ruff.format]
 quote-style = "single"
 docstring-code-format = false
+skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
 select = [
@@ -132,17 +133,20 @@ select = [
     "C4",      # flake8-comprehensions
     "EXE",     # flake8-executable
     "FA",      # flake8-future-annotations
-    "LOG",     # flake8-logging
     "ISC",     # flake8-implicit-str-concat
+    "LOG",     # flake8-logging
     "INP",     # flake8-no-pep420
     "PIE",     # flake8-pie
     "PYI",     # flake8-pyi
+    "PT",      # flake8-pytest-style
     "Q",       # flake8-quotes
     "RSE",     # flake8-raise
     "RET",     # flake8-return
     "SIM",     # flake8-simplify
+    "SLOT",    # flake8-slots
     "TID",     # flake8-tidy-imports
-    "TCH",     # flake8-type-checking
+    "TC",      # flake8-type-checking
+    "NPY",     # numpy
     "PERF",    # perflint
     "FURB",    # refurb
     "TRY",     # tryceratops

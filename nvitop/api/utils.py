@@ -29,7 +29,7 @@ import re
 import sys
 import time
 from collections.abc import KeysView
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, final
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, TypeVar, final
 
 from nvitop.api import termcolor
 
@@ -134,6 +134,8 @@ class NaType(str):
         >>> NA / (1024 * 1024)             # auto-casting to float if the operand is a number
         nan
     """
+
+    __slots__: ClassVar[tuple[()]] = ()
 
     def __new__(cls) -> NaType:
         """Get the singleton instance (:const:`nvitop.NA`)."""
