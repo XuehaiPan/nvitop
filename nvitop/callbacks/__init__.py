@@ -14,3 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
+# pylint: disable=missing-module-docstring
+
+import warnings
+
+
+warnings.warn(
+    f'The `{__name__}` module is deprecated '
+    'and will not be supported in the future. '
+    'Feel free to port and implement your own callback using `nvitop`.',
+    category=FutureWarning,
+    stacklevel=2,
+)

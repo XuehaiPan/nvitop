@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--
+- Deprecate `nvitop.callbacks` as officially unmaintained by [@XuehaiPan](https://github.com/XuehaiPan) in [#157](https://github.com/XuehaiPan/nvitop/pull/157).
 
 ### Fixed
 
