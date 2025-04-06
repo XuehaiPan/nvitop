@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import re
 import time
+import warnings
 
 # pylint: disable-next=import-error,no-name-in-module
 from tensorflow.python.keras.callbacks import Callback
@@ -102,6 +103,14 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         fan_speed: bool = False,
         temperature: bool = False,
     ) -> None:
+        warnings.warn(
+            f'`{__name__}.{self.__class__.__name__}` is deprecated '
+            'and will not be supported in the future. '
+            'Feel free to port and implement your own callback using `nvitop`.',
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
         super().__init__()
 
         try:

@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import time
+import warnings
 from typing import TYPE_CHECKING, Any
 
 from pytorch_lightning.callbacks import Callback  # pylint: disable=import-error
@@ -97,6 +98,14 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         fan_speed: bool = False,
         temperature: bool = False,
     ) -> None:
+        warnings.warn(
+            f'The class `{__name__}.{self.__class__.__name__}` is deprecated '
+            'and will not be supported in the future. '
+            'Feel free to port and implement your own callback using `nvitop`.',
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
         super().__init__()
 
         try:

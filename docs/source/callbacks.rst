@@ -1,5 +1,5 @@
-nvitop.callbacks package
-========================
+nvitop.callbacks package (DEPRECATED)
+=====================================
 
 Submodules
 ----------

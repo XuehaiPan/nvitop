@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import warnings
 from typing import TYPE_CHECKING
 
 
@@ -32,6 +33,15 @@ if TYPE_CHECKING:
             from tensorboardX import SummaryWriter
         except ImportError:
             pass
+
+
+warnings.warn(
+    f'The `{__name__}` module is deprecated '
+    'and will not be supported in the future. '
+    'Feel free to port and implement your own callback using `nvitop`.',
+    category=FutureWarning,
+    stacklevel=2,
+)
 
 
 def add_scalar_dict(

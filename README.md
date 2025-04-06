@@ -41,7 +41,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
     - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
   - [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool)
-  - [Callback Functions for Machine Learning Frameworks](#callback-functions-for-machine-learning-frameworks)
+  - [Callback Functions for Machine Learning Frameworks (DEPRECATED)](#callback-functions-for-machine-learning-frameworks-deprecated)
     - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
     - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
     - [TensorBoard Integration](#tensorboard-integration)
@@ -600,7 +600,7 @@ formatting:
 
 ------
 
-### Callback Functions for Machine Learning Frameworks
+### Callback Functions for Machine Learning Frameworks (DEPRECATED)
 
 `nvitop` provides two builtin callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai).
 
