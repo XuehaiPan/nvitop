@@ -21,6 +21,7 @@ from __future__ import annotations
 import builtins
 import functools
 import time
+from dataclasses import dataclass
 from threading import RLock
 from typing import TYPE_CHECKING, Any, NamedTuple, overload
 
@@ -101,23 +102,15 @@ except ImportError:
         return _HashedSeq(key)
 
 
+@dataclass
 class _TTLCacheLink:  # pylint: disable=too-few-public-methods
     __slots__ = ('expires', 'key', 'next', 'prev', 'value')
 
-    # pylint: disable-next=too-many-arguments,too-many-positional-arguments
-    def __init__(
-        self,
-        prev: Self | None,
-        next: Self | None,  # pylint: disable=redefined-builtin
-        key: Hashable,
-        value: Any,
-        expires: float | None,
-    ) -> None:
-        self.prev: Self = prev  # type: ignore[assignment]
-        self.next: Self = next  # type: ignore[assignment]
-        self.key: Hashable = key
-        self.value: Any = value
-        self.expires: float = expires  # type: ignore[assignment]
+    prev: Self
+    next: Self  # pylint: disable=redefined-builtin
+    key: Hashable
+    value: Any
+    expires: float
 
 
 @overload
@@ -173,7 +166,8 @@ def ttl_cache(
         cache_get = cache.get  # bound method to lookup a key or return None
         cache_len = cache.__len__  # get cache size without calling len()
         lock = RLock()  # because linked-list updates aren't thread-safe
-        root = _TTLCacheLink(*((None,) * 5))  # root of the circular doubly linked list
+        # root of the circular doubly linked list
+        root = _TTLCacheLink(*((None,) * 5))  # type: ignore[arg-type]
         root.prev = root.next = root  # initialize by pointing to self
         hits = misses = 0
         full = False
@@ -257,7 +251,7 @@ def ttl_cache(
                         cache[key], root = root, front
                     else:
                         # Put result in a new link at the front of the queue.
-                        cache[key] = append(_TTLCacheLink(None, None, key, result, expires))
+                        cache[key] = append(_TTLCacheLink(None, None, key, result, expires))  # type: ignore[arg-type]
                     full = cache_len() >= maxsize
             return result
 
