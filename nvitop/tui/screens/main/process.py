@@ -41,6 +41,7 @@ class Order(NamedTuple):
     column: str
     previous: str
     next: str
+    bind_key: str
 
 
 class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -55,6 +56,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             column='ID',
             previous='time',
             next='pid',
+            bind_key='n',
         ),
         'pid': Order(
             key=attrgetter('_gone', 'pid', 'device.tuple_index'),
@@ -63,6 +65,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             column='PID',
             previous='natural',
             next='username',
+            bind_key='p',
         ),
         'username': Order(
             key=attrgetter('_gone', 'username', 'pid', 'device.tuple_index'),
@@ -71,6 +74,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             column='USER',
             previous='pid',
             next='gpu_memory',
+            bind_key='u',
         ),
         'gpu_memory': Order(
             key=attrgetter(
@@ -86,6 +90,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             column='GPU-MEM',
             previous='username',
             next='sm_utilization',
+            bind_key='g',
         ),
         'sm_utilization': Order(
             key=attrgetter(
@@ -100,31 +105,51 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             offset=34,
             column='SM',
             previous='gpu_memory',
+            next='gpu_memory_utilization',
+            bind_key='s',
+        ),
+        'gpu_memory_utilization': Order(
+            key=attrgetter(
+                '_gone',
+                'gpu_memory_utilization',
+                'gpu_memory',
+                'cpu_percent',
+                'pid',
+                'device.tuple_index',
+            ),
+            reverse=True,
+            offset=38,
+            column='GMBW',
+            previous='gpu_memory',
             next='cpu_percent',
+            bind_key='b',
         ),
         'cpu_percent': Order(
             key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.tuple_index'),
             reverse=True,
-            offset=38,
+            offset=44,
             column='%CPU',
-            previous='sm_utilization',
+            previous='gpu_memory_utilization',
             next='memory_percent',
+            bind_key='c',
         ),
         'memory_percent': Order(
             key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.tuple_index'),
             reverse=True,
-            offset=44,
+            offset=50,
             column='%MEM',
             previous='cpu_percent',
             next='time',
+            bind_key='m',
         ),
         'time': Order(
             key=attrgetter('_gone', 'running_time', 'pid', 'device.tuple_index'),
             reverse=True,
-            offset=50,
+            offset=56,
             column='TIME',
             previous='memory_percent',
             next='natural',
+            bind_key='t',
         ),
     }
 
@@ -236,7 +261,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
             self.host_headers[-2] = time_header
             self.height = height
-            self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 39))
+            self.host_offset = max(-1, min(self.host_offset, info_length - self.width + 45))
 
         if old_host_offset not in {self.host_offset, LARGE_INTEGER}:
             self.beep()
@@ -298,8 +323,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
-            '│ GPU     PID      USER  GPU-MEM %SM  {} │'.format(
-                '  '.join(self.host_headers).ljust(self.width - 40),
+            r'│ GPU     PID      USER  GPU-MEM %SM %GMBW  {} │'.format(
+                '  '.join(self.host_headers).ljust(self.width - 46),
             ),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
@@ -388,18 +413,18 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     attr='bold',
                 )
 
-        self.addstr(self.y + 3, self.x + 1, ' GPU     PID      USER  GPU-MEM %SM  ')
+        self.addstr(self.y + 3, self.x + 1, r' GPU     PID      USER  GPU-MEM %SM %GMBW  ')
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:
             host_headers = '  '.join(self.host_headers)
             self.addstr(
                 self.y + 3,
-                self.x + 38,
-                f'{host_headers[host_offset:].ljust(self.width - 40)}',
+                self.x + 44,
+                f'{host_headers[host_offset:].ljust(self.width - 46)}',
             )
         else:
-            self.addstr(self.y + 3, self.x + 38, '{}'.format('COMMAND'.ljust(self.width - 40)))
+            self.addstr(self.y + 3, self.x + 44, '{}'.format('COMMAND'.ljust(self.width - 46)))
 
         _, reverse, offset, column, *_ = self.ORDERS[self.order]
         column_width = len(column)
@@ -409,7 +434,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             offset -= host_offset
             if self.order == 'time':
                 offset += len(self.host_headers[-2]) - 4
-            if offset > 38 or host_offset == 0:
+            if offset > 44 or host_offset == 0:
                 self.addstr(self.y + 3, self.x + offset - 1, column + indicator)
                 self.color_at(
                     self.y + 3,
@@ -417,16 +442,16 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     width=column_width,
                     attr='bold | underline',
                 )
-            elif offset <= 38 < offset + column_width:
-                self.addstr(self.y + 3, self.x + 38, (column + indicator)[39 - offset :])
-                if offset + column_width >= 40:
+            elif offset <= 44 < offset + column_width:
+                self.addstr(self.y + 3, self.x + 44, (column + indicator)[45 - offset :])
+                if offset + column_width >= 46:
                     self.color_at(
                         self.y + 3,
-                        self.x + 38,
-                        width=offset + column_width - 39,
+                        self.x + 44,
+                        width=offset + column_width - 45,
                         attr='bold | underline',
                     )
-            if offset + column_width >= 39:
+            if offset + column_width >= 45:
                 self.color_at(self.y + 3, self.x + offset + column_width - 1, width=1, attr='bold')
         elif self.order == 'natural' and not reverse:
             self.color_at(self.y + 3, self.x + 2, width=3, attr='bold')
@@ -467,13 +492,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
                 host_info = process.host_info
                 if self.host_offset < 0:
-                    host_info = cut_string(host_info, padstr='..', maxlen=self.width - 39)
+                    host_info = cut_string(host_info, padstr='..', maxlen=self.width - 45)
                 else:
                     host_info = WideString(host_info)[self.host_offset :]
                 self.addstr(
                     y,
                     self.x,
-                    '│{:>4} {:>7} {} {} {:>8} {:>3} {} │'.format(
+                    '│{:>4} {:>7} {} {} {:>8} {:>3} {:>5} {} │'.format(
                         device_display_index,
                         cut_string(process.pid, maxlen=7, padstr='.'),
                         process.type,
@@ -482,17 +507,18 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         ),
                         process.gpu_memory_human,
                         process.gpu_sm_utilization_string.replace('%', ''),
-                        WideString(host_info).ljust(self.width - 39)[: self.width - 39],
+                        process.gpu_memory_utilization_string.replace('%', ''),
+                        WideString(host_info).ljust(self.width - 45)[: self.width - 45],
                     ),
                 )
                 if self.host_offset > 0:
-                    self.addstr(y, self.x + 37, ' ')
+                    self.addstr(y, self.x + 43, ' ')
 
                 is_zombie = process.is_zombie
                 no_permissions = process.no_permissions
                 is_gone = process.is_gone
                 if (is_zombie or no_permissions or is_gone) and command_offset == 0:
-                    self.addstr(y, self.x + 38, process.command)
+                    self.addstr(y, self.x + 44, process.command)
 
                 if y == self.y_mouse:
                     self.selection.process = process
@@ -525,9 +551,9 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     elif not owned:
                         self.color_at(y, self.x + 5, width=self.width - 6, attr='dim')
                     if is_zombie or no_permissions:
-                        self.color_at(y, self.x + 38 + command_offset, width=14, fg='yellow')
+                        self.color_at(y, self.x + 44 + command_offset, width=14, fg='yellow')
                     elif is_gone:
-                        self.color_at(y, self.x + 38 + command_offset, width=15, fg='red')
+                        self.color_at(y, self.x + 44 + command_offset, width=15, fg='red')
                 y += 1
 
             self.addstr(y, self.x, '╘' + '═' * (self.width - 2) + '╛')
@@ -564,7 +590,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.ensure_snapshots()
         return min(
             self.width,
-            max((39 + len(process.host_info) for process in self.snapshots), default=79),
+            max((45 + len(process.host_info) for process in self.snapshots), default=79),
         )
 
     def print(self):
@@ -598,15 +624,16 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     color = process.device.snapshot.display_color
                     prev_device_display_index = device_display_index
 
-                host_info = cut_string(process.host_info, padstr='..', maxlen=self.width - 39)
+                host_info = cut_string(process.host_info, padstr='..', maxlen=self.width - 45)
 
-                info = '{:>7} {} {} {:>8} {:>3} {}'.format(
+                info = '{:>7} {} {} {:>8} {:>3} {:>5} {}'.format(
                     cut_string(process.pid, maxlen=7, padstr='.'),
                     process.type,
                     str(WideString(cut_string(process.username, maxlen=7, padstr='+')).rjust(7)),
                     process.gpu_memory_human,
                     process.gpu_sm_utilization_string.replace('%', ''),
-                    WideString(host_info).ljust(self.width - 39)[: self.width - 39],
+                    process.gpu_memory_utilization_string.replace('%', ''),
+                    WideString(host_info).ljust(self.width - 45)[: self.width - 45],
                 )
                 if process.is_zombie or process.no_permissions or process.is_gone:
                     info = info.split(process.command)

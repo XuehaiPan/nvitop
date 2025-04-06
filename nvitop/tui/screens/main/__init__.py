@@ -267,14 +267,14 @@ class MainScreen(DisplayableContainer):  # pylint: disable=too-many-instance-att
         keymaps.bind('main', '.', order_next)
         keymaps.copy('main', '.', '>')
         keymaps.bind('main', '/', order_reverse)
-        for order in ProcessPanel.ORDERS:
+        for name, order in ProcessPanel.ORDERS.items():
             keymaps.bind(
                 'main',
-                'o' + order[:1].lower(),
-                partial(sort_by, order=order, reverse=False),
+                f'o{order.bind_key.lower()}',
+                partial(sort_by, order=name, reverse=False),
             )
             keymaps.bind(
                 'main',
-                'o' + order[:1].upper(),
-                partial(sort_by, order=order, reverse=True),
+                f'o{order.bind_key.upper()}',
+                partial(sort_by, order=name, reverse=True),
             )

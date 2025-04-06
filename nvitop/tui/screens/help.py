@@ -7,7 +7,7 @@ from nvitop.tui.library import Device, Displayable, MouseEvent
 from nvitop.version import __version__
 
 
-HELP_TEMPLATE = """nvitop {} - (C) Xuehai Pan, 2021-2025.
+HELP_TEMPLATE = r"""nvitop {} - (C) Xuehai Pan, 2021-2025.
 Released under the GNU GPLv3 License.
 
 GPU Process Type: C: Compute, G: Graphics, X: Mixed.
@@ -31,10 +31,11 @@ Device coloring rules by loading intensity:
       Wheel: scroll process list        Shift-Wheel: scroll horizontally
         Tab: scroll process list         Ctrl-Wheel: fast scroll ({}x)
 
-      on oN: sort by GPU-INDEX                os oS: sort by %SM
-      op oP: sort by PID                      oc oC: sort by %CPU
-      ou oU: sort by USER                     om oM: sort by %MEM
-      og oG: sort by GPU-MEM                  ot oT: sort by TIME
+      on oN: sort by GPU-INDEX
+      op oP: sort by PID                      ob oB: sort by %GMBW
+      ou oU: sort by USER                     oc oC: sort by %CPU
+      og oG: sort by GPU-MEM                  om oM: sort by %MEM
+      os oS: sort by %SM                      ot oT: sort by TIME
         , .: select sort column                   /: invert sort order
 
 Press any key to return.
@@ -67,8 +68,8 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
             16: ('cyan', 'red'),
             **dict.fromkeys(range(17, 20), ('cyan', 'green')),
             **dict.fromkeys(range(21, 23), ('blue', 'blue')),
-            **dict.fromkeys(range(24, 28), ('blue', 'blue')),
-            28: ('magenta', 'magenta'),
+            **dict.fromkeys(range(24, 29), ('blue', 'blue')),
+            29: ('magenta', 'magenta'),
         }
 
         self.x, self.y = root.x, root.y
