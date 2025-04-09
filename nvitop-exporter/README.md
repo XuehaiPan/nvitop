@@ -28,7 +28,7 @@ After building `nvitop:latest`
 ```bash
 cd nvitop-exporter/
 docker buildx build -t nvitop-exporter:latest .
-docker run -it --rm --runtime=nvidia --gpus=all --pid=host -p 5050:5050 nvitop-exporter:latest
+docker run -it --name nvitop-exporter --rm --runtime=nvidia --gpus=all --pid=host -p 5050:5050 nvitop-exporter:latest
 ```
 
 ## Grafana Dashboard
