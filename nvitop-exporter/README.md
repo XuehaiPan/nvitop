@@ -23,6 +23,14 @@ scrape_configs:
       - targets: ['localhost:5050']
 ```
 
+### With Docker
+After building `nvitop:latest`
+```bash
+cd nvitop-exporter/
+docker buildx build -t nvitop-exporter:latest .
+docker run -it --rm --runtime=nvidia --gpus=all --pid=host -p 5050:5050 nvitop-exporter:latest
+```
+
 ## Grafana Dashboard
 
 A Grafana dashboard is provided to visualize the metrics collected by the exporter.
