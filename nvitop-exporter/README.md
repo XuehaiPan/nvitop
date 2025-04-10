@@ -31,6 +31,8 @@ docker buildx build -t nvitop-exporter:latest .
 docker run -it --name nvitop-exporter --rm --runtime=nvidia --gpus=all --pid=host -p 5050:5050 nvitop-exporter:latest
 ```
 
+If you need the exporter to report the local IP, you can replace `-p 5050:5050` with `--network=host`. This gives the container access to the host's network which have security implications, especially in multi-tenant environments.
+
 ## Grafana Dashboard
 
 A Grafana dashboard is provided to visualize the metrics collected by the exporter.
