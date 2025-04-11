@@ -1,4 +1,5 @@
-FROM nvitop:latest
+ARG basetag="450-signed-ubuntu22.04"  # Ubuntu only
+FROM nvcr.io/nvidia/driver:"${basetag}"
 
 RUN apt-get update && apt-get install -y pipx
 RUN pipx ensurepath
