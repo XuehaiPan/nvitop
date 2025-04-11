@@ -1,0 +1,37 @@
+services:
+  prometheus-server:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus-conf.yml:/etc/prometheus/prometheus.yml
+    # ports:
+    #   - "9090:9090"
+    # network_mode: "host"  # VPN messes up connection, so use this when running locally
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - ./datasource-conf.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./dashboard-conf.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
+      - ./dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    ports:
+      - "3000:3000"
+    # network_mode: "host"  # VPN messes up connection, so use this when running locally
+    depends_on:
+      - prometheus-server
+
+  nvitop-exporter:
+    image: nvitop-exporter:latest
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    ports:
+      - "5050:5050"
+    pid: "host"
+    restart: unless-stopped
