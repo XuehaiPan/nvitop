@@ -3,9 +3,8 @@ services:
     image: prom/prometheus
     volumes:
       - ./prometheus-conf.yml:/etc/prometheus/prometheus.yml
-    # ports:
-    #   - "9090:9090"
-    # network_mode: "host"  # VPN messes up connection, so use this when running locally
+    ports:
+      - "9090:9090"
 
   grafana:
     image: grafana/grafana
@@ -19,7 +18,6 @@ services:
       - GF_AUTH_DISABLE_LOGIN_FORM=true
     ports:
       - "3000:3000"
-    # network_mode: "host"  # VPN messes up connection, so use this when running locally
     depends_on:
       - prometheus-server
 
