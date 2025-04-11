@@ -24,7 +24,6 @@ scrape_configs:
 ```
 
 ### With Docker
-After building `nvitop:latest`
 ```bash
 cd nvitop-exporter/
 docker buildx build -t nvitop-exporter:latest .
