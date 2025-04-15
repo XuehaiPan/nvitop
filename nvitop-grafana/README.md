@@ -1,6 +1,5 @@
 # nvitop-grafana-dashboard
 Use to view GPU metrics in a dashboard, if you don't already have one.
-Only run after building `nvitop-exporter`.
 * Prometheus scrapes the exporter defined in prometheus-conf.yml
 * Grafana shows the dashboard, by connecting to the Prometheus server.
 
