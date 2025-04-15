@@ -1,4 +1,4 @@
-# nvitop-dashboard
+# nvitop-grafana-dashboard
 Use to view GPU metrics in a dashboard, if you don't already have one.
 Only run after building `nvitop-exporter`.
 * Prometheus scrapes the exporter defined in prometheus-conf.yml
@@ -10,7 +10,7 @@ Only run after building `nvitop-exporter`.
 1. Start Grafana/Prometheus
    ```
    cd nvitop-grafana/
-   docker compose up -d
+   docker compose up --build -d
    ```
 
 2. Navigate to http://localhost:3000/dashboards -> New (upper right) -> Import

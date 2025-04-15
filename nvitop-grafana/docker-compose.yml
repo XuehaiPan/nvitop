@@ -21,6 +21,7 @@ services:
 
   nvitop-exporter:
     image: nvitop-exporter:latest
+    build: ../nvitop-exporter
     runtime: nvidia
     deploy:
       resources:
