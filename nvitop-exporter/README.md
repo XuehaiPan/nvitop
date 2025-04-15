@@ -35,7 +35,7 @@ If you need the exporter to report the local IP, you can replace `-p 5050:5050` 
 ## Grafana Dashboard
 
 A Grafana dashboard is provided to visualize the metrics collected by the exporter.
-The source of the dashboard is [`dashboard.json`](./dashboard.json).
+The source of the dashboard is [`dashboard.json`](../nvitop-grafana/dashboard.json).
 The Grafana dashboard can also be imported as by ID [22589](https://grafana.com/grafana/dashboards/22589-nvitop-dashboard).
 
 <p align="center">
