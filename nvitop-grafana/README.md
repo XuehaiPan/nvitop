@@ -9,13 +9,17 @@ Only run after building `nvitop-exporter`.
 
 1. Start Grafana/Prometheus
    ```
+   cd nvitop-grafana/
    docker compose up -d
    ```
 
-2. Navigate to http://localhost:3000/dashboards
+2. Navigate to http://localhost:3000/dashboards -> New (upper right) -> Import
 
-3. Import new dashboard or select the provisioned one
+3. Copy code from `dashboard.json` and paste it into the appropriate field
 
+4. Select `nvitop-prometheus` as data source -> Import
+
+5. You should now be looking at a the beautiful nvitop dashboard
 
 ## Sanity checks
 * Verify Prometheus has connection with the desired endpoint: http://localhost:9090/targets
