@@ -172,9 +172,6 @@ ignore = [
     # TRY003: avoid specifying long messages outside the exception class
     # long messages are necessary for clarity
     "TRY003",
-    # RUF022: `__all__` is not ordered according to an "isort-style" sort
-    # `__all__` contains comments to group names
-    "RUF022",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -183,7 +180,6 @@ ignore = [
 ]
 "setup.py" = [
     "D",       # pydocstyle
-    "ANN",     # flake8-annotations
 ]
 "nvitop/api/lib*.py" = [
     "N",       # pep8-naming
@@ -195,7 +191,6 @@ ignore = [
 "nvitop/tui/**/*.py" = [
     "D",       # pydocstyle
     "ANN",     # flake8-annotations
-    "RUF012",  # mutable-class-default
 ]
 "!nvitop/tui/**/*.py" = [
     "TID251",  # banned-api

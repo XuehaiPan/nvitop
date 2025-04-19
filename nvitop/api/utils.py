@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Generator, Iterable, Iterator
 
 
-__all__ = [
+__all__ = [  # noqa: RUF022
     'NA',
     'NaType',
     'NotApplicable',

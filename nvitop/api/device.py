@@ -139,13 +139,13 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    'Device',
-    'PhysicalDevice',
-    'MigDevice',
     'CudaDevice',
     'CudaMigDevice',
-    'parse_cuda_visible_devices',
+    'Device',
+    'MigDevice',
+    'PhysicalDevice',
     'normalize_cuda_visible_devices',
+    'parse_cuda_visible_devices',
 ]
 
 # Class definitions ################################################################################
@@ -2176,9 +2176,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     ignore_function_not_found=True,
                 )
                 # nvmlDeviceIsMigDeviceHandle returns c_uint
-                self._is_mig_device = bool(
-                    is_mig_device,
-                )
+                self._is_mig_device = bool(is_mig_device)
             return self._is_mig_device
         return False
 

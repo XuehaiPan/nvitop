@@ -12,6 +12,9 @@ from collections import deque
 from nvitop.api import NA
 
 
+__all__ = ['BufferedHistoryGraph', 'HistoryGraph']
+
+
 BOUND_UPDATE_INTERVAL = 1.0
 
 # fmt: off

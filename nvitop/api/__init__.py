@@ -65,7 +65,7 @@ from nvitop.api.utils import (  # explicitly export these to appease mypy
 )
 
 
-__all__ = [
+__all__ = [  # noqa: RUF022
     'NVMLError',
     'nvmlCheckReturn',
     'libnvml',

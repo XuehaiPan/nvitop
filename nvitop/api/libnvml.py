@@ -55,13 +55,13 @@ __all__ = [  # will be updated in below
     'NA',
     'UINT_MAX',
     'ULONGLONG_MAX',
+    'NVMLError',
     'nvmlCheckReturn',
-    'nvmlQuery',
-    'nvmlQueryFieldValues',
     'nvmlInit',
     'nvmlInitWithFlags',
+    'nvmlQuery',
+    'nvmlQueryFieldValues',
     'nvmlShutdown',
-    'NVMLError',
 ]
 
 

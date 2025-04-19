@@ -11,6 +11,24 @@ import string
 from collections import OrderedDict
 
 
+__all__ = [
+    'ALT_KEY',
+    'ANYKEY',
+    'DIGITS',
+    'PASSIVE_ACTION',
+    'QUANT_KEY',
+    'REVERSED_SPECIAL_KEYS',
+    'SPECIAL_KEYS',
+    'SPECIAL_KEYS',
+    'SPECIAL_KEYS_UNCASED',
+    'KeyBuffer',
+    'KeyMaps',
+    'construct_keybinding',
+    'normalize_keybinding',
+    'parse_keybinding',
+]
+
+
 DIGITS = set(map(ord, string.digits))
 
 # Arbitrary numbers which are not used with curses.KEY_XYZ
@@ -45,15 +63,6 @@ SPECIAL_KEYS = OrderedDict(
     ],
 )
 
-NAMED_SPECIAL_KEYS = tuple(SPECIAL_KEYS.keys())
-SPECIAL_KEYS_UNCASED = {}
-VERY_SPECIAL_KEYS = {
-    'Alt': ALT_KEY,
-    'any': ANYKEY,
-    'bg': PASSIVE_ACTION,
-    'allow_quantifiers': QUANT_KEY,
-}
-
 
 def _uncase_special_key(key_string):
     """Uncase a special key.
@@ -77,6 +86,16 @@ def _uncase_special_key(key_string):
     return uncased
 
 
+_VERY_SPECIAL_KEYS = {
+    'Alt': ALT_KEY,
+    'any': ANYKEY,
+    'bg': PASSIVE_ACTION,
+    'allow_quantifiers': QUANT_KEY,
+}
+_NAMED_SPECIAL_KEYS = tuple(SPECIAL_KEYS.keys())
+SPECIAL_KEYS_UNCASED = {}
+
+
 def _special_keys_init():
     for key, val in tuple(SPECIAL_KEYS.items()):
         SPECIAL_KEYS['M-' + key] = (ALT_KEY, val)
@@ -97,10 +116,10 @@ def _special_keys_init():
     for n in range(64):
         SPECIAL_KEYS['F' + str(n)] = curses.KEY_F0 + n
 
-    SPECIAL_KEYS.update(VERY_SPECIAL_KEYS)  # noqa: F821
+    SPECIAL_KEYS.update(_VERY_SPECIAL_KEYS)  # noqa: F821
 
     # Reorder the keys of SPECIAL_KEYS.
-    for key in NAMED_SPECIAL_KEYS:  # noqa: F821
+    for key in _NAMED_SPECIAL_KEYS:  # noqa: F821
         SPECIAL_KEYS.move_to_end(key, last=True)
 
     for key, val in SPECIAL_KEYS.items():
@@ -108,7 +127,7 @@ def _special_keys_init():
 
 
 _special_keys_init()
-del _special_keys_init, VERY_SPECIAL_KEYS, NAMED_SPECIAL_KEYS
+del _special_keys_init, _VERY_SPECIAL_KEYS, _NAMED_SPECIAL_KEYS
 REVERSED_SPECIAL_KEYS = OrderedDict([(v, k) for k, v in SPECIAL_KEYS.items()])
 
 
@@ -308,7 +327,7 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
     any_key = ANYKEY
     passive_key = PASSIVE_ACTION
     quantifier_key = QUANT_KEY
-    excluded_from_anykey = [curses.ascii.ESC]
+    excluded_from_anykey = frozenset({curses.ascii.ESC})
 
     def __init__(self, keymap=None):
         self.keymap = keymap

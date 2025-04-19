@@ -7,6 +7,9 @@
 from unicodedata import east_asian_width
 
 
+__all__ = ['WideString', 'wcslen']
+
+
 ASCIIONLY = set(map(chr, range(1, 128)))
 NARROW = 1
 WIDE = 2

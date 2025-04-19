@@ -7,35 +7,38 @@
 import curses
 
 
+__all__ = ['MouseEvent']
+
+
 class MouseEvent:
-    PRESSED = [
+    PRESSED = (
         0,
         curses.BUTTON1_PRESSED,
         curses.BUTTON2_PRESSED,
         curses.BUTTON3_PRESSED,
         curses.BUTTON4_PRESSED,
-    ]
-    RELEASED = [
+    )
+    RELEASED = (
         0,
         curses.BUTTON1_RELEASED,
         curses.BUTTON2_RELEASED,
         curses.BUTTON3_RELEASED,
         curses.BUTTON4_RELEASED,
-    ]
-    CLICKED = [
+    )
+    CLICKED = (
         0,
         curses.BUTTON1_CLICKED,
         curses.BUTTON2_CLICKED,
         curses.BUTTON3_CLICKED,
         curses.BUTTON4_CLICKED,
-    ]
-    DOUBLE_CLICKED = [
+    )
+    DOUBLE_CLICKED = (
         0,
         curses.BUTTON1_DOUBLE_CLICKED,
         curses.BUTTON2_DOUBLE_CLICKED,
         curses.BUTTON3_DOUBLE_CLICKED,
         curses.BUTTON4_DOUBLE_CLICKED,
-    ]
+    )
     CTRL_SCROLLWHEEL_MULTIPLIER = 5
 
     def __init__(self, state):

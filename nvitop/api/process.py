@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from nvitop.api.device import Device
 
 
-__all__ = ['HostProcess', 'GpuProcess', 'command_join']
+__all__ = ['GpuProcess', 'HostProcess', 'command_join']
 
 
 if host.POSIX:

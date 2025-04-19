@@ -15,11 +15,11 @@ from nvitop.tui.library import (
     USERNAME,
     Displayable,
     HostProcess,
+    MessageBox,
     Selection,
     Snapshot,
     WideString,
     host,
-    send_signal,
     ttl_cache,
 )
 
@@ -599,8 +599,20 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         keymaps.bind('treeview', '<Esc>', select_clear)
         keymaps.bind('treeview', '<Space>', tag)
 
-        keymaps.bind('treeview', 'T', partial(send_signal, signal='terminate', panel=self))
-        keymaps.bind('treeview', 'K', partial(send_signal, signal='kill', panel=self))
+        keymaps.bind(
+            'treeview',
+            'T',
+            partial(MessageBox.confirm_sending_signal_to_processes, signal='terminate', panel=self),
+        )
+        keymaps.bind(
+            'treeview',
+            'K',
+            partial(MessageBox.confirm_sending_signal_to_processes, signal='kill', panel=self),
+        )
         keymaps.copy('treeview', 'K', 'k')
-        keymaps.bind('treeview', '<C-c>', partial(send_signal, signal='interrupt', panel=self))
+        keymaps.bind(
+            'treeview',
+            '<C-c>',
+            partial(MessageBox.confirm_sending_signal_to_processes, signal='interrupt', panel=self),
+        )
         keymaps.copy('treeview', '<C-c>', 'I')

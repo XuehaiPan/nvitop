@@ -3,13 +3,15 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from types import MappingProxyType
+
 from nvitop.api import NA, libnvml, ttl_cache, utilization2string
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
 from nvitop.tui.library.process import GpuProcess
 
 
-__all__ = ['Device', 'NA']
+__all__ = ['Device', 'MigDevice']
 
 
 class Device(DeviceBase):
@@ -17,9 +19,9 @@ class Device(DeviceBase):
 
     MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
     GPU_UTILIZATION_THRESHOLDS = (10, 75)
-    INTENSITY2COLOR = {'light': 'green', 'moderate': 'yellow', 'heavy': 'red'}
+    INTENSITY2COLOR = MappingProxyType({'light': 'green', 'moderate': 'yellow', 'heavy': 'red'})
 
-    SNAPSHOT_KEYS = [
+    SNAPSHOT_KEYS = (
         'name',
         'bus_id',
         'memory_used',
@@ -56,7 +58,7 @@ class Device(DeviceBase):
         'gpu_display_color',
         'loading_intensity',
         'display_color',
-    ]
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -187,7 +189,7 @@ class MigDevice(MigDeviceBase, Device):
 
     loading_intensity = Device.memory_loading_intensity
 
-    SNAPSHOT_KEYS = [
+    SNAPSHOT_KEYS = (
         'name',
         'memory_used',
         'memory_free',
@@ -215,4 +217,4 @@ class MigDevice(MigDeviceBase, Device):
         'gpu_display_color',
         'loading_intensity',
         'display_color',
-    ]
+    )

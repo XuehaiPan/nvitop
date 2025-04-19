@@ -17,7 +17,10 @@ from nvitop.tui.library.utils import cut_string
 from nvitop.tui.library.widestring import WideString
 
 
-DIGITS = set(string.digits)
+__all__ = ['MessageBox']
+
+
+DIGITS = frozenset(string.digits)
 
 
 class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -258,74 +261,72 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             keymaps.copy('messagebox', '<Left>', '<S-Tab>')
             keymaps.copy('messagebox', '<Right>', '<Tab>')
 
+    @staticmethod
+    def confirm_sending_signal_to_processes(signal, panel):
+        assert signal in {'terminate', 'kill', 'interrupt'}
+        default = {'terminate': 0, 'kill': 1, 'interrupt': 2}.get(signal)
+        processes = []
+        for process in panel.selection.processes():
+            try:
+                username = process.username()
+            except host.PsutilError:
+                username = 'N/A'
+            username = cut_string(username, maxlen=24, padstr='+')
+            processes.append(f'{process.pid}({username})')
+        if len(processes) == 0:
+            return
+        if len(processes) == 1:
+            message = f'Send signal to process {processes[0]}?'
+        else:
+            maxlen = max(map(len, processes))
+            processes = [process.ljust(maxlen) for process in processes]
+            message = 'Send signal to the following processes?\n\n{}'.format(' '.join(processes))
 
-def send_signal(signal, panel):
-    assert signal in {'terminate', 'kill', 'interrupt'}
-    default = {'terminate': 0, 'kill': 1, 'interrupt': 2}.get(signal)
-    processes = []
-    for process in panel.selection.processes():
-        try:
-            username = process.username()
-        except host.PsutilError:
-            username = 'N/A'
-        username = cut_string(username, maxlen=24, padstr='+')
-        processes.append(f'{process.pid}({username})')
-    if len(processes) == 0:
-        return
-    if len(processes) == 1:
-        message = f'Send signal to process {processes[0]}?'
-    else:
-        maxlen = max(map(len, processes))
-        processes = [process.ljust(maxlen) for process in processes]
-        message = 'Send signal to the following processes?\n\n{}'.format(' '.join(processes))
-
-    # pylint: disable=use-dict-literal
-    panel.root.messagebox = MessageBox(
-        message=message,
-        options=[
-            MessageBox.Option(
-                'SIGTERM',
-                't',
-                panel.selection.terminate,
-                keys=('T',),
-                attrs=(
-                    {'y': 0, 'x': 0, 'width': 7, 'fg': 'red'},
-                    {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
+        panel.root.messagebox = MessageBox(
+            message=message,
+            options=[
+                MessageBox.Option(
+                    'SIGTERM',
+                    't',
+                    panel.selection.terminate,
+                    keys=('T',),
+                    attrs=(
+                        {'y': 0, 'x': 0, 'width': 7, 'fg': 'red'},
+                        {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
+                    ),
                 ),
-            ),
-            MessageBox.Option(
-                'SIGKILL',
-                'k',
-                panel.selection.kill,
-                keys=('K',),
-                attrs=(
-                    {'y': 0, 'x': 0, 'width': 7, 'fg': 'red'},
-                    {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
+                MessageBox.Option(
+                    'SIGKILL',
+                    'k',
+                    panel.selection.kill,
+                    keys=('K',),
+                    attrs=(
+                        {'y': 0, 'x': 0, 'width': 7, 'fg': 'red'},
+                        {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
+                    ),
                 ),
-            ),
-            MessageBox.Option(
-                'SIGINT',
-                'i',
-                panel.selection.interrupt,
-                keys=('I',),
-                attrs=(
-                    {'y': 0, 'x': 0, 'width': 6, 'fg': 'red'},
-                    {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
+                MessageBox.Option(
+                    'SIGINT',
+                    'i',
+                    panel.selection.interrupt,
+                    keys=('I',),
+                    attrs=(
+                        {'y': 0, 'x': 0, 'width': 6, 'fg': 'red'},
+                        {'y': 0, 'x': 3, 'width': 1, 'fg': 'red', 'attr': 'bold | underline'},
+                    ),
                 ),
-            ),
-            MessageBox.Option(
-                'Cancel',
-                'c',
-                None,
-                keys=('C',),
-                attrs=({'y': 0, 'x': 0, 'width': 1, 'attr': 'bold | underline'},),
-            ),
-        ],
-        default=default,
-        yes=None,
-        no=3,
-        cancel=3,
-        win=panel.win,
-        root=panel.root,
-    )
-    # pylint: enable=use-dict-literal
+                MessageBox.Option(
+                    'Cancel',
+                    'c',
+                    None,
+                    keys=('C',),
+                    attrs=({'y': 0, 'x': 0, 'width': 1, 'attr': 'bold | underline'},),
+                ),
+            ],
+            default=default,
+            yes=None,
+            no=3,
+            cancel=3,
+            win=panel.win,
+            root=panel.root,
+        )

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable
 
 
-__all__ = ['take_snapshots', 'collect_in_background', 'ResourceMetricCollector']
+__all__ = ['ResourceMetricCollector', 'collect_in_background', 'take_snapshots']
 
 
 class SnapshotResult(NamedTuple):  # pylint: disable=missing-class-docstring

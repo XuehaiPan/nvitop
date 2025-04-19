@@ -9,6 +9,7 @@ import itertools
 import threading
 import time
 from operator import attrgetter, xor
+from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from nvitop.tui.library import (
@@ -49,110 +50,143 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     NAME = 'process'
     SNAPSHOT_INTERVAL = 0.5
 
-    ORDERS = {
-        'natural': Order(
-            key=attrgetter('device.tuple_index', '_gone', 'username', 'pid'),
-            reverse=False,
-            offset=3,
-            column='ID',
-            previous='time',
-            next='pid',
-            bind_key='n',
-        ),
-        'pid': Order(
-            key=attrgetter('_gone', 'pid', 'device.tuple_index'),
-            reverse=False,
-            offset=10,
-            column='PID',
-            previous='natural',
-            next='username',
-            bind_key='p',
-        ),
-        'username': Order(
-            key=attrgetter('_gone', 'username', 'pid', 'device.tuple_index'),
-            reverse=False,
-            offset=19,
-            column='USER',
-            previous='pid',
-            next='gpu_memory',
-            bind_key='u',
-        ),
-        'gpu_memory': Order(
-            key=attrgetter(
-                '_gone',
-                'gpu_memory',
-                'gpu_sm_utilization',
-                'cpu_percent',
-                'pid',
-                'device.tuple_index',
+    ORDERS = MappingProxyType(
+        {
+            'natural': Order(
+                key=attrgetter(
+                    'device.tuple_index',
+                    '_gone',
+                    'username',
+                    'pid',
+                ),
+                reverse=False,
+                offset=3,
+                column='ID',
+                previous='time',
+                next='pid',
+                bind_key='n',
             ),
-            reverse=True,
-            offset=25,
-            column='GPU-MEM',
-            previous='username',
-            next='sm_utilization',
-            bind_key='g',
-        ),
-        'sm_utilization': Order(
-            key=attrgetter(
-                '_gone',
-                'gpu_sm_utilization',
-                'gpu_memory',
-                'cpu_percent',
-                'pid',
-                'device.tuple_index',
+            'pid': Order(
+                key=attrgetter(
+                    '_gone',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=False,
+                offset=10,
+                column='PID',
+                previous='natural',
+                next='username',
+                bind_key='p',
             ),
-            reverse=True,
-            offset=34,
-            column='SM',
-            previous='gpu_memory',
-            next='gpu_memory_utilization',
-            bind_key='s',
-        ),
-        'gpu_memory_utilization': Order(
-            key=attrgetter(
-                '_gone',
-                'gpu_memory_utilization',
-                'gpu_memory',
-                'cpu_percent',
-                'pid',
-                'device.tuple_index',
+            'username': Order(
+                key=attrgetter(
+                    '_gone',
+                    'username',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=False,
+                offset=19,
+                column='USER',
+                previous='pid',
+                next='gpu_memory',
+                bind_key='u',
             ),
-            reverse=True,
-            offset=38,
-            column='GMBW',
-            previous='gpu_memory',
-            next='cpu_percent',
-            bind_key='b',
-        ),
-        'cpu_percent': Order(
-            key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.tuple_index'),
-            reverse=True,
-            offset=44,
-            column='%CPU',
-            previous='gpu_memory_utilization',
-            next='memory_percent',
-            bind_key='c',
-        ),
-        'memory_percent': Order(
-            key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.tuple_index'),
-            reverse=True,
-            offset=50,
-            column='%MEM',
-            previous='cpu_percent',
-            next='time',
-            bind_key='m',
-        ),
-        'time': Order(
-            key=attrgetter('_gone', 'running_time', 'pid', 'device.tuple_index'),
-            reverse=True,
-            offset=56,
-            column='TIME',
-            previous='memory_percent',
-            next='natural',
-            bind_key='t',
-        ),
-    }
+            'gpu_memory': Order(
+                key=attrgetter(
+                    '_gone',
+                    'gpu_memory',
+                    'gpu_sm_utilization',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=25,
+                column='GPU-MEM',
+                previous='username',
+                next='sm_utilization',
+                bind_key='g',
+            ),
+            'sm_utilization': Order(
+                key=attrgetter(
+                    '_gone',
+                    'gpu_sm_utilization',
+                    'gpu_memory',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=34,
+                column='SM',
+                previous='gpu_memory',
+                next='gpu_memory_utilization',
+                bind_key='s',
+            ),
+            'gpu_memory_utilization': Order(
+                key=attrgetter(
+                    '_gone',
+                    'gpu_memory_utilization',
+                    'gpu_memory',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=38,
+                column='GMBW',
+                previous='gpu_memory',
+                next='cpu_percent',
+                bind_key='b',
+            ),
+            'cpu_percent': Order(
+                key=attrgetter(
+                    '_gone',
+                    'cpu_percent',
+                    'memory_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=44,
+                column='%CPU',
+                previous='gpu_memory_utilization',
+                next='memory_percent',
+                bind_key='c',
+            ),
+            'memory_percent': Order(
+                key=attrgetter(
+                    '_gone',
+                    'memory_percent',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=50,
+                column='%MEM',
+                previous='cpu_percent',
+                next='time',
+                bind_key='m',
+            ),
+            'time': Order(
+                key=attrgetter(
+                    '_gone',
+                    'running_time',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=56,
+                column='TIME',
+                previous='memory_percent',
+                next='natural',
+                bind_key='t',
+            ),
+        },
+    )
 
     # pylint: disable-next=too-many-arguments
     def __init__(self, devices, compact, filters, *, win, root):

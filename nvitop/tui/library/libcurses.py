@@ -13,6 +13,9 @@ import signal
 from nvitop.tui.library.history import GRAPH_SYMBOLS
 
 
+__all__ = ['CursesShortcuts', 'libcurses', 'setlocale_utf8']
+
+
 LIGHT_THEME = False
 DEFAULT_FOREGROUND = curses.COLOR_WHITE
 DEFAULT_BACKGROUND = curses.COLOR_BLACK

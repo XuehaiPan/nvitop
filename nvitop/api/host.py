@@ -46,17 +46,17 @@ from psutil import Error as PsutilError  # pylint: disable=reimported
 
 
 __all__ = [
+    'WINDOWS_SUBSYSTEM_FOR_LINUX',
+    'WSL',
     'PsutilError',
     'getuser',
     'hostname',
     'load_average',
-    'uptime',
     'memory_percent',
-    'swap_percent',
     'ppid_map',
     'reverse_ppid_map',
-    'WSL',
-    'WINDOWS_SUBSYSTEM_FOR_LINUX',
+    'swap_percent',
+    'uptime',
 ]
 __all__ += [name for name in _psutil.__all__ if not name.startswith('_') and name != 'Error']
 
