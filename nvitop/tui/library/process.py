@@ -5,7 +5,7 @@
 
 from nvitop.api import NA, HostProcess, Snapshot, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
-from nvitop.tui.library.host import WINDOWS, WSL
+from nvitop.api.host import WINDOWS, WSL
 
 
 __all__ = ['HostProcess', 'GpuProcess']
