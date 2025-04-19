@@ -197,6 +197,12 @@ ignore = [
     "ANN",     # flake8-annotations
     "RUF012",  # mutable-class-default
 ]
+"!nvitop/tui/**/*.py" = [
+    "TID251",  # banned-api
+]
+"nvitop/tui/library/*.py" = [
+    "TID251",  # banned-api
+]
 "docs/source/conf.py" = [
     "D",       # pydocstyle
     "INP001",  # flake8-no-pep420
@@ -220,3 +226,6 @@ inline-quotes = "single"
 
 [tool.ruff.lint.flake8-tidy-imports]
 ban-relative-imports = "all"
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"nvitop.api".msg = "Use `nvitop.tui.library` instead of `nvitop.api` in `nvitop.tui`."

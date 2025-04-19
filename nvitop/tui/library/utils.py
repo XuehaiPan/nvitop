@@ -7,32 +7,44 @@ import contextlib
 import math
 import os
 
-from nvitop.api import NA, colored, host, set_color, ttl_cache
+from nvitop.api import (
+    NA,
+    GiB,
+    Snapshot,
+    bytes2human,
+    colored,
+    set_color,
+    timedelta2human,
+    ttl_cache,
+)
+from nvitop.tui.library.host import WINDOWS, WSL, getuser, hostname
 from nvitop.tui.library.widestring import WideString
 
 
 __all__ = [
-    'NA',
-    'USERNAME',
     'HOSTNAME',
-    'SUPERUSER',
-    'USERCONTEXT',
     'LARGE_INTEGER',
-    'ttl_cache',
+    'NA',
+    'SUPERUSER',
+    'USER_CONTEXT',
+    'USERNAME',
+    'GiB',
+    'Snapshot',
+    'bytes2human',
     'colored',
-    'set_color',
     'cut_string',
     'make_bar',
+    'set_color',
+    'timedelta2human',
+    'ttl_cache',
 ]
 
 
-USERNAME = 'N/A'
-with contextlib.suppress(ImportError, OSError):
-    USERNAME = host.getuser()
+USERNAME = getuser()
 
 SUPERUSER = False
 with contextlib.suppress(AttributeError, OSError):
-    if host.WINDOWS:
+    if WINDOWS:
         import ctypes
 
         SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
@@ -42,11 +54,11 @@ with contextlib.suppress(AttributeError, OSError):
         except AttributeError:
             SUPERUSER = os.getuid() == 0
 
-HOSTNAME = host.hostname()
-if host.WSL:
+HOSTNAME = hostname()
+if WSL:
     HOSTNAME = f'{HOSTNAME} (WSL)'
 
-USERCONTEXT = f'{USERNAME}@{HOSTNAME}'
+USER_CONTEXT = f'{USERNAME}@{HOSTNAME}'
 
 
 LARGE_INTEGER = 65536

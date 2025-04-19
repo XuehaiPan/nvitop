@@ -3,7 +3,8 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.tui.library.device import NA, Device
+from nvitop.tui.library import host
+from nvitop.tui.library.device import Device
 from nvitop.tui.library.displayable import Displayable, DisplayableContainer
 from nvitop.tui.library.history import BufferedHistoryGraph, HistoryGraph
 from nvitop.tui.library.keybinding import (
@@ -19,26 +20,25 @@ from nvitop.tui.library.keybinding import (
 from nvitop.tui.library.libcurses import libcurses, setlocale_utf8
 from nvitop.tui.library.messagebox import MessageBox, send_signal
 from nvitop.tui.library.mouse import MouseEvent
-from nvitop.tui.library.process import (
-    GiB,
-    GpuProcess,
-    HostProcess,
-    Snapshot,
-    bytes2human,
-    host,
-    timedelta2human,
-)
+from nvitop.tui.library.process import GpuProcess, HostProcess
 from nvitop.tui.library.selection import Selection
 from nvitop.tui.library.utils import (
     HOSTNAME,
     LARGE_INTEGER,
+    NA,
     SUPERUSER,
-    USERCONTEXT,
+    USER_CONTEXT,
     USERNAME,
+    WINDOWS,
+    WSL,
+    GiB,
+    Snapshot,
+    bytes2human,
     colored,
     cut_string,
     make_bar,
     set_color,
+    timedelta2human,
     ttl_cache,
 )
 from nvitop.tui.library.widestring import WideString, wcslen

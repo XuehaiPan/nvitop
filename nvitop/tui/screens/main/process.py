@@ -15,8 +15,10 @@ from nvitop.tui.library import (
     HOSTNAME,
     LARGE_INTEGER,
     SUPERUSER,
-    USERCONTEXT,
+    USER_CONTEXT,
     USERNAME,
+    WINDOWS,
+    WSL,
     Displayable,
     GpuProcess,
     MouseEvent,
@@ -24,7 +26,6 @@ from nvitop.tui.library import (
     WideString,
     colored,
     cut_string,
-    host,
     ttl_cache,
     wcslen,
 )
@@ -330,7 +331,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
         if len(self.snapshots) == 0:
             if self.has_snapshots:
-                message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
+                message = ' No running processes found{} '.format(' (in WSL)' if WSL else '')
             else:
                 message = ' Gathering process status...'
             header.extend(
@@ -390,13 +391,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
-            context_width = wcslen(USERCONTEXT)
-            if not host.WINDOWS or len(USERCONTEXT) == context_width:
+            context_width = wcslen(USER_CONTEXT)
+            if not WINDOWS or len(USER_CONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
                 username_width = wcslen(USERNAME)
                 hostname_width = wcslen(HOSTNAME)
                 offset = self.x + self.width - context_width - 2
-                self.addstr(self.y + 2, self.x + offset, USERCONTEXT)
+                self.addstr(self.y + 2, self.x + offset, USER_CONTEXT)
                 self.color_at(self.y + 2, self.x + offset, width=context_width, attr='bold')
                 self.color_at(
                     self.y + 2,
@@ -561,7 +562,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 self.selection.clear()
 
         elif self.has_snapshots:
-            message = ' No running processes found{} '.format(' (in WSL)' if host.WSL else '')
+            message = ' No running processes found{} '.format(' (in WSL)' if WSL else '')
             self.addstr(self.y + 5, self.x, f'│ {message.ljust(self.width - 4)} │')
 
         text_offset = self.x + self.width - 47
@@ -599,7 +600,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         lines = ['', *self.header_lines()]
         lines[2] = ''.join(
             (
-                lines[2][: -2 - wcslen(USERCONTEXT)],
+                lines[2][: -2 - wcslen(USER_CONTEXT)],
                 colored(USERNAME, color=('yellow' if SUPERUSER else 'magenta'), attrs=('bold',)),
                 colored('@', attrs=('bold',)),
                 colored(HOSTNAME, color='green', attrs=('bold',)),

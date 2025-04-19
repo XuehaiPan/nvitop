@@ -254,13 +254,9 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
-        if self.load_average is not None:
-            load_average = tuple(
-                f'{value:5.2f}'[:5] if value < 10000.0 else '9999+' for value in self.load_average
-            )
-        else:
-            load_average = (NA,) * 3
-        load_average = 'Load Average: {} {} {}'.format(*load_average)
+        load_average = 'Load Average: {} {} {}'.format(
+            *(f'{value:5.2f}'[:5] if value < 10000.0 else '9999+' for value in self.load_average),
+        )
 
         if self.compact:
             width_right = len(load_average) + 4
