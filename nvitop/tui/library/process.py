@@ -3,29 +3,12 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.api import (
-    NA,
-    GiB,
-    HostProcess,
-    Snapshot,
-    bytes2human,
-    host,
-    timedelta2human,
-    utilization2string,
-)
+from nvitop.api import NA, HostProcess, Snapshot, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
+from nvitop.tui.library.host import WINDOWS, WSL
 
 
-__all__ = [
-    'host',
-    'HostProcess',
-    'GpuProcess',
-    'NA',
-    'Snapshot',
-    'bytes2human',
-    'GiB',
-    'timedelta2human',
-]
+__all__ = ['HostProcess', 'GpuProcess']
 
 
 class GpuProcess(GpuProcessBase):
@@ -63,7 +46,7 @@ class GpuProcess(GpuProcessBase):
         snapshot = super().as_snapshot(host_process_snapshot_cache=host_process_snapshot_cache)
 
         snapshot.type = snapshot.type.replace('C+G', 'X')
-        if snapshot.gpu_memory_human is NA and (host.WINDOWS or host.WSL):
+        if snapshot.gpu_memory_human is NA and (WINDOWS or WSL):
             snapshot.gpu_memory_human = 'WDDM:N/A'
 
         snapshot.cpu_percent_string = snapshot.host.cpu_percent_string

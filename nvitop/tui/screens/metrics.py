@@ -13,7 +13,7 @@ from nvitop.tui.library import (
     HOSTNAME,
     NA,
     SUPERUSER,
-    USERCONTEXT,
+    USER_CONTEXT,
     USERNAME,
     BufferedHistoryGraph,
     Displayable,
@@ -350,13 +350,13 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             for y, line in enumerate(self.frame_lines(), start=self.y):
                 self.addstr(y, self.x, line)
 
-            context_width = wcslen(USERCONTEXT)
-            if not host.WINDOWS or len(USERCONTEXT) == context_width:
+            context_width = wcslen(USER_CONTEXT)
+            if not host.WINDOWS or len(USER_CONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
                 username_width = wcslen(USERNAME)
                 hostname_width = wcslen(HOSTNAME)
                 offset = self.x + self.width - context_width - 2
-                self.addstr(self.y + 1, self.x + offset, USERCONTEXT)
+                self.addstr(self.y + 1, self.x + offset, USER_CONTEXT)
                 self.color_at(self.y + 1, self.x + offset, width=context_width, attr='bold')
                 self.color_at(
                     self.y + 1,

@@ -7,8 +7,8 @@ import signal
 import time
 from weakref import WeakValueDictionary
 
-from nvitop.api import NA, Snapshot, host
-from nvitop.tui.library.utils import LARGE_INTEGER, SUPERUSER, USERNAME
+from nvitop.tui.library import host
+from nvitop.tui.library.utils import LARGE_INTEGER, NA, SUPERUSER, USERNAME, Snapshot
 
 
 class Selection:  # pylint: disable=too-many-instance-attributes
