@@ -1,0 +1,9 @@
+apiVersion: 1
+datasources:
+  - name: nvitop-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus-server:9090
+    isDefault: true
+    version: 1
+    editable: true
