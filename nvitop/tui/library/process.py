@@ -5,10 +5,10 @@
 
 from nvitop.api import NA, HostProcess, Snapshot, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
-from nvitop.api.host import WINDOWS, WSL
+from nvitop.tui.library.utils import IS_WINDOWS, IS_WSL
 
 
-__all__ = ['HostProcess', 'GpuProcess']
+__all__ = ['GpuProcess', 'HostProcess']
 
 
 class GpuProcess(GpuProcessBase):
@@ -46,7 +46,7 @@ class GpuProcess(GpuProcessBase):
         snapshot = super().as_snapshot(host_process_snapshot_cache=host_process_snapshot_cache)
 
         snapshot.type = snapshot.type.replace('C+G', 'X')
-        if snapshot.gpu_memory_human is NA and (WINDOWS or WSL):
+        if snapshot.gpu_memory_human is NA and (IS_WINDOWS or IS_WSL):
             snapshot.gpu_memory_human = 'WDDM:N/A'
 
         snapshot.cpu_percent_string = snapshot.host.cpu_percent_string

@@ -17,15 +17,20 @@ from nvitop.api import (
     timedelta2human,
     ttl_cache,
 )
-from nvitop.tui.library.host import WINDOWS, WSL, getuser, hostname
+from nvitop.api.host import WINDOWS as IS_WINDOWS
+from nvitop.api.host import WINDOWS_SUBSYSTEM_FOR_LINUX
+from nvitop.tui.library.host import getuser, hostname
 from nvitop.tui.library.widestring import WideString
 
 
 __all__ = [
     'HOSTNAME',
+    'IS_SUPERUSER',
+    'IS_WINDOWS',
+    'IS_WINDOWS_SUBSYSTEM_FOR_LINUX',
+    'IS_WSL',
     'LARGE_INTEGER',
     'NA',
-    'SUPERUSER',
     'USERNAME',
     'USER_CONTEXT',
     'GiB',
@@ -42,20 +47,21 @@ __all__ = [
 
 USERNAME = getuser()
 
-SUPERUSER = False
+IS_SUPERUSER = False
 with contextlib.suppress(AttributeError, OSError):
-    if WINDOWS:
+    if IS_WINDOWS:
         import ctypes
 
-        SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
+        IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())
     else:
         try:
-            SUPERUSER = os.geteuid() == 0
+            IS_SUPERUSER = os.geteuid() == 0
         except AttributeError:
-            SUPERUSER = os.getuid() == 0
+            IS_SUPERUSER = os.getuid() == 0
 
 HOSTNAME = hostname()
-if WSL:
+IS_WINDOWS_SUBSYSTEM_FOR_LINUX = IS_WSL = bool(WINDOWS_SUBSYSTEM_FOR_LINUX)
+if IS_WSL:
     HOSTNAME = f'{HOSTNAME} (WSL)'
 
 USER_CONTEXT = f'{USERNAME}@{HOSTNAME}'

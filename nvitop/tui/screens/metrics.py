@@ -11,8 +11,9 @@ from collections import OrderedDict
 
 from nvitop.tui.library import (
     HOSTNAME,
+    IS_SUPERUSER,
+    IS_WINDOWS,
     NA,
-    SUPERUSER,
     USER_CONTEXT,
     USERNAME,
     BufferedHistoryGraph,
@@ -351,7 +352,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 self.addstr(y, self.x, line)
 
             context_width = wcslen(USER_CONTEXT)
-            if not host.WINDOWS or len(USER_CONTEXT) == context_width:
+            if not IS_WINDOWS or len(USER_CONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
                 username_width = wcslen(USERNAME)
                 hostname_width = wcslen(HOSTNAME)
@@ -362,7 +363,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                     self.y + 1,
                     self.x + offset,
                     width=username_width,
-                    fg=('yellow' if SUPERUSER else 'magenta'),
+                    fg=('yellow' if IS_SUPERUSER else 'magenta'),
                     attr='bold',
                 )
                 self.color_at(

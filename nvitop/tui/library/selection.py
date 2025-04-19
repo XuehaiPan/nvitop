@@ -9,7 +9,7 @@ from weakref import WeakValueDictionary
 
 from nvitop.api import NA, Snapshot
 from nvitop.tui.library import host
-from nvitop.tui.library.utils import LARGE_INTEGER, SUPERUSER, USERNAME
+from nvitop.tui.library.utils import IS_SUPERUSER, IS_WINDOWS, LARGE_INTEGER, USERNAME
 
 
 class Selection:  # pylint: disable=too-many-instance-attributes
@@ -85,9 +85,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes
     def owned(self):
         if not self.is_set():
             return False
-        if SUPERUSER:
-            return True
-        return self.username == USERNAME
+        return IS_SUPERUSER or self.username == USERNAME
 
     def tag(self):
         if self.is_set():
@@ -123,7 +121,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes
     def interrupt(self):
         try:
             # pylint: disable-next=no-member
-            self.send_signal(signal.SIGINT if not host.WINDOWS else signal.CTRL_C_EVENT)
+            self.send_signal(signal.SIGINT if not IS_WINDOWS else signal.CTRL_C_EVENT)
         except SystemError:
             pass
 

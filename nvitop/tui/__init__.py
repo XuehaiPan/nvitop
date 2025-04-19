@@ -4,7 +4,7 @@
 # pylint: disable=missing-module-docstring
 
 from nvitop.tui.library import (
-    SUPERUSER,
+    IS_SUPERUSER,
     USERNAME,
     Device,
     colored,

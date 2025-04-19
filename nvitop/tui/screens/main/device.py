@@ -7,8 +7,8 @@ import threading
 import time
 
 from nvitop.tui.library import (
+    IS_WINDOWS,
     NA,
-    WINDOWS,
     Device,
     Displayable,
     colored,
@@ -90,7 +90,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │',
         ]
 
-        if WINDOWS:
+        if IS_WINDOWS:
             self.formats_full[0] = self.formats_full[0].replace(
                 'persistence_mode',
                 'current_driver_model',
@@ -218,7 +218,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
                     ),
                 )
-                if WINDOWS:
+                if IS_WINDOWS:
                     header[-2] = header[-2].replace('Persistence-M', '    TCC/WDDM ')
                 if self.support_mig:
                     header[-2] = header[-2].replace('Volatile Uncorr. ECC', 'MIG M.   Uncorr. ECC')

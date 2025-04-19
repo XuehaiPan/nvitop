@@ -10,8 +10,9 @@ from functools import partial
 from itertools import islice
 
 from nvitop.tui.library import (
+    IS_SUPERUSER,
+    IS_WSL,
     NA,
-    SUPERUSER,
     USERNAME,
     Displayable,
     HostProcess,
@@ -407,7 +408,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.addstr(
                 self.y + 1,
                 self.x,
-                'No running GPU processes found{}.'.format(' (in WSL)' if host.WSL else ''),
+                'No running GPU processes found{}.'.format(' (in WSL)' if IS_WSL else ''),
             )
             return
 
@@ -453,7 +454,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 self.selection.process = process
                 hint = True
 
-            owned = str(process.username) == USERNAME or SUPERUSER
+            owned = IS_SUPERUSER or str(process.username) == USERNAME
             if self.selection.is_same_on_host(process):
                 self.color_at(
                     y,

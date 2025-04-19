@@ -7,12 +7,10 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, NamedTuple
 
 from nvitop.api import NA, host
-from nvitop.api.host import WINDOWS, WSL, AccessDenied, PsutilError
+from nvitop.api.host import AccessDenied, PsutilError
 
 
 __all__ = [
-    'WINDOWS',
-    'WSL',
     'AccessDenied',
     'PsutilError',
     'cpu_percent',
