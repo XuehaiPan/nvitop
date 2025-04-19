@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Ignore errors when collecting host metrics for host panel by [@XuehaiPan](https://github.com/XuehaiPan) in [#163](https://github.com/XuehaiPan/nvitop/pull/163).
 
 ### Removed
 
