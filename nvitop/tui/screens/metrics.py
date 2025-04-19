@@ -4,10 +4,13 @@
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 # pylint: disable=invalid-name
 
+from __future__ import annotations
+
 import itertools
 import threading
 import time
 from collections import OrderedDict
+from typing import TYPE_CHECKING, ClassVar
 
 from nvitop.tui.library import (
     HOSTNAME,
@@ -17,8 +20,8 @@ from nvitop.tui.library import (
     USER_CONTEXT,
     USERNAME,
     BufferedHistoryGraph,
-    Displayable,
     GpuProcess,
+    HistoryGraph,
     Selection,
     WideString,
     bytes2human,
@@ -26,17 +29,28 @@ from nvitop.tui.library import (
     host,
     wcslen,
 )
+from nvitop.tui.screens.base import BaseSelectableScreen
 
 
-def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many-locals
+if TYPE_CHECKING:
+    import curses
+
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['ProcessMetricsScreen']
+
+
+# pylint: disable-next=too-many-branches,too-many-locals
+def get_yticks(history: HistoryGraph, y_offset: int) -> list[tuple[int, int]]:
     height = history.height
     baseline = history.baseline
     bound = history.bound
     max_bound = history.max_bound
-    scale = history.scale
+    scale: float = history.scale  # type: ignore[attr-defined]
     upsidedown = history.upsidedown
 
-    def p2h_f(p):
+    def p2h_f(p: int) -> float:
         return 0.01 * scale * p * (max_bound - baseline) * (height - 1) / (bound - baseline)
 
     max_height = height - 2
@@ -78,20 +92,20 @@ def get_yticks(history, y_offset):  # pylint: disable=too-many-branches,too-many
     return [(h + y_offset, p) for h, p in ticks]
 
 
-class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'process-metrics'
-    SNAPSHOT_INTERVAL = 0.5
+class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'process-metrics'
+    SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
 
-    def __init__(self, win, root):
+    def __init__(self, *, win: curses.window, root: TUI) -> None:
         super().__init__(win, root)
 
-        self.selection = Selection(panel=self)
-        self.used_gpu_memory = None
-        self.gpu_sm_utilization = None
-        self.cpu_percent = None
-        self.used_host_memory = None
+        self.selection: Selection = Selection(self)
+        self.used_gpu_memory: HistoryGraph | None = None
+        self.gpu_sm_utilization: HistoryGraph | None = None
+        self.cpu_percent: HistoryGraph | None = None
+        self.used_host_memory: HistoryGraph | None = None
 
-        self.enabled = False
+        self.enabled: bool = False
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
             name='process-metrics-snapshot-daemon',
@@ -102,17 +116,17 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         self.x, self.y = root.x, root.y
         self.width, self.height = root.width, root.height
-        self.left_width = max(20, (self.width - 3) // 2)
-        self.right_width = max(20, (self.width - 2) // 2)
-        self.upper_height = max(5, (self.height - 5 - 3) // 2)
-        self.lower_height = max(5, (self.height - 5 - 2) // 2)
+        self.left_width: int = max(20, (self.width - 3) // 2)
+        self.right_width: int = max(20, (self.width - 2) // 2)
+        self.upper_height: int = max(5, (self.height - 5 - 3) // 2)
+        self.lower_height: int = max(5, (self.height - 5 - 2) // 2)
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         return self._visible
 
     @visible.setter
-    def visible(self, value):
+    def visible(self, value: bool) -> None:
         if self._visible != value:
             self.need_redraw = True
             self._visible = value
@@ -126,7 +140,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         else:
             self.focused = False
 
-    def enable(self, state=True):
+    def enable(self, state: bool = True) -> None:
         if not self.selection.is_set() or not state:
             self.disable()
             return
@@ -136,57 +150,57 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         total_gpu_memory = self.process.device.memory_total()
         total_gpu_memory_human = bytes2human(total_gpu_memory)
 
-        def format_cpu_percent(value):
-            if value is NA:
+        def format_cpu_percent(value: float) -> str:
+            if value is NA:  # type: ignore[comparison-overlap]
                 return f'CPU: {value}'
             return f'CPU: {value:.1f}%'
 
-        def format_max_cpu_percent(value):
-            if value is NA:
+        def format_max_cpu_percent(value: float) -> str:
+            if value is NA:  # type: ignore[comparison-overlap]
                 return f'MAX CPU: {value}'
             return f'MAX CPU: {value:.1f}%'
 
-        def format_host_memory(value):
-            if value is NA:
+        def format_host_memory(value: float) -> str:
+            if value is NA:  # type: ignore[comparison-overlap]
                 return f'HOST-MEM: {value}'
-            return 'HOST-MEM: {} ({:.1f}%)'.format(  # noqa: UP032
-                bytes2human(value),
-                round(100.0 * value / total_host_memory, 1),
+            return (
+                f'HOST-MEM: {bytes2human(value)} '
+                f'({round(100.0 * value / total_host_memory, 1):.1f}%)'
             )
 
-        def format_max_host_memory(value):
-            if value is NA:
+        def format_max_host_memory(value: float) -> str:
+            if value is NA:  # type: ignore[comparison-overlap]
                 return f'MAX HOST-MEM: {value}'
-            return 'MAX HOST-MEM: {} ({:.1f}%) / {}'.format(  # noqa: UP032
-                bytes2human(value),
-                round(100.0 * value / total_host_memory, 1),
-                total_host_memory_human,
+            return (
+                f'MAX HOST-MEM: {bytes2human(value)} '
+                f'({round(100.0 * value / total_host_memory, 1):.1f}%) '
+                f'/ {total_host_memory_human}'
             )
 
-        def format_gpu_memory(value):
-            if value is not NA and total_gpu_memory is not NA:
-                return 'GPU-MEM: {} ({:.1f}%)'.format(  # noqa: UP032
-                    bytes2human(value),
-                    round(100.0 * value / total_gpu_memory, 1),
+        def format_gpu_memory(value: float) -> str:
+            if value is not NA and total_gpu_memory is not NA:  # type: ignore[comparison-overlap]
+                return (
+                    f'GPU-MEM: {bytes2human(value)} '
+                    f'({round(100.0 * value / total_gpu_memory, 1):.1f}%)'
                 )
             return f'GPU-MEM: {value}'
 
-        def format_max_gpu_memory(value):
-            if value is not NA and total_gpu_memory is not NA:
-                return 'MAX GPU-MEM: {} ({:.1f}%) / {}'.format(  # noqa: UP032
-                    bytes2human(value),
-                    round(100.0 * value / total_gpu_memory, 1),
-                    total_gpu_memory_human,
+        def format_max_gpu_memory(value: float) -> str:
+            if value is not NA and total_gpu_memory is not NA:  # type: ignore[comparison-overlap]
+                return (
+                    f'MAX GPU-MEM: {bytes2human(value)} '
+                    f'({round(100.0 * value / total_gpu_memory, 1):.1f}%) '
+                    f'/ {total_gpu_memory_human}'
                 )
             return f'MAX GPU-MEM: {value}'
 
-        def format_sm(value):
-            if value is NA:
+        def format_sm(value: float) -> str:
+            if value is NA:  # type: ignore[comparison-overlap]
                 return f'GPU-SM: {value}'
             return f'GPU-SM: {value:.1f}%'
 
-        def format_max_sm(value):
-            if value is NA:
+        def format_max_sm(value: float) -> str:
+            if value is NA:  # type: ignore[comparison-overlap]
                 return f'MAX GPU-SM: {value}'
             return f'MAX GPU-SM: {value:.1f}%'
 
@@ -217,7 +231,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             )
             self.used_gpu_memory = BufferedHistoryGraph(
                 interval=1.0,
-                upperbound=total_gpu_memory or 1,
+                upperbound=total_gpu_memory or 1.0,  # type: ignore[arg-type]
                 width=self.right_width,
                 height=self.upper_height,
                 baseline=0.0,
@@ -237,10 +251,10 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 format=format_sm,
                 max_format=format_max_sm,
             )
-            self.cpu_percent.scale = 0.1
-            self.used_host_memory.scale = 1.0
-            self.used_gpu_memory.scale = 1.0
-            self.gpu_sm_utilization.scale = 1.0
+            self.cpu_percent.scale = 0.1  # type: ignore[attr-defined]
+            self.used_host_memory.scale = 1.0  # type: ignore[attr-defined]
+            self.used_gpu_memory.scale = 1.0  # type: ignore[attr-defined]
+            self.gpu_sm_utilization.scale = 1.0  # type: ignore[attr-defined]
 
             self._daemon_running.set()
             try:
@@ -252,7 +266,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
         self.take_snapshots()
         self.update_size()
 
-    def disable(self):
+    def disable(self) -> None:
         with self.snapshot_lock:
             self._daemon_running.clear()
             self.enabled = False
@@ -262,22 +276,22 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             self.gpu_sm_utilization = None
 
     @property
-    def process(self):
-        return self.selection.process
+    def process(self) -> GpuProcess:
+        return self.selection.process  # type: ignore[return-value]
 
     @process.setter
-    def process(self, value):
+    def process(self, value: GpuProcess) -> None:
         self.selection.process = value
         self.enable()
 
     @classmethod
-    def set_snapshot_interval(cls, interval):
+    def set_snapshot_interval(cls, interval: float) -> None:
         assert interval > 0.0
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
 
-    def take_snapshots(self):
+    def take_snapshots(self) -> None:
         with self.snapshot_lock:
             if not self.selection.is_set() or not self.enabled:
                 return
@@ -287,18 +301,22 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 self.process.update_gpu_status()
                 snapshot = self.process.as_snapshot()
 
+                assert self.cpu_percent is not None
+                assert self.used_host_memory is not None
+                assert self.used_gpu_memory is not None
+                assert self.gpu_sm_utilization is not None
                 self.cpu_percent.add(snapshot.cpu_percent)
                 self.used_host_memory.add(snapshot.host_memory)
                 self.used_gpu_memory.add(snapshot.gpu_memory)
                 self.gpu_sm_utilization.add(snapshot.gpu_sm_utilization)
 
-    def _snapshot_target(self):
+    def _snapshot_target(self) -> None:
         while True:
             self._daemon_running.wait()
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
-    def update_size(self, termsize=None):
+    def update_size(self, termsize: tuple[int, int] | None = None) -> tuple[int, int]:
         n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
         self.width = n_term_cols - self.x
@@ -311,6 +329,10 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         with self.snapshot_lock:
             if self.enabled:
+                assert self.cpu_percent is not None
+                assert self.used_host_memory is not None
+                assert self.used_gpu_memory is not None
+                assert self.gpu_sm_utilization is not None
                 self.cpu_percent.graph_size = (self.left_width, self.upper_height)
                 self.used_host_memory.graph_size = (self.left_width, self.lower_height)
                 self.used_gpu_memory.graph_size = (self.right_width, self.upper_height)
@@ -318,7 +340,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         return termsize
 
-    def frame_lines(self):
+    def frame_lines(self) -> list[str]:
         line = '│' + ' ' * self.left_width + '│' + ' ' * self.right_width + '│'
         return [
             '╒' + '═' * (self.width - 2) + '╕',
@@ -333,7 +355,7 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
             '╘' + '═' * self.left_width + '╧' + '═' * self.right_width + '╛',
         ]
 
-    def poke(self):
+    def poke(self) -> None:
         if self.visible and not self._daemon_running.is_set():
             self._daemon_running.set()
             try:
@@ -344,8 +366,13 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-statements,too-many-locals,too-many-branches
+    def draw(self) -> None:  # pylint: disable=too-many-statements,too-many-locals,too-many-branches
         self.color_reset()
+
+        assert self.used_gpu_memory is not None
+        assert self.gpu_sm_utilization is not None
+        assert self.cpu_percent is not None
+        assert self.used_host_memory is not None
 
         if self.need_redraw:
             for y, line in enumerate(self.frame_lines(), start=self.y):
@@ -590,10 +617,10 @@ class ProcessMetricsScreen(Displayable):  # pylint: disable=too-many-instance-at
                 self.addstr(y, x, f'├╴{p}% ')
                 self.color_at(y, x, width=2, attr=0)
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('process-metrics')
-        self.root.press(key)
+        return self.root.press(key)

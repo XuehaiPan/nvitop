@@ -4,7 +4,7 @@
 # pylint: disable=missing-module-docstring
 
 from nvitop.tui.library import host
-from nvitop.tui.library.device import Device
+from nvitop.tui.library.device import Device, MigDevice
 from nvitop.tui.library.displayable import Displayable, DisplayableContainer
 from nvitop.tui.library.history import BufferedHistoryGraph, HistoryGraph
 from nvitop.tui.library.keybinding import (
@@ -33,6 +33,7 @@ from nvitop.tui.library.utils import (
     USER_CONTEXT,
     USERNAME,
     GiB,
+    NaType,
     Snapshot,
     bytes2human,
     colored,
@@ -71,7 +72,9 @@ __all__ = [
     'KeyBuffer',
     'KeyMaps',
     'MessageBox',
+    'MigDevice',
     'MouseEvent',
+    'NaType',
     'Selection',
     'Snapshot',
     'WideString',

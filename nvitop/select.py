@@ -62,7 +62,7 @@ import math
 import os
 import sys
 import warnings
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from nvitop.api import Device, GpuProcess, Snapshot, colored, host, human2bytes, libnvml
 from nvitop.version import __version__
@@ -70,7 +70,6 @@ from nvitop.version import __version__
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-    from typing_extensions import Literal  # Python 3.8+
 
 
 __all__ = ['select_devices']

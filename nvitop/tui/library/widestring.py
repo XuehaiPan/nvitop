@@ -4,26 +4,33 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 from unicodedata import east_asian_width
+
+
+if TYPE_CHECKING:
+    from typing_extensions import Self  # Python 3.11+
 
 
 __all__ = ['WideString', 'wcslen']
 
 
-ASCIIONLY = set(map(chr, range(1, 128)))
-NARROW = 1
-WIDE = 2
-WIDE_SYMBOLS = set('WF')
+ASCIIONLY: frozenset[str] = frozenset(map(chr, range(1, 128)))
+NARROW: Literal[1] = 1
+WIDE: Literal[2] = 2
+WIDE_SYMBOLS: frozenset[str] = frozenset('WF')
 
 
-def utf_char_width(string):
+def utf_char_width(string: str) -> Literal[1, 2]:
     """Return the width of a single character."""
     if east_asian_width(string) in WIDE_SYMBOLS:
         return WIDE
     return NARROW
 
 
-def string_to_charlist(string):
+def string_to_charlist(string: str) -> list[str]:
     """Return a list of characters with extra empty strings after wide chars."""
     if ASCIIONLY.issuperset(string):
         return list(string)
@@ -35,26 +42,23 @@ def string_to_charlist(string):
     return result
 
 
-def wcslen(string):
+def wcslen(string: str | WideString) -> int:
     """Return the length of a string with wide chars."""
     return len(WideString(string))
 
 
 class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-docstring
-    def __init__(self, string='', chars=None):
+    def __init__(self, string: str | WideString = '', chars: list[str] | None = None) -> None:
         if isinstance(string, WideString):
             string = string.string
 
-        try:
-            self.string = str(string)
-        except UnicodeEncodeError:
-            self.string = string.encode('latin-1', 'ignore')
+        self.string: str = str(string)
         if chars is None:
-            self.chars = string_to_charlist(string)
+            self.chars: list[str] = string_to_charlist(string)
         else:
             self.chars = chars
 
-    def __add__(self, other):
+    def __add__(self, other: object) -> WideString:
         """
         >>> (WideString('a') + WideString('b')).string
         'ab'
@@ -69,7 +73,7 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
             return WideString(self.string + other.string, self.chars + other.chars)
         return NotImplemented
 
-    def __radd__(self, other):
+    def __radd__(self, other: object) -> WideString:
         """
         >>> ('bc' + WideString('afd')).chars
         ['b', 'c', 'a', 'f', 'd']
@@ -80,27 +84,27 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
             return WideString(other.string + self.string, other.chars + self.chars)
         return NotImplemented
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: object) -> Self:
         new = self + other
         self.string = new.string
         self.chars = new.chars
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.string
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<{self.__class__.__name__} {self.string!r}>'
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, (str, WideString)):
             raise TypeError
         return str(self) == str(other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.string)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int | slice) -> WideString:
         """
         >>> WideString('asdf')[2]
         <WideString 'd'>
@@ -112,21 +116,21 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         <WideString 'sd'>
         >>> WideString('asdf')[1:-100]
         <WideString ''>
-        >>> WideString('モヒカン')[2:4]
-        <WideString 'ヒ'>
-        >>> WideString('モヒカン')[2:5]
-        <WideString 'ヒ '>
-        >>> WideString('モabカン')[2:5]
+        >>> WideString('十百千万')[2:4]
+        <WideString '百'>
+        >>> WideString('十百千万')[2:5]
+        <WideString '百 '>
+        >>> WideString('十ab千万')[2:5]
         <WideString 'ab '>
-        >>> WideString('モヒカン')[1:5]
-        <WideString ' ヒ '>
-        >>> WideString('モヒカン')[:]
-        <WideString 'モヒカン'>
-        >>> WideString('aモ')[0:3]
-        <WideString 'aモ'>
-        >>> WideString('aモ')[0:2]
+        >>> WideString('十百千万')[1:5]
+        <WideString ' 百 '>
+        >>> WideString('十百千万')[:]
+        <WideString '十百千万'>
+        >>> WideString('a十')[0:3]
+        <WideString 'a十'>
+        >>> WideString('a十')[0:2]
         <WideString 'a '>
-        >>> WideString('aモ')[0:1]
+        >>> WideString('a十')[0:1]
         <WideString 'a'>
         """
         if isinstance(item, slice):
@@ -156,49 +160,49 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
             return WideString(' ' + ''.join(self.chars[start : stop - 1]))
         return WideString(''.join(self.chars[start:stop]))
 
-    def __len__(self):
+    def __len__(self) -> int:
         """
         >>> len(WideString('poo'))
         3
-        >>> len(WideString('モヒカン'))
+        >>> len(WideString('十百千万'))
         8
         """
         return len(self.chars)
 
-    def ljust(self, width, fillchar=' '):
+    def ljust(self, width: int, fillchar: str = ' ') -> WideString:
         """
         >>> WideString('poo').ljust(2)
         <WideString 'poo'>
         >>> WideString('poo').ljust(5)
         <WideString 'poo  '>
-        >>> WideString('モヒカン').ljust(10)
-        <WideString 'モヒカン  '>
+        >>> WideString('十百千万').ljust(10)
+        <WideString '十百千万  '>
         """
         if width > len(self):
             return WideString(self.string + fillchar * width)[:width]
         return self
 
-    def rjust(self, width, fillchar=' '):
+    def rjust(self, width: int, fillchar: str = ' ') -> WideString:
         """
         >>> WideString('poo').rjust(2)
         <WideString 'poo'>
         >>> WideString('poo').rjust(5)
         <WideString '  poo'>
-        >>> WideString('モヒカン').rljust(10)
-        <WideString '  モヒカン'>
+        >>> WideString('十百千万').rljust(10)
+        <WideString '  十百千万'>
         """
         if width > len(self):
             return WideString(fillchar * width + self.string)[-width:]
         return self
 
-    def center(self, width, fillchar=' '):
+    def center(self, width: int, fillchar: str = ' ') -> WideString:
         """
         >>> WideString('poo').center(2)
         <WideString 'poo'>
         >>> WideString('poo').center(5)
         <WideString ' poo '>
-        >>> WideString('モヒカン').center(10)
-        <WideString ' モヒカン '>
+        >>> WideString('十百千万').center(10)
+        <WideString ' 十百千万 '>
         """
         if width > len(self):
             left_width = (width - len(self)) // 2
@@ -206,29 +210,29 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
             return WideString(fillchar * left_width + self.string + fillchar * right_width)[:width]
         return self
 
-    def strip(self, chars=None):
+    def strip(self, chars: str | None = None) -> WideString:
         """
         >>> WideString('  poo  ').strip()
         <WideString 'poo'>
-        >>> WideString('  モヒカン  ').strip()
-        <WideString 'モヒカン'>
+        >>> WideString('  十百千万  ').strip()
+        <WideString '十百千万'>
         """
         return WideString(self.string.strip(chars))
 
-    def lstrip(self, chars=None):
+    def lstrip(self, chars: str | None = None) -> WideString:
         """
         >>> WideString('  poo  ').lstrip()
         <WideString 'poo  '>
-        >>> WideString('  モヒカン  ').lstrip()
-        <WideString 'モヒカン  '>
+        >>> WideString('  十百千万  ').lstrip()
+        <WideString '十百千万  '>
         """
         return WideString(self.string.lstrip(chars))
 
-    def rstrip(self, chars=None):
+    def rstrip(self, chars: str | None = None) -> WideString:
         """
         >>> WideString('  poo  ').rstrip()
         <WideString '  poo'>
-        >>> WideString('  モヒカン  ').rstrip()
-        <WideString '  モヒカン'>
+        >>> WideString('  十百千万  ').rstrip()
+        <WideString '  十百千万'>
         """
         return WideString(self.string.rstrip(chars))

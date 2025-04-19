@@ -90,10 +90,6 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 
-[[tool.mypy.overrides]]
-module = ['nvitop.callbacks.*', 'nvitop.tui.*']
-ignore_errors = true
-
 [tool.pylint]
 main.py-version = "3.8"
 basic.good-names = ["x", "y", "dx", "dy", "p", "s", "fg", "bg", "n", "ui", "tx", "rx"]
@@ -190,7 +186,6 @@ ignore = [
 ]
 "nvitop/tui/**/*.py" = [
     "D",       # pydocstyle
-    "ANN",     # flake8-annotations
 ]
 "!nvitop/tui/**/*.py" = [
     "TID251",  # banned-api

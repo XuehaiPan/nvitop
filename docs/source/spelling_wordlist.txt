@@ -107,6 +107,7 @@ rtx
 runtime
 rw
 rx
+selectable
 shader
 sm
 smi

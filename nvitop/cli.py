@@ -95,10 +95,10 @@ def parse_arguments() -> argparse.Namespace:
         help='Process status update interval in seconds. (default: 2)',
     )
     parser.add_argument(
-        '--ascii',
         '--no-unicode',
+        '--ascii',
         '-U',
-        dest='ascii',
+        dest='no_unicode',
         action='store_true',
         help='Use ASCII characters only, which is useful for terminals without Unicode support.',
     )
@@ -294,7 +294,7 @@ def main() -> int:
         args.monitor = mode
 
     if not setlocale_utf8():
-        args.ascii = True
+        args.no_unicode = True
 
     try:
         device_count = Device.count()
@@ -352,7 +352,7 @@ def main() -> int:
                 tui = TUI(
                     devices,
                     filters,
-                    ascii=args.ascii,
+                    no_unicode=args.no_unicode,
                     mode=args.monitor,
                     interval=args.interval,
                     win=win,
@@ -364,7 +364,7 @@ def main() -> int:
             messages.append(f'ERROR: Failed to initialize `curses` ({ex})')
 
     if tui is None:
-        tui = TUI(devices, filters, ascii=args.ascii)
+        tui = TUI(devices, filters, no_unicode=args.no_unicode)
         if not sys.stdout.isatty():
             parent = HostProcess().parent()
             if parent is not None:
@@ -416,8 +416,8 @@ def main() -> int:
                 pip3 install --upgrade pipx
                 pipx run nvitop
             """,
-        )
-        messages.append(message.strip() + '\n')
+        ).strip()
+        messages.append(f'{message}\n')
 
     if len(messages) > 0:
         for message in messages:

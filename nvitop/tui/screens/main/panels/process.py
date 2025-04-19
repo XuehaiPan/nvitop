@@ -10,7 +10,7 @@ import threading
 import time
 from operator import attrgetter, xor
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple
 
 from nvitop.tui.library import (
     HOSTNAME,
@@ -20,20 +20,42 @@ from nvitop.tui.library import (
     LARGE_INTEGER,
     USER_CONTEXT,
     USERNAME,
+    Device,
     Displayable,
     GpuProcess,
     MouseEvent,
     Selection,
+    Snapshot,
     WideString,
     colored,
     cut_string,
     ttl_cache,
     wcslen,
 )
+from nvitop.tui.screens.main.panels.base import BasePanel
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    import curses
+    from collections.abc import Callable, Iterable, Mapping
+
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['OrderName', 'ProcessPanel']
+
+
+OrderName = Literal[
+    'natural',
+    'pid',
+    'username',
+    'gpu_memory',
+    'sm_utilization',
+    'gpu_memory_utilization',
+    'cpu_percent',
+    'memory_percent',
+    'time',
+]
 
 
 class Order(NamedTuple):
@@ -41,16 +63,16 @@ class Order(NamedTuple):
     reverse: bool
     offset: int
     column: str
-    previous: str
-    next: str
+    previous: OrderName
+    next: OrderName
     bind_key: str
 
 
-class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'process'
-    SNAPSHOT_INTERVAL = 0.5
+class ProcessPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'process'
+    SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
 
-    ORDERS = MappingProxyType(
+    ORDERS: ClassVar[Mapping[OrderName, Order]] = MappingProxyType(
         {
             'natural': Order(
                 key=attrgetter(
@@ -189,29 +211,37 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
     )
 
     # pylint: disable-next=too-many-arguments
-    def __init__(self, devices, compact, filters, *, win, root):
+    def __init__(
+        self,
+        devices: list[Device],
+        compact: bool,
+        filters: Iterable[Callable[[Snapshot], bool]],
+        *,
+        win: curses.window | None,
+        root: TUI,
+    ) -> None:
         super().__init__(win, root)
 
-        self.devices = devices
+        self.devices: list[Device] = devices
 
-        self._compact = compact
-        self.width = max(79, root.width)
+        self._compact: bool = compact
+        self.width: int = max(79, root.width)
         self.height = self._full_height = self.compact_height = 7
 
-        self.filters = [None, *filters]
+        self.filters: list[Callable[[Snapshot], bool] | None] = [None, *filters]
 
-        self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
+        self.host_headers: list[str] = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
-        self.selection = Selection(panel=self)
-        self.host_offset = -1
-        self.y_mouse = None
+        self.selection: Selection = Selection(self)
+        self.host_offset: int = -1
+        self.y_mouse: int | None = None
 
-        self._order = 'natural'
-        self.reverse = False
+        self._order: OrderName = 'natural'
+        self.reverse: bool = False
 
-        self.has_snapshots = False
-        self._snapshot_buffer = None
-        self._snapshots = []
+        self.has_snapshots: int = False
+        self._snapshot_buffer: list[Snapshot] | None = None
+        self._snapshots: list[Snapshot] = []
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
             name='process-snapshot-daemon',
@@ -221,22 +251,22 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: int) -> None:
         width = max(79, value)
         if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
 
     @property
-    def compact(self):
+    def compact(self) -> bool:
         return self._compact or self.order != 'natural'
 
     @compact.setter
-    def compact(self, value):
+    def compact(self, value: bool) -> None:
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
@@ -250,29 +280,29 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.height = self.compact_height if self.compact else self.full_height
 
     @property
-    def full_height(self):
+    def full_height(self) -> int:
         return self._full_height if self.order == 'natural' else self.compact_height
 
     @full_height.setter
-    def full_height(self, value):
+    def full_height(self, value: int) -> None:
         self._full_height = value
 
     @property
-    def order(self):
+    def order(self) -> OrderName:
         return self._order
 
     @order.setter
-    def order(self, value):
+    def order(self, value: OrderName) -> None:
         if self._order != value:
             self._order = value
             self.height = self.compact_height if self.compact else self.full_height
 
     @property
-    def snapshots(self):
+    def snapshots(self) -> list[Snapshot]:
         return self._snapshots
 
     @snapshots.setter
-    def snapshots(self, snapshots):
+    def snapshots(self, snapshots: list[Snapshot] | None) -> None:
         if snapshots is None:
             return
         self.has_snapshots = True
@@ -307,33 +337,33 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for i, process in enumerate(snapshots):
                 if process._ident == identity:  # pylint: disable=protected-access
                     self.selection.index = i
-                    self.selection.process = process
+                    self.selection.process = process  # type: ignore[assignment]
                     break
 
     @classmethod
-    def set_snapshot_interval(cls, interval):
+    def set_snapshot_interval(cls, interval: float) -> None:
         assert interval > 0.0
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
-        cls.take_snapshots = ttl_cache(ttl=interval)(
-            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
+        cls.take_snapshots = ttl_cache(ttl=interval)(  # type: ignore[method-assign]
+            cls.take_snapshots.__wrapped__,  # type: ignore[attr-defined] # pylint: disable=no-member
         )
 
-    def ensure_snapshots(self):
+    def ensure_snapshots(self) -> None:
         if not self.has_snapshots:
             self.snapshots = self.take_snapshots()
 
     @ttl_cache(ttl=2.0)
-    def take_snapshots(self):
+    def take_snapshots(self) -> list[Snapshot]:
         snapshots = GpuProcess.take_snapshots(self.processes, failsafe=True)
         for condition in self.filters:
-            snapshots = filter(condition, snapshots)
+            snapshots = filter(condition, snapshots)  # type: ignore[assignment]
         snapshots = list(snapshots)
 
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         for snapshot in snapshots:
-            snapshot.host_info = WideString(
+            snapshot.host_info = WideString(  # type: ignore[attr-defined]
                 '{:>5} {:>5}  {}  {}'.format(
                     snapshot.cpu_percent_string.replace('%', ''),
                     snapshot.memory_percent_string.replace('%', ''),
@@ -348,13 +378,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         return snapshots
 
-    def _snapshot_target(self):
+    def _snapshot_target(self) -> None:
         self._daemon_running.wait()
         while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
-    def header_lines(self):
+    def header_lines(self) -> list[str]:
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
@@ -374,22 +404,22 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         return header
 
     @property
-    def processes(self):
+    def processes(self) -> list[GpuProcess]:
         return list(
-            itertools.chain.from_iterable(device.processes().values() for device in self.devices),
+            itertools.chain.from_iterable(device.processes().values() for device in self.devices),  # type: ignore[misc]
         )
 
-    def poke(self):
+    def poke(self) -> None:
         if not self._daemon_running.is_set():
             self._daemon_running.set()
             self._snapshot_daemon.start()
 
-        self.snapshots = self._snapshot_buffer
+        self.snapshots = self._snapshot_buffer  # type: ignore[assignment]
 
         self.selection.within_window = False
         if len(self.snapshots) > 0 and self.selection.is_set():
             y = self.y + 5
-            prev_device_index = None
+            prev_device_index: int | None = None
             for process in self.snapshots:
                 device_index = process.device.physical_index
                 if prev_device_index != device_index:
@@ -399,13 +429,14 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
                 if self.selection.is_same(process):
                     self.selection.within_window = (
-                        self.root.y <= y < self.root.termsize[0] and self.width >= 79
+                        self.root.y <= y < self.root.termsize[0]  # type: ignore[index]
+                        and self.width >= 79
                     )
                     if not self.selection.within_window:
                         if y < self.root.y:
                             self.parent.y += self.root.y - y
-                        elif y >= self.root.termsize[0]:
-                            self.parent.y -= y - self.root.termsize[0] + 1
+                        elif y >= self.root.termsize[0]:  # type: ignore[index]
+                            self.parent.y -= y - self.root.termsize[0] + 1  # type: ignore[index]
                         self.parent.update_size(self.root.termsize)
                         self.need_redraw = True
                     break
@@ -413,7 +444,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def draw(self) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
         if self.need_redraw:
@@ -508,7 +539,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.selection.within_window = False
         if len(self.snapshots) > 0:
             y = self.y + 5
-            prev_device_index = None
+            prev_device_index: int | None = None
             prev_device_display_index = None
             color = -1
             for process in self.snapshots:
@@ -556,7 +587,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     self.addstr(y, self.x + 44, process.command)
 
                 if y == self.y_mouse:
-                    self.selection.process = process
+                    self.selection.process = process  # type: ignore[assignment]
                     hint = True
 
                 if self.selection.is_same(process):
@@ -568,7 +599,8 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         attr='bold | reverse',
                     )
                     self.selection.within_window = (
-                        self.root.y <= y < self.root.termsize[0] and self.width >= 79
+                        self.root.y <= y < self.root.termsize[0]  # type: ignore[index]
+                        and self.width >= 79
                     )
                 else:
                     owned = IS_SUPERUSER or str(process.username) == USERNAME
@@ -613,22 +645,22 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         else:
             self.addstr(self.y, text_offset, ' ' * 47)
 
-    def finalize(self):
+    def finalize(self) -> None:
         self.y_mouse = None
         super().finalize()
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
-    def print_width(self):
+    def print_width(self) -> int:
         self.ensure_snapshots()
         return min(
             self.width,
             max((45 + len(process.host_info) for process in self.snapshots), default=79),
         )
 
-    def print(self):
+    def print(self) -> None:
         self.ensure_snapshots()
 
         lines = ['', *self.header_lines()]
@@ -645,7 +677,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if len(self.snapshots) > 0:
             key, reverse, *_ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)
-            prev_device_index = None
+            prev_device_index: int | None = None
             prev_device_display_index = None
             color = None
             for process in self.snapshots:
@@ -671,13 +703,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     WideString(host_info).ljust(self.width - 45)[: self.width - 45],
                 )
                 if process.is_zombie or process.no_permissions or process.is_gone:
-                    info = info.split(process.command)
+                    info_segments = info.split(process.command)
                     if not IS_SUPERUSER and process.username != USERNAME:
-                        info = (colored(item, attrs=('dark',)) for item in info)
+                        info_segments = [colored(item, attrs=('dark',)) for item in info]
                     info = colored(
                         process.command,
                         color=('red' if process.is_gone else 'yellow'),
-                    ).join(info)
+                    ).join(info_segments)
                 elif not IS_SUPERUSER and process.username != USERNAME:
                     info = colored(info, attrs=('dark',))
                 lines.append('│{} {} │'.format(colored(f'{device_display_index:>4}', color), info))
@@ -685,7 +717,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             lines.append('╘' + '═' * (self.width - 2) + '╛')
 
         lines = '\n'.join(lines)
-        if self.ascii:
+        if self.no_unicode:
             lines = lines.translate(self.ASCII_TRANSTABLE)
 
         try:
@@ -693,11 +725,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         except UnicodeError:
             print(lines.translate(self.ASCII_TRANSTABLE))
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('process')
-        self.root.press(key)
+        return self.root.press(key)
 
-    def click(self, event):
+    def click(self, event: MouseEvent) -> bool:
         if event.pressed(1) or event.pressed(3) or event.clicked(1) or event.clicked(3):
             self.y_mouse = event.y
             return True
@@ -709,7 +741,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.selection.move(direction=direction)
         return True
 
-    def __contains__(self, item):
+    def __contains__(self, item: Displayable | MouseEvent | tuple[int, int]) -> bool:
         if self.parent.visible and isinstance(item, MouseEvent):
             return True
         return super().__contains__(item)

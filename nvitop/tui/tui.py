@@ -3,12 +3,25 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import curses
 import shutil
 import time
+from typing import TYPE_CHECKING, Literal, Union
 
-from nvitop.tui.library import ALT_KEY, DisplayableContainer, KeyBuffer, KeyMaps, MouseEvent
+from nvitop.tui.library import (
+    ALT_KEY,
+    Device,
+    DisplayableContainer,
+    KeyBuffer,
+    KeyMaps,
+    MessageBox,
+    MouseEvent,
+    Snapshot,
+)
 from nvitop.tui.screens import (
+    BaseScreen,
     BreakLoop,
     EnvironScreen,
     HelpScreen,
@@ -18,33 +31,44 @@ from nvitop.tui.screens import (
 )
 
 
-class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+
+__all__ = ['TUI', 'MonitorMode']
+
+
+MonitorMode = Literal['auto', 'full', 'compact']
+
+
+class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
-        devices,
-        filters=(),
+        devices: list[Device],
+        filters: Iterable[Callable[[Snapshot], bool]] = (),
         *,
-        ascii=False,  # pylint: disable=redefined-builtin
-        mode='auto',
-        interval=None,
-        win=None,
-    ):
+        no_unicode: bool = False,
+        mode: MonitorMode = 'auto',
+        interval: float | None = None,
+        win: curses.window | None = None,
+    ) -> None:
         super().__init__(win, root=self)
 
         self.x = self.y = 0
-        self.width = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns - self.x)
-        self.termsize = None
+        self.width: int = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns - self.x)
+        self.height: int = 0
+        self.termsize: tuple[int, int] | None = None
 
-        self.ascii = ascii
+        self.no_unicode: bool = no_unicode
 
-        self.devices = devices
-        self.device_count = len(self.devices)
+        self.devices: list[Device] = devices
+        self.device_count: int = len(self.devices)
 
-        self.main_screen = MainScreen(
+        self.main_screen: MainScreen = MainScreen(
             self.devices,
             filters,
-            ascii=ascii,
+            no_unicode=no_unicode,
             mode=mode,
             win=win,
             root=self,
@@ -52,29 +76,33 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         self.main_screen.visible = True
         self.main_screen.focused = False
         self.add_child(self.main_screen)
-        self.current_screen = self.previous_screen = self.main_screen
+        self.current_screen: BaseScreen = self.main_screen
+        self.previous_screen: BaseScreen = self.main_screen
 
-        self._messagebox = None
+        self._messagebox: MessageBox | None = None
 
         if win is not None:
-            self.environ_screen = EnvironScreen(win=win, root=self)
+            self.environ_screen: EnvironScreen = EnvironScreen(win=win, root=self)
             self.environ_screen.visible = False
-            self.environ_screen.ascii = False
+            self.environ_screen.no_unicode = False
             self.add_child(self.environ_screen)
 
-            self.treeview_screen = TreeViewScreen(win=win, root=self)
+            self.treeview_screen: TreeViewScreen = TreeViewScreen(win=win, root=self)
             self.treeview_screen.visible = False
-            self.treeview_screen.ascii = self.ascii
+            self.treeview_screen.no_unicode = self.no_unicode
             self.add_child(self.treeview_screen)
 
-            self.process_metrics_screen = ProcessMetricsScreen(win=win, root=self)
+            self.process_metrics_screen: ProcessMetricsScreen = ProcessMetricsScreen(
+                win=win,
+                root=self,
+            )
             self.process_metrics_screen.visible = False
-            self.process_metrics_screen.ascii = self.ascii
+            self.process_metrics_screen.no_unicode = self.no_unicode
             self.add_child(self.process_metrics_screen)
 
-            self.help_screen = HelpScreen(win=win, root=self)
+            self.help_screen: HelpScreen = HelpScreen(win=win, root=self)
             self.help_screen.visible = False
-            self.help_screen.ascii = False
+            self.help_screen.no_unicode = False
             self.add_child(self.help_screen)
 
             if interval is not None:
@@ -86,35 +114,35 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
                 self.main_screen.process_panel.set_snapshot_interval(interval)
                 self.treeview_screen.set_snapshot_interval(interval)
 
-            self.keybuffer = KeyBuffer()
-            self.keymaps = KeyMaps(self.keybuffer)
-            self.last_input_time = time.monotonic()
+            self.keybuffer: KeyBuffer = KeyBuffer()
+            self.keymaps: KeyMaps = KeyMaps(self.keybuffer)
+            self.last_input_time: float = time.monotonic()
             self.init_keybindings()
 
     @property
-    def messagebox(self):
+    def messagebox(self) -> MessageBox | None:
         return self._messagebox
 
     @messagebox.setter
-    def messagebox(self, value):
+    def messagebox(self, value: MessageBox | None) -> None:
         self.need_redraw = True
         if self._messagebox is not None:
             self.remove_child(self._messagebox)
 
         self._messagebox = value
         if value is not None:
-            self._messagebox.visible = True
-            self._messagebox.focused = True
-            self._messagebox.ascii = self.ascii
-            self._messagebox.previous_focused = self.get_focused_obj()
-            self.add_child(self._messagebox)
+            value.visible = True
+            value.focused = True
+            value.no_unicode = self.no_unicode
+            value.previous_focused = self.get_focused_obj()  # type: ignore[assignment]
+            self.add_child(value)
 
-    def get_focused_obj(self):
+    def get_focused_obj(self) -> BaseScreen | MessageBox | None:
         if self.messagebox is not None:
             return self.messagebox
         return super().get_focused_obj()
 
-    def update_size(self, termsize=None):
+    def update_size(self, termsize: tuple[int, int] | None = None) -> tuple[int, int]:
         n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
         self.width = n_term_cols - self.x
@@ -130,13 +158,14 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
 
         return termsize
 
-    def poke(self):
+    def poke(self) -> None:
         super().poke()
 
         if self.termsize is None:
             self.update_size()
 
-    def draw(self):
+    def draw(self) -> None:
+        assert self.win is not None
         if self.need_redraw:
             self.win.erase()
 
@@ -151,6 +180,7 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         if not self.need_redraw:
             return
 
+        assert self.termsize is not None
         n_term_lines, n_term_cols = self.termsize
         message = (
             f'nvitop needs at least a width of 79 to render, the current width is {self.width}.'
@@ -178,16 +208,17 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         for y, line in enumerate(lines, start=y_start):
             self.addstr(y, x_start, line)
 
-    def finalize(self):
+    def finalize(self) -> None:
+        assert self.win is not None
         super().finalize()
         self.win.refresh()
 
-    def redraw(self):
+    def redraw(self) -> None:
         self.poke()
         self.draw()
         self.finalize()
 
-    def loop(self):
+    def loop(self) -> None:
         if self.win is None:
             return
 
@@ -200,18 +231,18 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
         except BreakLoop:
             pass
 
-    def print(self):
+    def print(self) -> None:
         self.main_screen.print()
 
-    def handle_mouse(self):
+    def handle_mouse(self) -> None:
         """Handle mouse input."""
         try:
-            event = MouseEvent(curses.getmouse())
+            event = MouseEvent.get()
         except curses.error:
             return
         super().click(event)
 
-    def handle_key(self, key):
+    def handle_key(self, key: int) -> None:
         """Handle key input."""
         if key < 0:
             self.keybuffer.clear()
@@ -219,11 +250,11 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.keymaps.use_keymap('main')
             self.press(key)
 
-    def handle_keys(self, *keys):
+    def handle_keys(self, *keys: int) -> None:
         for key in keys:
             self.handle_key(key)
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         keybuffer = self.keybuffer
 
         keybuffer.add(key)
@@ -238,7 +269,8 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             return False
         return True
 
-    def handle_input(self):  # pylint: disable=too-many-branches
+    def handle_input(self) -> None:  # pylint: disable=too-many-branches
+        assert self.win is not None
         key = self.win.getch()
         if key == curses.ERR:
             return
@@ -269,14 +301,14 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             else:
                 self.handle_key(key)
 
-    def init_keybindings(self):
+    def init_keybindings(self) -> None:
         # pylint: disable=multiple-statements,too-many-statements
 
         for screen in self.container:
             if hasattr(screen, 'init_keybindings'):
                 screen.init_keybindings()
 
-        def show_screen(screen, focused=None):
+        def show_screen(screen: BaseScreen, focused: bool | None = None) -> None:
             for s in self.container:
                 if s is screen:
                     s.visible = True
@@ -288,21 +320,23 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             self.previous_screen = self.current_screen
             self.current_screen = screen
 
-        def show_main():
-            show_screen(self.main_screen, focused=False)
+        def show_main() -> None:
+            target_screen = self.main_screen
+            show_screen(target_screen, focused=False)
 
             if self.treeview_screen.selection.is_set():
-                self.main_screen.selection.process = self.treeview_screen.selection.process
+                target_screen.selection.process = self.treeview_screen.selection.process
             self.treeview_screen.selection.clear()
             self.process_metrics_screen.disable()
 
-        def show_environ():
-            show_screen(self.environ_screen, focused=True)
+        def show_environ() -> None:
+            target_screen = self.environ_screen
+            show_screen(target_screen, focused=True)
 
             if self.previous_screen is not self.help_screen:
-                self.environ_screen.process = self.previous_screen.selection.process
+                target_screen.process = self.previous_screen.selection.process  # type: ignore[attr-defined]
 
-        def environ_return():
+        def environ_return() -> None:
             if self.previous_screen is self.treeview_screen:
                 show_treeview()
             elif self.previous_screen is self.process_metrics_screen:
@@ -310,28 +344,30 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
             else:
                 show_main()
 
-        def show_treeview():
+        def show_treeview() -> None:
             if not self.main_screen.process_panel.has_snapshots:
                 return
 
-            show_screen(self.treeview_screen, focused=True)
+            target_screen = self.treeview_screen
+            show_screen(target_screen, focused=True)
 
-            if not self.treeview_screen.selection.is_set():
-                self.treeview_screen.selection.process = self.main_screen.selection.process
+            if not target_screen.selection.is_set():
+                target_screen.selection.process = self.main_screen.selection.process
             self.main_screen.selection.clear()
 
-        def show_process_metrics():
+        def show_process_metrics() -> None:
+            target_screen = self.process_metrics_screen
             if self.current_screen is self.main_screen:
                 if self.main_screen.selection.is_set():
-                    show_screen(self.process_metrics_screen, focused=True)
-                    self.process_metrics_screen.process = self.previous_screen.selection.process
+                    show_screen(target_screen, focused=True)
+                    target_screen.process = self.previous_screen.selection.process  # type: ignore[attr-defined]
             elif self.current_screen is not self.treeview_screen:
-                show_screen(self.process_metrics_screen, focused=True)
+                show_screen(target_screen, focused=True)
 
-        def show_help():
+        def show_help() -> None:
             show_screen(self.help_screen, focused=True)
 
-        def help_return():
+        def help_return() -> None:
             if self.previous_screen is self.treeview_screen:
                 show_treeview()
             elif self.previous_screen is self.environ_screen:
@@ -343,26 +379,26 @@ class TUI(DisplayableContainer):  # pylint: disable=too-many-instance-attributes
 
         self.keymaps.bind('main', 'e', show_environ)
         self.keymaps.bind('environ', 'e', environ_return)
-        self.keymaps.copy('environ', 'e', '<Esc>')
-        self.keymaps.copy('environ', 'e', 'q')
-        self.keymaps.copy('environ', 'e', 'Q')
+        self.keymaps.alias('environ', 'e', '<Esc>')
+        self.keymaps.alias('environ', 'e', 'q')
+        self.keymaps.alias('environ', 'e', 'Q')
 
         self.keymaps.bind('main', 't', show_treeview)
         self.keymaps.bind('treeview', 't', show_main)
-        self.keymaps.copy('treeview', 't', 'q')
-        self.keymaps.copy('treeview', 't', 'Q')
+        self.keymaps.alias('treeview', 't', 'q')
+        self.keymaps.alias('treeview', 't', 'Q')
         self.keymaps.bind('treeview', 'e', show_environ)
 
         self.keymaps.bind('main', '<Enter>', show_process_metrics)
         self.keymaps.bind('process-metrics', '<Enter>', show_main)
-        self.keymaps.copy('process-metrics', '<Enter>', '<Esc>')
-        self.keymaps.copy('process-metrics', '<Enter>', 'q')
-        self.keymaps.copy('process-metrics', '<Enter>', 'Q')
+        self.keymaps.alias('process-metrics', '<Enter>', '<Esc>')
+        self.keymaps.alias('process-metrics', '<Enter>', 'q')
+        self.keymaps.alias('process-metrics', '<Enter>', 'Q')
         self.keymaps.bind('process-metrics', 'e', show_environ)
 
-        for screen in ('main', 'treeview', 'environ', 'process-metrics'):
-            self.keymaps.bind(screen, 'h', show_help)
-            self.keymaps.copy(screen, 'h', '?')
+        for screen_name in ('main', 'treeview', 'environ', 'process-metrics'):
+            self.keymaps.bind(screen_name, 'h', show_help)
+            self.keymaps.alias(screen_name, 'h', '?')
         self.keymaps.bind('help', '<Esc>', help_return)
         self.keymaps.bind('help', '<any>', help_return)
 

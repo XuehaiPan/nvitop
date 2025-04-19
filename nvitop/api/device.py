@@ -115,7 +115,7 @@ import textwrap
 import threading
 import time
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, overload
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
@@ -132,10 +132,7 @@ from nvitop.api.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Hashable, Iterable
-    from typing_extensions import (
-        Literal,  # Python 3.8+
-        Self,  # Python 3.11+
-    )
+    from typing_extensions import Self  # Python 3.11+
 
 
 __all__ = [
@@ -266,7 +263,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     # GPU UUID        : `GPU-<GPU-UUID>`
     # MIG UUID        : `MIG-GPU-<GPU-UUID>/<GPU instance ID>/<compute instance ID>`
     # MIG UUID (R470+): `MIG-<MIG-UUID>`
-    UUID_PATTERN: re.Pattern = re.compile(
+    UUID_PATTERN: ClassVar[re.Pattern] = re.compile(
         r"""^  # full match
         (?:(?P<MigMode>MIG)-)?                                 # prefix for MIG UUID
         (?:(?P<GpuUuid>GPU)-)?                                 # prefix for GPU UUID
@@ -283,8 +280,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         flags=re.VERBOSE,
     )
 
-    GPU_PROCESS_CLASS: type[GpuProcess] = GpuProcess
-    cuda: type[CudaDevice] = None  # type: ignore[assignment] # defined in below
+    GPU_PROCESS_CLASS: ClassVar[type[GpuProcess]] = GpuProcess
+    cuda: ClassVar[type[CudaDevice]] = None  # type: ignore[assignment] # defined in below
     """Shortcut for class :class:`CudaDevice`."""
 
     _nvml_index: int | tuple[int, int]
@@ -395,7 +392,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def from_indices(
         cls,
         indices: int | Iterable[int | tuple[int, int]] | None = None,
-    ) -> list[PhysicalDevice | MigDevice]:
+    ) -> list[Self]:
         """Return a list of devices of the given indices.
 
         Args:
@@ -430,7 +427,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if isinstance(indices, int):
             indices = [indices]
 
-        return list(map(cls, indices))  # type: ignore[arg-type]
+        return list(map(cls, indices))
 
     @staticmethod
     def from_cuda_visible_devices() -> list[CudaDevice]:

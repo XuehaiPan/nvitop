@@ -237,7 +237,7 @@ class HostProcess(host.Process, ABC):
 
     def __repr__(self) -> str:
         """Return a string representation of the process."""
-        return super().__repr__().replace(self.__class__.__module__ + '.', '', 1)
+        return super().__repr__().replace(f'{self.__class__.__module__}.', '', 1)
 
     def __reduce__(self) -> tuple[type[HostProcess], tuple[int]]:
         """Return state information for pickling."""

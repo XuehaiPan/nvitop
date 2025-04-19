@@ -580,8 +580,8 @@ def human2bytes(s: int | str, /) -> int:
     if match is None:
         raise ValueError(f'Cannot convert {s!r} to bytes.')
     size, unit = match.groups()
-    unit = unit.upper().replace('I', 'i').replace('B', '') + 'B'
-    return int(float(size) * SIZE_UNITS[unit])
+    unit = unit.upper().replace('I', 'i').replace('B', '')
+    return int(float(size) * SIZE_UNITS[f'{unit}B'])
 
 
 def timedelta2human(

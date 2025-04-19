@@ -3,25 +3,40 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from types import MappingProxyType
+from __future__ import annotations
 
-from nvitop.api import NA, libnvml, ttl_cache, utilization2string
+import enum
+from typing import Any, ClassVar, Literal
+
+from nvitop.api import NA, Snapshot, libnvml, ttl_cache, utilization2string
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
-from nvitop.tui.library.process import GpuProcess
+from nvitop.tui.library.process import GpuProcess, GpuProcessBase
 
 
 __all__ = ['Device', 'MigDevice']
 
 
+class LoadingIntensity(enum.IntEnum):
+    LIGHT = 0
+    MODERATE = 1
+    HEAVY = 2
+
+    def color(self) -> str:
+        if self == LoadingIntensity.LIGHT:
+            return 'green'
+        if self == LoadingIntensity.MODERATE:
+            return 'yellow'
+        return 'red'
+
+
 class Device(DeviceBase):
-    GPU_PROCESS_CLASS = GpuProcess
+    GPU_PROCESS_CLASS: ClassVar[type[GpuProcessBase]] = GpuProcess
 
-    MEMORY_UTILIZATION_THRESHOLDS = (10, 80)
-    GPU_UTILIZATION_THRESHOLDS = (10, 75)
-    INTENSITY2COLOR = MappingProxyType({'light': 'green', 'moderate': 'yellow', 'heavy': 'red'})
+    MEMORY_UTILIZATION_THRESHOLDS: ClassVar[tuple[int, int]] = (10, 80)
+    GPU_UTILIZATION_THRESHOLDS: ClassVar[tuple[int, int]] = (10, 75)
 
-    SNAPSHOT_KEYS = (
+    SNAPSHOT_KEYS: ClassVar[list[str]] = [
         'name',
         'bus_id',
         'memory_used',
@@ -58,28 +73,30 @@ class Device(DeviceBase):
         'gpu_display_color',
         'loading_intensity',
         'display_color',
-    )
+    ]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self._snapshot = None
-        self.tuple_index = (self.index,) if isinstance(self.index, int) else self.index
-        self.display_index = ':'.join(map(str, self.tuple_index))
+        self._snapshot: Snapshot | None = None
+        self.tuple_index: tuple[int] | tuple[int, int] = (
+            (self.index,) if isinstance(self.index, int) else self.index
+        )
+        self.display_index: str = ':'.join(map(str, self.tuple_index))
 
-    def as_snapshot(self):
+    def as_snapshot(self) -> Snapshot:
         self._snapshot = super().as_snapshot()
-        self._snapshot.tuple_index = self.tuple_index
-        self._snapshot.display_index = self.display_index
+        self._snapshot.tuple_index = self.tuple_index  # type: ignore[attr-defined]
+        self._snapshot.display_index = self.display_index  # type: ignore[attr-defined]
         return self._snapshot
 
     @property
-    def snapshot(self):
+    def snapshot(self) -> Snapshot:
         if self._snapshot is None:
             self.as_snapshot()
-        return self._snapshot
+        return self._snapshot  # type: ignore[return-value]
 
-    def mig_devices(self):
+    def mig_devices(self) -> list[MigDevice]:  # type: ignore[override]
         mig_devices = []
 
         if self.is_mig_mode_enabled():
@@ -107,89 +124,90 @@ class Device(DeviceBase):
     compute_mode = ttl_cache(ttl=5.0)(DeviceBase.compute_mode)
     mig_mode = ttl_cache(ttl=5.0)(DeviceBase.mig_mode)
 
-    def memory_percent_string(self):  # in percentage
+    def memory_percent_string(self) -> str:  # in percentage
         return utilization2string(self.memory_percent())
 
-    def memory_utilization_string(self):  # in percentage
+    def memory_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.memory_utilization())
 
-    def gpu_utilization_string(self):  # in percentage
+    def gpu_utilization_string(self) -> str:  # in percentage
         return utilization2string(self.gpu_utilization())
 
-    def fan_speed_string(self):  # in percentage
+    def fan_speed_string(self) -> str:  # in percentage
         return utilization2string(self.fan_speed())
 
-    def temperature_string(self):  # in Celsius
+    def temperature_string(self) -> str:  # in Celsius
         temperature = self.temperature()
-        if libnvml.nvmlCheckReturn(temperature, int):
-            temperature = str(temperature) + 'C'
-        return temperature
+        return f'{temperature}C' if libnvml.nvmlCheckReturn(temperature, int) else NA
 
-    def memory_loading_intensity(self):
+    def memory_loading_intensity(self) -> LoadingIntensity:
         return self.loading_intensity_of(self.memory_percent(), type='memory')
 
-    def gpu_loading_intensity(self):
+    def gpu_loading_intensity(self) -> LoadingIntensity:
         return self.loading_intensity_of(self.gpu_utilization(), type='gpu')
 
-    def loading_intensity(self):
-        loading_intensity = (self.memory_loading_intensity(), self.gpu_loading_intensity())
-        if 'heavy' in loading_intensity:
-            return 'heavy'
-        if 'moderate' in loading_intensity:
-            return 'moderate'
-        return 'light'
+    def loading_intensity(self) -> LoadingIntensity:
+        return max(self.memory_loading_intensity(), self.gpu_loading_intensity())
 
-    def display_color(self):
+    def display_color(self) -> str:
         if self.name().startswith('ERROR:'):
             return 'red'
-        return self.INTENSITY2COLOR.get(self.loading_intensity())
+        return self.loading_intensity().color()
 
-    def memory_display_color(self):
+    def memory_display_color(self) -> str:
         if self.name().startswith('ERROR:'):
             return 'red'
-        return self.INTENSITY2COLOR.get(self.memory_loading_intensity())
+        return self.memory_loading_intensity().color()
 
-    def gpu_display_color(self):
+    def gpu_display_color(self) -> str:
         if self.name().startswith('ERROR:'):
             return 'red'
-        return self.INTENSITY2COLOR.get(self.gpu_loading_intensity())
+        return self.gpu_loading_intensity().color()
 
     @staticmethod
-    def loading_intensity_of(utilization, type='memory'):  # pylint: disable=redefined-builtin
+    def loading_intensity_of(
+        utilization: float | str,
+        type: Literal['memory', 'gpu'] = 'memory',  # pylint: disable=redefined-builtin
+    ) -> LoadingIntensity:
         thresholds = {
             'memory': Device.MEMORY_UTILIZATION_THRESHOLDS,
             'gpu': Device.GPU_UTILIZATION_THRESHOLDS,
-        }.get(type)
+        }[type]
         if utilization is NA:
-            return 'moderate'
+            return LoadingIntensity.MODERATE
         if isinstance(utilization, str):
             utilization = utilization.replace('%', '')
         utilization = float(utilization)
         if utilization >= thresholds[-1]:
-            return 'heavy'
+            return LoadingIntensity.HEAVY
         if utilization >= thresholds[0]:
-            return 'moderate'
-        return 'light'
+            return LoadingIntensity.MODERATE
+        return LoadingIntensity.LIGHT
 
     @staticmethod
-    def color_of(utilization, type='memory'):  # pylint: disable=redefined-builtin
-        return Device.INTENSITY2COLOR.get(Device.loading_intensity_of(utilization, type=type))
+    def color_of(
+        utilization: float | str,
+        type: Literal['memory', 'gpu'] = 'memory',  # pylint: disable=redefined-builtin
+    ) -> str:
+        return Device.loading_intensity_of(utilization, type=type).color()
 
 
-class MigDevice(MigDeviceBase, Device):
-    def __init__(self, *args, **kwargs):
+class MigDevice(MigDeviceBase, Device):  # type: ignore[misc]
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        self._snapshot = None
-        self.tuple_index = (self.index,) if isinstance(self.index, int) else self.index
-        self.display_index = ':'.join(map(str, self.tuple_index))
+        self._snapshot: Snapshot | None = None
+        self.tuple_index: tuple[int] | tuple[int, int] = (
+            (self.index,) if isinstance(self.index, int) else self.index
+        )
+        self.display_index: str = ':'.join(map(str, self.tuple_index))
 
     def memory_usage(self) -> str:  # string of used memory over total memory (in human readable)
         return f'{self.memory_used_human()} / {self.memory_total_human():>8s}'
 
     loading_intensity = Device.memory_loading_intensity
 
-    SNAPSHOT_KEYS = (
+    SNAPSHOT_KEYS: ClassVar[list[str]] = [
         'name',
         'memory_used',
         'memory_free',
@@ -217,4 +235,4 @@ class MigDevice(MigDeviceBase, Device):
         'gpu_display_color',
         'loading_intensity',
         'display_color',
-    )
+    ]

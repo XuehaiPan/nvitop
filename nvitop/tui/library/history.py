@@ -3,29 +3,41 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import functools
 import itertools
 import threading
 import time
 from collections import deque
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from nvitop.api import NA
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+    from typing_extensions import ParamSpec  # Python 3.11+
+
+    _P = ParamSpec('_P')
+    _T = TypeVar('_T')
+    _S = TypeVar('_S')
 
 
 __all__ = ['BufferedHistoryGraph', 'HistoryGraph']
 
 
-BOUND_UPDATE_INTERVAL = 1.0
+BOUND_UPDATE_INTERVAL: float = 1.0
 
 # fmt: off
-VALUE2SYMBOL_UP = {
+VALUE2SYMBOL_UP: dict[tuple[int, int], str] = {
     (0, 0): ' ', (0, 1): '⢀', (0, 2): '⢠', (0, 3): '⢰', (0, 4): '⢸',
     (1, 0): '⡀', (1, 1): '⣀', (1, 2): '⣠', (1, 3): '⣰', (1, 4): '⣸',
     (2, 0): '⡄', (2, 1): '⣄', (2, 2): '⣤', (2, 3): '⣴', (2, 4): '⣼',
     (3, 0): '⡆', (3, 1): '⣆', (3, 2): '⣦', (3, 3): '⣶', (3, 4): '⣾',
     (4, 0): '⡇', (4, 1): '⣇', (4, 2): '⣧', (4, 3): '⣷', (4, 4): '⣿',
 }
-VALUE2SYMBOL_DOWN = {
+VALUE2SYMBOL_DOWN: dict[tuple[int, int], str] = {
     (0, 0): ' ', (0, 1): '⠈', (0, 2): '⠘', (0, 3): '⠸', (0, 4): '⢸',
     (1, 0): '⠁', (1, 1): '⠉', (1, 2): '⠙', (1, 3): '⠹', (1, 4): '⢹',
     (2, 0): '⠃', (2, 1): '⠋', (2, 2): '⠛', (2, 3): '⠻', (2, 4): '⢻',
@@ -33,23 +45,28 @@ VALUE2SYMBOL_DOWN = {
     (4, 0): '⡇', (4, 1): '⡏', (4, 2): '⡟', (4, 3): '⡿', (4, 4): '⣿',
 }
 # fmt: on
-SYMBOL2VALUE_UP = {v: k for k, v in VALUE2SYMBOL_UP.items()}
-SYMBOL2VALUE_DOWN = {v: k for k, v in VALUE2SYMBOL_DOWN.items()}
-PAIR2SYMBOL_UP = {
+SYMBOL2VALUE_UP: dict[str, tuple[int, int]] = {v: k for k, v in VALUE2SYMBOL_UP.items()}
+SYMBOL2VALUE_DOWN: dict[str, tuple[int, int]] = {v: k for k, v in VALUE2SYMBOL_DOWN.items()}
+PAIR2SYMBOL_UP: dict[tuple[str, str], str] = {
     (s1, s2): VALUE2SYMBOL_UP[SYMBOL2VALUE_UP[s1][-1], SYMBOL2VALUE_UP[s2][0]]
     for s1, s2 in itertools.product(SYMBOL2VALUE_UP, repeat=2)
 }
-PAIR2SYMBOL_DOWN = {
+PAIR2SYMBOL_DOWN: dict[tuple[str, str], str] = {
     (s1, s2): VALUE2SYMBOL_DOWN[SYMBOL2VALUE_DOWN[s1][-1], SYMBOL2VALUE_DOWN[s2][0]]
     for s1, s2 in itertools.product(SYMBOL2VALUE_DOWN, repeat=2)
 }
-GRAPH_SYMBOLS = ''.join(
+GRAPH_SYMBOLS: str = ''.join(
     sorted(set(itertools.chain(VALUE2SYMBOL_UP.values(), VALUE2SYMBOL_DOWN.values()))),
 ).replace(' ', '')
 
 
-def grouped(iterable, size, fillvalue=None):
-    yield from itertools.zip_longest(*([iter(iterable)] * size), fillvalue=fillvalue)
+def grouped(
+    iterable: Iterable[_T],
+    size: int,
+    fillvalue: _S = None,  # type: ignore[assignment]
+) -> itertools.zip_longest[tuple[_T | _S, ...]]:
+    it = iter(iterable)
+    return itertools.zip_longest(*([it] * size), fillvalue=fillvalue)
 
 
 class HistoryGraph:  # pylint: disable=too-many-instance-attributes
@@ -58,24 +75,24 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
-        upperbound,
-        width,
-        height,
+        upperbound: float,
+        width: int,
+        height: int,
         *,
-        format='{:.1f}'.format,  # pylint: disable=redefined-builtin
-        max_format=None,
-        baseline=0.0,
-        dynamic_bound=False,
-        min_bound=None,
-        init_bound=None,
-        upsidedown=False,
-    ):
+        format: Callable[[float], str] = '{:.1f}'.format,  # pylint: disable=redefined-builtin
+        max_format: Callable[[float], str] | None = None,
+        baseline: float = 0.0,
+        dynamic_bound: bool = False,
+        min_bound: float | None = None,
+        init_bound: float | None = None,
+        upsidedown: bool = False,
+    ) -> None:
         assert baseline < upperbound
 
-        self.format = format
+        self.format: Callable[[float], str] = format
         if max_format is None:
             max_format = format
-        self.max_format = max_format
+        self.max_format: Callable[[float], str] = max_format
 
         if dynamic_bound:
             if min_bound is None:
@@ -86,29 +103,35 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             assert min_bound is None
             assert init_bound is None
             min_bound = init_bound = upperbound
-        self.baseline = baseline
-        self.min_bound = min_bound
-        self.max_bound = upperbound
-        self.bound = init_bound
-        self.next_bound_update_at = time.monotonic()
-        self._width = width
-        self._height = height
+        self.baseline: float = baseline
+        self.min_bound: float = min_bound
+        self.max_bound: float = upperbound
+        self.bound: float = init_bound
+        self.next_bound_update_at: float = time.monotonic()
+        self._width: int = width
+        self._height: int = height
 
-        self.maxlen = 2 * self.width + 1
-        self.history = deque(
+        self.maxlen: int = 2 * self.width + 1
+        self.history: deque[float] = deque(
             [self.baseline - 0.1] * (2 * self.MAX_WIDTH + 1),
             maxlen=(2 * self.MAX_WIDTH + 1),
         )
-        self.reversed_history = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
-        self._max_value_maintainer = deque([self.baseline - 0.1] * self.maxlen, maxlen=self.maxlen)
-        self.last_retval = None
+        self.reversed_history: deque[float] = deque(
+            [self.baseline - 0.1] * self.maxlen,
+            maxlen=self.maxlen,
+        )
+        self._max_value_maintainer: deque[float] = deque(
+            [self.baseline - 0.1] * self.maxlen,
+            maxlen=self.maxlen,
+        )
+        self.last_retval: Any = None
 
-        self.graph = []
-        self.last_graph = []
-        self.upsidedown = upsidedown
+        self.graph: list[str] = []
+        self.last_graph: list[str] = []
+        self.upsidedown: bool = upsidedown
         if upsidedown:
-            self.value2symbol = VALUE2SYMBOL_DOWN
-            self.pair2symbol = PAIR2SYMBOL_DOWN
+            self.value2symbol: dict[tuple[int, int], str] = VALUE2SYMBOL_DOWN
+            self.pair2symbol: dict[tuple[str, str], str] = PAIR2SYMBOL_DOWN
         else:
             self.value2symbol = VALUE2SYMBOL_UP
             self.pair2symbol = PAIR2SYMBOL_UP
@@ -118,11 +141,11 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         self.remake_graph()
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: int) -> None:
         if self._width != value:
             assert isinstance(value, int)
             assert value >= 1
@@ -139,7 +162,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
                 )
                 for history in itertools.islice(
                     self.history,
-                    max(0, self.history.maxlen - self.maxlen),
+                    max(0, self.history.maxlen - self.maxlen),  # type: ignore[operator]
                     self.history.maxlen,
                 ):
                     if self.reversed_history[-1] == self._max_value_maintainer[0]:
@@ -154,11 +177,11 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
                 self.remake_graph()
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._height
 
     @height.setter
-    def height(self, value):
+    def height(self, value: int) -> None:
         if self._height != value:
             assert isinstance(value, int)
             assert value >= 1
@@ -166,11 +189,11 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             self.remake_graph()
 
     @property
-    def graph_size(self):
+    def graph_size(self) -> tuple[int, int]:
         return (self.width, self.height)
 
     @graph_size.setter
-    def graph_size(self, value):
+    def graph_size(self, value: tuple[int, int]) -> None:
         width, height = value
         assert isinstance(width, int)
         assert width >= 1
@@ -181,38 +204,37 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
         self.width = width
 
     @property
-    def last_value(self):
+    def last_value(self) -> float:
         return self.reversed_history[0]
 
     @property
-    def max_value(self):
+    def max_value(self) -> float:
         return self._max_value_maintainer[0]
 
-    def last_value_string(self):
+    def last_value_string(self) -> str:
         last_value = self.last_value
         if last_value >= self.baseline:
             return self.format(last_value)
         try:
-            return self.format(NA)
+            return self.format(NA)  # type: ignore[arg-type]
         except ValueError:
             return NA
 
     __str__ = last_value_string
 
-    def max_value_string(self):
+    def max_value_string(self) -> str:
         max_value = self.max_value
         if max_value >= self.baseline:
             return self.max_format(max_value)
         try:
-            return self.max_format(NA)
+            return self.max_format(NA)  # type: ignore[arg-type]
         except ValueError:
             return NA
 
-    def add(self, value):
-        if value is NA:
+    def add(self, value: float) -> None:
+        if value is NA:  # type: ignore[comparison-overlap]
             value = self.baseline - 0.1
-        if not isinstance(value, (int, float)):
-            return
+        assert isinstance(value, (int, float))
 
         with self.write_lock:
             if self.reversed_history[-1] == self._max_value_maintainer[0]:
@@ -237,7 +259,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             for i, (line, char) in enumerate(zip(self.graph, bar)):
                 self.graph[i] = (line + char)[-self.width :]
 
-    def remake_graph(self):
+    def remake_graph(self) -> None:
         with self.remake_lock:
             if self.max_value >= self.baseline:
                 reversed_bars = []
@@ -257,7 +279,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
                 self.graph = [' ' * self.width for _ in range(self.height)]
                 self.last_graph = [' ' * (self.width - 1) for _ in range(self.height)]
 
-    def make_bar(self, value1, value2):
+    def make_bar(self, value1: float, value2: float) -> list[str]:
         if self.bound <= self.baseline:
             return [' '] * self.height
 
@@ -277,22 +299,26 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             bar.reverse()
         return bar
 
-    def shift_line(self, line):
-        return ''.join(map(self.pair2symbol.get, zip(line, line[1:])))
+    def shift_line(self, line: str) -> str:
+        return ''.join(self.pair2symbol[p] for p in zip(line, line[1:]))
 
-    def __getitem__(self, item):
+    def __getitem__(self, item: int) -> float:
         return self.reversed_history[item]
 
-    def hook(self, func, get_value=None):
+    def hook(
+        self,
+        func: Callable[_P, _T],
+        *,
+        get_value: Callable[[_T], float] | None = None,
+    ) -> Callable[_P, _T]:
         @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            self.last_retval = retval = value = func(*args, **kwargs)
-            if get_value is not None:
-                value = get_value(retval)
+        def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
+            self.last_retval = retval = func(*args, **kwargs)
+            value: float = get_value(retval) if get_value is not None else retval  # type: ignore[assignment]
             self.add(value)
             return retval
 
-        wrapped.history = self
+        wrapped.history = self  # type: ignore[attr-defined]
         return wrapped
 
     __call__ = hook
@@ -302,19 +328,19 @@ class BufferedHistoryGraph(HistoryGraph):
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
-        upperbound,
-        width,
-        height,
+        upperbound: float,
+        width: int,
+        height: int,
         *,
-        format='{:.1f}'.format,  # pylint: disable=redefined-builtin
-        max_format=None,
-        baseline=0.0,
-        dynamic_bound=False,
-        upsidedown=False,
-        min_bound=None,
-        init_bound=None,
-        interval=1.0,
-    ):
+        format: Callable[[float], str] = '{:.1f}'.format,  # pylint: disable=redefined-builtin
+        max_format: Callable[[float], str] | None = None,
+        baseline: float = 0.0,
+        dynamic_bound: bool = False,
+        min_bound: float | None = None,
+        init_bound: float | None = None,
+        upsidedown: bool = False,
+        interval: float = 1.0,
+    ) -> None:
         assert interval > 0.0
         super().__init__(
             upperbound,
@@ -329,23 +355,22 @@ class BufferedHistoryGraph(HistoryGraph):
             upsidedown=upsidedown,
         )
 
-        self.interval = interval
-        self.start_time = time.monotonic()
-        self.last_update_time = self.start_time
-        self.buffer = []
+        self.interval: float = interval
+        self.start_time: float = time.monotonic()
+        self.last_update_time: float = self.start_time
+        self.buffer: list[float] = []
 
     @property
-    def last_value(self):
+    def last_value(self) -> float:
         last_value = super().last_value
         if last_value < self.baseline and len(self.buffer) > 0:
             return sum(self.buffer) / len(self.buffer)
         return last_value
 
-    def add(self, value):
-        if value is NA:
+    def add(self, value: float) -> None:
+        if value is NA:  # type: ignore[comparison-overlap]
             value = self.baseline - 0.1
-        if not isinstance(value, (int, float)):
-            return
+        assert isinstance(value, (int, float))
 
         timestamp = time.monotonic()
         timedelta = timestamp - self.last_update_time

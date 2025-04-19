@@ -3,8 +3,22 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.tui.library import Device, Displayable, MouseEvent
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, ClassVar
+
+from nvitop.tui.library import Device, MouseEvent
+from nvitop.tui.screens.base import BaseScreen
 from nvitop.version import __version__
+
+
+if TYPE_CHECKING:
+    import curses
+
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['HelpScreen']
 
 
 HELP_TEMPLATE = r"""nvitop {} - (C) Xuehai Pan, 2021-2025.
@@ -42,13 +56,13 @@ Press any key to return.
 """
 
 
-class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'help'
+class HelpScreen(BaseScreen):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'help'
 
-    def __init__(self, win, root):
+    def __init__(self, *, win: curses.window, root: TUI) -> None:
         super().__init__(win, root)
 
-        self.infos = (
+        self.infos: list[str] = (
             HELP_TEMPLATE.format(
                 __version__,
                 *Device.GPU_UTILIZATION_THRESHOLDS,
@@ -58,7 +72,7 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
             .strip()
             .splitlines()
         )
-        self.color_matrix = {
+        self.color_matrix: dict[int, tuple[str | None, str | None]] = {
             9: ('green', 'green'),
             10: ('green', 'green'),
             12: ('cyan', 'yellow'),
@@ -73,10 +87,10 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
         }
 
         self.x, self.y = root.x, root.y
-        self.width = max(map(len, self.infos))
-        self.height = len(self.infos)
+        self.width: int = max(map(len, self.infos))
+        self.height: int = len(self.infos)
 
-    def draw(self):
+    def draw(self) -> None:
         if not self.need_redraw:
             return
 
@@ -108,6 +122,6 @@ class HelpScreen(Displayable):  # pylint: disable=too-many-instance-attributes
             if right is not None:
                 self.color_at(self.y + dy, self.x + 39, width=13, fg=right, attr='bold')
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('help')
-        self.root.press(key)
+        return self.root.press(key)

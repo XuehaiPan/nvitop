@@ -614,7 +614,7 @@ def cudaDriverGetVersion() -> str:
     """
     fn = __cudaGetFunctionPointer('cudaDriverGetVersion')
 
-    driver_version = _ctypes.c_int()
+    driver_version = _ctypes.c_int(0)
     ret = fn(_ctypes.byref(driver_version))
     _cudaCheckReturn(ret)
     major = driver_version.value // 1000
@@ -638,7 +638,7 @@ def cudaRuntimeGetVersion() -> str:
     """
     fn = __cudaGetFunctionPointer('cudaRuntimeGetVersion')
 
-    runtime_version = _ctypes.c_int()
+    runtime_version = _ctypes.c_int(0)
     ret = fn(_ctypes.byref(runtime_version))
     _cudaCheckReturn(ret)
     major = runtime_version.value // 1000
@@ -695,7 +695,7 @@ def cudaDeviceGetByPCIBusId(pciBusId: str) -> int:
     """
     fn = __cudaGetFunctionPointer('cudaDeviceGetByPCIBusId')
 
-    device = _ctypes.c_int()
+    device = _ctypes.c_int(0)
     ret = fn(_ctypes.byref(device), _ctypes.c_char_p(pciBusId.encode('utf-8')))
     _cudaCheckReturn(ret)
     return device.value
