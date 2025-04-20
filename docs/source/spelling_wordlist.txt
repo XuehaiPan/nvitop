@@ -24,6 +24,7 @@ devicesnapshot
 displayables
 divmod
 docstring
+doctest
 ecc
 enum
 env

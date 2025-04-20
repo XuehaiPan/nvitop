@@ -411,3 +411,9 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
 
     def __str__(self) -> str:
         return construct_keybinding(tuple(self.keys))
+
+
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod()

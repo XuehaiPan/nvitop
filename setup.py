@@ -76,6 +76,7 @@ if __name__ == '__main__':
         'lint': [
             'ruff',
             'pylint[spelling]',
+            'xdoctest',
             'mypy',
             'typing-extensions',
             'pre-commit',

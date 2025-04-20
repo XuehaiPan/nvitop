@@ -43,20 +43,23 @@ def string_to_charlist(string: str) -> list[str]:
 
 
 def wcslen(string: str | WideString) -> int:
-    """Return the length of a string with wide chars."""
+    # pylint: disable=wrong-spelling-in-docstring
+    """Return the length of a string with wide chars.
+
+    >>> wcslen('poo')
+    3
+    >>> wcslen('十百千万')
+    8
+    >>> wcslen('a十')
+    3
+    """
     return len(WideString(string))
 
 
-class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-docstring
+class WideString:  # pylint: disable=wrong-spelling-in-docstring
     def __init__(self, string: str | WideString = '', chars: list[str] | None = None) -> None:
-        if isinstance(string, WideString):
-            string = string.string
-
         self.string: str = str(string)
-        if chars is None:
-            self.chars: list[str] = string_to_charlist(string)
-        else:
-            self.chars = chars
+        self.chars: list[str] = string_to_charlist(self.string) if chars is None else chars
 
     def __add__(self, other: object) -> WideString:
         """
@@ -188,7 +191,7 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         <WideString 'poo'>
         >>> WideString('poo').rjust(5)
         <WideString '  poo'>
-        >>> WideString('十百千万').rljust(10)
+        >>> WideString('十百千万').rjust(10)
         <WideString '  十百千万'>
         """
         if width > len(self):
@@ -236,3 +239,9 @@ class WideString:  # pylint: disable=too-few-public-methods,wrong-spelling-in-do
         <WideString '  十百千万'>
         """
         return WideString(self.string.rstrip(chars))
+
+
+if __name__ == '__main__':
+    import doctest
+
+    doctest.testmod()
