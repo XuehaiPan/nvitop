@@ -159,7 +159,7 @@ class ProcessPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 reverse=True,
                 offset=38,
                 column='GMBW',
-                previous='gpu_memory',
+                previous='sm_utilization',
                 next='cpu_percent',
                 bind_key='b',
             ),
