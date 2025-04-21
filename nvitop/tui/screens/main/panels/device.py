@@ -170,45 +170,31 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
         for device in snapshots:
             if device.name.startswith('NVIDIA '):
-                device.name = device.name.replace('NVIDIA ', '', 1)  # type: ignore[attr-defined]
+                device.name = device.name.replace('NVIDIA ', '', 1)
             if device.is_mig_device:
-                device.name = device.name.rpartition(' ')[-1]  # type: ignore[attr-defined]
+                device.name = device.name.rpartition(' ')[-1]
                 if device.bar1_memory_percent is not NA:
-                    device.bar1_memory_percent = round(device.bar1_memory_percent)  # type: ignore[attr-defined]
-                    device.bar1_memory_percent_string = (  # type: ignore[attr-defined]
+                    device.bar1_memory_percent = round(device.bar1_memory_percent)
+                    device.bar1_memory_percent_string = (
                         'MAX'
                         if device.bar1_memory_percent >= 100
                         else f'{round(device.bar1_memory_percent)}%'
                     )
             else:
-                device.name = cut_string(  # type: ignore[attr-defined]
-                    device.name,
-                    maxlen=18,
-                    padstr='..',
-                    align='right',
-                )
-                device.current_driver_model = device.current_driver_model.replace(  # type: ignore[attr-defined]
-                    'WDM',
-                    'TCC',
-                )
-                device.display_active = device.display_active.replace(  # type: ignore[attr-defined]
-                    'Enabled',
-                    'On',
-                ).replace(
+                device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
+                device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
+                device.display_active = device.display_active.replace('Enabled', 'On').replace(
                     'Disabled',
                     'Off',
                 )
-                device.persistence_mode = device.persistence_mode.replace(  # type: ignore[attr-defined]
-                    'Enabled',
-                    'On',
-                ).replace(
+                device.persistence_mode = device.persistence_mode.replace('Enabled', 'On').replace(
                     'Disabled',
                     'Off',
                 )
-                device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')  # type: ignore[attr-defined]
-                device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')  # type: ignore[attr-defined]
+                device.mig_mode = device.mig_mode.replace('N/A', 'N/A ')
+                device.compute_mode = device.compute_mode.replace('Exclusive', 'E.')
                 if device.fan_speed is not NA and device.fan_speed >= 100:
-                    device.fan_speed_string = 'MAX'  # type: ignore[attr-defined]
+                    device.fan_speed_string = 'MAX'
 
         with self.snapshot_lock:
             self._snapshot_buffer = snapshots

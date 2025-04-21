@@ -2674,8 +2674,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         The attributes are defined in :attr:`SNAPSHOT_KEYS`.
         """
         snapshot = super().as_snapshot()
-        snapshot.mig_index = self.mig_index  # type: ignore[attr-defined]
-
+        snapshot.mig_index = self.mig_index
         return snapshot
 
     SNAPSHOT_KEYS: ClassVar[list[str]] = [
@@ -2925,8 +2924,7 @@ class CudaDevice(Device):
         The attributes are defined in :attr:`SNAPSHOT_KEYS`.
         """
         snapshot = super().as_snapshot()
-        snapshot.cuda_index = self.cuda_index  # type: ignore[attr-defined]
-
+        snapshot.cuda_index = self.cuda_index
         return snapshot
 
 

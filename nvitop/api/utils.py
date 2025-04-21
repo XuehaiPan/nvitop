@@ -663,8 +663,8 @@ class Snapshot:
 
     def __init__(self, real: Any, **items: Any) -> None:
         """Initialize a new :class:`Snapshot` object with the given attributes."""
-        self.real = real
-        self.timestamp = time.time()
+        object.__setattr__(self, 'real', real)
+        object.__setattr__(self, 'timestamp', time.time())
         for key, value in items.items():
             setattr(self, key, value)
 
@@ -714,6 +714,15 @@ class Snapshot:
     def __setitem__(self, name: str, value: Any) -> None:
         """Support ``snapshot['name'] = value`` syntax."""
         setattr(self, name, value)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Set or update a member of the instance.
+
+        If the attribute is not defined, set it to the snapshot object.
+        """
+        if name in ('real', 'timestamp'):
+            raise AttributeError(f'Cannot set attribute {name!r} of {self.__class__.__name__!r}')
+        super().__setattr__(name, value)
 
     def __iter__(self) -> Iterator[str]:
         """Support ``for name in snapshot`` syntax and ``*`` tuple unpack ``[*snapshot]`` syntax."""

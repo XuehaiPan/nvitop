@@ -86,15 +86,15 @@ class Device(DeviceBase):
 
     def as_snapshot(self) -> Snapshot:
         self._snapshot = super().as_snapshot()
-        self._snapshot.tuple_index = self.tuple_index  # type: ignore[attr-defined]
-        self._snapshot.display_index = self.display_index  # type: ignore[attr-defined]
+        self._snapshot.tuple_index = self.tuple_index
+        self._snapshot.display_index = self.display_index
         return self._snapshot
 
     @property
     def snapshot(self) -> Snapshot:
         if self._snapshot is None:
-            self.as_snapshot()
-        return self._snapshot  # type: ignore[return-value]
+            self._snapshot = self.as_snapshot()
+        return self._snapshot
 
     def mig_devices(self) -> list[MigDevice]:  # type: ignore[override]
         mig_devices = []

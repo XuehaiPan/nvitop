@@ -334,9 +334,9 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
         snapshots = []
         for node in nodes:
             snapshot = node.process
-            snapshot.username = WideString(snapshot.username)  # type: ignore[attr-defined]
-            snapshot.prefix = node.prefix  # type: ignore[attr-defined]
-            snapshot.devices = (  # type: ignore[attr-defined]
+            snapshot.username = WideString(snapshot.username)
+            snapshot.prefix = node.prefix
+            snapshot.devices = (
                 (
                     'GPU '
                     + ','.join(

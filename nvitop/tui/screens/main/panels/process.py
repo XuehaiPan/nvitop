@@ -363,7 +363,7 @@ class ProcessPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         for snapshot in snapshots:
-            snapshot.host_info = WideString(  # type: ignore[attr-defined]
+            snapshot.host_info = WideString(
                 '{:>5} {:>5}  {}  {}'.format(
                     snapshot.cpu_percent_string.replace('%', ''),
                     snapshot.memory_percent_string.replace('%', ''),
