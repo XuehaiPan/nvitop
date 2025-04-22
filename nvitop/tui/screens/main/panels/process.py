@@ -23,6 +23,7 @@ from nvitop.tui.library import (
     Device,
     Displayable,
     GpuProcess,
+    MigDevice,
     MouseEvent,
     Selection,
     Snapshot,
@@ -213,7 +214,7 @@ class ProcessPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-arguments
     def __init__(
         self,
-        devices: list[Device],
+        devices: list[Device | MigDevice],
         compact: bool,
         filters: Iterable[Callable[[Snapshot], bool]],
         *,
@@ -222,7 +223,7 @@ class ProcessPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
     ) -> None:
         super().__init__(win, root)
 
-        self.devices: list[Device] = devices
+        self.devices: list[Device | MigDevice] = devices
 
         self._compact: bool = compact
         self.width: int = max(79, root.width)
