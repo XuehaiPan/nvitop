@@ -3,10 +3,17 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.tui.screens.main.panels.base import BasePanel
+from nvitop.tui.screens.main.panels.base import BasePanel, BaseSelectablePanel
 from nvitop.tui.screens.main.panels.device import DevicePanel
 from nvitop.tui.screens.main.panels.host import HostPanel
 from nvitop.tui.screens.main.panels.process import OrderName, ProcessPanel
 
 
-__all__ = ['BasePanel', 'DevicePanel', 'HostPanel', 'OrderName', 'ProcessPanel']
+__all__ = [
+    'BasePanel',
+    'BaseSelectablePanel',
+    'DevicePanel',
+    'HostPanel',
+    'OrderName',
+    'ProcessPanel',
+]

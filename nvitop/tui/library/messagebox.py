@@ -51,7 +51,7 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             self.key: str = normalize_keybinding(key)
             self.callback: Callable[[], None] | None = callback
             self.keys: tuple[str, ...] = tuple(
-                {normalize_keybinding(key) for key in keys}.difference({self.key}),
+                set(map(normalize_keybinding, keys)).difference({self.key}),
             )
             self.attrs: tuple[dict[str, int | str], ...] = attrs
 

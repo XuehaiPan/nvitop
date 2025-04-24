@@ -32,6 +32,9 @@ if TYPE_CHECKING:
     from nvitop.tui.tui import TUI
 
 
+__all__ = ['HostPanel']
+
+
 class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
     NAME: ClassVar[str] = 'host'
     SNAPSHOT_INTERVAL: ClassVar[float] = 0.5

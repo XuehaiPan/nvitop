@@ -33,7 +33,7 @@ from nvitop.tui.library import (
     ttl_cache,
     wcslen,
 )
-from nvitop.tui.screens.main.panels.base import BasePanel
+from nvitop.tui.screens.main.panels.base import BaseSelectablePanel
 
 
 if TYPE_CHECKING:
@@ -69,7 +69,7 @@ class Order(NamedTuple):
     bind_key: str
 
 
-class ProcessPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
+class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-attributes
     NAME: ClassVar[str] = 'process'
     SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
 

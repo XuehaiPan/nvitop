@@ -158,8 +158,6 @@ class Selection:  # pylint: disable=too-many-instance-attributes
     def is_set(self) -> bool:
         return self.process is not None
 
-    __bool__ = is_set
-
     def is_same(self, process: Snapshot | GpuProcess | HostProcess) -> bool:
         if isinstance(process, Snapshot):
             process = process.real
@@ -170,8 +168,6 @@ class Selection:  # pylint: disable=too-many-instance-attributes
             pass
 
         return False
-
-    __eq__ = is_same  # type: ignore[assignment]
 
     def is_same_on_host(self, process: Snapshot | GpuProcess | HostProcess) -> bool:
         if isinstance(process, Snapshot):

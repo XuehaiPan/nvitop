@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from nvitop.tui.library import Displayable
+from nvitop.tui.library import Displayable, Selection
 
 
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from nvitop.tui.tui import TUI
 
 
-__all__ = ['BasePanel']
+__all__ = ['BasePanel', 'BaseSelectablePanel']
 
 
 class BasePanel(Displayable):
@@ -26,3 +26,9 @@ class BasePanel(Displayable):
 
     NAME: ClassVar[str]
     SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
+
+
+class BaseSelectablePanel(BasePanel):
+    """Base class for all selectable panels."""
+
+    selection: Selection
