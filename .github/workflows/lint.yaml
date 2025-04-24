@@ -27,7 +27,7 @@ jobs:
         id: py
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8 - 3.13"
+          python-version: "3.13"
           update-environment: true
 
       - name: Upgrade pip
@@ -68,3 +68,10 @@ jobs:
           python -m pre_commit --version
           python -m pre_commit install --install-hooks
           python -m pre_commit run --all-files
+
+      - name: xdoctest
+        run: |
+          python -m pip install xdoctest
+          python -m xdoctest --version
+          grep -P -l -r '^\s*(import|from) (doctest|unittest)\b' nvitop |
+            xargs -r -L 1 python -m xdoctest

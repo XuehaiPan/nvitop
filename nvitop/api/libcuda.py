@@ -522,7 +522,7 @@ def cuDriverGetVersion() -> str:
     """
     fn = __cudaGetFunctionPointer('cuDriverGetVersion')
 
-    driver_version = _ctypes.c_int()
+    driver_version = _ctypes.c_int(0)
     ret = fn(_ctypes.byref(driver_version))
     _cudaCheckReturn(ret)
     major = driver_version.value // 1000
@@ -733,7 +733,7 @@ def cuDeviceTotalMem(device: _c_CUdevice_t) -> int:
     """
     fn = __cudaGetFunctionPointer('cuDeviceTotalMem')
 
-    bytes = _ctypes.c_size_t()  # pylint: disable=redefined-builtin
+    bytes = _ctypes.c_size_t(0)  # pylint: disable=redefined-builtin
     ret = fn(_ctypes.byref(bytes), device)
     _cudaCheckReturn(ret)
     return bytes.value

@@ -115,7 +115,7 @@ import textwrap
 import threading
 import time
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, overload
 
 from nvitop.api import libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
@@ -132,20 +132,17 @@ from nvitop.api.utils import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Hashable, Iterable
-    from typing_extensions import (
-        Literal,  # Python 3.8+
-        Self,  # Python 3.11+
-    )
+    from typing_extensions import Self  # Python 3.11+
 
 
 __all__ = [
-    'Device',
-    'PhysicalDevice',
-    'MigDevice',
     'CudaDevice',
     'CudaMigDevice',
-    'parse_cuda_visible_devices',
+    'Device',
+    'MigDevice',
+    'PhysicalDevice',
     'normalize_cuda_visible_devices',
+    'parse_cuda_visible_devices',
 ]
 
 # Class definitions ################################################################################
@@ -266,7 +263,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     # GPU UUID        : `GPU-<GPU-UUID>`
     # MIG UUID        : `MIG-GPU-<GPU-UUID>/<GPU instance ID>/<compute instance ID>`
     # MIG UUID (R470+): `MIG-<MIG-UUID>`
-    UUID_PATTERN: re.Pattern = re.compile(
+    UUID_PATTERN: ClassVar[re.Pattern] = re.compile(
         r"""^  # full match
         (?:(?P<MigMode>MIG)-)?                                 # prefix for MIG UUID
         (?:(?P<GpuUuid>GPU)-)?                                 # prefix for GPU UUID
@@ -283,8 +280,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         flags=re.VERBOSE,
     )
 
-    GPU_PROCESS_CLASS: type[GpuProcess] = GpuProcess
-    cuda: type[CudaDevice] = None  # type: ignore[assignment] # defined in below
+    GPU_PROCESS_CLASS: ClassVar[type[GpuProcess]] = GpuProcess
+    cuda: ClassVar[type[CudaDevice]] = None  # type: ignore[assignment] # defined in below
     """Shortcut for class :class:`CudaDevice`."""
 
     _nvml_index: int | tuple[int, int]
@@ -395,7 +392,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def from_indices(
         cls,
         indices: int | Iterable[int | tuple[int, int]] | None = None,
-    ) -> list[PhysicalDevice | MigDevice]:
+    ) -> list[Self]:
         """Return a list of devices of the given indices.
 
         Args:
@@ -430,7 +427,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         if isinstance(indices, int):
             indices = [indices]
 
-        return list(map(cls, indices))  # type: ignore[arg-type]
+        return list(map(cls, indices))
 
     @staticmethod
     def from_cuda_visible_devices() -> list[CudaDevice]:
@@ -2176,9 +2173,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                     ignore_function_not_found=True,
                 )
                 # nvmlDeviceIsMigDeviceHandle returns c_uint
-                self._is_mig_device = bool(
-                    is_mig_device,
-                )
+                self._is_mig_device = bool(is_mig_device)
             return self._is_mig_device
         return False
 
@@ -2679,8 +2674,7 @@ class MigDevice(Device):  # pylint: disable=too-many-instance-attributes
         The attributes are defined in :attr:`SNAPSHOT_KEYS`.
         """
         snapshot = super().as_snapshot()
-        snapshot.mig_index = self.mig_index  # type: ignore[attr-defined]
-
+        snapshot.mig_index = self.mig_index
         return snapshot
 
     SNAPSHOT_KEYS: ClassVar[list[str]] = [
@@ -2930,8 +2924,7 @@ class CudaDevice(Device):
         The attributes are defined in :attr:`SNAPSHOT_KEYS`.
         """
         snapshot = super().as_snapshot()
-        snapshot.cuda_index = self.cuda_index  # type: ignore[attr-defined]
-
+        snapshot.cuda_index = self.cuda_index
         return snapshot
 
 

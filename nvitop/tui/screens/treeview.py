@@ -3,41 +3,63 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import threading
 import time
 from collections import deque
 from functools import partial
 from itertools import islice
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from nvitop.tui.library import (
+    IS_SUPERUSER,
+    IS_WSL,
     NA,
-    SUPERUSER,
     USERNAME,
-    Displayable,
+    Device,
+    GpuProcess,
     HostProcess,
+    MessageBox,
+    MouseEvent,
     Selection,
     Snapshot,
     WideString,
     host,
-    send_signal,
     ttl_cache,
 )
+from nvitop.tui.screens.base import BaseSelectableScreen
+
+
+if TYPE_CHECKING:
+    import curses
+    from collections.abc import Iterable
+    from typing_extensions import Self  # Python 3.11+
+
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['TreeViewScreen']
 
 
 class TreeNode:  # pylint: disable=too-many-instance-attributes
-    def __init__(self, process, children=()):
-        self.process = process
-        self.parent = None
-        self.children = []
-        self.devices = set()
-        self.children_set = set()
-        self.is_root = True
-        self.is_last = False
-        self.prefix = ''
+    def __init__(
+        self,
+        process: GpuProcess | HostProcess,
+        children: Iterable[Self] = (),
+    ) -> None:
+        self.process: GpuProcess | HostProcess = process
+        self.parent: TreeNode | None = None
+        self.children: list[Self] = []
+        self.devices: set[Device] = set()
+        self.children_set: set[Self] = set()
+        self.is_root: bool = True
+        self.is_last: bool = False
+        self.prefix: str = ''
         for child in children:
             self.add(child)
 
-    def add(self, child):
+    def add(self, child: Self) -> None:
         if child in self.children_set:
             return
         self.children.append(child)
@@ -45,19 +67,20 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
         child.parent = self
         child.is_root = False
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         try:
-            return super().__getattr__(name)
+            return super().__getattr__(name)  # type: ignore[misc]
         except AttributeError:
             return getattr(self.process, name)
 
-    def __eq__(self, other):
-        return self.process._ident == other.process._ident  # pylint: disable=protected-access
+    def __eq__(self, other: object) -> bool:
+        # pylint: disable-next=protected-access
+        return self.process._ident == other.process._ident  # type: ignore[attr-defined]
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.process)
 
-    def as_snapshot(self):  # pylint: disable=too-many-branches,too-many-statements
+    def as_snapshot(self) -> None:  # pylint: disable=too-many-branches,too-many-statements
         if not isinstance(self.process, Snapshot):
             with self.process.oneshot():
                 try:
@@ -73,6 +96,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                 except host.PsutilError:
                     command = 'No Such Process'
 
+                cpu_percent_string: str
                 try:
                     cpu_percent = self.process.cpu_percent()
                 except host.PsutilError:
@@ -87,15 +111,15 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                     else:
                         cpu_percent_string = '9999+%'
 
+                memory_percent_string: str
                 try:
                     memory_percent = self.process.memory_percent()
                 except host.PsutilError:
                     memory_percent = memory_percent_string = NA
                 else:
-                    if memory_percent is not NA:
-                        memory_percent_string = f'{memory_percent:.1f}%'
-                    else:
-                        memory_percent_string = NA
+                    memory_percent_string = (
+                        f'{memory_percent:.1f}%' if memory_percent is not NA else NA
+                    )
 
                 try:
                     num_threads = self.process.num_threads()
@@ -107,7 +131,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                 except host.PsutilError:
                     running_time_human = NA
 
-            self.process = Snapshot(
+            self.process = Snapshot(  # type: ignore[assignment]
                 real=self.process,
                 pid=self.process.pid,
                 username=username,
@@ -134,7 +158,7 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
                 child.is_last = False
             self.children[-1].is_last = True
 
-    def set_prefix(self, prefix=''):
+    def set_prefix(self, prefix: str = '') -> None:
         if self.is_root:
             self.prefix = ''
         else:
@@ -144,16 +168,18 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
             child.set_prefix(prefix)
 
     @classmethod
-    def merge(cls, leaves):  # pylint: disable=too-many-branches
-        nodes = {}
+    def merge(  # pylint: disable=too-many-branches
+        cls,
+        leaves: list[Snapshot | GpuProcess | HostProcess],
+    ) -> list[Self]:
+        nodes: dict[int, Self] = {}
         for process in leaves:
-            if isinstance(process, Snapshot):
-                process = process.real
+            real_process = process.real if isinstance(process, Snapshot) else process
 
             try:
-                node = nodes[process.pid]
+                node = nodes[real_process.pid]
             except KeyError:
-                node = nodes[process.pid] = cls(process)
+                node = nodes[real_process.pid] = cls(real_process)
             finally:
                 try:
                     node.devices.add(process.device)
@@ -195,37 +221,40 @@ class TreeNode:  # pylint: disable=too-many-instance-attributes
         return sorted(filter(lambda node: node.is_root, nodes.values()), key=lambda node: node.pid)
 
     @staticmethod
-    def freeze(roots):
+    def freeze(roots: list[TreeNode]) -> list[FreezedTreeNode]:
         for root in roots:
             root.as_snapshot()
             root.set_prefix()
-
-        return roots
-
-    @staticmethod
-    def flatten(roots):
-        flattened = []
-        stack = list(reversed(roots))
-        while len(stack) > 0:
-            top = stack.pop()
-            flattened.append(top)
-            stack.extend(reversed(top.children))
-        return flattened
+        return roots  # type: ignore[return-value]
 
 
-class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'treeview'
-    SNAPSHOT_INTERVAL = 0.5
+class FreezedTreeNode(TreeNode):
+    process: Snapshot  # type: ignore[assignment]
 
-    def __init__(self, win, root):
+
+def flatten_process_trees(roots: list[FreezedTreeNode]) -> list[FreezedTreeNode]:
+    flattened = []
+    stack = list(reversed(roots))
+    while len(stack) > 0:
+        top = stack.pop()
+        flattened.append(top)
+        stack.extend(reversed(top.children))
+    return flattened
+
+
+class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'treeview'
+    SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
+
+    def __init__(self, *, win: curses.window, root: TUI) -> None:
         super().__init__(win, root)
 
-        self.selection = Selection(panel=self)
-        self.x_offset = 0
-        self.y_mouse = None
+        self.selection: Selection = Selection(self)
+        self.x_offset: int = 0
+        self.y_mouse: int | None = None
 
-        self._snapshot_buffer = []
-        self._snapshots = []
+        self._snapshot_buffer: list[Snapshot] = []
+        self._snapshots: list[Snapshot] = []
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
             name='treeview-snapshot-daemon',
@@ -235,19 +264,19 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
         self._daemon_running = threading.Event()
 
         self.x, self.y = root.x, root.y
-        self.scroll_offset = 0
         self.width, self.height = root.width, root.height
+        self.scroll_offset: int = 0
 
     @property
-    def display_height(self):
+    def display_height(self) -> int:
         return self.height - 1
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         return self._visible
 
     @visible.setter
-    def visible(self, value):
+    def visible(self, value: bool) -> None:
         if self._visible != value:
             self.need_redraw = True
             self._visible = value
@@ -263,11 +292,11 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.focused = False
 
     @property
-    def snapshots(self):
+    def snapshots(self) -> list[Snapshot]:
         return self._snapshots
 
     @snapshots.setter
-    def snapshots(self, snapshots):
+    def snapshots(self, snapshots: list[Snapshot]) -> None:
         with self.snapshot_lock:
             self.need_redraw = self.need_redraw or len(self._snapshots) > len(snapshots)
             self._snapshots = snapshots
@@ -278,42 +307,46 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             for i, process in enumerate(snapshots):
                 if process._ident[:2] == identity[:2]:  # pylint: disable=protected-access
                     self.selection.index = i
-                    self.selection.process = process
+                    self.selection.process = process  # type: ignore[assignment]
                     break
 
     @classmethod
-    def set_snapshot_interval(cls, interval):
+    def set_snapshot_interval(cls, interval: float) -> None:
         assert interval > 0.0
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
-        cls.take_snapshots = ttl_cache(ttl=interval)(
-            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
+        cls.take_snapshots = ttl_cache(ttl=interval)(  # type: ignore[method-assign]
+            cls.take_snapshots.__wrapped__,  # type: ignore[attr-defined] # pylint: disable=no-member
         )
 
     @ttl_cache(ttl=2.0)
-    def take_snapshots(self):
+    def take_snapshots(self) -> list[Snapshot]:
         self.root.main_screen.process_panel.ensure_snapshots()
         snapshots = (
             self.root.main_screen.process_panel._snapshot_buffer  # pylint: disable=protected-access
         )
 
-        roots = TreeNode.merge(snapshots)
+        roots = TreeNode.merge(snapshots)  # type: ignore[arg-type]
         roots = TreeNode.freeze(roots)
-        nodes = TreeNode.flatten(roots)
+        nodes = flatten_process_trees(roots)
 
         snapshots = []
         for node in nodes:
             snapshot = node.process
             snapshot.username = WideString(snapshot.username)
             snapshot.prefix = node.prefix
-            if len(node.devices) > 0:
-                snapshot.devices = 'GPU ' + ','.join(
-                    dev.display_index
-                    for dev in sorted(node.devices, key=lambda device: device.tuple_index)
+            snapshot.devices = (
+                (
+                    'GPU '
+                    + ','.join(
+                        dev.display_index
+                        for dev in sorted(node.devices, key=lambda device: device.tuple_index)
+                    )
                 )
-            else:
-                snapshot.devices = 'Host'
+                if node.devices
+                else 'Host'
+            )
             snapshots.append(snapshot)
 
         with self.snapshot_lock:
@@ -321,13 +354,13 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         return snapshots
 
-    def _snapshot_target(self):
+    def _snapshot_target(self) -> None:
         while True:
             self._daemon_running.wait()
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
-    def update_size(self, termsize=None):
+    def update_size(self, termsize: tuple[int, int] | None = None) -> tuple[int, int]:
         n_term_lines, n_term_cols = termsize = super().update_size(termsize=termsize)
 
         self.width = n_term_cols - self.x
@@ -335,7 +368,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         return termsize
 
-    def poke(self):
+    def poke(self) -> None:
         if self._daemon_running.is_set():
             self.snapshots = self._snapshot_buffer
 
@@ -362,7 +395,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-statements,too-many-locals
+    def draw(self) -> None:  # pylint: disable=too-many-statements,too-many-locals
         self.color_reset()
 
         pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
@@ -407,7 +440,7 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.addstr(
                 self.y + 1,
                 self.x,
-                'No running GPU processes found{}.'.format(' (in WSL)' if host.WSL else ''),
+                'No running GPU processes found{}.'.format(' (in WSL)' if IS_WSL else ''),
             )
             return
 
@@ -450,10 +483,10 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 )
 
             if y == self.y_mouse:
-                self.selection.process = process
+                self.selection.process = process  # type: ignore[assignment]
                 hint = True
 
-            owned = str(process.username) == USERNAME or SUPERUSER
+            owned = IS_SUPERUSER or str(process.username) == USERNAME
             if self.selection.is_same_on_host(process):
                 self.color_at(
                     y,
@@ -532,19 +565,19 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
                 attr='bold | reverse',
             )
 
-    def finalize(self):
+    def finalize(self) -> None:
         self.y_mouse = None
         super().finalize()
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('treeview')
-        self.root.press(key)
+        return self.root.press(key)
 
-    def click(self, event):
+    def click(self, event: MouseEvent) -> bool:
         if event.pressed(1) or event.pressed(3) or event.clicked(1) or event.clicked(3):
             self.y_mouse = event.y
             return True
@@ -556,51 +589,75 @@ class TreeViewScreen(Displayable):  # pylint: disable=too-many-instance-attribut
             self.selection.move(direction=direction)
         return True
 
-    def init_keybindings(self):
-        def tree_left():
+    def init_keybindings(self) -> None:
+        def tree_left() -> None:
             self.x_offset = max(0, self.x_offset - 5)
 
-        def tree_right():
+        def tree_right() -> None:
             self.x_offset += 5
 
-        def tree_begin():
+        def tree_begin() -> None:
             self.x_offset = 0
 
-        def select_move(direction):
+        def select_move(direction: int) -> None:
             self.selection.move(direction=direction)
 
-        def select_clear():
+        def select_clear() -> None:
             self.selection.clear()
 
-        def tag():
+        def tag() -> None:
             self.selection.tag()
             select_move(direction=+1)
 
         keymaps = self.root.keymaps
 
         keymaps.bind('treeview', '<Left>', tree_left)
-        keymaps.copy('treeview', '<Left>', '<A-h>')
+        keymaps.alias('treeview', '<Left>', '<A-h>')
         keymaps.bind('treeview', '<Right>', tree_right)
-        keymaps.copy('treeview', '<Right>', '<A-l>')
+        keymaps.alias('treeview', '<Right>', '<A-l>')
         keymaps.bind('treeview', '<C-a>', tree_begin)
-        keymaps.copy('treeview', '<C-a>', '^')
+        keymaps.alias('treeview', '<C-a>', '^')
         keymaps.bind('treeview', '<Up>', partial(select_move, direction=-1))
-        keymaps.copy('treeview', '<Up>', '<S-Tab>')
-        keymaps.copy('treeview', '<Up>', '<A-k>')
-        keymaps.copy('treeview', '<Up>', '<PageUp>')
-        keymaps.copy('treeview', '<Up>', '[')
+        keymaps.alias('treeview', '<Up>', '<S-Tab>')
+        keymaps.alias('treeview', '<Up>', '<A-k>')
+        keymaps.alias('treeview', '<Up>', '<PageUp>')
+        keymaps.alias('treeview', '<Up>', '[')
         keymaps.bind('treeview', '<Down>', partial(select_move, direction=+1))
-        keymaps.copy('treeview', '<Down>', '<Tab>')
-        keymaps.copy('treeview', '<Down>', '<A-j>')
-        keymaps.copy('treeview', '<Down>', '<PageDown>')
-        keymaps.copy('treeview', '<Down>', ']')
+        keymaps.alias('treeview', '<Down>', '<Tab>')
+        keymaps.alias('treeview', '<Down>', '<A-j>')
+        keymaps.alias('treeview', '<Down>', '<PageDown>')
+        keymaps.alias('treeview', '<Down>', ']')
         keymaps.bind('treeview', '<Home>', partial(select_move, direction=-(1 << 20)))
         keymaps.bind('treeview', '<End>', partial(select_move, direction=+(1 << 20)))
         keymaps.bind('treeview', '<Esc>', select_clear)
         keymaps.bind('treeview', '<Space>', tag)
 
-        keymaps.bind('treeview', 'T', partial(send_signal, signal='terminate', panel=self))
-        keymaps.bind('treeview', 'K', partial(send_signal, signal='kill', panel=self))
-        keymaps.copy('treeview', 'K', 'k')
-        keymaps.bind('treeview', '<C-c>', partial(send_signal, signal='interrupt', panel=self))
-        keymaps.copy('treeview', '<C-c>', 'I')
+        keymaps.bind(
+            'treeview',
+            'T',
+            partial(
+                MessageBox.confirm_sending_signal_to_processes,
+                signal='terminate',
+                screen=self,
+            ),
+        )
+        keymaps.bind(
+            'treeview',
+            'K',
+            partial(
+                MessageBox.confirm_sending_signal_to_processes,
+                signal='kill',
+                screen=self,
+            ),
+        )
+        keymaps.alias('treeview', 'K', 'k')
+        keymaps.bind(
+            'treeview',
+            '<C-c>',
+            partial(
+                MessageBox.confirm_sending_signal_to_processes,
+                signal='interrupt',
+                screen=self,
+            ),
+        )
+        keymaps.alias('treeview', '<C-c>', 'I')

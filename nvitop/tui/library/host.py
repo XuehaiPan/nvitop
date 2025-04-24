@@ -3,16 +3,16 @@
 
 # pylint: disable=missing-module-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 from types import MappingProxyType
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeVar
 
 from nvitop.api import NA, host
-from nvitop.api.host import WINDOWS, WSL, AccessDenied, PsutilError
+from nvitop.api.host import AccessDenied, PsutilError
 
 
 __all__ = [
-    'WINDOWS',
-    'WSL',
     'AccessDenied',
     'PsutilError',
     'cpu_percent',
@@ -26,11 +26,19 @@ __all__ = [
 ]
 
 
-def ignore_error(*, fallback):
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from typing_extensions import ParamSpec  # Python 3.10+
+
+    _P = ParamSpec('_P')
+    _T = TypeVar('_T')
+
+
+def ignore_error(*, fallback: Any) -> Callable[[Callable[_P, _T]], Callable[_P, _T]]:
     """Ignore errors in the function."""
 
-    def wrapper(func):
-        def wrapped(*args, **kwargs):
+    def wrapper(func: Callable[_P, _T]) -> Callable[_P, _T]:
+        def wrapped(*args: _P.args, **kwargs: _P.kwargs) -> _T:
             try:
                 return func(*args, **kwargs)
             except Exception:  # noqa: BLE001 # pylint: disable=broad-exception-caught
@@ -42,15 +50,15 @@ def ignore_error(*, fallback):
 
 
 class VirtualMemory(NamedTuple):  # pylint: disable=missing-class-docstring
-    total: int
-    available: int
-    percent: int
-    used: int
-    free: int
+    total: int = NA  # type: ignore[assignment]
+    available: int = NA  # type: ignore[assignment]
+    percent: int = NA  # type: ignore[assignment]
+    used: int = NA  # type: ignore[assignment]
+    free: int = NA  # type: ignore[assignment]
 
 
-@ignore_error(fallback=VirtualMemory(NA, NA, NA, NA, NA))
-def virtual_memory():
+@ignore_error(fallback=VirtualMemory())
+def virtual_memory() -> VirtualMemory:
     vm = host.virtual_memory()
     return VirtualMemory(
         total=vm.total,
@@ -62,32 +70,28 @@ def virtual_memory():
 
 
 class SwapMemory(NamedTuple):  # pylint: disable=missing-class-docstring
-    total: int
-    used: int
-    free: int
-    percent: float
-    sin: int
-    sout: int
+    total: int = NA  # type: ignore[assignment]
+    used: int = NA  # type: ignore[assignment]
+    free: int = NA  # type: ignore[assignment]
+    percent: float = NA  # type: ignore[assignment]
 
 
-@ignore_error(fallback=SwapMemory(NA, NA, NA, NA, NA, NA))
-def swap_memory():
+@ignore_error(fallback=SwapMemory())
+def swap_memory() -> SwapMemory:
     sm = host.swap_memory()
     return SwapMemory(
         total=sm.total,
         used=sm.used,
         free=sm.free,
         percent=sm.percent,
-        sin=sm.sin,
-        sout=sm.sout,
     )
 
 
 @ignore_error(fallback=(NA, NA, NA))
-def load_average():
+def load_average() -> tuple[float, float, float]:
     la = host.load_average()
     if la is None:
-        return (NA, NA, NA)
+        return (NA, NA, NA)  # type: ignore[unreachable]
     return la
 
 

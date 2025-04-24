@@ -9,30 +9,54 @@ import itertools
 import threading
 import time
 from operator import attrgetter, xor
-from typing import TYPE_CHECKING, Any, NamedTuple
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple
 
 from nvitop.tui.library import (
     HOSTNAME,
+    IS_SUPERUSER,
+    IS_WINDOWS,
+    IS_WSL,
     LARGE_INTEGER,
-    SUPERUSER,
     USER_CONTEXT,
     USERNAME,
-    WINDOWS,
-    WSL,
+    Device,
     Displayable,
     GpuProcess,
+    MigDevice,
     MouseEvent,
     Selection,
+    Snapshot,
     WideString,
     colored,
     cut_string,
     ttl_cache,
     wcslen,
 )
+from nvitop.tui.screens.main.panels.base import BaseSelectablePanel
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    import curses
+    from collections.abc import Callable, Iterable, Mapping
+
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['OrderName', 'ProcessPanel']
+
+
+OrderName = Literal[
+    'natural',
+    'pid',
+    'username',
+    'gpu_memory',
+    'sm_utilization',
+    'gpu_memory_utilization',
+    'cpu_percent',
+    'memory_percent',
+    'time',
+]
 
 
 class Order(NamedTuple):
@@ -40,144 +64,185 @@ class Order(NamedTuple):
     reverse: bool
     offset: int
     column: str
-    previous: str
-    next: str
+    previous: OrderName
+    next: OrderName
     bind_key: str
 
 
-class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'process'
-    SNAPSHOT_INTERVAL = 0.5
+class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'process'
+    SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
 
-    ORDERS = {
-        'natural': Order(
-            key=attrgetter('device.tuple_index', '_gone', 'username', 'pid'),
-            reverse=False,
-            offset=3,
-            column='ID',
-            previous='time',
-            next='pid',
-            bind_key='n',
-        ),
-        'pid': Order(
-            key=attrgetter('_gone', 'pid', 'device.tuple_index'),
-            reverse=False,
-            offset=10,
-            column='PID',
-            previous='natural',
-            next='username',
-            bind_key='p',
-        ),
-        'username': Order(
-            key=attrgetter('_gone', 'username', 'pid', 'device.tuple_index'),
-            reverse=False,
-            offset=19,
-            column='USER',
-            previous='pid',
-            next='gpu_memory',
-            bind_key='u',
-        ),
-        'gpu_memory': Order(
-            key=attrgetter(
-                '_gone',
-                'gpu_memory',
-                'gpu_sm_utilization',
-                'cpu_percent',
-                'pid',
-                'device.tuple_index',
+    ORDERS: ClassVar[Mapping[OrderName, Order]] = MappingProxyType(
+        {
+            'natural': Order(
+                key=attrgetter(
+                    'device.tuple_index',
+                    '_gone',
+                    'username',
+                    'pid',
+                ),
+                reverse=False,
+                offset=3,
+                column='ID',
+                previous='time',
+                next='pid',
+                bind_key='n',
             ),
-            reverse=True,
-            offset=25,
-            column='GPU-MEM',
-            previous='username',
-            next='sm_utilization',
-            bind_key='g',
-        ),
-        'sm_utilization': Order(
-            key=attrgetter(
-                '_gone',
-                'gpu_sm_utilization',
-                'gpu_memory',
-                'cpu_percent',
-                'pid',
-                'device.tuple_index',
+            'pid': Order(
+                key=attrgetter(
+                    '_gone',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=False,
+                offset=10,
+                column='PID',
+                previous='natural',
+                next='username',
+                bind_key='p',
             ),
-            reverse=True,
-            offset=34,
-            column='SM',
-            previous='gpu_memory',
-            next='gpu_memory_utilization',
-            bind_key='s',
-        ),
-        'gpu_memory_utilization': Order(
-            key=attrgetter(
-                '_gone',
-                'gpu_memory_utilization',
-                'gpu_memory',
-                'cpu_percent',
-                'pid',
-                'device.tuple_index',
+            'username': Order(
+                key=attrgetter(
+                    '_gone',
+                    'username',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=False,
+                offset=19,
+                column='USER',
+                previous='pid',
+                next='gpu_memory',
+                bind_key='u',
             ),
-            reverse=True,
-            offset=38,
-            column='GMBW',
-            previous='gpu_memory',
-            next='cpu_percent',
-            bind_key='b',
-        ),
-        'cpu_percent': Order(
-            key=attrgetter('_gone', 'cpu_percent', 'memory_percent', 'pid', 'device.tuple_index'),
-            reverse=True,
-            offset=44,
-            column='%CPU',
-            previous='gpu_memory_utilization',
-            next='memory_percent',
-            bind_key='c',
-        ),
-        'memory_percent': Order(
-            key=attrgetter('_gone', 'memory_percent', 'cpu_percent', 'pid', 'device.tuple_index'),
-            reverse=True,
-            offset=50,
-            column='%MEM',
-            previous='cpu_percent',
-            next='time',
-            bind_key='m',
-        ),
-        'time': Order(
-            key=attrgetter('_gone', 'running_time', 'pid', 'device.tuple_index'),
-            reverse=True,
-            offset=56,
-            column='TIME',
-            previous='memory_percent',
-            next='natural',
-            bind_key='t',
-        ),
-    }
+            'gpu_memory': Order(
+                key=attrgetter(
+                    '_gone',
+                    'gpu_memory',
+                    'gpu_sm_utilization',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=25,
+                column='GPU-MEM',
+                previous='username',
+                next='sm_utilization',
+                bind_key='g',
+            ),
+            'sm_utilization': Order(
+                key=attrgetter(
+                    '_gone',
+                    'gpu_sm_utilization',
+                    'gpu_memory',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=34,
+                column='SM',
+                previous='gpu_memory',
+                next='gpu_memory_utilization',
+                bind_key='s',
+            ),
+            'gpu_memory_utilization': Order(
+                key=attrgetter(
+                    '_gone',
+                    'gpu_memory_utilization',
+                    'gpu_memory',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=38,
+                column='GMBW',
+                previous='sm_utilization',
+                next='cpu_percent',
+                bind_key='b',
+            ),
+            'cpu_percent': Order(
+                key=attrgetter(
+                    '_gone',
+                    'cpu_percent',
+                    'memory_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=44,
+                column='%CPU',
+                previous='gpu_memory_utilization',
+                next='memory_percent',
+                bind_key='c',
+            ),
+            'memory_percent': Order(
+                key=attrgetter(
+                    '_gone',
+                    'memory_percent',
+                    'cpu_percent',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=50,
+                column='%MEM',
+                previous='cpu_percent',
+                next='time',
+                bind_key='m',
+            ),
+            'time': Order(
+                key=attrgetter(
+                    '_gone',
+                    'running_time',
+                    'pid',
+                    'device.tuple_index',
+                ),
+                reverse=True,
+                offset=56,
+                column='TIME',
+                previous='memory_percent',
+                next='natural',
+                bind_key='t',
+            ),
+        },
+    )
 
     # pylint: disable-next=too-many-arguments
-    def __init__(self, devices, compact, filters, *, win, root):
+    def __init__(
+        self,
+        devices: list[Device | MigDevice],
+        compact: bool,
+        filters: Iterable[Callable[[Snapshot], bool]],
+        *,
+        win: curses.window | None,
+        root: TUI,
+    ) -> None:
         super().__init__(win, root)
 
-        self.devices = devices
+        self.devices: list[Device | MigDevice] = devices
 
-        self._compact = compact
-        self.width = max(79, root.width)
+        self._compact: bool = compact
+        self.width: int = max(79, root.width)
         self.height = self._full_height = self.compact_height = 7
 
-        self.filters = [None, *filters]
+        self.filters: list[Callable[[Snapshot], bool] | None] = [None, *filters]
 
-        self.host_headers = ['%CPU', '%MEM', 'TIME', 'COMMAND']
+        self.host_headers: list[str] = ['%CPU', '%MEM', 'TIME', 'COMMAND']
 
-        self.selection = Selection(panel=self)
-        self.host_offset = -1
-        self.y_mouse = None
+        self.selection: Selection = Selection(self)
+        self.host_offset: int = -1
+        self.y_mouse: int | None = None
 
-        self._order = 'natural'
-        self.reverse = False
+        self._order: OrderName = 'natural'
+        self.reverse: bool = False
 
-        self.has_snapshots = False
-        self._snapshot_buffer = None
-        self._snapshots = []
+        self.has_snapshots: int = False
+        self._snapshot_buffer: list[Snapshot] | None = None
+        self._snapshots: list[Snapshot] = []
         self.snapshot_lock = threading.Lock()
         self._snapshot_daemon = threading.Thread(
             name='process-snapshot-daemon',
@@ -187,22 +252,22 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: int) -> None:
         width = max(79, value)
         if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
 
     @property
-    def compact(self):
+    def compact(self) -> bool:
         return self._compact or self.order != 'natural'
 
     @compact.setter
-    def compact(self, value):
+    def compact(self, value: bool) -> None:
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
@@ -216,29 +281,29 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.height = self.compact_height if self.compact else self.full_height
 
     @property
-    def full_height(self):
+    def full_height(self) -> int:
         return self._full_height if self.order == 'natural' else self.compact_height
 
     @full_height.setter
-    def full_height(self, value):
+    def full_height(self, value: int) -> None:
         self._full_height = value
 
     @property
-    def order(self):
+    def order(self) -> OrderName:
         return self._order
 
     @order.setter
-    def order(self, value):
+    def order(self, value: OrderName) -> None:
         if self._order != value:
             self._order = value
             self.height = self.compact_height if self.compact else self.full_height
 
     @property
-    def snapshots(self):
+    def snapshots(self) -> list[Snapshot]:
         return self._snapshots
 
     @snapshots.setter
-    def snapshots(self, snapshots):
+    def snapshots(self, snapshots: list[Snapshot] | None) -> None:
         if snapshots is None:
             return
         self.has_snapshots = True
@@ -273,28 +338,28 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             for i, process in enumerate(snapshots):
                 if process._ident == identity:  # pylint: disable=protected-access
                     self.selection.index = i
-                    self.selection.process = process
+                    self.selection.process = process  # type: ignore[assignment]
                     break
 
     @classmethod
-    def set_snapshot_interval(cls, interval):
+    def set_snapshot_interval(cls, interval: float) -> None:
         assert interval > 0.0
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
-        cls.take_snapshots = ttl_cache(ttl=interval)(
-            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
+        cls.take_snapshots = ttl_cache(ttl=interval)(  # type: ignore[method-assign]
+            cls.take_snapshots.__wrapped__,  # type: ignore[attr-defined] # pylint: disable=no-member
         )
 
-    def ensure_snapshots(self):
+    def ensure_snapshots(self) -> None:
         if not self.has_snapshots:
             self.snapshots = self.take_snapshots()
 
     @ttl_cache(ttl=2.0)
-    def take_snapshots(self):
+    def take_snapshots(self) -> list[Snapshot]:
         snapshots = GpuProcess.take_snapshots(self.processes, failsafe=True)
         for condition in self.filters:
-            snapshots = filter(condition, snapshots)
+            snapshots = filter(condition, snapshots)  # type: ignore[assignment]
         snapshots = list(snapshots)
 
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
@@ -314,13 +379,13 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         return snapshots
 
-    def _snapshot_target(self):
+    def _snapshot_target(self) -> None:
         self._daemon_running.wait()
         while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
-    def header_lines(self):
+    def header_lines(self) -> list[str]:
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
@@ -331,7 +396,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
         if len(self.snapshots) == 0:
             if self.has_snapshots:
-                message = ' No running processes found{} '.format(' (in WSL)' if WSL else '')
+                message = ' No running processes found{} '.format(' (in WSL)' if IS_WSL else '')
             else:
                 message = ' Gathering process status...'
             header.extend(
@@ -340,22 +405,22 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         return header
 
     @property
-    def processes(self):
+    def processes(self) -> list[GpuProcess]:
         return list(
-            itertools.chain.from_iterable(device.processes().values() for device in self.devices),
+            itertools.chain.from_iterable(device.processes().values() for device in self.devices),  # type: ignore[misc]
         )
 
-    def poke(self):
+    def poke(self) -> None:
         if not self._daemon_running.is_set():
             self._daemon_running.set()
             self._snapshot_daemon.start()
 
-        self.snapshots = self._snapshot_buffer
+        self.snapshots = self._snapshot_buffer  # type: ignore[assignment]
 
         self.selection.within_window = False
         if len(self.snapshots) > 0 and self.selection.is_set():
             y = self.y + 5
-            prev_device_index = None
+            prev_device_index: int | None = None
             for process in self.snapshots:
                 device_index = process.device.physical_index
                 if prev_device_index != device_index:
@@ -365,13 +430,14 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
                 if self.selection.is_same(process):
                     self.selection.within_window = (
-                        self.root.y <= y < self.root.termsize[0] and self.width >= 79
+                        self.root.y <= y < self.root.termsize[0]  # type: ignore[index]
+                        and self.width >= 79
                     )
                     if not self.selection.within_window:
                         if y < self.root.y:
                             self.parent.y += self.root.y - y
-                        elif y >= self.root.termsize[0]:
-                            self.parent.y -= y - self.root.termsize[0] + 1
+                        elif y >= self.root.termsize[0]:  # type: ignore[index]
+                            self.parent.y -= y - self.root.termsize[0] + 1  # type: ignore[index]
                         self.parent.update_size(self.root.termsize)
                         self.need_redraw = True
                     break
@@ -379,11 +445,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def draw(self) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
         if self.need_redraw:
-            if SUPERUSER:
+            if IS_SUPERUSER:
                 self.addstr(self.y, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
                 self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
                 self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
@@ -392,7 +458,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 self.addstr(y, self.x, line)
 
             context_width = wcslen(USER_CONTEXT)
-            if not WINDOWS or len(USER_CONTEXT) == context_width:
+            if not IS_WINDOWS or len(USER_CONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
                 username_width = wcslen(USERNAME)
                 hostname_width = wcslen(HOSTNAME)
@@ -403,7 +469,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     self.y + 2,
                     self.x + offset,
                     width=username_width,
-                    fg=('yellow' if SUPERUSER else 'magenta'),
+                    fg=('yellow' if IS_SUPERUSER else 'magenta'),
                     attr='bold',
                 )
                 self.color_at(
@@ -474,7 +540,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.selection.within_window = False
         if len(self.snapshots) > 0:
             y = self.y + 5
-            prev_device_index = None
+            prev_device_index: int | None = None
             prev_device_display_index = None
             color = -1
             for process in self.snapshots:
@@ -522,7 +588,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     self.addstr(y, self.x + 44, process.command)
 
                 if y == self.y_mouse:
-                    self.selection.process = process
+                    self.selection.process = process  # type: ignore[assignment]
                     hint = True
 
                 if self.selection.is_same(process):
@@ -534,10 +600,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         attr='bold | reverse',
                     )
                     self.selection.within_window = (
-                        self.root.y <= y < self.root.termsize[0] and self.width >= 79
+                        self.root.y <= y < self.root.termsize[0]  # type: ignore[index]
+                        and self.width >= 79
                     )
                 else:
-                    owned = str(process.username) == USERNAME or SUPERUSER
+                    owned = IS_SUPERUSER or str(process.username) == USERNAME
                     if self.selection.is_same_on_host(process):
                         self.addstr(y, self.x + 1, '=', self.get_fg_bg_attr(attr='bold | blink'))
                     self.color_at(y, self.x + 2, width=3, fg=color)
@@ -562,7 +629,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 self.selection.clear()
 
         elif self.has_snapshots:
-            message = ' No running processes found{} '.format(' (in WSL)' if WSL else '')
+            message = ' No running processes found{} '.format(' (in WSL)' if IS_WSL else '')
             self.addstr(self.y + 5, self.x, f'│ {message.ljust(self.width - 4)} │')
 
         text_offset = self.x + self.width - 47
@@ -579,29 +646,29 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         else:
             self.addstr(self.y, text_offset, ' ' * 47)
 
-    def finalize(self):
+    def finalize(self) -> None:
         self.y_mouse = None
         super().finalize()
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
-    def print_width(self):
+    def print_width(self) -> int:
         self.ensure_snapshots()
         return min(
             self.width,
             max((45 + len(process.host_info) for process in self.snapshots), default=79),
         )
 
-    def print(self):
+    def print(self) -> None:
         self.ensure_snapshots()
 
         lines = ['', *self.header_lines()]
         lines[2] = ''.join(
             (
                 lines[2][: -2 - wcslen(USER_CONTEXT)],
-                colored(USERNAME, color=('yellow' if SUPERUSER else 'magenta'), attrs=('bold',)),
+                colored(USERNAME, color=('yellow' if IS_SUPERUSER else 'magenta'), attrs=('bold',)),
                 colored('@', attrs=('bold',)),
                 colored(HOSTNAME, color='green', attrs=('bold',)),
                 lines[2][-2:],
@@ -611,7 +678,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         if len(self.snapshots) > 0:
             key, reverse, *_ = self.ORDERS['natural']
             self.snapshots.sort(key=key, reverse=reverse)
-            prev_device_index = None
+            prev_device_index: int | None = None
             prev_device_display_index = None
             color = None
             for process in self.snapshots:
@@ -637,21 +704,21 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     WideString(host_info).ljust(self.width - 45)[: self.width - 45],
                 )
                 if process.is_zombie or process.no_permissions or process.is_gone:
-                    info = info.split(process.command)
-                    if process.username != USERNAME and not SUPERUSER:
-                        info = (colored(item, attrs=('dark',)) for item in info)
+                    info_segments = info.split(process.command)
+                    if not IS_SUPERUSER and process.username != USERNAME:
+                        info_segments = [colored(item, attrs=('dark',)) for item in info]
                     info = colored(
                         process.command,
                         color=('red' if process.is_gone else 'yellow'),
-                    ).join(info)
-                elif process.username != USERNAME and not SUPERUSER:
+                    ).join(info_segments)
+                elif not IS_SUPERUSER and process.username != USERNAME:
                     info = colored(info, attrs=('dark',))
                 lines.append('│{} {} │'.format(colored(f'{device_display_index:>4}', color), info))
 
             lines.append('╘' + '═' * (self.width - 2) + '╛')
 
         lines = '\n'.join(lines)
-        if self.ascii:
+        if self.no_unicode:
             lines = lines.translate(self.ASCII_TRANSTABLE)
 
         try:
@@ -659,11 +726,11 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         except UnicodeError:
             print(lines.translate(self.ASCII_TRANSTABLE))
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('process')
-        self.root.press(key)
+        return self.root.press(key)
 
-    def click(self, event):
+    def click(self, event: MouseEvent) -> bool:
         if event.pressed(1) or event.pressed(3) or event.clicked(1) or event.clicked(3):
             self.y_mouse = event.y
             return True
@@ -675,7 +742,7 @@ class ProcessPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.selection.move(direction=direction)
         return True
 
-    def __contains__(self, item):
+    def __contains__(self, item: Displayable | MouseEvent | tuple[int, int]) -> bool:
         if self.parent.visible and isinstance(item, MouseEvent):
             return True
         return super().__contains__(item)

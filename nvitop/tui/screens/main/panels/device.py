@@ -3,36 +3,56 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import threading
 import time
+from typing import TYPE_CHECKING, ClassVar
 
 from nvitop.tui.library import (
+    IS_WINDOWS,
     NA,
-    WINDOWS,
     Device,
-    Displayable,
+    MigDevice,
+    Snapshot,
     colored,
     cut_string,
     make_bar,
     ttl_cache,
 )
+from nvitop.tui.screens.main.panels.base import BasePanel
 from nvitop.version import __version__
 
 
-class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'device'
-    SNAPSHOT_INTERVAL = 0.5
+if TYPE_CHECKING:
+    import curses
 
-    def __init__(self, devices, compact, win, root):
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['DevicePanel']
+
+
+class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'device'
+    SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
+
+    def __init__(
+        self,
+        devices: list[Device],
+        compact: bool,
+        win: curses.window | None,
+        root: TUI,
+    ) -> None:
         super().__init__(win, root)
 
-        self.devices = devices
-        self.device_count = len(self.devices)
+        self.devices: list[Device] = devices
+        self.device_count: int = len(self.devices)
 
-        self.all_devices = []
-        self.leaf_devices = []
-        self.mig_device_counts = [0] * self.device_count
-        self.mig_enabled_device_count = 0
+        self.all_devices: list[Device | MigDevice] = []
+        self.leaf_devices: list[Device | MigDevice] = []
+        self.mig_device_counts: list[int] = [0] * self.device_count
+        self.mig_enabled_device_count: int = 0
         for i, device in enumerate(self.devices):
             self.all_devices.append(device)
 
@@ -45,27 +65,27 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             else:
                 self.leaf_devices.append(device)
 
-        self.mig_device_count = sum(self.mig_device_counts)
-        self.all_device_count = len(self.all_devices)
-        self.leaf_device_count = len(self.leaf_devices)
+        self.mig_device_count: int = sum(self.mig_device_counts)
+        self.all_device_count: int = len(self.all_devices)
+        self.leaf_device_count: int = len(self.leaf_devices)
 
-        self._compact = compact
-        self.width = max(79, root.width)
-        self.compact_height = (
+        self._compact: bool = compact
+        self.width: int = max(79, root.width)
+        self.compact_height: int = (
             4 + 2 * (self.device_count + 1) + self.mig_device_count + self.mig_enabled_device_count
         )
-        self.full_height = self.compact_height + self.device_count + 1
-        self.height = self.compact_height if compact else self.full_height
+        self.full_height: int = self.compact_height + self.device_count + 1
+        self.height: int = self.compact_height if compact else self.full_height
         if self.device_count == 0:
             self.height = self.full_height = self.compact_height = 6
 
-        self.driver_version = Device.driver_version()
-        self.cuda_driver_version = Device.cuda_driver_version()
+        self.driver_version: str = Device.driver_version()
+        self.cuda_driver_version: str = Device.cuda_driver_version()
 
-        self._snapshot_buffer = []
-        self._snapshots = []
+        self._snapshot_buffer: list[Snapshot] = []
+        self._snapshots: list[Snapshot] = []
         self.snapshot_lock = threading.Lock()
-        self.snapshots = self.take_snapshots()
+        self.snapshots: list[Snapshot] = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(
             name='device-snapshot-daemon',
             target=self._snapshot_target,
@@ -73,30 +93,30 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )
         self._daemon_running = threading.Event()
 
-        self.formats_compact = [
+        self.formats_compact: list[str] = [
             '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
             '{performance_state:>3} {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
-        self.formats_full = [
+        self.formats_full: list[str] = [
             '│ {physical_index:>3}  {name:<18}  {persistence_mode:<4} '
             '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
             '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 
-        self.mig_formats = [
+        self.mig_formats: list[str] = [
             '│{physical_index:>2}:{mig_index:<2}{name:>12} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
             '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │',
         ]
 
-        if WINDOWS:
+        if IS_WINDOWS:
             self.formats_full[0] = self.formats_full[0].replace(
                 'persistence_mode',
                 'current_driver_model',
             )
 
-        self.support_mig = any('N/A' not in device.mig_mode for device in self.snapshots)
+        self.support_mig: bool = any('N/A' not in device.mig_mode for device in self.snapshots)
         if self.support_mig:
             self.formats_full[0] = self.formats_full[0].replace(
                 '{total_volatile_uncorrected_ecc_errors:>20}',
@@ -104,48 +124,48 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             )
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: int) -> None:
         width = max(79, value)
         if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
 
     @property
-    def compact(self):
+    def compact(self) -> bool:
         return self._compact
 
     @compact.setter
-    def compact(self, value):
+    def compact(self, value: bool) -> None:
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
             self.height = self.compact_height if self.compact else self.full_height
 
     @property
-    def snapshots(self):
+    def snapshots(self) -> list[Snapshot]:
         return self._snapshots
 
     @snapshots.setter
-    def snapshots(self, snapshots):
+    def snapshots(self, snapshots: list[Snapshot]) -> None:
         with self.snapshot_lock:
             self._snapshots = snapshots
 
     @classmethod
-    def set_snapshot_interval(cls, interval):
+    def set_snapshot_interval(cls, interval: float) -> None:
         assert interval > 0.0
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 1.0)
-        cls.take_snapshots = ttl_cache(ttl=interval)(
-            cls.take_snapshots.__wrapped__,  # pylint: disable=no-member
+        cls.take_snapshots = ttl_cache(ttl=interval)(  # type: ignore[method-assign]
+            cls.take_snapshots.__wrapped__,  # type: ignore[attr-defined] # pylint: disable=no-member
         )
 
     @ttl_cache(ttl=1.0)
-    def take_snapshots(self):
+    def take_snapshots(self) -> list[Snapshot]:
         snapshots = [device.as_snapshot() for device in self.all_devices]
 
         for device in snapshots:
@@ -155,10 +175,11 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 device.name = device.name.rpartition(' ')[-1]
                 if device.bar1_memory_percent is not NA:
                     device.bar1_memory_percent = round(device.bar1_memory_percent)
-                    if device.bar1_memory_percent >= 100:
-                        device.bar1_memory_percent_string = 'MAX'
-                    else:
-                        device.bar1_memory_percent_string = f'{round(device.bar1_memory_percent)}%'
+                    device.bar1_memory_percent_string = (
+                        'MAX'
+                        if device.bar1_memory_percent >= 100
+                        else f'{round(device.bar1_memory_percent)}%'
+                    )
             else:
                 device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
                 device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
@@ -180,13 +201,13 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         return snapshots
 
-    def _snapshot_target(self):
+    def _snapshot_target(self) -> None:
         self._daemon_running.wait()
         while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
-    def header_lines(self, compact=None):
+    def header_lines(self, compact: bool | None = None) -> list[str]:
         if compact is None:
             compact = self.compact
 
@@ -218,7 +239,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
                     ),
                 )
-                if WINDOWS:
+                if IS_WINDOWS:
                     header[-2] = header[-2].replace('Persistence-M', '    TCC/WDDM ')
                 if self.support_mig:
                     header[-2] = header[-2].replace('Volatile Uncorr. ECC', 'MIG M.   Uncorr. ECC')
@@ -235,7 +256,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             )
         return header
 
-    def frame_lines(self, compact=None):
+    def frame_lines(self, compact: bool | None = None) -> list[str]:
         if compact is None:
             compact = self.compact
 
@@ -273,7 +294,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         return frame
 
-    def poke(self):
+    def poke(self) -> None:
         if not self._daemon_running.is_set():
             self._daemon_running.set()
             self._snapshot_daemon.start()
@@ -283,7 +304,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         super().poke()
 
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
-    def draw(self):
+    def draw(self) -> None:
         self.color_reset()
 
         if self.need_redraw:
@@ -300,7 +321,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
         remaining_width = self.width - 79
         draw_bars = self.width >= 100
         try:
-            selected_device = self.parent.selection.process.device
+            selected_device = self.parent.selection.process.device  # type: ignore[union-attr]
         except AttributeError:
             selected_device = None
 
@@ -313,7 +334,7 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             ):
                 y_start += 1
 
-            attr = 0
+            attr: int | str = 0
             if selected_device is not None:
                 if device.real == selected_device:
                     attr = 'bold'
@@ -403,16 +424,16 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
             y_start += len(fmts)
             prev_device_index = device.tuple_index
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
-    def print_width(self):
+    def print_width(self) -> int:
         if self.device_count > 0 and self.width >= 100:
             return self.width
         return 79
 
-    def print(self):  # pylint: disable=too-many-locals,too-many-branches
+    def print(self) -> None:  # pylint: disable=too-many-locals,too-many-branches
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]
 
         if self.device_count > 0:
@@ -426,8 +447,8 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                         '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
                     )
 
-                def colorize(s):
-                    if len(s) > 0:
+                def colorize(s: str) -> str:
+                    if s:
                         # pylint: disable-next=cell-var-from-loop
                         return colored(s, device.display_color)  # noqa: B023
                     return ''
@@ -494,15 +515,15 @@ class DevicePanel(Displayable):  # pylint: disable=too-many-instance-attributes
                     y_start += len(matrix)
                     prev_device_index = device.tuple_index
 
-        lines = '\n'.join(lines)
-        if self.ascii:
-            lines = lines.translate(self.ASCII_TRANSTABLE)
+        content = '\n'.join(lines)
+        if self.no_unicode:
+            content = content.translate(self.ASCII_TRANSTABLE)
 
         try:
-            print(lines)
+            print(content)
         except UnicodeError:
-            print(lines.translate(self.ASCII_TRANSTABLE))
+            print(content.translate(self.ASCII_TRANSTABLE))
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('device')
-        self.root.press(key)
+        return self.root.press(key)

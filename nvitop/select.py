@@ -62,7 +62,7 @@ import math
 import os
 import sys
 import warnings
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from nvitop.api import Device, GpuProcess, Snapshot, colored, host, human2bytes, libnvml
 from nvitop.version import __version__
@@ -70,7 +70,6 @@ from nvitop.version import __version__
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
-    from typing_extensions import Literal  # Python 3.8+
 
 
 __all__ = ['select_devices']
@@ -220,7 +219,7 @@ def select_devices(
     for device in devices:
         available_devices.extend(dev.as_snapshot() for dev in device.to_leaf_devices())
     for device in available_devices:
-        device.loosen_constraints = 0  # type: ignore[attr-defined]
+        device.loosen_constraints = 0
 
     if len(free_accounts) > 0:
         with GpuProcess.failsafe():
@@ -229,15 +228,15 @@ def select_devices(
                 for process in device.real.processes().values():
                     if process.username() in free_accounts:
                         as_free_memory += process.gpu_memory()
-                device.memory_free += as_free_memory  # type: ignore[attr-defined]
-                device.memory_used -= as_free_memory  # type: ignore[attr-defined]
+                device.memory_free += as_free_memory
+                device.memory_used -= as_free_memory
 
     def filter_func(
         criteria: Callable[[Snapshot], bool],
         original_criteria: Callable[[Snapshot], bool],
     ) -> Callable[[Snapshot], bool]:
         def wrapped(device: Snapshot) -> bool:
-            device.loosen_constraints += int(not original_criteria(device))  # type: ignore[attr-defined]
+            device.loosen_constraints += int(not original_criteria(device))
             return criteria(device)
 
         return wrapped
