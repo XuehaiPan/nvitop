@@ -89,12 +89,12 @@ class EnvironScreen(BaseScreen):  # pylint: disable=too-many-instance-attributes
 
         if value is not None:
             self.items = [
-                (WideString(key), WideString(f'{key}={normalize(value[key])}'))
-                for key in sorted(value.keys())
+                (WideString(k), WideString(f'{k}={normalize(v)}')) for k, v in sorted(value.items())
             ]
+            self._environ = OrderedDict(self.items)
         else:
             self.items = None
-        self._environ = OrderedDict(self.items) if self.items is not None else None
+            self._environ = None
         self.x_offset = 0
         self.y_offset = 0
         self.scroll_offset = 0
