@@ -132,9 +132,14 @@ class Selection:  # pylint: disable=too-many-instance-attributes
         self.foreach(lambda process: process.send_signal(sig))
 
     def interrupt(self) -> None:
-        try:
+        sig = (
+            signal.SIGINT
+            if not IS_WINDOWS
             # pylint: disable-next=no-member
-            self.send_signal(signal.SIGINT if not IS_WINDOWS else signal.CTRL_C_EVENT)  # type: ignore[attr-defined]
+            else signal.CTRL_C_EVENT  # type: ignore[attr-defined,unused-ignore]
+        )
+        try:
+            self.send_signal(sig)
         except SystemError:
             pass
 

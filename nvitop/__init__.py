@@ -39,6 +39,7 @@ from nvitop.version import __version__
 __all__ = [*api.__all__, 'select_devices']
 
 # Add submodules to the top-level namespace
+submodule = api
 for submodule in (
     caching,
     collector,
@@ -57,4 +58,4 @@ for submodule in (
 # Required for `python -m nvitop.select` to work properly
 sys.modules.pop(f'{__name__}.select', None)
 
-del sys
+del sys, submodule
