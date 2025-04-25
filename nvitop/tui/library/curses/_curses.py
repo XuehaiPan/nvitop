@@ -590,9 +590,11 @@ class CursesWindow:  # pylint: disable=too-many-public-methods
             import ctypes  # pylint: disable=import-outside-toplevel
 
             try:
-                self.encoding = f'cp{ctypes.windll.kernel32.GetConsoleOutputCP()}'  # type: ignore[attr-defined]
+                code_page = ctypes.windll.kernel32.GetConsoleOutputCP()  # type: ignore[attr-defined,unused-ignore]
             except (AttributeError, OSError):
                 self.encoding = 'utf-8'
+            else:
+                self.encoding = f'cp{code_page}'
 
     @overload
     def addch(self, ch: ChType, attr: int = ...) -> None: ...
