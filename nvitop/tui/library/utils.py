@@ -57,12 +57,12 @@ with contextlib.suppress(AttributeError, OSError):
     if IS_WINDOWS:
         import ctypes
 
-        IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())  # type: ignore[attr-defined]
+        IS_SUPERUSER = bool(ctypes.windll.shell32.IsUserAnAdmin())  # type: ignore[attr-defined,unused-ignore]
     else:
         try:
-            IS_SUPERUSER = os.geteuid() == 0
+            IS_SUPERUSER = os.geteuid() == 0  # type: ignore[attr-defined,unused-ignore]
         except AttributeError:
-            IS_SUPERUSER = os.getuid() == 0
+            IS_SUPERUSER = os.getuid() == 0  # type: ignore[attr-defined,unused-ignore]
 
 HOSTNAME: str = hostname()
 IS_WINDOWS_SUBSYSTEM_FOR_LINUX = IS_WSL = bool(WINDOWS_SUBSYSTEM_FOR_LINUX)
