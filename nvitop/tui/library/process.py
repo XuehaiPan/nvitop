@@ -3,33 +3,29 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
-from nvitop.api import (
-    NA,
-    GiB,
-    HostProcess,
-    Snapshot,
-    bytes2human,
-    host,
-    timedelta2human,
-    utilization2string,
-)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from nvitop.api import NA, HostProcess, Snapshot, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
+from nvitop.tui.library.utils import IS_WINDOWS, IS_WSL
 
 
-__all__ = [
-    'host',
-    'HostProcess',
-    'GpuProcess',
-    'NA',
-    'Snapshot',
-    'bytes2human',
-    'GiB',
-    'timedelta2human',
-]
+if TYPE_CHECKING:
+    from typing_extensions import Self  # Python 3.11+
+
+    from nvitop.tui.library.device import Device
+
+
+__all__ = ['GpuProcess', 'HostProcess']
 
 
 class GpuProcess(GpuProcessBase):
-    def __new__(cls, *args, **kwargs):
+    _snapshot: Snapshot | None
+    device: Device
+
+    def __new__(cls, *args: Any, **kwargs: Any) -> Self:
         instance = super().__new__(cls, *args, **kwargs)
         instance._snapshot = None
         return instance
@@ -38,7 +34,7 @@ class GpuProcess(GpuProcessBase):
     def snapshot(self) -> Snapshot:
         if self._snapshot is None:
             self.as_snapshot()
-        return self._snapshot
+        return self._snapshot  # type: ignore[return-value]
 
     def host_snapshot(self) -> Snapshot:
         host_snapshot = super().host_snapshot()
@@ -59,11 +55,15 @@ class GpuProcess(GpuProcessBase):
 
         return host_snapshot
 
-    def as_snapshot(self, *, host_process_snapshot_cache=None) -> Snapshot:
+    def as_snapshot(
+        self,
+        *,
+        host_process_snapshot_cache: dict[int, Snapshot] | None = None,
+    ) -> Snapshot:
         snapshot = super().as_snapshot(host_process_snapshot_cache=host_process_snapshot_cache)
 
         snapshot.type = snapshot.type.replace('C+G', 'X')
-        if snapshot.gpu_memory_human is NA and (host.WINDOWS or host.WSL):
+        if snapshot.gpu_memory_human is NA and (IS_WINDOWS or IS_WSL):
             snapshot.gpu_memory_human = 'WDDM:N/A'
 
         snapshot.cpu_percent_string = snapshot.host.cpu_percent_string

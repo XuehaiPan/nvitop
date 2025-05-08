@@ -13,7 +13,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+------
+
+## [1.5.0] - 2025-04-25
+
+### Added
+
 - Show `%GMBW` in main screen by [@XuehaiPan](https://github.com/XuehaiPan) in [#156](https://github.com/XuehaiPan/nvitop/pull/156).
+- Add doctests and add type annotations in `nvitop.tui` by [@XuehaiPan](https://github.com/XuehaiPan) in [#164](https://github.com/XuehaiPan/nvitop/pull/164).
 
 ### Changed
 
@@ -21,7 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Ignore errors when collecting host metrics for host panel by [@XuehaiPan](https://github.com/XuehaiPan) in [#163](https://github.com/XuehaiPan/nvitop/pull/163).
 
 ### Removed
 
@@ -163,7 +184,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.5.0
 [1.4.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.2
 [1.4.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.1
 [1.4.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.0

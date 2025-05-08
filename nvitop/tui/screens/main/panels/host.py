@@ -3,48 +3,70 @@
 
 # pylint: disable=missing-module-docstring,missing-class-docstring,missing-function-docstring
 
+from __future__ import annotations
+
 import threading
 import time
+from typing import TYPE_CHECKING, ClassVar
 
 from nvitop.tui.library import (
     NA,
     BufferedHistoryGraph,
     Device,
-    Displayable,
     GiB,
+    HistoryGraph,
+    MigDevice,
+    NaType,
     bytes2human,
     colored,
     host,
     make_bar,
     timedelta2human,
 )
+from nvitop.tui.screens.main.panels.base import BasePanel
 
 
-class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
-    NAME = 'host'
-    SNAPSHOT_INTERVAL = 0.5
+if TYPE_CHECKING:
+    import curses
 
-    def __init__(self, devices, compact, win, root):
+    from nvitop.tui.tui import TUI
+
+
+__all__ = ['HostPanel']
+
+
+class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
+    NAME: ClassVar[str] = 'host'
+    SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
+
+    def __init__(
+        self,
+        devices: list[Device | MigDevice],
+        compact: bool,
+        *,
+        win: curses.window | None,
+        root: TUI,
+    ) -> None:
         super().__init__(win, root)
 
-        self.devices = devices
-        self.device_count = len(self.devices)
+        self.devices: list[Device | MigDevice] = devices
+        self.device_count: int = len(self.devices)
 
         if win is not None:
-            self.average_gpu_memory_percent = None
-            self.average_gpu_utilization = None
+            self.average_gpu_memory_percent: HistoryGraph | None = None
+            self.average_gpu_utilization: HistoryGraph | None = None
             self.enable_history()
 
-        self._compact = compact
-        self.width = max(79, root.width)
-        self.full_height = 12
-        self.compact_height = 2
-        self.height = self.compact_height if compact else self.full_height
+        self._compact: bool = compact
+        self.width: int = max(79, root.width)
+        self.full_height: int = 12
+        self.compact_height: int = 2
+        self.height: int = self.compact_height if compact else self.full_height
 
-        self.cpu_percent = None
-        self.load_average = None
-        self.virtual_memory = None
-        self.swap_memory = None
+        self.cpu_percent: float = NA  # type: ignore[assignment]
+        self.load_average: tuple[float, float, float] = (NA, NA, NA)  # type: ignore[assignment]
+        self.virtual_memory: host.VirtualMemory = host.VirtualMemory()
+        self.swap_memory: host.SwapMemory = host.SwapMemory()
         self._snapshot_daemon = threading.Thread(
             name='host-snapshot-daemon',
             target=self._snapshot_target,
@@ -53,37 +75,37 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: int) -> None:
         width = max(79, value)
         if self._width != width:
             if self.visible:
                 self.need_redraw = True
             graph_width = max(width - 80, 20)
             if self.win is not None:
-                self.average_gpu_memory_percent.width = graph_width
-                self.average_gpu_utilization.width = graph_width
+                self.average_gpu_memory_percent.width = graph_width  # type: ignore[union-attr]
+                self.average_gpu_utilization.width = graph_width  # type: ignore[union-attr]
                 for device in self.devices:
-                    device.memory_percent.history.width = graph_width
-                    device.gpu_utilization.history.width = graph_width
+                    device.memory_percent.history.width = graph_width  # type: ignore[attr-defined]
+                    device.gpu_utilization.history.width = graph_width  # type: ignore[attr-defined]
         self._width = width
 
     @property
-    def compact(self):
-        return self._compact or self.ascii
+    def compact(self) -> bool:
+        return self._compact or self.no_unicode
 
     @compact.setter
-    def compact(self, value):
-        value = value or self.ascii
+    def compact(self, value: bool) -> None:
+        value = value or self.no_unicode
         if self._compact != value:
             self.need_redraw = True
             self._compact = value
             self.height = self.compact_height if self.compact else self.full_height
 
-    def enable_history(self):
+    def enable_history(self) -> None:
         host.cpu_percent = BufferedHistoryGraph(
             interval=1.0,
             width=77,
@@ -115,11 +137,11 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             format='{:.1f}%'.format,
         )(host.swap_memory, get_value=lambda sm: sm.percent)
 
-        def percentage(x):
+        def percentage(x: float | NaType) -> str:
             return f'{x:.1f}%' if x is not NA else NA
 
-        def enable_history(device):
-            device.memory_percent = BufferedHistoryGraph(
+        def enable_history(device: Device) -> None:
+            device.memory_percent = BufferedHistoryGraph(  # type: ignore[method-assign]
                 interval=1.0,
                 width=20,
                 height=5,
@@ -129,7 +151,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
                 dynamic_bound=False,
                 format=lambda x: f'GPU {device.display_index} MEM: {percentage(x)}',
             )(device.memory_percent)
-            device.gpu_utilization = BufferedHistoryGraph(
+            device.gpu_utilization = BufferedHistoryGraph(  # type: ignore[method-assign]
                 interval=1.0,
                 width=20,
                 height=5,
@@ -166,21 +188,21 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         )
 
     @classmethod
-    def set_snapshot_interval(cls, interval):
+    def set_snapshot_interval(cls, interval: float) -> None:
         assert interval > 0.0
         interval = float(interval)
 
         cls.SNAPSHOT_INTERVAL = min(interval / 3.0, 0.5)
 
-    def take_snapshots(self):
+    def take_snapshots(self) -> None:
         host.cpu_percent()
         host.virtual_memory()
         host.swap_memory()
         self.load_average = host.load_average()
 
         self.cpu_percent = host.cpu_percent.history.last_value
-        self.virtual_memory = host.virtual_memory.history.last_retval
-        self.swap_memory = host.swap_memory.history.last_retval
+        self.virtual_memory = host.virtual_memory.history.last_retval  # type: ignore[attr-defined]
+        self.swap_memory = host.swap_memory.history.last_retval  # type: ignore[attr-defined]
 
         total_memory_used = 0
         total_memory_total = 0
@@ -195,20 +217,22 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             if gpu_utilization is not NA:
                 gpu_utilizations.append(float(gpu_utilization))
         if total_memory_total > 0:
-            self.average_gpu_memory_percent.add(100.0 * total_memory_used / total_memory_total)
+            avg = 100.0 * total_memory_used / total_memory_total
+            self.average_gpu_memory_percent.add(avg)  # type: ignore[union-attr]
         if len(gpu_utilizations) > 0:
-            self.average_gpu_utilization.add(sum(gpu_utilizations) / len(gpu_utilizations))
+            avg = sum(gpu_utilizations) / len(gpu_utilizations)
+            self.average_gpu_utilization.add(avg)  # type: ignore[union-attr]
 
-    def _snapshot_target(self):
+    def _snapshot_target(self) -> None:
         self._daemon_running.wait()
         while self._daemon_running.is_set():
             self.take_snapshots()
             time.sleep(self.SNAPSHOT_INTERVAL)
 
-    def frame_lines(self, compact=None):
+    def frame_lines(self, compact: bool | None = None) -> list[str]:
         if compact is None:
             compact = self.compact
-        if compact or self.ascii:
+        if compact or self.no_unicode:
             return []
 
         remaining_width = self.width - 79
@@ -243,7 +267,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         return frame
 
-    def poke(self):
+    def poke(self) -> None:
         if not self._daemon_running.is_set():
             self._daemon_running.set()
             self._snapshot_daemon.start()
@@ -251,16 +275,12 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
 
         super().poke()
 
-    def draw(self):  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def draw(self) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         self.color_reset()
 
-        if self.load_average is not None:
-            load_average = tuple(
-                f'{value:5.2f}'[:5] if value < 10000.0 else '9999+' for value in self.load_average
-            )
-        else:
-            load_average = (NA,) * 3
-        load_average = 'Load Average: {} {} {}'.format(*load_average)
+        load_average = 'Load Average: {} {} {}'.format(
+            *(f'{value:5.2f}'[:5] if value < 10000.0 else '9999+' for value in self.load_average),
+        )
 
         if self.compact:
             width_right = len(load_average) + 4
@@ -329,18 +349,18 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
             self.addstr(y, self.x + 1, line)
 
         self.color(fg='magenta')
-        for y, line in enumerate(host.virtual_memory.history.graph, start=self.y + 6):
+        for y, line in enumerate(host.virtual_memory.history.graph, start=self.y + 6):  # type: ignore[attr-defined]
             self.addstr(y, self.x + 1, line)
 
         self.color(fg='blue')
-        for y, line in enumerate(host.swap_memory.history.graph, start=self.y + 10):
+        for y, line in enumerate(host.swap_memory.history.graph, start=self.y + 10):  # type: ignore[attr-defined]
             self.addstr(y, self.x + 1, line)
 
         if self.width >= 100:
             if self.device_count > 1 and self.parent.selection.is_set():
-                device = self.parent.selection.process.device
-                gpu_memory_percent = device.memory_percent.history
-                gpu_utilization = device.gpu_utilization.history
+                device = self.parent.selection.process.device  # type: ignore[union-attr]
+                gpu_memory_percent = device.memory_percent.history  # type: ignore[union-attr]
+                gpu_utilization = device.gpu_utilization.history  # type: ignore[union-attr]
             else:
                 gpu_memory_percent = self.average_gpu_memory_percent
                 gpu_utilization = self.average_gpu_utilization
@@ -366,39 +386,41 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         self.addstr(
             self.y + 9,
             self.x + 1,
-            f' MEM: {bytes2human(self.virtual_memory.used, min_unit=GiB)} ({host.virtual_memory.history}) ',
+            (
+                f' MEM: {bytes2human(self.virtual_memory.used, min_unit=GiB)} '
+                f'({host.virtual_memory.history}) '  # type: ignore[attr-defined]
+            ),
         )
         self.addstr(
             self.y + 10,
             self.x + 1,
-            f' SWP: {bytes2human(self.swap_memory.used, min_unit=GiB)} ({host.swap_memory.history}) ',
+            (
+                f' SWP: {bytes2human(self.swap_memory.used, min_unit=GiB)} '
+                f'({host.swap_memory.history}) '  # type: ignore[attr-defined]
+            ),
         )
         if self.width >= 100:
             self.addstr(self.y, self.x + 79, f' {gpu_memory_percent} ')
             self.addstr(self.y + 10, self.x + 79, f' {gpu_utilization} ')
 
-    def destroy(self):
+    def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
-    def print_width(self):
+    def print_width(self) -> int:
         if self.device_count > 0 and self.width >= 100:
             return self.width
         return 79
 
-    def print(self):
+    def print(self) -> None:
         self.cpu_percent = host.cpu_percent()
         self.virtual_memory = host.virtual_memory()
         self.swap_memory = host.swap_memory()
         self.load_average = host.load_average()
 
-        if self.load_average is not None:
-            load_average = tuple(
-                f'{value:5.2f}'[:5] if value < 10000.0 else '9999+' for value in self.load_average
-            )
-        else:
-            load_average = (NA,) * 3
-        load_average = 'Load Average: {} {} {}'.format(*load_average)
+        load_average = 'Load Average: {} {} {}'.format(
+            *(f'{value:5.2f}'[:5] if value < 10000.0 else '9999+' for value in self.load_average),
+        )
 
         width_right = len(load_average) + 4
         width_left = self.width - 2 - width_right
@@ -432,7 +454,7 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         ]
 
         lines = '\n'.join(lines)
-        if self.ascii:
+        if self.no_unicode:
             lines = lines.translate(self.ASCII_TRANSTABLE)
 
         try:
@@ -440,6 +462,6 @@ class HostPanel(Displayable):  # pylint: disable=too-many-instance-attributes
         except UnicodeError:
             print(lines.translate(self.ASCII_TRANSTABLE))
 
-    def press(self, key):
+    def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('host')
-        self.root.press(key)
+        return self.root.press(key)

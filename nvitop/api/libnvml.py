@@ -55,13 +55,13 @@ __all__ = [  # will be updated in below
     'NA',
     'UINT_MAX',
     'ULONGLONG_MAX',
+    'NVMLError',
     'nvmlCheckReturn',
-    'nvmlQuery',
-    'nvmlQueryFieldValues',
     'nvmlInit',
     'nvmlInitWithFlags',
+    'nvmlQuery',
+    'nvmlQueryFieldValues',
     'nvmlShutdown',
-    'NVMLError',
 ]
 
 
@@ -592,7 +592,7 @@ if not _pynvml_installation_corrupted:
             'usedGpuCcProtectedMemory': '%d B',
         }
 
-    __get_running_processes_version_suffix = None
+    __get_running_processes_version_suffix: str | None = None
     c_nvmlProcessInfo_t = c_nvmlProcessInfo_v3_t
 
     def __determine_get_running_processes_version_suffix() -> str:
@@ -811,7 +811,7 @@ if not _pynvml_installation_corrupted:
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
     nvmlMemory_v2 = getattr(_pynvml, 'nvmlMemory_v2', _ctypes.sizeof(c_nvmlMemory_v2_t) | 2 << 24)
-    __get_memory_info_version_suffix = None
+    __get_memory_info_version_suffix: str | None = None
     c_nvmlMemory_t = c_nvmlMemory_v2_t
 
     def __determine_get_memory_info_version_suffix() -> str:

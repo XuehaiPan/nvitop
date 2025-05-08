@@ -18,6 +18,8 @@
 # pylint: disable=missing-module-docstring,missing-function-docstring
 # pylint: disable=unused-argument,attribute-defined-outside-init
 
+# mypy: ignore-errors
+
 from __future__ import annotations
 
 import time

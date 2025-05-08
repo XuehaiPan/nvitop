@@ -46,12 +46,11 @@ from __future__ import annotations
 import io
 import os
 import sys
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from typing_extensions import Literal  # Python 3.8+
 
     Attribute = Literal[
         'bold',

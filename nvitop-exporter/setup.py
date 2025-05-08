@@ -9,12 +9,13 @@ import re
 import sys
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 
 from setuptools import setup
 
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
     from types import ModuleType
 
 
@@ -61,11 +62,12 @@ def vcs_version(name: str, path: Path | str) -> Generator[ModuleType]:
                 file.write(content)
 
 
-with vcs_version(
-    name='nvitop_exporter.version',
-    path=(HERE / 'nvitop_exporter' / 'version.py'),
-) as version:
-    setup(
-        name='nvitop-exporter',
-        version=version.__version__,
-    )
+if __name__ == '__main__':
+    with vcs_version(
+        name='nvitop_exporter.version',
+        path=(HERE / 'nvitop_exporter' / 'version.py'),
+    ) as version:
+        setup(
+            name='nvitop-exporter',
+            version=version.__version__,
+        )
