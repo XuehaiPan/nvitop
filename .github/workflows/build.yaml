@@ -50,7 +50,7 @@ jobs:
         id: py
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8 - 3.13"
+          python-version: "3.8 - 3.14"
           update-environment: true
 
       - name: Upgrade build dependencies
@@ -129,7 +129,7 @@ jobs:
         uses: actions/setup-python@v5
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          python-version: "3.8 - 3.13"
+          python-version: "3.8 - 3.14"
           update-environment: true
 
       - name: Upgrade pip

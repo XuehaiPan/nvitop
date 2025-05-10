@@ -9,7 +9,7 @@ version: 2
 build:
   os: ubuntu-lts-latest
   tools:
-    python: "3.8"
+    python: latest
   jobs:
     post_install:
       - bash docs/source/fix-psutil-docstring.sh
