@@ -140,7 +140,7 @@ bash install-nvidia-driver.sh --latest                     # install the latest 
 
 Run `bash install-nvidia-driver.sh --help` for more information.
 
-<a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows using PDCurses. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
+<a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and `nvitop` supports Windows using ANSI escape codes. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
 
 ------
 
