@@ -3,7 +3,3 @@ sphinx-autoapi
 sphinx-autobuild
 sphinx-copybutton
 sphinx-rtd-theme
-
-lightning >= 2.0.0, < 3.0.0a0
-pytorch-lightning >= 1.5.0, < 2.0.0a0
-tensorflow-cpu >= 2.0.0, < 2.20.0a0
