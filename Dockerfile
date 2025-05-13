@@ -25,7 +25,7 @@ RUN python3 -m venv /venv && \
   python3 -m pip install --upgrade pip setuptools && \
   rm -rf /root/.cache && \
   echo && echo && echo "source /venv/bin/activate" >> /root/.bashrc
-ENV SHELL /bin/bash
+ENV SHELL=/bin/bash
 
 # Install nvitop
 COPY . /nvitop
