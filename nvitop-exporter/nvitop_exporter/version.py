@@ -28,11 +28,17 @@ if not __release__:
     import os
     import subprocess
 
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     try:
         prefix, sep, suffix = (
             subprocess.check_output(  # noqa: S603
-                ['git', 'describe', '--abbrev=7'],  # noqa: S607
-                cwd=os.path.dirname(os.path.abspath(__file__)),
+                [  # noqa: S607
+                    'git',
+                    f'--git-dir={os.path.join(root_dir, ".git")}',
+                    'describe',
+                    '--abbrev=7',
+                ],
+                cwd=root_dir,
                 stderr=subprocess.DEVNULL,
                 text=True,
             )
@@ -53,4 +59,4 @@ if not __release__:
     except (OSError, subprocess.CalledProcessError):
         pass
 
-    del os, subprocess
+    del os, subprocess, root_dir
