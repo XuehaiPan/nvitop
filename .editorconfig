@@ -12,7 +12,6 @@ insert_final_newline = true
 
 [*.py]
 indent_size = 4
-src_paths=nvitop
 
 [*.{yaml,yml,json,xml}]
 indent_size = 2

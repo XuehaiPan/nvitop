@@ -37,7 +37,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.repository == 'XuehaiPan/nvitop'
+    if: github.repository_owner == 'XuehaiPan'
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -50,7 +50,7 @@ jobs:
         id: py
         uses: actions/setup-python@v5
         with:
-          python-version: "3.8 - 3.13"
+          python-version: "3.8 - 3.14"
           update-environment: true
 
       - name: Upgrade build dependencies
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build]
     if: |
-      github.repository == 'XuehaiPan/nvitop' && github.event_name != 'pull_request' &&
+      github.repository_owner == 'XuehaiPan' && github.event_name != 'pull_request' &&
       (github.event_name != 'workflow_dispatch' || github.event.inputs.task == 'build-and-publish') &&
       (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/'))
     timeout-minutes: 15
@@ -129,7 +129,7 @@ jobs:
         uses: actions/setup-python@v5
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          python-version: "3.8 - 3.13"
+          python-version: "3.8 - 3.14"
           update-environment: true
 
       - name: Upgrade pip

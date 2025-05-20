@@ -706,7 +706,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 if process.is_zombie or process.no_permissions or process.is_gone:
                     info_segments = info.split(process.command)
                     if not IS_SUPERUSER and process.username != USERNAME:
-                        info_segments = [colored(item, attrs=('dark',)) for item in info]
+                        info_segments = [colored(item, attrs=('dark',)) for item in info_segments]
                     info = colored(
                         process.command,
                         color=('red' if process.is_gone else 'yellow'),
