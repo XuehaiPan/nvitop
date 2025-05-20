@@ -1496,4 +1496,3 @@ import nvitop.tui
 your source code should also be released under the GPL-3.0 License.
 
 If you want to add or modify some features of `nvitop`'s CLI, or copy some source code of `nvitop`'s CLI into your own code, the source code should also be released under the GPL-3.0 License (as `nvitop`  contains some modified source code from [ranger](https://github.com/ranger/ranger) under the GPL-3.0 License).
-

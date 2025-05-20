@@ -1,11 +1,16 @@
 ARG basetag="450-signed-ubuntu22.04"  # Ubuntu only
 FROM nvcr.io/nvidia/driver:"${basetag}"
 
+SHELL [ "/bin/bash" ]
+
+RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] || \
+  (echo "This Dockerfile is only supported on Ubuntu" >&2 && exit 1)
+
 ENV NVIDIA_DISABLE_REQUIRE=true
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Update APT sources
-RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] && \
+RUN . /etc/os-release && \
   echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME} main universe" > /etc/apt/sources.list && \
   echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME}-updates main universe" >> /etc/apt/sources.list && \
   echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu ${UBUNTU_CODENAME}-security main universe" >> /etc/apt/sources.list
