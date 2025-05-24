@@ -5,7 +5,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_storage:/var/lib/prometheus
     ports:
-      - "9090:9090"
+      - 9090:9090
     restart: unless-stopped
 
   grafana:
@@ -18,24 +18,26 @@ services:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_DISABLE_LOGIN_FORM=true
     ports:
-      - "3000:3000"
+      - 3000:3000
+    restart: unless-stopped
     depends_on:
       - prometheus
-    restart: unless-stopped
 
   nvitop-exporter:
-    image: nvitop-exporter:latest
-    build: ../nvitop-exporter
+    build:
+      dockerfile: Dockerfile
+      context: ..
+    network_mode: host
+    pid: host
+    ports:
+      - 5050:5050
+    restart: unless-stopped
     runtime: nvidia
     deploy:
       resources:
         reservations:
           devices:
             - capabilities: [gpu]
-    ports:
-      - "5050:5050"
-    pid: "host"
-    restart: unless-stopped
 
 volumes:
   prometheus_storage: {}
