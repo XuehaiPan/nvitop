@@ -1,4 +1,4 @@
-ARG basetag="450-signed-ubuntu22.04"  # Ubuntu only
+ARG basetag="535-5.15.0-140-generic-ubuntu22.04"  # Ubuntu only
 FROM nvcr.io/nvidia/driver:"${basetag}"
 
 SHELL [ "/bin/bash" ]
