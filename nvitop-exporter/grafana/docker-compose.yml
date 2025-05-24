@@ -1,15 +1,18 @@
 services:
-  prometheus-server:
-    image: prom/prometheus
+  prometheus:
+    image: prom/prometheus:latest
     volumes:
-      - ./prometheus-conf.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_storage:/var/lib/prometheus
     ports:
       - "9090:9090"
+    restart: unless-stopped
 
   grafana:
-    image: grafana/grafana
+    image: grafana/grafana:latest
     volumes:
-      - ./datasource-conf.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - grafana_storage:/var/lib/grafana
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -17,7 +20,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - prometheus-server
+      - prometheus
+    restart: unless-stopped
 
   nvitop-exporter:
     image: nvitop-exporter:latest
@@ -32,3 +36,7 @@ services:
       - "5050:5050"
     pid: "host"
     restart: unless-stopped
+
+volumes:
+  prometheus_storage: {}
+  grafana_storage: {}

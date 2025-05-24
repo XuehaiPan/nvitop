@@ -3,6 +3,7 @@ datasources:
   - name: nvitop-prometheus
     type: prometheus
     access: proxy
+    uid: nvitop-prometheus
     url: http://prometheus-server:9090
     isDefault: true
     version: 1
