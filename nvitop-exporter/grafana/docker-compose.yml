@@ -12,6 +12,7 @@ services:
     image: grafana/grafana:latest
     volumes:
       - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./dashboard.json:/usr/share/grafana/public/dashboards/home.json
       - grafana_storage:/var/lib/grafana
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
