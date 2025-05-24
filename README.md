@@ -314,11 +314,13 @@ Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/n
 
 ```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop  # clone this repo first
-docker build --tag nvitop:latest .  # build the Docker image
+docker buildx build --tag nvitop:latest .  # build the Docker image
 docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest  # run the Docker container
 ```
 
-The [`Dockerfile`](Dockerfile) has an optional build argument `basetag` (default: `450-signed-ubuntu22.04`) for the tag of image [`nvcr.io/nvidia/driver`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/driver/tags).
+The [`Dockerfile`](Dockerfile) has an optional build argument `basetag` (default: `535-5.15.0-140-generic-ubuntu22.04`) for the tag of image [`nvcr.io/nvidia/driver`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/driver/tags).
+
+If you only need to set up the grafana dashboard, please refer to the [nvitop-grafana README](./nvitop-grafana/README.md).
 
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
 
