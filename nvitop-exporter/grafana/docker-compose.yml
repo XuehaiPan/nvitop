@@ -4,8 +4,6 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_storage:/var/lib/prometheus
-    ports:
-      - 9090:9090
     restart: unless-stopped
 
   grafana:
@@ -32,8 +30,6 @@ services:
       context: ..
     command: ["--bind-address", "0.0.0.0", "--port", "5050"]
     pid: host
-    ports:
-      - 5050:5050
     restart: unless-stopped
     runtime: nvidia
     deploy:
