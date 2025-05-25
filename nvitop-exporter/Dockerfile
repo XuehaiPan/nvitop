@@ -1,14 +1,13 @@
-ARG basetag="535-5.15.0-140-generic-ubuntu22.04"  # Ubuntu only
-FROM nvcr.io/nvidia/driver:"${basetag}"
-
-SHELL [ "/bin/bash" ]
+FROM ubuntu:24.04
 
 RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] || \
   (echo "This Dockerfile is only supported on Ubuntu" >&2 && exit 1)
 
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Setup locale
 RUN apt-get update && \
-  apt-get install --quiet --yes --no-install-recommends locales && \
+  apt-get install --quiet --yes --no-install-recommends python3 locales && \
   rm -rf /var/lib/apt/lists/*
 ENV LC_ALL=C.UTF-8
 RUN update-locale LC_ALL="C.UTF-8"

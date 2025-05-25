@@ -4,7 +4,7 @@ datasources:
     type: prometheus
     access: proxy
     uid: nvitop-prometheus
-    url: http://prometheus-server:9090
+    url: http://prometheus:9090
     isDefault: true
     version: 1
     editable: true
