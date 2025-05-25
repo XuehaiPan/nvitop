@@ -9,10 +9,12 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:latest
+    build:
+      dockerfile: Dockerfile
+      context: .
     volumes:
       - ./datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
-      - ./dashboard.json:/usr/share/grafana/public/dashboards/home.json
+      - ./dashboard.yml:/etc/grafana/provisioning/dashboards/dashboard.yml
       - grafana_storage:/var/lib/grafana
     environment:
       - GF_AUTH_ANONYMOUS_ENABLED=true
@@ -28,7 +30,6 @@ services:
     build:
       dockerfile: Dockerfile
       context: ..
-    network_mode: host
     pid: host
     ports:
       - 5050:5050

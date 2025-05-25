@@ -1,0 +1,9 @@
+apiVersion: 1
+providers:
+  - name: 'nvitop-exporter'
+    folder: nvitop-exporter
+    type: file
+    allowUiUpdates: true
+    options:
+      path: /grafana/dashboards
+      foldersFromFilesStructure: true
