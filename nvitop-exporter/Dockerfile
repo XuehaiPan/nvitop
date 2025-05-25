@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:latest
 
 RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] || \
   (echo "This Dockerfile is only supported on Ubuntu" >&2 && exit 1)

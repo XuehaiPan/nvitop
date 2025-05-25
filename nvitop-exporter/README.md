@@ -29,7 +29,7 @@ A Grafana dashboard is provided to visualize the metrics collected by the export
 The source of the dashboard is [`dashboard.json`](grafana/dashboard.json).
 The Grafana dashboard can also be imported as by ID [22589](https://grafana.com/grafana/dashboards/22589-nvitop-dashboard).
 
-If you are using [`docker-compose`](https://docs.docker.com/compose), you can start a dashboard with following command:
+If you are using [`docker-compose`](https://docs.docker.com/compose), you can start a dashboard at [`http://localhost:3000`](http://localhost:3000) with the following command:
 
 ```bash
 cd nvitop-exporter/grafana
