@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Add `docker-compose` template for `nvitop-exporter` by [@gianfranco-s](https://github.com/gianfranco-s) in [#159](https://github.com/XuehaiPan/nvitop/pull/159).
 
 ### Changed
 
