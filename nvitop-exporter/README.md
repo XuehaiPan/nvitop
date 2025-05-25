@@ -23,20 +23,18 @@ scrape_configs:
       - targets: ['localhost:5050']
 ```
 
-### With Docker
-```bash
-cd nvitop-exporter/
-docker buildx build -t nvitop-exporter:latest .
-docker run -it --name nvitop-exporter --rm --runtime=nvidia --gpus=all --pid=host -p 5050:5050 nvitop-exporter:latest
-```
-
-If you need the exporter to report the local IP, you can replace `-p 5050:5050` with `--network=host`. This gives the container access to the host's network. Keep in mind this may have security implications, especially in multi-tenant environments.
-
 ## Grafana Dashboard
 
 A Grafana dashboard is provided to visualize the metrics collected by the exporter.
-The source of the dashboard is [`dashboard.json`](../nvitop-grafana/dashboard.json).
+The source of the dashboard is [`dashboard.json`](grafana/dashboard.json).
 The Grafana dashboard can also be imported as by ID [22589](https://grafana.com/grafana/dashboards/22589-nvitop-dashboard).
+
+If you are using [`docker-compose`](https://docs.docker.com/compose), you can start a dashboard with following command:
+
+```bash
+cd nvitop-exporter/grafana
+docker compose up --build --detach
+```
 
 <p align="center">
   <img width="100%" src="https://github.com/user-attachments/assets/e4867e64-2ca9-45bc-b524-929053f9673d" alt="Grafana Dashboard">

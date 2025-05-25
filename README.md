@@ -318,9 +318,16 @@ docker build --tag nvitop:latest .  # build the Docker image
 docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest  # run the Docker container
 ```
 
-If you only need to set up the grafana dashboard, please refer to the [nvitop-grafana README](./nvitop-grafana/README.md).
-
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
+
+If you only need to set up the Grafana dashboard, you can start a dashboard with following command:
+
+```bash
+cd nvitop-exporter/grafana
+docker compose up --build --detach
+```
+
+See [`nvitop-exporter`](./nvitop-exporter/README.md) for more details.
 
 #### For SSH Users
 
