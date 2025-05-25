@@ -18,4 +18,4 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 # Install nvitop-exporter
 RUN /bin/uv tool install nvitop-exporter
 
-ENTRYPOINT [ "/bin/uvx", "--quiet", "--offline", "nvitop-exporter", "--bind-address", "0.0.0.0", "--port", "5050" ]
+ENTRYPOINT [ "/bin/uvx", "--quiet", "--offline", "nvitop-exporter" ]
