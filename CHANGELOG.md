@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `docker-compose` template for `nvitop-exporter` by [@gianfranco-s](https://github.com/gianfranco-s) in [#159](https://github.com/XuehaiPan/nvitop/pull/159).
+-
 
 ### Changed
 
@@ -21,11 +21,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix one-time output rendering on exit for TUI by [@XuehaiPan](https://github.com/XuehaiPan).
+-
 
 ### Removed
 
 -
+
+------
+
+## [1.5.1] - 2025-05-26
+
+### Added
+
+- Add `docker-compose` template for `nvitop-exporter` by [@gianfranco-s](https://github.com/gianfranco-s) in [#159](https://github.com/XuehaiPan/nvitop/pull/159).
+
+### Fixed
+
+- Fix one-time output rendering on exit for TUI by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ------
 
@@ -184,7 +196,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.5.1
 [1.5.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.5.0
 [1.4.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.2
 [1.4.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.1
