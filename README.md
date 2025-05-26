@@ -310,7 +310,7 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
 
 #### For Docker Users
 
-Build and run the Docker image using [nvidia-docker](https://github.com/NVIDIA/nvidia-docker):
+Build and run the Docker image with [nvidia-container-toolkit](https://github.com/NVIDIA/nvidia-container-toolkit):
 
 ```bash
 git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop  # clone this repo first
@@ -318,9 +318,15 @@ docker build --tag nvitop:latest .  # build the Docker image
 docker run -it --rm --runtime=nvidia --gpus=all --pid=host nvitop:latest  # run the Docker container
 ```
 
-The [`Dockerfile`](Dockerfile) has an optional build argument `basetag` (default: `450-signed-ubuntu22.04`) for the tag of image [`nvcr.io/nvidia/driver`](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/driver/tags).
-
 **NOTE:** Don't forget to add the `--pid=host` option when running the container.
+
+If you only need to set up the Grafana dashboard, you can start a dashboard at [`http://localhost:3000`](http://localhost:3000) with the following command:
+
+```bash
+docker compose --project-directory=nvitop-exporter/grafana up --build --detach
+```
+
+See [`nvitop-exporter`](./nvitop-exporter/README.md) for more details.
 
 #### For SSH Users
 
