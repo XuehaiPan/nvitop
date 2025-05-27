@@ -62,26 +62,25 @@ jobs:
             org.opencontainers.image.description=GPU monitoring exporter for nvitop
             org.opencontainers.image.vendor=${{ github.repository_owner }}
 
-      - name: Build Docker image
+      - name: Build and test Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./nvitop-exporter
           file: ./nvitop-exporter/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          load: true
+          tags: test-image:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/nvitop-exporter.tar
 
       - name: Test Docker image
         run: |
-          docker load --input /tmp/nvitop-exporter.tar
-          docker run --rm ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version || 'latest' }} --help
+          docker run --rm test-image:latest --help
 
-      - name: Push Docker image
+      - name: Build and push multi-platform Docker image
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ./nvitop-exporter
@@ -98,5 +97,5 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.meta.outputs.digest }}
-          push-to-registry: true 
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
