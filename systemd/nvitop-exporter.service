@@ -2,27 +2,17 @@
 Description=NVITOP GPU Metrics Exporter
 Documentation=https://github.com/ntheanh201/nvitop
 After=network.target
-Wants=network.target
 
 [Service]
+#User=nvitop_exporter
+#Group=nvitop_exporter
 Type=simple
-User=nvitop-exporter
-Group=nvitop-exporter
 ExecStart=/usr/local/bin/nvitop-exporter --bind-address=0.0.0.0 --port=5050
 Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=nvitop-exporter
-
-# Security settings
-NoNewPrivileges=true
-PrivateTmp=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/var/lib/nvitop-exporter
-RuntimeDirectory=nvitop-exporter
-RuntimeDirectoryMode=0755
 
 # Resource limits
 LimitNOFILE=65536
