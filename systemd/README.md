@@ -25,15 +25,27 @@ sudo ./install.sh
 
 1. **Install dependencies:**
    ```bash
-   # Install Python and uv
+   # Install Python and required packages
+   sudo apt-get update
+   sudo apt-get install -y python3 python3-pip python3-dev
+
+   # Install uv
    curl -LsSf https://astral.sh/uv/install.sh | sh
    source ~/.bashrc
    ```
 
-2. **Install nvitop-exporter:**
+2. **Build and install nvitop-exporter:**
    ```bash
-   uv tool install nvitop-exporter
-   sudo ln -sf ~/.local/bin/nvitop-exporter /usr/local/bin/nvitop-exporter
+   # Install shiv for building binary
+   pip install shiv
+
+   # Build the binary
+   cd /path/to/nvitop
+   shiv -e nvitop_exporter.__main__:main -o nvitop-exporter --site-packages . nvitop prometheus-client
+   chmod +x nvitop-exporter
+
+   # Install binary
+   sudo cp nvitop-exporter /usr/local/bin/nvitop-exporter
    ```
 
 3. **Create service user:**

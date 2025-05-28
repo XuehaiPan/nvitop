@@ -19,9 +19,9 @@ DATA_DIR="/var/lib/nvitop-exporter"
 echo -e "${BLUE}🚀 Installing nvitop-exporter as systemd service${NC}"
 
 # Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}❌ This script must be run as root${NC}"
-   exit 1
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${RED}❌ This script must be run as root${NC}"
+    exit 1
 fi
 
 # Check if NVIDIA drivers are installed
@@ -29,20 +29,22 @@ if ! command -v nvidia-smi &> /dev/null; then
     echo -e "${YELLOW}⚠️  Warning: nvidia-smi not found. Make sure NVIDIA drivers are installed.${NC}"
 fi
 
-# Install Python and pip if not present
-echo -e "${BLUE}📦 Checking Python installation...${NC}"
-if ! command -v python3 &> /dev/null; then
-    echo -e "${YELLOW}Installing Python3...${NC}"
-    apt-get update
-    apt-get install -y python3 python3-pip python3-venv
-fi
+# Install dependencies
+echo -e "${BLUE}📦 Installing dependencies...${NC}"
+apt-get update
+apt-get install -y python3 python3-pip python3-dev
 
-# Install uv (modern Python package manager)
+# Install uv
 echo -e "${BLUE}📦 Installing uv package manager...${NC}"
-if ! command -v uv &> /dev/null; then
-    curl -LsSf https://astral.sh/uv/install.sh | sh
-    source ~/.bashrc
-fi
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc
+
+# Build nvitop-exporter binary
+echo -e "${BLUE}📦 Building nvitop-exporter binary...${NC}"
+cd "$(dirname "$0")/.."
+pip install shiv
+shiv -e nvitop_exporter.__main__:main -o nvitop-exporter --site-packages . nvitop prometheus-client
+chmod +x nvitop-exporter
 
 # Create service user and group
 echo -e "${BLUE}👤 Creating service user and group...${NC}"
@@ -59,13 +61,11 @@ mkdir -p "$DATA_DIR"
 chown "$SERVICE_USER:$SERVICE_GROUP" "$DATA_DIR"
 chmod 755 "$DATA_DIR"
 
-# Install nvitop-exporter using uv
-echo -e "${BLUE}📦 Installing nvitop-exporter...${NC}"
-uv tool install nvitop-exporter
-
-# Create symlink to make it available system-wide
-echo -e "${BLUE}🔗 Creating system-wide symlink...${NC}"
-ln -sf ~/.local/bin/nvitop-exporter "$INSTALL_DIR/nvitop-exporter"
+# Install binary
+echo -e "${BLUE}📦 Installing binary...${NC}"
+cp nvitop-exporter "$INSTALL_DIR/nvitop-exporter"
+chown "$SERVICE_USER:$SERVICE_GROUP" "$INSTALL_DIR/nvitop-exporter"
+chmod 755 "$INSTALL_DIR/nvitop-exporter"
 
 # Copy service file
 echo -e "${BLUE}📋 Installing systemd service...${NC}"
