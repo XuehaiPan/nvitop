@@ -1,5 +1,7 @@
 FROM ubuntu:latest
 
+LABEL org.opencontainers.image.source https://github.com/ntheanh201/nvitop
+
 RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] || \
   (echo "This Dockerfile is only supported on Ubuntu" >&2 && exit 1)
 
