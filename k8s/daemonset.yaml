@@ -38,7 +38,7 @@ spec:
       #     effect: NoSchedule
       containers:
       - name: nvitop-exporter
-        image: ghcr.io/ntheanh201/nvitop-exporter:latest
+        image: ghcr.io/ntheanh201/nvitop:exporter
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
@@ -113,4 +113,4 @@ spec:
           type: File
       serviceAccountName: nvitop-exporter
       restartPolicy: Always
-      dnsPolicy: ClusterFirstWithHostNet 
+      dnsPolicy: ClusterFirstWithHostNet

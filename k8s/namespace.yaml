@@ -4,4 +4,4 @@ metadata:
   name: monitoring
   labels:
     name: monitoring
-    purpose: gpu-monitoring 
+    purpose: gpu-monitoring

@@ -18,5 +18,5 @@ commonLabels:
   app.kubernetes.io/part-of: monitoring
 
 images:
-  - name: ghcr.io/ntheanh201/nvitop-exporter
-    newTag: 0.0.1
+  - name: ghcr.io/ntheanh201/nvitop
+    newTag: exporter-v1.5.1

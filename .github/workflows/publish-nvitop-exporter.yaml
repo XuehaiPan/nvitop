@@ -1,9 +1,19 @@
-name: Build and Publish nvitop-exporter Docker Image
+name: Build and Publish nvitop-exporter
 
 on:
   push:
     tags:
       - 'v*'  # Trigger on version tags (e.g., v1.0.0)
+  pull_request:
+    paths:
+      - setup.py
+      - setup.cfg
+      - pyproject.toml
+      - MANIFEST.in
+      - nvitop/version.py
+  release:
+    types:
+      - published
   workflow_dispatch:  # Allow manual trigger
     inputs:
       publish:
@@ -11,7 +21,10 @@ on:
         type: boolean
         default: true
         required: false
-
+      version:
+        description: 'Version tag to publish'
+        type: string
+        required: true
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: nvitop
@@ -34,27 +47,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Log in to Container Registry
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern=exporter-{{version}}
-            type=semver,pattern=exporter-{{major}}.{{minor}}
-            type=semver,pattern=exporter-{{major}}
-            type=raw,value=exporter,enable={{is_default_branch}}
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build Docker image
         run: |
           docker build -t test-image:latest ./nvitop-exporter
@@ -63,12 +55,15 @@ jobs:
         run: |
           docker run --rm test-image:latest --help
 
-      - name: Tag and push Docker image
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
+      - name: Login and push Docker image
         run: |
-          # Tag the image with all metadata tags
-          echo "${{ steps.meta.outputs.tags }}" | while read -r tag; do
-            echo "Tagging and pushing: $tag"
-            docker tag test-image:latest "$tag"
-            docker push "$tag"
-          done
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          
+          # Extract version from tag (e.g., v1.0.0 -> exporter-v1.0.0)
+          VERSION=${GITHUB_REF#refs/tags/}
+          TAG="exporter-${VERSION}"
+          IMAGE_FULL_NAME="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${TAG}"
+          
+          echo "Tagging and pushing: ${IMAGE_FULL_NAME}"
+          docker tag test-image:latest "${IMAGE_FULL_NAME}"
+          docker push "${IMAGE_FULL_NAME}"

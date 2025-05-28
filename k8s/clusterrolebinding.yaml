@@ -1,0 +1,15 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nvitop-exporter
+  labels:
+    app: nvitop-exporter
+    component: gpu-monitoring
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nvitop-exporter
+subjects:
+- kind: ServiceAccount
+  name: nvitop-exporter
+  namespace: monitoring

@@ -23,4 +23,4 @@ spec:
     - sourceLabels: [__meta_kubernetes_pod_name]
       targetLabel: pod
     - sourceLabels: [__meta_kubernetes_namespace]
-      targetLabel: namespace 
+      targetLabel: namespace
