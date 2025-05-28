@@ -191,4 +191,4 @@ The exporter provides GPU metrics including:
 - Process information
 - And more...
 
-Access metrics at: `http://<node-ip>:8080/metrics` 
+Access metrics at: `http://<node-ip>:8080/metrics`
