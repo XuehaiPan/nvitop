@@ -14,7 +14,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: nvitop-exporter
+  IMAGE_NAME: nvitop
 
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
@@ -23,19 +23,16 @@ concurrency:
 permissions:
   contents: read
   packages: write
+  id-token: write
+  attestations: write
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Container Registry
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
@@ -52,50 +49,26 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=semver,pattern=exporter-{{version}}
+            type=semver,pattern=exporter-{{major}}.{{minor}}
+            type=semver,pattern=exporter-{{major}}
+            type=raw,value=exporter,enable={{is_default_branch}}
             type=raw,value=latest,enable={{is_default_branch}}
-          labels: |
-            org.opencontainers.image.title=nvitop-exporter
-            org.opencontainers.image.description=GPU monitoring exporter for nvitop
-            org.opencontainers.image.vendor=${{ github.repository_owner }}
 
-      - name: Build and test Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./nvitop-exporter
-          file: ./nvitop-exporter/Dockerfile
-          platforms: linux/amd64
-          push: false
-          load: true
-          tags: test-image:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Build Docker image
+        run: |
+          docker build -t test-image:latest ./nvitop-exporter
 
       - name: Test Docker image
         run: |
           docker run --rm test-image:latest --help
 
-      - name: Build and push multi-platform Docker image
+      - name: Tag and push Docker image
         if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: ./nvitop-exporter
-          file: ./nvitop-exporter/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Generate artifact attestation
-        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
+        run: |
+          # Tag the image with all metadata tags
+          echo "${{ steps.meta.outputs.tags }}" | while read -r tag; do
+            echo "Tagging and pushing: $tag"
+            docker tag test-image:latest "$tag"
+            docker push "$tag"
+          done
