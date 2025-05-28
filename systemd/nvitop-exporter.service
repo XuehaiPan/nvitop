@@ -29,4 +29,4 @@ LimitNOFILE=65536
 MemoryMax=256M
 
 [Install]
-WantedBy=multi-user.target 
+WantedBy=multi-user.target

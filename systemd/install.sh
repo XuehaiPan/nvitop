@@ -101,4 +101,4 @@ echo -e "  Restart:   ${YELLOW}systemctl restart $SERVICE_NAME${NC}"
 echo -e "  Disable:   ${YELLOW}systemctl disable $SERVICE_NAME${NC}"
 echo -e "  Metrics:   ${YELLOW}curl http://localhost:8080/metrics${NC}"
 
-echo -e "\n${GREEN}🎉 Installation completed successfully!${NC}" 
+echo -e "\n${GREEN}🎉 Installation completed successfully!${NC}"

@@ -83,4 +83,4 @@ if [[ "$response" =~ ^[Yy]$ ]]; then
     fi
 fi
 
-echo -e "\n${GREEN}🎉 Uninstallation completed successfully!${NC}" 
+echo -e "\n${GREEN}🎉 Uninstallation completed successfully!${NC}"

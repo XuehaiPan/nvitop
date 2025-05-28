@@ -293,4 +293,4 @@ If you encounter issues:
 1. Check the troubleshooting section above
 2. Review service logs: `sudo journalctl -u nvitop-exporter`
 3. Test the binary manually: `nvitop-exporter --help`
-4. Open an issue on GitHub with logs and system information 
+4. Open an issue on GitHub with logs and system information
