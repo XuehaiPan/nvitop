@@ -64,14 +64,6 @@ resources:
     cpu: "200m"
 ```
 
-### Environment Variables
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NVITOP_EXPORTER_HOST` | `0.0.0.0` | Bind address |
-| `NVITOP_EXPORTER_PORT` | `8080` | Port number |
-| `NODE_NAME` | (auto) | Kubernetes node name |
-
 ### Command Arguments
 
 | Argument | Default | Description |
