@@ -30,33 +30,38 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 
 ### Table of Contents  <!-- omit in toc --> <!-- markdownlint-disable heading-increment -->
 
-- [Features](#features)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Device and Process Status](#device-and-process-status)
-  - [Resource Monitor](#resource-monitor)
-    - [For Docker Users](#for-docker-users)
-    - [For SSH Users](#for-ssh-users)
-    - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
-    - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
-  - [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool)
-  - [Callback Functions for Machine Learning Frameworks (DEPRECATED)](#callback-functions-for-machine-learning-frameworks-deprecated)
-    - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
-    - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
-    - [TensorBoard Integration](#tensorboard-integration)
-  - [More than a Monitor](#more-than-a-monitor)
-    - [Quick Start](#quick-start)
-    - [Status Snapshot](#status-snapshot)
-    - [Resource Metric Collector](#resource-metric-collector)
-    - [Low-level APIs](#low-level-apis)
-      - [Device](#device)
-      - [Process](#process)
-      - [Host (inherited from psutil)](#host-inherited-from-psutil)
-- [Screenshots](#screenshots)
-- [Changelog](#changelog)
-- [License](#license)
-  - [Copyright Notice](#copyright-notice)
+- [nvitop](#nvitop)
+    - [Table of Contents   ](#table-of-contents---)
+  - [Features](#features)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Device and Process Status](#device-and-process-status)
+    - [Resource Monitor](#resource-monitor)
+      - [For Docker Users](#for-docker-users)
+      - [nvitop-exporter Installation](#nvitop-exporter-installation)
+        - [Option 1: Linux systemd Service](#option-1-linux-systemd-service)
+        - [Option 2: Kubernetes Helm Chart](#option-2-kubernetes-helm-chart)
+      - [For SSH Users](#for-ssh-users)
+      - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
+      - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
+    - [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool)
+    - [Callback Functions for Machine Learning Frameworks (DEPRECATED)](#callback-functions-for-machine-learning-frameworks-deprecated)
+      - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
+      - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
+      - [TensorBoard Integration](#tensorboard-integration)
+    - [More than a Monitor](#more-than-a-monitor)
+      - [Quick Start](#quick-start)
+      - [Status Snapshot](#status-snapshot)
+      - [Resource Metric Collector](#resource-metric-collector)
+      - [Low-level APIs](#low-level-apis)
+        - [Device](#device)
+        - [Process](#process)
+        - [Host (inherited from psutil)](#host-inherited-from-psutil)
+  - [Screenshots](#screenshots)
+  - [Changelog](#changelog)
+  - [License](#license)
+    - [Copyright Notice](#copyright-notice)
 
 ------
 
@@ -327,6 +332,53 @@ docker compose --project-directory=nvitop-exporter/grafana up --build --detach
 ```
 
 See [`nvitop-exporter`](./nvitop-exporter/README.md) for more details.
+
+#### nvitop-exporter Installation
+
+The `nvitop-exporter` provides Prometheus metrics for GPU monitoring and can be deployed in multiple ways:
+
+##### Option 1: Linux systemd Service
+
+For Linux systems, you can install `nvitop-exporter` as a systemd service:
+
+```bash
+# Clone the repository
+git clone --depth=1 https://github.com/ntheanh201/nvitop.git && cd nvitop
+
+# Install the systemd service
+sudo cp systemd/nvitop-exporter.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable nvitop-exporter
+sudo systemctl start nvitop-exporter
+
+# Check service status
+sudo systemctl status nvitop-exporter
+
+# View logs
+sudo journalctl -u nvitop-exporter -f
+```
+
+The service will expose metrics at `http://localhost:5050/metrics` by default.
+
+##### Option 2: Kubernetes Helm Chart
+
+For Kubernetes clusters, you can deploy `nvitop-exporter` using Helm:
+
+```bash
+# Add the Helm repository
+helm repo add nvitop-exporter https://ntheanh201.id.vn/helm-charts
+helm repo update
+
+# Install nvitop-exporter
+helm install nvitop-exporter nvitop-exporter/nvitop-exporter
+
+# Or install with custom values
+helm install nvitop-exporter nvitop-exporter/nvitop-exporter \
+  --set service.port=8080 \
+  --set resources.limits.memory=512Mi
+```
+
+The Helm chart will deploy `nvitop-exporter` as a DaemonSet to collect metrics from all GPU nodes in your cluster.
 
 #### For SSH Users
 
