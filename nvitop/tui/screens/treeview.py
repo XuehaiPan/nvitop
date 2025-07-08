@@ -307,7 +307,7 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
             for i, process in enumerate(snapshots):
                 if process._ident[:2] == identity[:2]:  # pylint: disable=protected-access
                     self.selection.index = i
-                    self.selection.process = process  # type: ignore[assignment]
+                    self.selection.process = process
                     break
 
     @classmethod
@@ -483,7 +483,7 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
                 )
 
             if y == self.y_mouse:
-                self.selection.process = process  # type: ignore[assignment]
+                self.selection.process = process
                 hint = True
 
             owned = IS_SUPERUSER or str(process.username) == USERNAME
