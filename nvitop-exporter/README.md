@@ -7,9 +7,9 @@ Prometheus exporter built on top of `nvitop`.
 Start the exporter with the following command:
 
 ```bash
-pipx run nvitop-exporter --bind-address 0.0.0.0 --port 5050
-# or
 uvx nvitop-exporter --bind-address 0.0.0.0 --port 5050
+# or
+pipx run nvitop-exporter --bind-address 0.0.0.0 --port 5050
 ```
 
 Then you can access the metrics at [`http://localhost:5050/metrics`](http://localhost:5050/metrics).
