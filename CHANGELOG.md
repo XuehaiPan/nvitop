@@ -17,11 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--
+- Minor tweak display for device name in TUI by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Fixed
 
--
+- Fix snapshot cache for GPU processes with shared host process by [@XuehaiPan](https://github.com/XuehaiPan) in [#172](https://github.com/XuehaiPan/nvitop/pull/172).
 
 ### Removed
 
