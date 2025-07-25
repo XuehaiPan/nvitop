@@ -413,8 +413,8 @@ def main() -> int:
 
             or install `nvitop` in an isolated environment:
 
-                pip3 install --upgrade pipx
-                pipx run nvitop
+                pip3 install --upgrade uv
+                uvx nvitop
             """,
         ).strip()
         messages.append(f'{message}\n')

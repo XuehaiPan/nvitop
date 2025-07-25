@@ -26,7 +26,7 @@ repos:
         fail_fast: true
       - id: debug-statements
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.11.11
+    rev: v0.12.5
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
@@ -38,7 +38,7 @@ repos:
       - id: codespell
         additional_dependencies: [".[toml]"]
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
+    rev: v1.17.0
     hooks:
       - id: mypy
         exclude: |

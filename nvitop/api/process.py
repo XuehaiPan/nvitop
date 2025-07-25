@@ -963,7 +963,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             snapshots with :meth:`GpuProcess.take_snapshots`, which caches the results and reduces
             redundant queries. See also :meth:`take_snapshots` and :meth:`failsafe`.
         """
-        host_process_snapshot_cache = host_process_snapshot_cache or {}
+        if host_process_snapshot_cache is None:
+            host_process_snapshot_cache = {}
         try:
             host_snapshot = host_process_snapshot_cache[self.pid]
         except KeyError:

@@ -11,8 +11,8 @@ body:
         You may try the latest version of `nvitop` in an isolated environment with the following commands first:
 
         ```bash
-        pip3 install --upgrade pipx
-        PYTHONFAULTHANDLER=1 pipx run --spec git+https://github.com/XuehaiPan/nvitop.git nvitop
+        pip3 install --upgrade uv
+        PYTHONFAULTHANDLER=1 uvx --from git+https://github.com/XuehaiPan/nvitop.git nvitop
         ```
 
   - type: checkboxes

@@ -260,19 +260,19 @@ def collect_in_background(
 
     def target() -> None:
         if on_start is not None:
-            on_start(collector)  # type: ignore[arg-type]
+            on_start(collector)
         try:
-            with collector(tag):  # type: ignore[misc]
+            with collector(tag):
                 try:
-                    next_snapshot = timer() + interval  # type: ignore[operator]
-                    while on_collect(collector.collect()):  # type: ignore[union-attr]
+                    next_snapshot = timer() + interval
+                    while on_collect(collector.collect()):
                         time.sleep(max(0.0, next_snapshot - timer()))
-                        next_snapshot += interval  # type: ignore[operator]
+                        next_snapshot += interval
                 except KeyboardInterrupt:
                     pass
         finally:
             if on_stop is not None:
-                on_stop(collector)  # type: ignore[arg-type]
+                on_stop(collector)
 
     daemon = threading.Thread(target=target, name=tag, daemon=True)
     daemon.collector = collector  # type: ignore[attr-defined]

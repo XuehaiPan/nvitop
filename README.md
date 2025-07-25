@@ -151,33 +151,15 @@ Run `bash install-nvidia-driver.sh --help` for more information.
 
 ## Installation
 
-**It is highly recommended to install `nvitop` in an isolated virtual environment.** Simple installation and run via [`pipx`](https://pypa.github.io/pipx) or [`uvx`](https://docs.astral.sh/uv/guides/tools) (a.k.a. `uv tool run`):
+**It is highly recommended to install `nvitop` in an isolated virtual environment.** Simple installation and run via [`uvx`](https://docs.astral.sh/uv/guides/tools) (a.k.a. `uv tool run`) or [`pipx`](https://pypa.github.io/pipx):
 
 ```bash
-pipx run nvitop
-# or
 uvx nvitop
+# or
+pipx run nvitop
 ```
 
 You can also set this command as an alias in your shell startup file, e.g.:
-
-```bash
-# For Bash
-echo 'alias nvitop="pipx run nvitop"' >> ~/.bashrc
-
-# For Zsh
-echo 'alias nvitop="pipx run nvitop"' >> ~/.zshrc
-
-# For Fish
-mkdir -p ~/.config/fish
-echo 'alias nvitop="pipx run nvitop"' >> ~/.config/fish/config.fish
-
-# For PowerShell
-New-Item -Path (Split-Path -Parent -Path $PROFILE.CurrentUserAllHosts) -ItemType Directory -Force
-'Function nvitop { pipx run nvitop @Args }' >> $PROFILE.CurrentUserAllHosts
-```
-
-or
 
 ```bash
 # For Bash
@@ -195,6 +177,24 @@ New-Item -Path (Split-Path -Parent -Path $PROFILE.CurrentUserAllHosts) -ItemType
 'Function nvitop { uvx nvitop @Args }' >> $PROFILE.CurrentUserAllHosts
 ```
 
+or
+
+```bash
+# For Bash
+echo 'alias nvitop="pipx run nvitop"' >> ~/.bashrc
+
+# For Zsh
+echo 'alias nvitop="pipx run nvitop"' >> ~/.zshrc
+
+# For Fish
+mkdir -p ~/.config/fish
+echo 'alias nvitop="pipx run nvitop"' >> ~/.config/fish/config.fish
+
+# For PowerShell
+New-Item -Path (Split-Path -Parent -Path $PROFILE.CurrentUserAllHosts) -ItemType Directory -Force
+'Function nvitop { pipx run nvitop @Args }' >> $PROFILE.CurrentUserAllHosts
+```
+
 Install from PyPI ([![PyPI](https://img.shields.io/pypi/v/nvitop?label=pypi&logo=pypi)](https://pypi.org/project/nvitop)):
 
 ```bash
@@ -207,7 +207,7 @@ Install from conda-forge ([![conda-forge](https://img.shields.io/conda/v/conda-f
 conda install -c conda-forge nvitop
 ```
 
-Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.5.1)):
+Install the latest version from GitHub (![Commit Count](https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.5.2)):
 
 ```bash
 pip3 install --upgrade pip setuptools
