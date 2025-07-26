@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--
+- Draw network and disk I/O graphs with centered symmetric zero in Grafana dashboard by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Fixed
 
