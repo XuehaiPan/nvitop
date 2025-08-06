@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Fix `device.pcie_tx_throughput()` returns PCIe RX throughput due to a typo in argument by [@kyet](https://github.com/kyet) in [#176](https://github.com/XuehaiPan/nvitop/pull/176).
 
 ### Removed
 
