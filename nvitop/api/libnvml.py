@@ -16,7 +16,7 @@
 # ==============================================================================
 """Utilities for the NVML Python bindings (`nvidia-ml-py <https://pypi.org/project/nvidia-ml-py>`_)."""
 
-# pylint: disable=invalid-name
+# pylint: disable=too-many-lines,invalid-name
 
 from __future__ import annotations
 
@@ -810,7 +810,7 @@ if not _pynvml_installation_corrupted:
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
-    nvmlMemory_v2 = getattr(_pynvml, 'nvmlMemory_v2', _ctypes.sizeof(c_nvmlMemory_v2_t) | 2 << 24)
+    nvmlMemory_v2 = getattr(_pynvml, 'nvmlMemory_v2', _ctypes.sizeof(c_nvmlMemory_v2_t) | (2 << 24))
     __get_memory_info_version_suffix: str | None = None
     c_nvmlMemory_t = c_nvmlMemory_v2_t
 
@@ -879,6 +879,88 @@ if not _pynvml_installation_corrupted:
         ret = fn(handle, _ctypes.byref(c_memory))
         _pynvml._nvmlCheckReturn(ret)  # pylint: disable=protected-access
         return c_memory
+
+    # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
+    class c_nvmlTemperature_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
+        _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Structure format version (must be 1).
+            ('version', _ctypes.c_uint),
+            # Sensor type.
+            ('sensorType', _ctypes.c_uint),
+            # Temperature in degrees Celsius.
+            ('temperature', _ctypes.c_int),
+        ]
+
+    nvmlTemperature_v1: int = getattr(
+        _pynvml,
+        'nvmlTemperature_v1',
+        _ctypes.sizeof(c_nvmlTemperature_v1_t) | (1 << 24),
+    )
+    __get_temperature_version_suffix: str | None = None
+
+    def __determine_get_temperature_version_suffix() -> str:
+        """Determine the version suffix for the NVML temperature functions."""
+        global __get_temperature_version_suffix  # pylint: disable=global-statement
+
+        if __get_temperature_version_suffix is None:
+            # pylint: disable-next=protected-access,no-member
+            nvml_get_function_pointer = _pynvml._nvmlGetFunctionPointer
+            __get_temperature_version_suffix = 'V'
+            try:
+                nvml_get_function_pointer('nvmlDeviceGetTemperatureV')
+            except NVMLError_FunctionNotFound:
+                LOGGER.debug('Failed to found symbol `nvmlDeviceGetTemperatureV`.')
+                __get_temperature_version_suffix = ''
+                LOGGER.debug(
+                    'NVML get temperature version 1 API is not available due to incompatible '
+                    'NVIDIA driver. Fallback to use NVML get temperature API without version.',
+                )
+            else:
+                LOGGER.debug('Found symbol `nvmlDeviceGetTemperatureV`.')
+                LOGGER.debug('NVML get temperature version 1 is available.')
+
+        return __get_temperature_version_suffix
+
+    def nvmlDeviceGetTemperature(  # pylint: disable=function-redefined
+        handle: c_nvmlDevice_t,
+        sensor: int,
+    ) -> int:
+        """Retrieve the current temperature readings (in degrees C) for the given device.
+
+        Raises:
+            NVMLError_Uninitialized:
+                If NVML was not first initialized with :func:`nvmlInit`.
+            NVMLError_InvalidArgument:
+                If device is invalid, sensorType is invalid or temp is NULL.
+            NVMLError_NotSupported:
+                If the device does not have the specified sensor.
+            NVMLError_GpuIsLost:
+                If the target GPU has fallen off the bus or is otherwise inaccessible.
+            NVMLError_Unknown:
+                On any unexpected error.
+        """
+        version_suffix = __determine_get_temperature_version_suffix()
+        if version_suffix == 'V':
+            c_temp_v1 = c_nvmlTemperature_v1_t()
+            c_temp_v1.version = nvmlTemperature_v1  # pylint: disable=attribute-defined-outside-init
+            c_temp_v1.sensorType = _ctypes.c_uint(sensor)  # pylint: disable=attribute-defined-outside-init
+            # pylint: disable-next=protected-access
+            fn = _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetTemperatureV')
+            ret = fn(handle, _ctypes.byref(c_temp_v1))
+            _pynvml._nvmlCheckReturn(ret)  # pylint: disable=protected-access
+            return int(c_temp_v1.temperature)
+
+        if version_suffix == '':
+            c_temp = _ctypes.c_uint(0)
+            # pylint: disable-next=protected-access
+            fn = _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetTemperature')
+            ret = fn(handle, _ctypes.c_uint(sensor), _ctypes.byref(c_temp))
+            _pynvml._nvmlCheckReturn(ret)  # pylint: disable=protected-access
+            return c_temp.value
+
+        raise ValueError(
+            f'Unknown version suffix {version_suffix!r} for function `nvmlDeviceGetTemperature`.',
+        )
 
 else:
     LOGGER.warning(
