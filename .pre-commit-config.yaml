@@ -8,7 +8,7 @@ ci:
 default_stages: [pre-commit, pre-push, manual]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v5.0.0
+    rev: v6.0.0
     hooks:
       - id: check-symlinks
       - id: destroyed-symlinks
@@ -26,7 +26,7 @@ repos:
         fail_fast: true
       - id: debug-statements
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.7
+    rev: v0.12.8
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
