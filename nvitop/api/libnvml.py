@@ -265,9 +265,13 @@ def _lazy_init() -> None:
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
+    if __initialized:
+        return
+
     with __lock:
         if __initialized:
-            return
+            return  # type: ignore[unreachable]
+
     nvmlInit()
     _atexit.register(nvmlShutdown)
 
