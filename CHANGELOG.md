@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
--
+- Remove per-`nvidia-ml-py`-version install extras and prefer `nvitop[cudaXX]` instead by [@XuehaiPan](https://github.com/XuehaiPan) in [#179](https://github.com/XuehaiPan/nvitop/pull/179).
 
 ------
 
