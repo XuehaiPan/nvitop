@@ -6,7 +6,7 @@
 #
 # or
 #
-#   pip install 'nvitop[pynvml-xx.yyy.zz]'
+#   pip install 'nvitop[cudaXX]'
 #
 
 """Setup script for ``nvitop``."""
@@ -101,13 +101,6 @@ if __name__ == '__main__':
                 extra_requirements[f'cuda{pynvml_major}'] = [
                     f'nvidia-ml-py >= {pynvml_range[0]}, <= {pynvml_range[-1]}',
                 ]
-        extra_requirements.update(
-            {
-                # The identifier could not start with numbers, add a prefix `pynvml-`
-                f'pynvml-{pynvml}': [f'nvidia-ml-py == {pynvml}']
-                for pynvml in version.PYNVML_VERSION_CANDIDATES
-            },
-        )
 
         setup(
             name='nvitop',

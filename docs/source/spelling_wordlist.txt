@@ -17,6 +17,7 @@ csv
 ctrl
 ctx
 cuda
+cudaxx
 cudadevice
 cudaerror
 cwd

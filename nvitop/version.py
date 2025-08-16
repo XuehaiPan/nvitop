@@ -95,17 +95,17 @@ PYNVML_VERSION_CANDIDATES = (
 """The list of supported ``nvidia-ml-py`` versions.
 See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
 
-To install ``nvitop`` with a specific version of ``nvidia-ml-py``, use ``nvitop[pynvml-xx.yyy.zzz]``, for example:
+To install ``nvitop`` with a specific version of ``nvidia-ml-py``, use:
 
 .. code:: bash
 
-    pip3 install 'nvitop[pynvml-11.450.51]'
+    pip3 install nvidia-ml-py==xx.yyy.zz nvitop
 
 or
 
 .. code:: bash
 
-    pip3 install nvitop nvidia-ml-py==11.450.51
+    pip3 install 'nvitop[cudaXX]'
 
 Note:
     The package ``nvidia-ml-py`` is not backward compatible over releases. This may cause problems
