@@ -2333,7 +2333,7 @@
           },
           "disableTextWrap": false,
           "editorMode": "builder",
-          "expr": "gpu_pcie_rx_throughput_MiBps{hostname=~\"$hostname\"}",
+          "expr": "gpu_pcie_tx_throughput_MiBps{hostname=~\"$hostname\"}",
           "fullMetaSearch": false,
           "hide": false,
           "includeNullMetadata": true,
