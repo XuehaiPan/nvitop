@@ -47,7 +47,7 @@ classifiers = [
 ]
 dependencies = [
     # Sync with nvitop/version.py and requirements.txt
-    "nvidia-ml-py >= 11.450.51, < 12.576.0a0",
+    "nvidia-ml-py >= 11.450.51, < 13.581.0a0",
     "psutil >= 5.6.6",
     "colorama >= 0.4.0; platform_system == 'Windows'",
     "windows-curses >= 2.2.0; platform_system == 'Windows'",

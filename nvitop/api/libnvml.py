@@ -16,7 +16,7 @@
 # ==============================================================================
 """Utilities for the NVML Python bindings (`nvidia-ml-py <https://pypi.org/project/nvidia-ml-py>`_)."""
 
-# pylint: disable=invalid-name
+# pylint: disable=too-many-lines,invalid-name
 
 from __future__ import annotations
 
@@ -265,9 +265,13 @@ def _lazy_init() -> None:
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
+    if __initialized:
+        return
+
     with __lock:
         if __initialized:
-            return
+            return  # type: ignore[unreachable]
+
     nvmlInit()
     _atexit.register(nvmlShutdown)
 
@@ -531,12 +535,24 @@ def nvmlCheckReturn(retval: _Any, types: type | tuple[type, ...] | None = None, 
 # Patch layers for backward compatibility ##########################################################
 _pynvml_installation_corrupted: bool = not callable(
     getattr(_pynvml, '_nvmlGetFunctionPointer', None),
-)
+) and isinstance(getattr(_pynvml, '_PrintableStructure', None), type)
 
 # Patch function `nvmlDeviceGet{Compute,Graphics,MPSCompute}RunningProcesses`
 if not _pynvml_installation_corrupted:
+    # pylint: disable-next=ungrouped-imports
+    from pynvml import _nvmlGetFunctionPointer, _PrintableStructure, nvmlStructToFriendlyObject
+
+    def _nvmlLookupFunctionPointer(symbol: str) -> _Any | None:
+        try:
+            ptr = _nvmlGetFunctionPointer(symbol)
+        except NVMLError_FunctionNotFound:
+            LOGGER.debug('Failed to found symbol `%s`.', symbol)
+            return None
+        LOGGER.debug('Found symbol `%s`.', symbol)
+        return ptr
+
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
-    class c_nvmlProcessInfo_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
+    class c_nvmlProcessInfo_v1_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Process ID
             ('pid', _ctypes.c_uint),
@@ -550,7 +566,7 @@ if not _pynvml_installation_corrupted:
         }
 
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
-    class c_nvmlProcessInfo_v2_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
+    class c_nvmlProcessInfo_v2_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Process ID
             ('pid', _ctypes.c_uint),
@@ -570,7 +586,7 @@ if not _pynvml_installation_corrupted:
         }
 
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
-    class c_nvmlProcessInfo_v3_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
+    class c_nvmlProcessInfo_v3_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Process ID
             ('pid', _ctypes.c_uint),
@@ -599,22 +615,11 @@ if not _pynvml_installation_corrupted:
         global __get_running_processes_version_suffix, c_nvmlProcessInfo_t  # pylint: disable=global-statement
 
         if __get_running_processes_version_suffix is None:
-            # pylint: disable-next=protected-access,no-member
-            nvmlGetFunctionPointer = _pynvml._nvmlGetFunctionPointer
             __get_running_processes_version_suffix = '_v3'
-
-            def lookup(symbol: str) -> _Any | None:
-                try:
-                    ptr = nvmlGetFunctionPointer(symbol)
-                except NVMLError_FunctionNotFound:
-                    LOGGER.debug('Failed to found symbol `%s`.', symbol)
-                    return None
-                LOGGER.debug('Found symbol `%s`.', symbol)
-                return ptr
-
-            if lookup('nvmlDeviceGetComputeRunningProcesses_v3'):
-                if lookup('nvmlDeviceGetConfComputeMemSizeInfo') and not lookup(
-                    'nvmlDeviceGetRunningProcessDetailList',
+            if _nvmlLookupFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v3') is not None:
+                if (
+                    _nvmlLookupFunctionPointer('nvmlDeviceGetConfComputeMemSizeInfo') is not None
+                    and _nvmlLookupFunctionPointer('nvmlDeviceGetRunningProcessDetailList') is None
                 ):
                     LOGGER.debug(
                         'NVML get running process version 3 API with v3 type struct is available.',
@@ -634,7 +639,10 @@ if not _pynvml_installation_corrupted:
                     'due to incompatible NVIDIA driver. Fallback to use get running process '
                     'version 2 API with v2 type struct.',
                 )
-                if lookup('nvmlDeviceGetComputeRunningProcesses_v2'):
+                if (
+                    _nvmlLookupFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v2')
+                    is not None
+                ):
                     LOGGER.debug(
                         'NVML get running process version 2 API with v2 type struct is available.',
                     )
@@ -663,8 +671,7 @@ if not _pynvml_installation_corrupted:
 
         # First call to get the size
         c_count = _ctypes.c_uint(0)
-        # pylint: disable-next=protected-access
-        fn = _pynvml._nvmlGetFunctionPointer(f'{func}{version_suffix}')
+        fn = _nvmlGetFunctionPointer(f'{func}{version_suffix}')
         ret = fn(handle, _ctypes.byref(c_count), None)
 
         if ret == NVML_SUCCESS:
@@ -679,12 +686,13 @@ if not _pynvml_installation_corrupted:
 
             # Make the call again
             ret = fn(handle, _ctypes.byref(c_count), c_processes)
-            _pynvml._nvmlCheckReturn(ret)  # pylint: disable=protected-access
+            if ret != NVML_SUCCESS:
+                raise NVMLError(ret)
 
             processes = []
             for i in range(c_count.value):
                 # Use an alternative struct for this object
-                obj = _pynvml.nvmlStructToFriendlyObject(c_processes[i])
+                obj = nvmlStructToFriendlyObject(c_processes[i])
                 if obj.usedGpuMemory == ULONGLONG_MAX:
                     # Special case for WDDM on Windows, see comment above
                     obj.usedGpuMemory = None
@@ -781,7 +789,7 @@ else:
 # Patch function `nvmlDeviceGetMemoryInfo`
 if not _pynvml_installation_corrupted:
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
-    class c_nvmlMemory_v1_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
+    class c_nvmlMemory_v1_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Total physical device memory (in bytes).
             ('total', _ctypes.c_ulonglong),
@@ -794,7 +802,7 @@ if not _pynvml_installation_corrupted:
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
-    class c_nvmlMemory_v2_t(_pynvml._PrintableStructure):  # pylint: disable=protected-access
+    class c_nvmlMemory_v2_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Structure format version (must be 2).
             ('version', _ctypes.c_uint),
@@ -810,7 +818,7 @@ if not _pynvml_installation_corrupted:
         ]
         _fmt_: _ClassVar[dict[str, str]] = {'<default>': '%d B'}
 
-    nvmlMemory_v2 = getattr(_pynvml, 'nvmlMemory_v2', _ctypes.sizeof(c_nvmlMemory_v2_t) | 2 << 24)
+    nvmlMemory_v2 = getattr(_pynvml, 'nvmlMemory_v2', _ctypes.sizeof(c_nvmlMemory_v2_t) | (2 << 24))
     __get_memory_info_version_suffix: str | None = None
     c_nvmlMemory_t = c_nvmlMemory_v2_t
 
@@ -818,22 +826,16 @@ if not _pynvml_installation_corrupted:
         global __get_memory_info_version_suffix, c_nvmlMemory_t  # pylint: disable=global-statement
 
         if __get_memory_info_version_suffix is None:
-            # pylint: disable-next=protected-access,no-member
-            nvml_get_function_pointer = _pynvml._nvmlGetFunctionPointer
             __get_memory_info_version_suffix = '_v2'
-            try:
-                nvml_get_function_pointer('nvmlDeviceGetMemoryInfo_v2')
-            except NVMLError_FunctionNotFound:
-                LOGGER.debug('Failed to found symbol `nvmlDeviceGetMemoryInfo_v2`.')
+            if _nvmlLookupFunctionPointer('nvmlDeviceGetMemoryInfo_v2') is not None:
+                LOGGER.debug('NVML get memory info version 2 is available.')
+            else:
                 c_nvmlMemory_t = c_nvmlMemory_v1_t
                 __get_memory_info_version_suffix = ''
                 LOGGER.debug(
                     'NVML get memory info version 2 API is not available due to incompatible '
                     'NVIDIA driver. Fallback to use NVML get memory info version 1 API.',
                 )
-            else:
-                LOGGER.debug('Found symbol `nvmlDeviceGetMemoryInfo_v2`.')
-                LOGGER.debug('NVML get memory info version 2 is available.')
 
         return __get_memory_info_version_suffix
 
@@ -865,25 +867,113 @@ if not _pynvml_installation_corrupted:
         if version_suffix == '_v2':
             c_memory = c_nvmlMemory_v2_t()
             c_memory.version = nvmlMemory_v2  # pylint: disable=attribute-defined-outside-init
-            # pylint: disable-next=protected-access
-            fn = _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo_v2')
         elif version_suffix in {'_v1', ''}:
             c_memory = c_nvmlMemory_v1_t()
-            # pylint: disable-next=protected-access
-            fn = _pynvml._nvmlGetFunctionPointer('nvmlDeviceGetMemoryInfo')
+            version_suffix = ''
         else:
             raise ValueError(
                 f'Unknown version suffix {version_suffix!r} for '
                 'function `nvmlDeviceGetMemoryInfo`.',
             )
+
+        fn = _nvmlGetFunctionPointer(f'nvmlDeviceGetMemoryInfo{version_suffix}')
         ret = fn(handle, _ctypes.byref(c_memory))
-        _pynvml._nvmlCheckReturn(ret)  # pylint: disable=protected-access
+        if ret != NVML_SUCCESS:
+            raise NVMLError(ret)
         return c_memory
 
 else:
     LOGGER.warning(
         'Your installed package `nvidia-ml-py` is corrupted. '
         'Skip patch functions `nvmlDeviceGetMemoryInfo`. '
+        'You may get incorrect or incomplete results. Please consider reinstall package '
+        '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
+    )
+
+# Patch function `nvmlDeviceGetTemperature`
+if not _pynvml_installation_corrupted:
+    # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
+    class c_nvmlTemperature_v1_t(_PrintableStructure):
+        _fields_: _ClassVar[list[tuple[str, type]]] = [
+            # Structure format version (must be 1).
+            ('version', _ctypes.c_uint),
+            # Sensor type.
+            ('sensorType', _ctypes.c_uint),
+            # Temperature in degrees Celsius.
+            ('temperature', _ctypes.c_int),
+        ]
+
+    nvmlTemperature_v1: int = getattr(
+        _pynvml,
+        'nvmlTemperature_v1',
+        _ctypes.sizeof(c_nvmlTemperature_v1_t) | (1 << 24),
+    )
+    __get_temperature_version_suffix: str | None = None
+
+    def __determine_get_temperature_version_suffix() -> str:
+        """Determine the version suffix for the NVML temperature functions."""
+        global __get_temperature_version_suffix  # pylint: disable=global-statement
+
+        if __get_temperature_version_suffix is None:
+            __get_temperature_version_suffix = 'V'
+            if _nvmlLookupFunctionPointer('nvmlDeviceGetTemperatureV') is not None:
+                LOGGER.debug('NVML get temperature version 1 API is available.')
+            else:
+                __get_temperature_version_suffix = ''
+                LOGGER.debug(
+                    'NVML get temperature version 1 API is not available due to incompatible '
+                    'NVIDIA driver. Fallback to use NVML get temperature API without version.',
+                )
+
+        return __get_temperature_version_suffix
+
+    def nvmlDeviceGetTemperature(  # pylint: disable=function-redefined
+        handle: c_nvmlDevice_t,
+        sensor: int,
+    ) -> int:
+        """Retrieve the current temperature readings (in degrees C) for the given device.
+
+        Raises:
+            NVMLError_Uninitialized:
+                If NVML was not first initialized with :func:`nvmlInit`.
+            NVMLError_InvalidArgument:
+                If device is invalid, sensorType is invalid or temp is NULL.
+            NVMLError_NotSupported:
+                If the device does not have the specified sensor.
+            NVMLError_GpuIsLost:
+                If the target GPU has fallen off the bus or is otherwise inaccessible.
+            NVMLError_Unknown:
+                On any unexpected error.
+        """
+        version_suffix = __determine_get_temperature_version_suffix()
+        if version_suffix == 'V':
+            c_temp_v1 = c_nvmlTemperature_v1_t()
+            # pylint: disable-next=attribute-defined-outside-init
+            c_temp_v1.version = nvmlTemperature_v1
+            # pylint: disable-next=attribute-defined-outside-init
+            c_temp_v1.sensorType = _ctypes.c_uint(sensor)
+            fn = _nvmlGetFunctionPointer('nvmlDeviceGetTemperatureV')
+            ret = fn(handle, _ctypes.byref(c_temp_v1))
+            if ret != NVML_SUCCESS:
+                raise NVMLError(ret)
+            return int(c_temp_v1.temperature)
+
+        if version_suffix == '':
+            c_temp = _ctypes.c_uint(0)
+            fn = _nvmlGetFunctionPointer('nvmlDeviceGetTemperature')
+            ret = fn(handle, _ctypes.c_uint(sensor), _ctypes.byref(c_temp))
+            if ret != NVML_SUCCESS:
+                raise NVMLError(ret)
+            return c_temp.value
+
+        raise ValueError(
+            f'Unknown version suffix {version_suffix!r} for function `nvmlDeviceGetTemperature`.',
+        )
+
+else:
+    LOGGER.warning(
+        'Your installed package `nvidia-ml-py` is corrupted. '
+        'Skip patch functions `nvmlDeviceGetTemperature`. '
         'You may get incorrect or incomplete results. Please consider reinstall package '
         '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
     )

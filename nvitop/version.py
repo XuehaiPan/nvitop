@@ -68,7 +68,7 @@ if not __release__:
 PYNVML_VERSION_CANDIDATES = (
     # Sync with pyproject.toml and requirements.txt
     '11.450.51',  # the last version supports the R430 driver (CUDA 10.x)
-    '11.450.129',  # requires at last the R450 driver
+    '11.450.129',  # requires at least the R450 driver
     '11.460.79',
     '11.470.66',
     '11.495.46',
@@ -90,6 +90,7 @@ PYNVML_VERSION_CANDIDATES = (
     '12.570.86',
     '12.570.172',
     '12.575.51',
+    '13.580.65',
 )
 """The list of supported ``nvidia-ml-py`` versions.
 See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
