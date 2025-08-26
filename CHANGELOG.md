@@ -29,6 +29,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
+## [1.5.3] - 2025-08-16
+
+### Added
+
+- Add CUDA-13 NVML API support by [@XuehaiPan](https://github.com/XuehaiPan) in [#178](https://github.com/XuehaiPan/nvitop/pull/178).
+
+### Changed
+
+- Draw network and disk I/O graphs with centered symmetric zero in Grafana dashboard by [@XuehaiPan](https://github.com/XuehaiPan).
+
+### Fixed
+
+- Fix `device.pcie_tx_throughput()` returns PCIe RX throughput due to a typo in argument by [@kyet](https://github.com/kyet) in [#176](https://github.com/XuehaiPan/nvitop/pull/176).
+
+### Removed
+
+- Remove per-version install extras for `nvidia-ml-py` and prefer `nvitop[cudaXX]` instead by [@XuehaiPan](https://github.com/XuehaiPan) in [#179](https://github.com/XuehaiPan/nvitop/pull/179).
+
+------
+
 ## [1.5.2] - 2025-07-25
 
 ### Changed
@@ -208,7 +228,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.2...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.3...HEAD
+[1.5.3]: https://github.com/XuehaiPan/nvitop/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/XuehaiPan/nvitop/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/XuehaiPan/nvitop/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/XuehaiPan/nvitop/compare/v1.4.2...v1.5.0

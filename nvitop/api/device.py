@@ -1490,7 +1490,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return libnvml.nvmlQuery(
                 'nvmlDeviceGetPcieThroughput',
                 self._handle,
-                libnvml.NVML_PCIE_UTIL_RX_BYTES,
+                libnvml.NVML_PCIE_UTIL_TX_BYTES,
             )
         return NA
 
