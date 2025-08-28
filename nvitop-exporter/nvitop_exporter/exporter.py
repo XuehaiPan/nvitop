@@ -26,6 +26,7 @@ from prometheus_client import REGISTRY, CollectorRegistry, Gauge, Info
 
 from nvitop import Device, GpuProcess, MiB, MigDevice, PhysicalDevice, host
 from nvitop_exporter.utils import get_ip_address
+from nvitop_exporter.k8s import KubernetesHelper
 
 
 class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
@@ -38,6 +39,7 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
         *,
         registry: CollectorRegistry = REGISTRY,
         interval: float = 1.0,
+        enable_k8s: bool = True,
     ) -> None:
         """Initialize the Prometheus exporter."""
         if not isinstance(devices, (list, tuple)):
@@ -52,7 +54,8 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
         self.hostname = hostname or get_ip_address()
         self.registry = registry
         self.interval = interval
-        self.alive_pids: dict[Device, set[tuple[int, str]]] = {
+        self.k8s_helper = KubernetesHelper(enable_k8s=enable_k8s)
+        self.alive_pids: dict[Device, set[tuple[int, str, str, str, str]]] = {
             device: set() for device in self.devices
         }
 
@@ -407,70 +410,70 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
         self.process_info = Info(
             name='process_info',
             documentation='Process information.',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_running_time = Gauge(
             name='process_running_time',
             documentation='Process running time (s).',
             unit='Second',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_cpu_percent = Gauge(
             name='process_cpu_percent',
             documentation='Process CPU percent (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_rss_memory = Gauge(
             name='process_rss_memory',
             documentation='Process memory resident set size (MiB).',
             unit='MiB',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_memory_percent = Gauge(
             name='process_memory_percent',
             documentation='Process memory percent (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_gpu_memory = Gauge(
             name='process_gpu_memory',
             documentation='Process GPU memory (MiB).',
             unit='MiB',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_gpu_sm_utilization = Gauge(
             name='process_gpu_sm_utilization',
             documentation='Process GPU SM utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_gpu_memory_utilization = Gauge(
             name='process_gpu_memory_utilization',
             documentation='Process GPU memory utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_gpu_encoder_utilization = Gauge(
             name='process_gpu_encoder_utilization',
             documentation='Process GPU encoder utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
         self.process_gpu_decoder_utilization = Gauge(
             name='process_gpu_decoder_utilization',
             documentation='Process GPU decoder utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username', 'pod_name', 'pod_namespace', 'container_name'],
             registry=self.registry,
         )
 
@@ -605,6 +608,13 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         host_snapshot = host_snapshots[pid, username] = process.host_snapshot()
                     else:
                         host_snapshot = host_snapshots[pid, username]
+                    
+                    # Get Kubernetes pod information if available
+                    pod_info = self.k8s_helper.get_pod_info_from_pid(pid)
+                    pod_name = pod_info.name if pod_info else ""
+                    pod_namespace = pod_info.namespace if pod_info else ""
+                    container_name = pod_info.container_name if pod_info else ""
+                    
                     self.process_info.labels(
                         hostname=self.hostname,
                         index=index,
@@ -612,6 +622,9 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         uuid=uuid,
                         pid=pid,
                         username=username,
+                        pod_name=pod_name,
+                        pod_namespace=pod_namespace,
+                        container_name=container_name,
                     ).info(
                         {
                             'status': host_snapshot.status,
@@ -655,10 +668,19 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                             uuid=uuid,
                             pid=pid,
                             username=username,
+                            pod_name=pod_name,
+                            pod_namespace=pod_namespace,
+                            container_name=container_name,
                         ).set(value)
 
-        alive_pids.update(host_snapshots)
-        for pid, username in previous_alive_pids.difference(alive_pids):
+        # Update alive_pids with pod information
+        for (pid, username), host_snapshot in host_snapshots.items():
+            pod_info = self.k8s_helper.get_pod_info_from_pid(pid)
+            pod_name = pod_info.name if pod_info else ""
+            pod_namespace = pod_info.namespace if pod_info else ""
+            container_name = pod_info.container_name if pod_info else ""
+            alive_pids.add((pid, username, pod_name, pod_namespace, container_name))
+        for pid, username, pod_name, pod_namespace, container_name in previous_alive_pids.difference(alive_pids):
             for collector in (
                 self.process_info,
                 self.process_running_time,
@@ -679,6 +701,9 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         uuid,
                         pid,
                         username,
+                        pod_name,
+                        pod_namespace,
+                        container_name,
                     )
                 except KeyError:  # noqa: PERF203
                     pass

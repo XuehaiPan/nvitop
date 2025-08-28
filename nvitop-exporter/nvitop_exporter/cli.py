@@ -117,6 +117,19 @@ def parse_arguments() -> argparse.Namespace:
         metavar='SEC',
         help='Interval between updates in seconds. (default: %(default)s)',
     )
+    parser.add_argument(
+        '--enable-k8s',
+        dest='enable_k8s',
+        action='store_true',
+        default=True,
+        help='Enable Kubernetes pod information collection. (default: %(default)s)',
+    )
+    parser.add_argument(
+        '--disable-k8s',
+        dest='enable_k8s',
+        action='store_false',
+        help='Disable Kubernetes pod information collection.',
+    )
 
     args = parser.parse_args()
     if args.interval < 0.25:
@@ -178,7 +191,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         else:
             cprint(f'INFO: GPU {device.index}: {name} (UUID: {uuid})', file=sys.stderr)
 
-    exporter = PrometheusExporter(devices, hostname=args.hostname, interval=args.interval)
+    exporter = PrometheusExporter(devices, hostname=args.hostname, interval=args.interval, enable_k8s=args.enable_k8s)
 
     try:
         start_wsgi_server(port=args.port, addr=args.bind_address)

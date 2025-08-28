@@ -50,6 +50,10 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+        - name: KUBERNETES_SERVICE_HOST
+          value: "kubernetes.default.svc"
+        - name: KUBERNETES_SERVICE_PORT
+          value: "443"
         args:
         - "--bind-address=0.0.0.0"
         - "--port=8080"
@@ -76,6 +80,18 @@ spec:
           readOnly: true
         - name: nvidia-ml
           mountPath: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
+          readOnly: true
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+          readOnly: true
+        - name: containerd-sock
+          mountPath: /run/containerd/containerd.sock
+          readOnly: true
+        - name: var-lib-docker
+          mountPath: /var/lib/docker
+          readOnly: true
+        - name: run-containerd
+          mountPath: /run/containerd
           readOnly: true
         livenessProbe:
           httpGet:
@@ -107,6 +123,20 @@ spec:
         hostPath:
           path: /usr/lib/x86_64-linux-gnu/libnvidia-ml.so.1
           type: File
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      - name: containerd-sock
+        hostPath:
+          path: /run/containerd/containerd.sock
+          type: Socket
+      - name: var-lib-docker
+        hostPath:
+          path: /var/lib/docker
+      - name: run-containerd
+        hostPath:
+          path: /run/containerd
       serviceAccountName: nvitop-exporter
       restartPolicy: Always
       dnsPolicy: ClusterFirstWithHostNet
