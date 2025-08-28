@@ -1,6 +1,9 @@
 name: Build and Publish nvitop-exporter
 
 on:
+  push:
+    paths:
+      - 'nvitop-exporter/**'
   pull_request:
     paths:
       - setup.py
@@ -8,20 +11,11 @@ on:
       - pyproject.toml
       - MANIFEST.in
       - nvitop/version.py
+      - 'nvitop-exporter/**'
   release:
     types:
       - published
   workflow_dispatch:  # Allow manual trigger
-    inputs:
-      publish:
-        description: 'Publish to GHCR'
-        type: boolean
-        default: true
-        required: false
-      version:
-        description: 'Version tag to publish'
-        type: string
-        required: true
 
 env:
   REGISTRY: ghcr.io
@@ -57,9 +51,20 @@ jobs:
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
 
-          # Extract version from tag (e.g., v1.0.0 -> exporter-v1.0.0)
-          VERSION=${GITHUB_REF#refs/tags/}
-          TAG="exporter-${VERSION}"
+          # Determine tag based on ref type
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            # Release tag (e.g., refs/tags/v1.0.0 -> exporter-v1.0.0)
+            VERSION=${GITHUB_REF#refs/tags/}
+            TAG="exporter-${VERSION}"
+          elif [[ "${GITHUB_REF}" == refs/heads/* ]]; then
+            # Branch (e.g., refs/heads/k8s -> exporter-k8s)
+            BRANCH=${GITHUB_REF#refs/heads/}
+            TAG="exporter-${BRANCH}"
+          else
+            # Fallback for other ref types
+            TAG="exporter-${GITHUB_SHA::8}"
+          fi
+
           IMAGE_FULL_NAME="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${TAG}"
 
           echo "Tagging and pushing: ${IMAGE_FULL_NAME}"
