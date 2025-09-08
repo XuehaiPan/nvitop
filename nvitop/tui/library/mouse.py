@@ -6,8 +6,9 @@
 
 from __future__ import annotations
 
-import curses
 from typing import TYPE_CHECKING, ClassVar
+
+from nvitop.tui.library import curses
 
 
 if TYPE_CHECKING:
