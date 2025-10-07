@@ -1,0 +1,67 @@
+name: Build and Publish nvitop-exporter
+
+on:
+  pull_request:
+    paths:
+      - setup.py
+      - setup.cfg
+      - pyproject.toml
+      - MANIFEST.in
+      - nvitop/version.py
+  release:
+    types:
+      - published
+  workflow_dispatch:  # Allow manual trigger
+    inputs:
+      publish:
+        description: 'Publish to GHCR'
+        type: boolean
+        default: true
+        required: false
+      version:
+        description: 'Version tag to publish'
+        type: string
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: nvitop
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t test-image:latest ./nvitop-exporter
+
+      - name: Test Docker image
+        run: |
+          docker run --rm test-image:latest --help
+
+      - name: Login and push Docker image
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+          # Extract version from tag (e.g., v1.0.0 -> exporter-v1.0.0)
+          VERSION=${GITHUB_REF#refs/tags/}
+          TAG="exporter-${VERSION}"
+          IMAGE_FULL_NAME="${{ env.REGISTRY }}/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${TAG}"
+
+          echo "Tagging and pushing: ${IMAGE_FULL_NAME}"
+          docker tag test-image:latest "${IMAGE_FULL_NAME}"
+          docker push "${IMAGE_FULL_NAME}"
