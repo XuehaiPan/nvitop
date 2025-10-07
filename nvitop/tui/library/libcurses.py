@@ -7,12 +7,12 @@ from __future__ import annotations
 
 import colorsys
 import contextlib
-import curses
 import locale
 import os
 import signal
 from typing import TYPE_CHECKING, Any, ClassVar, Tuple, Union
 
+from nvitop.tui.library import curses
 from nvitop.tui.library.history import GRAPH_SYMBOLS
 
 
@@ -173,15 +173,16 @@ def libcurses(colorful: bool = False, light_theme: bool = False) -> Generator[cu
 
     # Push a Ctrl+C (ascii value 3) to the curses getch stack
     def interrupt_handler(*_: Any) -> None:  # pylint: disable=unused-argument
-        curses.ungetch(3)
+        curses.ungetch(curses.ascii.ETX)
 
     # Simulate a ^C press in curses when an interrupt is caught
-    signal.signal(signal.SIGINT, interrupt_handler)
+    original_interrupt_handler = signal.signal(signal.SIGINT, interrupt_handler)
 
     try:
         yield win
     finally:
         curses.endwin()
+        signal.signal(signal.SIGINT, original_interrupt_handler)
 
 
 class CursesShortcuts:
