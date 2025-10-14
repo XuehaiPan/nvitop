@@ -18,7 +18,7 @@
 
 # pylint: disable=invalid-name
 
-__version__ = '1.5.3'
+__version__ = '1.5.4'
 __license__ = 'Apache-2.0 AND GPL-3.0-only'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
@@ -91,6 +91,7 @@ PYNVML_VERSION_CANDIDATES = (
     '12.570.172',
     '12.575.51',
     '13.580.65',
+    '13.580.82',
 )
 """The list of supported ``nvidia-ml-py`` versions.
 See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
