@@ -25,8 +25,11 @@ repos:
       - id: check-ast
         fail_fast: true
       - id: debug-statements
+      - id: file-contents-sorter
+        args: [--ignore-case]
+        files: ^docs/source/spelling_wordlist\.txt$
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.3
+    rev: v0.14.1
     hooks:
       - id: ruff-check
         args: [--fix, --exit-non-zero-on-fix]
