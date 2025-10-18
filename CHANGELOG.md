@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Add `nvidia-ml-py` 13.580.82 to support list by [@johnnynunez](https://github.com/johnnynunez) in [#186](https://github.com/XuehaiPan/nvitop/pull/186).
 
 ### Changed
 
