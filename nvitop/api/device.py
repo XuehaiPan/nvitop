@@ -3076,9 +3076,11 @@ class _PhysicalDeviceAttrs(NamedTuple):
     support_mig_mode: bool
 
 
+# pylint: disable=invalid-name
 _PHYSICAL_DEVICE_ATTRS: OrderedDict[str, _PhysicalDeviceAttrs] | None = None
 _GLOBAL_PHYSICAL_DEVICE: PhysicalDevice | None = None
 _GLOBAL_PHYSICAL_DEVICE_LOCK: threading.RLock = threading.RLock()
+# pylint: enable=invalid-name
 
 
 def _get_all_physical_device_attrs() -> OrderedDict[str, _PhysicalDeviceAttrs]:

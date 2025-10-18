@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 __all__ = ['CursesShortcuts', 'libcurses', 'setlocale_utf8']
 
 
+# pylint: disable=invalid-name
 LIGHT_THEME: bool = False
 DEFAULT_FOREGROUND: int = curses.COLOR_WHITE
 DEFAULT_BACKGROUND: int = curses.COLOR_BLACK
@@ -47,9 +48,8 @@ TRUE_COLORS: dict[str | tuple[int, int, int], int] = {
     'bright white': 15,
     **{f'preserved {i:02d}': i for i in range(16, 64)},
 }
-
-
 BASE_ATTR: int = 0
+# pylint: enable=invalid-name
 
 
 def _init_color_theme(light_theme: bool = False) -> None:

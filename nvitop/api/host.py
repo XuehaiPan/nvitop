@@ -139,6 +139,7 @@ def reverse_ppid_map() -> dict[int, list[int]]:
     return ret
 
 
+# pylint: disable=invalid-name
 if LINUX:
     WSL = _os.getenv('WSL_DISTRO_NAME', default=None)
     if WSL is not None and WSL == '':
@@ -147,3 +148,4 @@ else:
     WSL = None
 WINDOWS_SUBSYSTEM_FOR_LINUX = WSL
 """The Linux distribution name of the Windows Subsystem for Linux."""
+# pylint: enable=invalid-name

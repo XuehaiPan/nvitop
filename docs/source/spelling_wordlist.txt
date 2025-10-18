@@ -17,9 +17,9 @@ csv
 ctrl
 ctx
 cuda
-cudaxx
 cudadevice
 cudaerror
+cudaxx
 cwd
 devicesnapshot
 displayables
