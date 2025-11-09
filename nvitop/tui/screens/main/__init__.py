@@ -189,7 +189,7 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
     def print(self) -> None:
         if self.device_count > 0:
             print_width = min(panel.print_width() for panel in self.container)
-            self.width = max(print_width, min(self.width, 100))
+            self.width = max(print_width, min(self.width, 128))
         else:
             self.width = 79
         for panel in self.container:

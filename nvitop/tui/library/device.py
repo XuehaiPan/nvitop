@@ -8,7 +8,7 @@ from __future__ import annotations
 import enum
 from typing import Any, ClassVar, Literal
 
-from nvitop.api import NA, Snapshot, libnvml, ttl_cache, utilization2string
+from nvitop.api import NA, NaType, Snapshot, libnvml, ttl_cache, utilization2string
 from nvitop.api import MigDevice as MigDeviceBase
 from nvitop.api import PhysicalDevice as DeviceBase
 from nvitop.tui.library.process import GpuProcess, GpuProcessBase
@@ -30,7 +30,7 @@ class LoadingIntensity(enum.IntEnum):
         return 'red'
 
 
-class Device(DeviceBase):
+class Device(DeviceBase):  # pylint: disable=too-many-public-methods
     GPU_PROCESS_CLASS: ClassVar[type[GpuProcessBase]] = GpuProcess
 
     MEMORY_UTILIZATION_THRESHOLDS: ClassVar[tuple[int, int]] = (10, 80)
@@ -62,6 +62,7 @@ class Device(DeviceBase):
         'compute_mode',
         'mig_mode',
         'is_mig_device',
+        'power_utilization',
         'memory_percent_string',
         'memory_utilization_string',
         'gpu_utilization_string',
@@ -69,8 +70,12 @@ class Device(DeviceBase):
         'temperature_string',
         'memory_loading_intensity',
         'memory_display_color',
+        'bandwidth_loading_intensity',
+        'bandwidth_display_color',
         'gpu_loading_intensity',
         'gpu_display_color',
+        'power_loading_intensity',
+        'power_display_color',
         'loading_intensity',
         'display_color',
     ]
@@ -112,7 +117,6 @@ class Device(DeviceBase):
 
     fan_speed = ttl_cache(ttl=5.0)(DeviceBase.fan_speed)
     temperature = ttl_cache(ttl=5.0)(DeviceBase.temperature)
-    power_usage = ttl_cache(ttl=5.0)(DeviceBase.power_usage)
     display_active = ttl_cache(ttl=5.0)(DeviceBase.display_active)
     display_mode = ttl_cache(ttl=5.0)(DeviceBase.display_mode)
     current_driver_model = ttl_cache(ttl=5.0)(DeviceBase.current_driver_model)
@@ -123,6 +127,15 @@ class Device(DeviceBase):
     )
     compute_mode = ttl_cache(ttl=5.0)(DeviceBase.compute_mode)
     mig_mode = ttl_cache(ttl=5.0)(DeviceBase.mig_mode)
+
+    def power_utilization(self) -> float | NaType:  # in percentage
+        power_limit = self.power_limit()
+        if not libnvml.nvmlCheckReturn(power_limit, int) or power_limit == 0:
+            return NA
+        power_usage = self.power_usage()
+        if not libnvml.nvmlCheckReturn(power_usage, int):
+            return NA
+        return round(100.0 * power_usage / power_limit, 1)
 
     def memory_percent_string(self) -> str:  # in percentage
         return utilization2string(self.memory_percent())
@@ -143,8 +156,14 @@ class Device(DeviceBase):
     def memory_loading_intensity(self) -> LoadingIntensity:
         return self.loading_intensity_of(self.memory_percent(), type='memory')
 
+    def bandwidth_loading_intensity(self) -> LoadingIntensity:
+        return self.loading_intensity_of(self.memory_utilization(), type='memory')
+
     def gpu_loading_intensity(self) -> LoadingIntensity:
         return self.loading_intensity_of(self.gpu_utilization(), type='gpu')
+
+    def power_loading_intensity(self) -> LoadingIntensity:
+        return self.loading_intensity_of(self.power_utilization(), type='gpu')
 
     def loading_intensity(self) -> LoadingIntensity:
         return max(self.memory_loading_intensity(), self.gpu_loading_intensity())
@@ -159,10 +178,20 @@ class Device(DeviceBase):
             return 'red'
         return self.memory_loading_intensity().color()
 
+    def bandwidth_display_color(self) -> str:
+        if self.name().startswith('ERROR:'):
+            return 'red'
+        return self.bandwidth_loading_intensity().color()
+
     def gpu_display_color(self) -> str:
         if self.name().startswith('ERROR:'):
             return 'red'
         return self.gpu_loading_intensity().color()
+
+    def power_display_color(self) -> str:
+        if self.name().startswith('ERROR:'):
+            return 'red'
+        return self.power_loading_intensity().color()
 
     @staticmethod
     def loading_intensity_of(
