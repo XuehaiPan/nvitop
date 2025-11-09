@@ -496,7 +496,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             return self.width
         return 79
 
-    def print(self) -> None:  # pylint: disable=too-many-locals,too-many-branches
+    def print(self) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]
 
         if self.device_count > 0:
@@ -545,27 +545,93 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             lines[y_start - 1][:-1] + '╪' + '═' * (remaining_width - 1) + '╕'
                         )
 
-                    matrix = [
-                        (
-                            'MEM',
-                            device.memory_percent,
-                            device.memory_display_color,
-                        ),
-                        (
-                            'UTL',
-                            device.gpu_utilization,
-                            device.gpu_display_color,
-                        ),
-                    ]
+                    left_width = (remaining_width - 6 + 1) // 2 - 1
+                    right_width = (remaining_width - 6) // 2 + 1
+                    matrix: list[list[tuple[str, float, str, int]]] = []
                     if device.is_mig_device:
-                        matrix.pop()
-                    for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
-                        bar = make_bar(  # pylint: disable=disallowed-name
-                            prefix,
-                            utilization,
-                            width=remaining_width - 3,
-                        )
-                        lines[y] += f' {colored(bar, color)} │'
+                        matrix = [
+                            [
+                                (
+                                    'MEM',
+                                    device.memory_percent,
+                                    device.memory_display_color,
+                                    remaining_width - 3,
+                                ),
+                            ],
+                        ]
+                        if remaining_width >= 44 and len(prev_device_index) == 1:
+                            lines[y_start - 1] = (
+                                lines[y_start - 1][: -right_width - 4]
+                                + '┴'
+                                + lines[y_start - 1][-right_width - 3 :]
+                            )
+                    else:
+                        if remaining_width >= 44:
+                            matrix = [
+                                [
+                                    (
+                                        'MEM',
+                                        device.memory_percent,
+                                        device.memory_display_color,
+                                        left_width,
+                                    ),
+                                    (
+                                        'MBW',
+                                        device.memory_utilization,
+                                        device.bandwidth_display_color,
+                                        right_width,
+                                    ),
+                                ],
+                                [
+                                    (
+                                        'UTL',
+                                        device.gpu_utilization,
+                                        device.gpu_display_color,
+                                        left_width,
+                                    ),
+                                    (
+                                        'PWR',
+                                        device.power_utilization,
+                                        device.power_display_color,
+                                        right_width,
+                                    ),
+                                ],
+                            ]
+                            separator = '┼' if index > 0 else '╤'
+                            if len(prev_device_index) == 2:
+                                separator = '┬'
+                            lines[y_start - 1] = (
+                                lines[y_start - 1][: -right_width - 4]
+                                + separator
+                                + lines[y_start - 1][-right_width - 3 :]
+                            )
+                        else:
+                            matrix = [
+                                [
+                                    (
+                                        'MEM',
+                                        device.memory_percent,
+                                        device.memory_display_color,
+                                        remaining_width - 3,
+                                    ),
+                                ],
+                                [
+                                    (
+                                        'UTL',
+                                        device.gpu_utilization,
+                                        device.gpu_display_color,
+                                        remaining_width - 3,
+                                    ),
+                                ],
+                            ]
+                    for y, row in enumerate(matrix, start=y_start):
+                        for prefix, utilization, color, width in row:
+                            bar = make_bar(  # pylint: disable=disallowed-name
+                                prefix,
+                                utilization,
+                                width=width,
+                            )
+                            lines[y] += f' {colored(bar, color)} │'  # type: ignore[arg-type]
 
                     if index == len(self.snapshots) - 1:
                         lines[y_start + len(matrix)] = (
@@ -574,6 +640,12 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             + '═' * (remaining_width - 1)
                             + '╛'
                         )
+                        if remaining_width >= 44 and len(matrix[0]) > 1:
+                            lines[y_start + len(matrix)] = (
+                                lines[y_start + len(matrix)][: -right_width - 4]
+                                + '╧'
+                                + lines[y_start + len(matrix)][-right_width - 3 :]
+                            )
 
                     y_start += len(matrix)
                     prev_device_index = device.tuple_index
