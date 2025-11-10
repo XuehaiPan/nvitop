@@ -17,7 +17,7 @@ from nvitop.tui.library import (
     Snapshot,
     colored,
     cut_string,
-    make_bar,
+    make_bar_chart,
     ttl_cache,
 )
 from nvitop.tui.screens.main.panels.base import BasePanel
@@ -99,7 +99,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full: list[str] = [
-            '│ {physical_index:>3}  {name:<18}  {persistence_mode:<4} '
+            '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
             '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
             '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
@@ -181,7 +181,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         else f'{round(device.bar1_memory_percent)}%'
                     )
             else:
-                device.name = cut_string(device.name, maxlen=18, padstr='..', align='right')
+                device.name = cut_string(device.name, maxlen=19, padstr='..', align='right')
                 device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
                 device.display_active = device.display_active.replace('Enabled', 'On').replace(
                     'Disabled',
@@ -351,75 +351,166 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 self.color_at(y, self.x + 56, width=22, fg=device.display_color, attr=attr)
 
             if draw_bars:
-                matrix = [
-                    (
-                        self.x + 80,
-                        y_start,
-                        remaining_width - 3,
-                        'MEM',
-                        device.memory_percent,
-                        device.memory_display_color,
-                    ),
-                    (
-                        self.x + 80,
-                        y_start + 1,
-                        remaining_width - 3,
-                        'UTL',
-                        device.gpu_utilization,
-                        device.gpu_display_color,
-                    ),
-                ]
-                if self.compact:
-                    if remaining_width >= 44 and not device.is_mig_device:
-                        left_width = (remaining_width - 6 + 1) // 2 - 1
-                        right_width = (remaining_width - 6) // 2 + 1
-                        matrix = [
+                left_width = (remaining_width - 6 + 1) // 2 - 1
+                right_width = (remaining_width - 6) // 2 + 1
+                matrix: list[list[tuple[int, int, str, float, str, str]]] = []
+                if device.is_mig_device:
+                    matrix = [
+                        [
                             (
                                 self.x + 80,
-                                y_start,
-                                left_width,
+                                remaining_width - 3,
                                 'MEM',
                                 device.memory_percent,
                                 device.memory_display_color,
+                                device.memory_used_human,
                             ),
-                            (
-                                self.x + 80 + left_width + 3,
-                                y_start,
-                                right_width,
-                                'UTL',
-                                device.gpu_utilization,
-                                device.gpu_display_color,
-                            ),
+                        ],
+                    ]
+                    if remaining_width >= 44 and len(prev_device_index) == 1:
+                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, '┴')
+                elif self.compact:
+                    if remaining_width >= 44:
+                        matrix = [
+                            [
+                                (
+                                    self.x + 80,
+                                    left_width,
+                                    'MEM',
+                                    device.memory_percent,
+                                    device.memory_display_color,
+                                    device.memory_used_human,
+                                ),
+                                (
+                                    self.x + 80 + left_width + 3,
+                                    right_width,
+                                    'UTL',
+                                    device.gpu_utilization,
+                                    device.gpu_display_color,
+                                    f'@ {device.clock_infos.sm}MHz',
+                                ),
+                            ],
                         ]
                         separator = '┼' if index > 0 else '╤'
                         if len(prev_device_index) == 2:
                             separator = '┬'
                         self.addstr(y_start - 1, self.x + 80 + left_width + 1, separator)
-                        self.addstr(y_start, self.x + 80 + left_width + 1, '│')
                         if index == len(self.snapshots) - 1:
                             self.addstr(y_start + 1, self.x + 80 + left_width + 1, '╧')
                     else:
-                        if remaining_width >= 44 and len(prev_device_index) == 1:
-                            self.addstr(y_start - 1, self.x + 80 + left_width + 1, '┴')
-                        matrix.pop()
-                elif device.is_mig_device:
-                    matrix.pop()
-                for x_offset, y, width, prefix, utilization, color in matrix:
-                    # pylint: disable-next=disallowed-name
-                    bar = make_bar(prefix, utilization, width=width)
-                    self.addstr(y, x_offset, bar)
-                    if self.TERM_256COLOR:
-                        parts = bar.rstrip().split(' ')
-                        prefix_len = len(parts[0])
-                        bar_len = len(parts[1])
-                        full_bar_len = width - prefix_len - 5
-                        self.color_at(y, x_offset, width=width, fg=float(bar_len / full_bar_len))
-                        for i, x in enumerate(
-                            range(x_offset + prefix_len + 1, x_offset + prefix_len + 1 + bar_len),
-                        ):
-                            self.color_at(y, x, width=1, fg=float(i / full_bar_len))
+                        matrix = [
+                            [
+                                (
+                                    self.x + 80,
+                                    remaining_width - 3,
+                                    'MEM',
+                                    device.memory_percent,
+                                    device.memory_display_color,
+                                    device.memory_used_human,
+                                ),
+                            ],
+                        ]
+                else:
+                    if remaining_width >= 44:
+                        matrix = [
+                            [
+                                (
+                                    self.x + 80,
+                                    left_width,
+                                    'MEM',
+                                    device.memory_percent,
+                                    device.memory_display_color,
+                                    device.memory_used_human,
+                                ),
+                                (
+                                    self.x + 80 + left_width + 3,
+                                    right_width,
+                                    'MBW',
+                                    device.memory_utilization,
+                                    device.bandwidth_display_color,
+                                    f'@ {device.clock_infos.memory}MHz',
+                                ),
+                            ],
+                            [
+                                (
+                                    self.x + 80,
+                                    left_width,
+                                    'UTL',
+                                    device.gpu_utilization,
+                                    device.gpu_display_color,
+                                    f'@ {device.clock_infos.sm}MHz',
+                                ),
+                                (
+                                    self.x + 80 + left_width + 3,
+                                    right_width,
+                                    'PWR',
+                                    device.power_utilization,
+                                    device.power_display_color,
+                                    f'{device.power_status.partition(" / ")[0]}',
+                                ),
+                            ],
+                        ]
+                        separator = '┼' if index > 0 else '╤'
+                        if len(prev_device_index) == 2:
+                            separator = '┬'
+                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, separator)
+                        if index == len(self.snapshots) - 1:
+                            self.addstr(y_start + 2, self.x + 80 + left_width + 1, '╧')
                     else:
-                        self.color_at(y, x_offset, width=width, fg=color, attr=attr)
+                        matrix = [
+                            [
+                                (
+                                    self.x + 80,
+                                    remaining_width - 3,
+                                    'MEM',
+                                    device.memory_percent,
+                                    device.memory_display_color,
+                                    device.memory_used_human,
+                                ),
+                            ],
+                            [
+                                (
+                                    self.x + 80,
+                                    remaining_width - 3,
+                                    'UTL',
+                                    device.gpu_utilization,
+                                    device.gpu_display_color,
+                                    f'@ {device.clock_infos.sm}MHz',
+                                ),
+                            ],
+                        ]
+
+                for y, row in enumerate(matrix, start=y_start):
+                    for x_offset, width, prefix, utilization, color, extra_text in row:
+                        bar_chart = make_bar_chart(
+                            prefix,
+                            utilization,
+                            width=width,
+                            extra_text=extra_text,
+                            swap_text=not extra_text.endswith('MHz'),
+                            extra_blank='  ',
+                        )
+                        self.addstr(y, x_offset, f'{bar_chart} │')
+                        if self.TERM_256COLOR:
+                            parts = bar_chart.rstrip().split(' ')
+                            prefix_len = len(parts[0])
+                            bar_len = len(parts[1])
+                            full_bar_len = width - prefix_len - 5
+                            self.color_at(
+                                y,
+                                x_offset,
+                                width=width,
+                                fg=float(bar_len / full_bar_len),
+                            )
+                            for i, x in enumerate(
+                                range(
+                                    x_offset + prefix_len + 1,
+                                    x_offset + prefix_len + 1 + bar_len,
+                                ),
+                            ):
+                                self.color_at(y, x, width=1, fg=float(i / full_bar_len))
+                        else:
+                            self.color_at(y, x_offset, width=width, fg=color, attr=attr)
 
             y_start += len(fmts)
             prev_device_index = device.tuple_index
@@ -433,7 +524,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             return self.width
         return 79
 
-    def print(self) -> None:  # pylint: disable=too-many-locals,too-many-branches
+    def print(self) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]
 
         if self.device_count > 0:
@@ -482,27 +573,103 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             lines[y_start - 1][:-1] + '╪' + '═' * (remaining_width - 1) + '╕'
                         )
 
-                    matrix = [
-                        (
-                            'MEM',
-                            device.memory_percent,
-                            device.memory_display_color,
-                        ),
-                        (
-                            'UTL',
-                            device.gpu_utilization,
-                            device.gpu_display_color,
-                        ),
-                    ]
+                    left_width = (remaining_width - 6 + 1) // 2 - 1
+                    right_width = (remaining_width - 6) // 2 + 1
+                    matrix: list[list[tuple[str, float, str, int, str]]] = []
                     if device.is_mig_device:
-                        matrix.pop()
-                    for y, (prefix, utilization, color) in enumerate(matrix, start=y_start):
-                        bar = make_bar(  # pylint: disable=disallowed-name
-                            prefix,
-                            utilization,
-                            width=remaining_width - 3,
-                        )
-                        lines[y] += f' {colored(bar, color)} │'
+                        matrix = [
+                            [
+                                (
+                                    'MEM',
+                                    device.memory_percent,
+                                    device.memory_display_color,
+                                    remaining_width - 3,
+                                    device.memory_used_human,
+                                ),
+                            ],
+                        ]
+                        if remaining_width >= 44 and len(prev_device_index) == 1:
+                            lines[y_start - 1] = (
+                                lines[y_start - 1][: -right_width - 4]
+                                + '┴'
+                                + lines[y_start - 1][-right_width - 3 :]
+                            )
+                    else:
+                        if remaining_width >= 44:
+                            matrix = [
+                                [
+                                    (
+                                        'MEM',
+                                        device.memory_percent,
+                                        device.memory_display_color,
+                                        left_width,
+                                        device.memory_used_human,
+                                    ),
+                                    (
+                                        'MBW',
+                                        device.memory_utilization,
+                                        device.bandwidth_display_color,
+                                        right_width,
+                                        f'@ {device.clock_infos.memory}MHz',
+                                    ),
+                                ],
+                                [
+                                    (
+                                        'UTL',
+                                        device.gpu_utilization,
+                                        device.gpu_display_color,
+                                        left_width,
+                                        f'@ {device.clock_infos.sm}MHz',
+                                    ),
+                                    (
+                                        'PWR',
+                                        device.power_utilization,
+                                        device.power_display_color,
+                                        right_width,
+                                        f'{device.power_status.partition(" / ")[0]}',
+                                    ),
+                                ],
+                            ]
+                            separator = '┼' if index > 0 else '╤'
+                            if len(prev_device_index) == 2:
+                                separator = '┬'
+                            lines[y_start - 1] = (
+                                lines[y_start - 1][: -right_width - 4]
+                                + separator
+                                + lines[y_start - 1][-right_width - 3 :]
+                            )
+                        else:
+                            matrix = [
+                                [
+                                    (
+                                        'MEM',
+                                        device.memory_percent,
+                                        device.memory_display_color,
+                                        remaining_width - 3,
+                                        device.memory_used_human,
+                                    ),
+                                ],
+                                [
+                                    (
+                                        'UTL',
+                                        device.gpu_utilization,
+                                        device.gpu_display_color,
+                                        remaining_width - 3,
+                                        f'@ {device.clock_infos.sm}MHz',
+                                    ),
+                                ],
+                            ]
+                    for y, row in enumerate(matrix, start=y_start):
+                        for prefix, utilization, color, width, extra_text in row:
+                            bar_chart = make_bar_chart(
+                                prefix,
+                                utilization,
+                                width=width,
+                                extra_text=extra_text,
+                                swap_text=not extra_text.endswith('MHz'),
+                                extra_blank='  ',
+                            )
+                            lines[y] += f' {colored(bar_chart, color)} │'  # type: ignore[arg-type]
 
                     if index == len(self.snapshots) - 1:
                         lines[y_start + len(matrix)] = (
@@ -511,6 +678,12 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             + '═' * (remaining_width - 1)
                             + '╛'
                         )
+                        if remaining_width >= 44 and len(matrix[0]) > 1:
+                            lines[y_start + len(matrix)] = (
+                                lines[y_start + len(matrix)][: -right_width - 4]
+                                + '╧'
+                                + lines[y_start + len(matrix)][-right_width - 3 :]
+                            )
 
                     y_start += len(matrix)
                     prev_device_index = device.tuple_index

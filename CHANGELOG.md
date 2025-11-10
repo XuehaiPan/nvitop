@@ -13,7 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Add `nvidia-ml-py` 13.580.82 to support list for NVIDIA Spark/Thor by [@johnnynunez](https://github.com/johnnynunez) in [#186](https://github.com/XuehaiPan/nvitop/pull/186).
+- Add bar charts for memory bandwidth and power usage in the main screen by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190).
 
 ### Changed
 
@@ -26,6 +27,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 -
+
+------
+
+## [1.5.3] - 2025-08-16
+
+### Added
+
+- Add CUDA-13 NVML API support by [@XuehaiPan](https://github.com/XuehaiPan) in [#178](https://github.com/XuehaiPan/nvitop/pull/178).
+
+### Changed
+
+- Draw network and disk I/O graphs with centered symmetric zero in Grafana dashboard by [@XuehaiPan](https://github.com/XuehaiPan).
+
+### Fixed
+
+- Fix `device.pcie_tx_throughput()` returns PCIe RX throughput due to a typo in argument by [@kyet](https://github.com/kyet) in [#176](https://github.com/XuehaiPan/nvitop/pull/176).
+
+### Removed
+
+- Remove per-version install extras for `nvidia-ml-py` and prefer `nvitop[cudaXX]` instead by [@XuehaiPan](https://github.com/XuehaiPan) in [#179](https://github.com/XuehaiPan/nvitop/pull/179).
+
+------
+
+## [1.5.2] - 2025-07-25
+
+### Changed
+
+- Minor tweak display for device name in TUI by [@XuehaiPan](https://github.com/XuehaiPan).
+
+### Fixed
+
+- Fix snapshot cache for GPU processes with shared host process by [@XuehaiPan](https://github.com/XuehaiPan) in [#172](https://github.com/XuehaiPan/nvitop/pull/172).
 
 ------
 
@@ -196,17 +229,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.1...HEAD
-[1.5.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.5.1
-[1.5.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.5.0
-[1.4.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.2
-[1.4.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.1
-[1.4.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.4.0
-[1.3.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.2
-[1.3.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.1
-[1.3.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.3.0
-[1.2.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.2.0
-[1.1.2]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.2
-[1.1.1]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.1
-[1.1.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.1.0
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.3...HEAD
+[1.5.3]: https://github.com/XuehaiPan/nvitop/compare/v1.5.2...v1.5.3
+[1.5.2]: https://github.com/XuehaiPan/nvitop/compare/v1.5.1...v1.5.2
+[1.5.1]: https://github.com/XuehaiPan/nvitop/compare/v1.5.0...v1.5.1
+[1.5.0]: https://github.com/XuehaiPan/nvitop/compare/v1.4.2...v1.5.0
+[1.4.2]: https://github.com/XuehaiPan/nvitop/compare/v1.4.1...v1.4.2
+[1.4.1]: https://github.com/XuehaiPan/nvitop/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/XuehaiPan/nvitop/compare/v1.3.2...v1.4.0
+[1.3.2]: https://github.com/XuehaiPan/nvitop/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/XuehaiPan/nvitop/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/XuehaiPan/nvitop/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/XuehaiPan/nvitop/compare/v1.1.2...v1.2.0
+[1.1.2]: https://github.com/XuehaiPan/nvitop/compare/v1.1.1...v1.1.2
+[1.1.1]: https://github.com/XuehaiPan/nvitop/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/XuehaiPan/nvitop/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/XuehaiPan/nvitop/releases/tag/v1.0.0

@@ -735,7 +735,7 @@ class Snapshot:
     def keys(self) -> Iterable[str]:
         # pylint: disable-next=line-too-long
         """Support ``**`` dictionary unpack ``{**snapshot}`` / ``dict(**snapshot)`` syntax and ``dict(snapshot)`` dictionary conversion."""
-        return KeysView(self)  # type: ignore[arg-type]
+        return KeysView(self)
 
 
 Method = TypeVar('Method', bound=Callable[..., Any])

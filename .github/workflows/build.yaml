@@ -41,14 +41,14 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: "recursive"
           fetch-depth: 0
 
       - name: Set up Python
         id: py
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.8 - 3.14"
           update-environment: true
@@ -104,7 +104,7 @@ jobs:
         run: ls -lh dist/
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: artifact
           path: dist/*
@@ -120,13 +120,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: "recursive"
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         if: startsWith(github.ref, 'refs/tags/')
         with:
           python-version: "3.8 - 3.14"
@@ -163,7 +163,7 @@ jobs:
           fi
 
       - name: Download built sdist and wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           # unpacks default artifact into dist/
           # if `name: artifact` is omitted, the action will create extra parent dir

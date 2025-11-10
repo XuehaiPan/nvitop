@@ -42,10 +42,12 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 Installation
 """"""""""""
 
-**It is highly recommended to install nvitop in an isolated virtual environment.** Simple installation and run via `pipx <https://pypa.github.io/pipx>`_:
+**It is highly recommended to install nvitop in an isolated virtual environment.** Simple installation and run via `uvx <https://docs.astral.sh/uv/guides/tools>`_ (a.k.a. ``uv tool run``) or `pipx <https://pypa.github.io/pipx>`_:
 
 .. code:: bash
 
+    uvx nvitop
+    # or
     pipx run nvitop
 
 Install from PyPI (|PyPI Package|_):
@@ -81,7 +83,7 @@ Or, clone this repo and install manually:
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗. |GitHub Repo Stars|_
 
-.. |Commit Count| image:: https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.5.1
+.. |Commit Count| image:: https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.5.3
 
 ------
 

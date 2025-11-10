@@ -338,7 +338,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             for i, process in enumerate(snapshots):
                 if process._ident == identity:  # pylint: disable=protected-access
                     self.selection.index = i
-                    self.selection.process = process  # type: ignore[assignment]
+                    self.selection.process = process
                     break
 
     @classmethod
@@ -415,7 +415,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             self._daemon_running.set()
             self._snapshot_daemon.start()
 
-        self.snapshots = self._snapshot_buffer  # type: ignore[assignment]
+        self.snapshots = self._snapshot_buffer
 
         self.selection.within_window = False
         if len(self.snapshots) > 0 and self.selection.is_set():
@@ -588,7 +588,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                     self.addstr(y, self.x + 44, process.command)
 
                 if y == self.y_mouse:
-                    self.selection.process = process  # type: ignore[assignment]
+                    self.selection.process = process
                     hint = True
 
                 if self.selection.is_same(process):

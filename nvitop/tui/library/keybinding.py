@@ -403,7 +403,7 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
                     if self.passive_key in self.pointer:
                         self.result = self.pointer[self.passive_key]  # type: ignore[assignment]
                 else:
-                    self.result = self.pointer  # type: ignore[unreachable]
+                    self.result = self.pointer
                     self.finished_parsing = True
             else:
                 self.finished_parsing = True

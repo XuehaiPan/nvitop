@@ -18,7 +18,7 @@
 
 # pylint: disable=invalid-name
 
-__version__ = '1.5.1'
+__version__ = '1.5.3'
 __license__ = 'Apache-2.0 AND GPL-3.0-only'
 __author__ = __maintainer__ = 'Xuehai Pan'
 __email__ = 'XuehaiPan@pku.edu.cn'
@@ -68,7 +68,7 @@ if not __release__:
 PYNVML_VERSION_CANDIDATES = (
     # Sync with pyproject.toml and requirements.txt
     '11.450.51',  # the last version supports the R430 driver (CUDA 10.x)
-    '11.450.129',  # requires at last the R450 driver
+    '11.450.129',  # requires at least the R450 driver
     '11.460.79',
     '11.470.66',
     '11.495.46',
@@ -88,22 +88,25 @@ PYNVML_VERSION_CANDIDATES = (
     '12.555.43',
     '12.560.30',
     '12.570.86',
+    '12.570.172',
     '12.575.51',
+    '13.580.65',
+    '13.580.82',
 )
 """The list of supported ``nvidia-ml-py`` versions.
 See also: `nvidia-ml-py's Release History <https://pypi.org/project/nvidia-ml-py/#history>`_.
 
-To install ``nvitop`` with a specific version of ``nvidia-ml-py``, use ``nvitop[pynvml-xx.yyy.zzz]``, for example:
+To install ``nvitop`` with a specific version of ``nvidia-ml-py``, use:
 
 .. code:: bash
 
-    pip3 install 'nvitop[pynvml-11.450.51]'
+    pip3 install nvidia-ml-py==xx.yyy.zz nvitop
 
 or
 
 .. code:: bash
 
-    pip3 install nvitop nvidia-ml-py==11.450.51
+    pip3 install 'nvitop[cudaXX]'
 
 Note:
     The package ``nvidia-ml-py`` is not backward compatible over releases. This may cause problems
