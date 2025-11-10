@@ -98,7 +98,14 @@ def cut_string(
 
 
 # pylint: disable=disallowed-name
-def make_bar(prefix: str, percent: float | str, width: int, *, extra_text: str = '') -> str:
+def make_bar(
+    prefix: str,
+    percent: float | str,
+    width: int,
+    *,
+    extra_text: str = '',
+    swap_text: bool = False,
+) -> str:
     bar = f'{prefix}: '
     if percent != NA and not (isinstance(percent, float) and not math.isfinite(percent)):
         if isinstance(percent, str) and percent.endswith('%'):
@@ -116,6 +123,11 @@ def make_bar(prefix: str, percent: float | str, width: int, *, extra_text: str =
     else:
         bar += '░' * (width - len(bar) - 4)
         text = 'N/A'
-    if extra_text and len(f'{bar} {text} {extra_text}') <= width:
-        return f'{bar} {text}'.ljust(width - len(extra_text) - 1) + f' {extra_text}'
+    if extra_text:
+        if len(f'{bar} {text}   {extra_text}') <= width:
+            if swap_text:
+                text, extra_text = extra_text, text
+            return f'{bar} {text}'.ljust(width - len(extra_text) - 3) + f'   {extra_text}'
+        if len(f'{bar} {extra_text}') <= width and swap_text:
+            return f'{bar} {extra_text}'.ljust(width)
     return f'{bar} {text}'.ljust(width)
