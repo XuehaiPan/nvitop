@@ -98,7 +98,7 @@ jobs:
         with:
           context: ${{ matrix.context }}
           push: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
-          tags: "${{ steps.tag.outputs.image-name }}:${{ steps.tag.outputs.image-tag }}${{ github.event_name == 'workflow_dispatch' && ',${{ steps.tag.outputs.image-name }}:latest' || '' }}"
+          tags: "${{ steps.tag.outputs.image-name }}:${{ steps.tag.outputs.image-tag }}${{ github.event_name == 'release' && format(',{0}:latest', steps.tag.outputs.image-name) || '' }}"
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
           platforms: linux/amd64,linux/arm64
