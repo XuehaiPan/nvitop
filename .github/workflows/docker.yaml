@@ -48,7 +48,7 @@ jobs:
     name: Build and Publish Docker Images for ${{ matrix.name }}
     if: github.repository_owner == 'XuehaiPan'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     strategy:
       matrix:
         include:
@@ -67,43 +67,43 @@ jobs:
       - name: Test docker build
         run: |
           docker build --tag test-image:latest ${{ matrix.context }}
+          docker run --rm test-image:latest --version
           docker run --rm test-image:latest --help
 
       - name: Extract version
         id: tag
         run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
+          if [[ "${{ github.event_name }}" == 'release' ]]; then
             VERSION="${GITHUB_REF#refs/tags/}"
             TAG="${VERSION#v}"
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          elif [[ "${{ github.event_name }}" == 'workflow_dispatch' ]]; then
             TAG="${{ github.event.inputs.tag }}"
           else
             TAG="pr-${{ github.event.number }}"
           fi
-          GITHUB_REPOSITORY_OWNER="${{ github.repository_owner }}"
-          GITHUB_REPOSITORY_OWNER_LOWER="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
-          echo "GITHUB_REPOSITORY_OWNER_LOWER=${GITHUB_REPOSITORY_OWNER_LOWER}" >> "${GITHUB_ENV}"
-          echo "image-name=${{ env.IMAGE_REGISTRY }}/${GITHUB_REPOSITORY_OWNER_LOWER}/${{ matrix.name }}" >> "${GITHUB_OUTPUT}"
-          echo "image-tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "image-name=${{ env.IMAGE_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}" |
+            tr '[:upper:]' '[:lower:]' | tee -a "${GITHUB_OUTPUT}"
+          echo "image-tag=${TAG}" | tee -a "${GITHUB_OUTPUT}"
 
       - name: Login to Container Registry
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
         uses: docker/login-action@v3
         with:
           registry: ${{ env.IMAGE_REGISTRY }}
-          username: ${{ env.GITHUB_REPOSITORY_OWNER_LOWER }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
 
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          push: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
           tags: "${{ steps.tag.outputs.image-name }}:${{ steps.tag.outputs.image-tag }}${{ github.event_name == 'release' && format(',{0}:latest', steps.tag.outputs.image-name) || '' }}"
+          platforms: linux/amd64,linux/arm64
+          pull: true
+          push: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-          platforms: linux/amd64,linux/arm64
 
       - name: Generate artifact attestation
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')

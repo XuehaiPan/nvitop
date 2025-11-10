@@ -86,8 +86,10 @@ jobs:
       - name: Test docker build
         run: |
           docker build --tag nvitop:latest .
+          docker run --rm nvitop:latest --version
           docker run --rm nvitop:latest --help
           docker build --tag nvitop-exporter:latest ./nvitop-exporter
+          docker run --rm nvitop-exporter:latest --version
           docker run --rm nvitop-exporter:latest --help
 
       - name: Set __release__
