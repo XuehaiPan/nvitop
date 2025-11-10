@@ -20,7 +20,7 @@ from nvitop.tui.library import (
     bytes2human,
     colored,
     host,
-    make_bar,
+    make_bar_chart,
     timedelta2human,
 )
 from nvitop.tui.screens.main.panels.base import BasePanel
@@ -286,7 +286,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             width_right = len(load_average) + 4
             width_left = self.width - 2 - width_right
             cpu_bar = '[ {} ]'.format(
-                make_bar(
+                make_bar_chart(
                     'CPU',
                     self.cpu_percent,
                     width_left - 4,
@@ -294,14 +294,20 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 ),
             )
             memory_bar = '[ {} ]'.format(
-                make_bar(
+                make_bar_chart(
                     'MEM',
                     self.virtual_memory.percent,
                     width_left - 4,
                     extra_text=f'  USED: {bytes2human(self.virtual_memory.used, min_unit=GiB)}',
                 ),
             )
-            swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory.percent, width_right - 4))
+            swap_bar = '[ {} ]'.format(
+                make_bar_chart(
+                    'SWP',
+                    self.swap_memory.percent,
+                    width_right - 4,
+                ),
+            )
             self.addstr(self.y, self.x, f'{cpu_bar}  ( {load_average} )')
             self.addstr(self.y + 1, self.x, f'{memory_bar}  {swap_bar}')
             self.color_at(self.y, self.x, width=len(cpu_bar), fg='cyan', attr='bold')
@@ -425,7 +431,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         width_right = len(load_average) + 4
         width_left = self.width - 2 - width_right
         cpu_bar = '[ {} ]'.format(
-            make_bar(
+            make_bar_chart(
                 'CPU',
                 self.cpu_percent,
                 width_left - 4,
@@ -433,14 +439,14 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             ),
         )
         memory_bar = '[ {} ]'.format(
-            make_bar(
+            make_bar_chart(
                 'MEM',
                 self.virtual_memory.percent,
                 width_left - 4,
                 extra_text=f'  USED: {bytes2human(self.virtual_memory.used, min_unit=GiB)}',
             ),
         )
-        swap_bar = '[ {} ]'.format(make_bar('SWP', self.swap_memory.percent, width_right - 4))
+        swap_bar = '[ {} ]'.format(make_bar_chart('SWP', self.swap_memory.percent, width_right - 4))
 
         lines = [
             '{}  {}'.format(

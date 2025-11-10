@@ -17,7 +17,7 @@ from nvitop.tui.library import (
     Snapshot,
     colored,
     cut_string,
-    make_bar,
+    make_bar_chart,
     ttl_cache,
 )
 from nvitop.tui.screens.main.panels.base import BasePanel
@@ -482,17 +482,17 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
                 for y, row in enumerate(matrix, start=y_start):
                     for x_offset, width, prefix, utilization, color, extra_text in row:
-                        # pylint: disable-next=disallowed-name
-                        bar = make_bar(
+                        bar_chart = make_bar_chart(
                             prefix,
                             utilization,
                             width=width,
                             extra_text=extra_text,
                             swap_text=not extra_text.endswith('MHz'),
+                            extra_blank='  ',
                         )
-                        self.addstr(y, x_offset, f'{bar} │')
+                        self.addstr(y, x_offset, f'{bar_chart} │')
                         if self.TERM_256COLOR:
-                            parts = bar.rstrip().split(' ')
+                            parts = bar_chart.rstrip().split(' ')
                             prefix_len = len(parts[0])
                             bar_len = len(parts[1])
                             full_bar_len = width - prefix_len - 5
@@ -661,14 +661,15 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             ]
                     for y, row in enumerate(matrix, start=y_start):
                         for prefix, utilization, color, width, extra_text in row:
-                            bar = make_bar(  # pylint: disable=disallowed-name
+                            bar_chart = make_bar_chart(
                                 prefix,
                                 utilization,
                                 width=width,
                                 extra_text=extra_text,
                                 swap_text=not extra_text.endswith('MHz'),
+                                extra_blank='  ',
                             )
-                            lines[y] += f' {colored(bar, color)} │'  # type: ignore[arg-type]
+                            lines[y] += f' {colored(bar_chart, color)} │'  # type: ignore[arg-type]
 
                     if index == len(self.snapshots) - 1:
                         lines[y_start + len(matrix)] = (

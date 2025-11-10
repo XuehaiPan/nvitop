@@ -255,20 +255,20 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
                 return
 
             self.graph, self.last_graph = self.last_graph, self.graph
-            bar = self.make_bar(self.reversed_history[1], value)  # pylint: disable=disallowed-name
-            for i, (line, char) in enumerate(zip(self.graph, bar)):
+            bar_chart = self.make_bar_chart(self.reversed_history[1], value)
+            for i, (line, char) in enumerate(zip(self.graph, bar_chart)):
                 self.graph[i] = (line + char)[-self.width :]
 
     def remake_graph(self) -> None:
         with self.remake_lock:
             if self.max_value >= self.baseline:
-                reversed_bars = []
+                reversed_bar_charts = []
                 for _, (value2, value1) in zip(
                     range(self.width),
                     grouped(self.reversed_history, size=2, fillvalue=self.baseline),
                 ):
-                    reversed_bars.append(self.make_bar(value1, value2))
-                graph = list(map(''.join, zip(*reversed(reversed_bars))))
+                    reversed_bar_charts.append(self.make_bar_chart(value1, value2))
+                graph = list(map(''.join, zip(*reversed(reversed_bar_charts))))
 
                 for i, line in enumerate(graph):
                     graph[i] = line.rjust(self.width)[-self.width :]
@@ -279,7 +279,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
                 self.graph = [' ' * self.width for _ in range(self.height)]
                 self.last_graph = [' ' * (self.width - 1) for _ in range(self.height)]
 
-    def make_bar(self, value1: float, value2: float) -> list[str]:
+    def make_bar_chart(self, value1: float, value2: float) -> list[str]:
         if self.bound <= self.baseline:
             return [' '] * self.height
 
@@ -289,15 +289,14 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
             value1 = max(value1, 0.2)
         if value2 >= 0.0:
             value2 = max(value2, 0.2)
-        # pylint: disable=disallowed-name,invalid-name
-        bar = []
+        bar_charts = []
         for h in range(self.height):
             s1 = min(max(round(5 * (value1 - h)), 0), 4)
             s2 = min(max(round(5 * (value2 - h)), 0), 4)
-            bar.append(self.value2symbol[s1, s2])
+            bar_charts.append(self.value2symbol[s1, s2])
         if not self.upsidedown:
-            bar.reverse()
-        return bar
+            bar_charts.reverse()
+        return bar_charts
 
     def shift_line(self, line: str) -> str:
         return ''.join(self.pair2symbol[p] for p in zip(line, line[1:]))

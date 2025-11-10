@@ -43,7 +43,7 @@ __all__ = [
     'bytes2human',
     'colored',
     'cut_string',
-    'make_bar',
+    'make_bar_chart',
     'set_color',
     'timedelta2human',
     'ttl_cache',
@@ -97,37 +97,44 @@ def cut_string(
     return str(padstr + s[-(maxlen - len(padstr)) :])
 
 
-# pylint: disable=disallowed-name
-def make_bar(
+# pylint: disable-next=too-many-arguments
+def make_bar_chart(
     prefix: str,
     percent: float | str,
     width: int,
     *,
     extra_text: str = '',
     swap_text: bool = False,
+    extra_blank: str = '',
 ) -> str:
-    bar = f'{prefix}: '
+    bar_chart = f'{prefix}: '
     if percent != NA and not (isinstance(percent, float) and not math.isfinite(percent)):
         if isinstance(percent, str) and percent.endswith('%'):
             percent = percent.replace('%', '')
             percent = float(percent) if '.' in percent else int(percent)
         percentage = max(0.0, min(float(percent) / 100.0, 1.0))
-        quotient, remainder = divmod(max(1, round(8 * (width - len(bar) - 4) * percentage)), 8)
-        bar += '█' * quotient
+        quotient, remainder = divmod(
+            max(1, round(8 * (width - len(bar_chart) - 4) * percentage)),
+            8,
+        )
+        bar_chart += '█' * quotient
         if remainder > 0:
-            bar += ' ▏▎▍▌▋▊▉'[remainder]
-        if isinstance(percent, float) and len(f'{bar} {percent:.1f}%') <= width:
+            bar_chart += ' ▏▎▍▌▋▊▉'[remainder]
+        if isinstance(percent, float) and len(f'{bar_chart} {percent:.1f}%') <= width:
             text = f'{percent:.1f}%'
         else:
             text = f'{min(round(percent), 100):d}%'.replace('100%', 'MAX')  # type: ignore[arg-type]
     else:
-        bar += '░' * (width - len(bar) - 4)
+        bar_chart += '░' * (width - len(bar_chart) - 4)
         text = 'N/A'
     if extra_text:
-        if len(f'{bar} {text}   {extra_text}') <= width:
+        if len(f'{bar_chart} {text} {extra_blank}{extra_text}') <= width:
             if swap_text:
                 text, extra_text = extra_text, text
-            return f'{bar} {text}'.ljust(width - len(extra_text) - 3) + f'   {extra_text}'
-        if len(f'{bar} {extra_text}') <= width and swap_text:
-            return f'{bar} {extra_text}'.ljust(width)
-    return f'{bar} {text}'.ljust(width)
+            return (
+                f'{bar_chart} {text}'.ljust(width - len(extra_blank) - len(extra_text) - 1)
+                + f' {extra_blank}{extra_text}'
+            )
+        if len(f'{bar_chart} {extra_text}') <= width and swap_text:
+            return f'{bar_chart} {extra_text}'.ljust(width)
+    return f'{bar_chart} {text}'.ljust(width)
