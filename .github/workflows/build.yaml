@@ -36,8 +36,9 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    name: Build sdist and wheels
     if: github.repository_owner == 'XuehaiPan'
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -47,7 +48,6 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        id: py
         uses: actions/setup-python@v6
         with:
           python-version: "3.8 - 3.14"
@@ -83,6 +83,8 @@ jobs:
         run: |
           docker build --tag nvitop:latest .
           docker run --rm nvitop:latest --help
+          docker build --tag nvitop-exporter:latest ./nvitop-exporter
+          docker run --rm nvitop-exporter:latest --help
 
       - name: Set __release__
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
@@ -111,12 +113,13 @@ jobs:
           if-no-files-found: error
 
   publish:
-    runs-on: ubuntu-latest
+    name: Publish to PyPI
     needs: [build]
     if: |
       github.repository_owner == 'XuehaiPan' && github.event_name != 'pull_request' &&
       (github.event_name != 'workflow_dispatch' || github.event.inputs.task == 'build-and-publish') &&
       (github.event_name != 'push' || startsWith(github.ref, 'refs/tags/'))
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -127,7 +130,6 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v6
-        if: startsWith(github.ref, 'refs/tags/')
         with:
           python-version: "3.8 - 3.14"
           update-environment: true
