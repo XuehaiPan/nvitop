@@ -34,6 +34,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
 jobs:
   build:
     name: Build sdist and wheels

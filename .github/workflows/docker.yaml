@@ -28,9 +28,6 @@ on:
         type: string
         required: true
 
-env:
-  IMAGE_REGISTRY: ghcr.io
-
 concurrency:
   group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -40,6 +37,11 @@ permissions:
   packages: write
   id-token: write
   attestations: write
+
+env:
+  IMAGE_REGISTRY: "ghcr.io"
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
 
 jobs:
   build-and-publish:
