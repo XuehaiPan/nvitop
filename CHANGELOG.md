@@ -13,9 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `nvidia-ml-py` 13.580.82 to support list for NVIDIA Spark/Thor by [@johnnynunez](https://github.com/johnnynunez) in [#186](https://github.com/XuehaiPan/nvitop/pull/186).
-- Add bar charts for memory bandwidth and power usage in the main screen by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190).
-- Add workflow to build and publish Docker images to GitHub Container Registry by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190). Issued by [@ntheanh201](https://github.com/ntheanh201).
+-
 
 ### Changed
 
@@ -28,6 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 -
+
+------
+
+## [1.6.0] - 2025-11-11
+
+### Added
+
+- Add `nvidia-ml-py` 13.580.82 to support list for NVIDIA Spark/Thor by [@johnnynunez](https://github.com/johnnynunez) in [#186](https://github.com/XuehaiPan/nvitop/pull/186).
+- Add bar charts for memory bandwidth and power usage in the main screen by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190).
+- Add workflow to build and publish Docker images to GitHub Container Registry by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190). Issued by [@ntheanh201](https://github.com/ntheanh201).
 
 ------
 
@@ -230,7 +238,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.5.3...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/XuehaiPan/nvitop/compare/v1.5.3...v1.6.0
 [1.5.3]: https://github.com/XuehaiPan/nvitop/compare/v1.5.2...v1.5.3
 [1.5.2]: https://github.com/XuehaiPan/nvitop/compare/v1.5.1...v1.5.2
 [1.5.1]: https://github.com/XuehaiPan/nvitop/compare/v1.5.0...v1.5.1

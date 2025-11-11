@@ -48,7 +48,7 @@ classifiers = [
 ]
 dependencies = [
     # Sync with nvitop/version.py and requirements.txt
-    "nvitop ~= 1.5.3",
+    "nvitop ~= 1.6.0",
     "prometheus-client >= 0.4.0",
 ]
 dynamic = ["version"]
