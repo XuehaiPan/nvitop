@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `nvidia-ml-py` 13.580.82 to support list for NVIDIA Spark/Thor by [@johnnynunez](https://github.com/johnnynunez) in [#186](https://github.com/XuehaiPan/nvitop/pull/186).
 - Add bar charts for memory bandwidth and power usage in the main screen by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190).
+- Add workflow to build and publish Docker images to GitHub Container Registry by [@XuehaiPan](https://github.com/XuehaiPan) in [#190](https://github.com/XuehaiPan/nvitop/pull/190). Issued by [@ntheanh201](https://github.com/ntheanh201).
 
 ### Changed
 

@@ -13,6 +13,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  FORCE_COLOR: "1"
+  CLICOLOR_FORCE: "1"
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -24,7 +28,6 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        id: py
         uses: actions/setup-python@v6
         with:
           python-version: "3.8 - 3.14"
