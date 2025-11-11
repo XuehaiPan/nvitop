@@ -24,6 +24,9 @@ x-soft-wrap-text = true
 indent_size = 4
 x-soft-wrap-text = true
 
+[{*.,}{Dockerfile,dockerfile}{*.,}]
+indent_size = 2
+
 [Makefile]
 indent_style = tab
 

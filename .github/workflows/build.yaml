@@ -83,12 +83,12 @@ jobs:
             )
           )
 
-      - name: Test docker build
+      - name: Test Docker build
         run: |
-          docker build --tag nvitop:latest .
+          docker build --tag nvitop:latest --file Dockerfile .
           docker run --rm nvitop:latest --version
           docker run --rm nvitop:latest --help
-          docker build --tag nvitop-exporter:latest ./nvitop-exporter
+          docker build --tag nvitop-exporter:latest --file nvitop-exporter/Dockerfile .
           docker run --rm nvitop-exporter:latest --version
           docker run --rm nvitop-exporter:latest --help
 

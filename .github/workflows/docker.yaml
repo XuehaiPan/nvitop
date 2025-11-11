@@ -54,8 +54,10 @@ jobs:
         include:
           - name: nvitop
             context: .
+            dockerfile: Dockerfile
           - name: nvitop-exporter
-            context: ./nvitop-exporter
+            context: .
+            dockerfile: nvitop-exporter/Dockerfile
       fail-fast: false
     steps:
       - name: Checkout
@@ -64,7 +66,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Test docker build
+      - name: Test Docker build
         run: |
           docker build --tag test-image:latest ${{ matrix.context }}
           docker run --rm test-image:latest --version
@@ -75,15 +77,18 @@ jobs:
         run: |
           if [[ "${{ github.event_name }}" == 'release' ]]; then
             VERSION="${GITHUB_REF#refs/tags/}"
-            TAG="${VERSION#v}"
+            TAGS="${VERSION#v},latest"
           elif [[ "${{ github.event_name }}" == 'workflow_dispatch' ]]; then
-            TAG="${{ github.event.inputs.tag }}"
+            TAGS="${{ github.event.inputs.tag }}"
           else
-            TAG="pr-${{ github.event.number }}"
+            TAGS="pr-${{ github.event.number }}"
           fi
-          echo "image-name=${{ env.IMAGE_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}" |
-            tr '[:upper:]' '[:lower:]' | tee -a "${GITHUB_OUTPUT}"
-          echo "image-tag=${TAG}" | tee -a "${GITHUB_OUTPUT}"
+          NAME="${{ env.IMAGE_REGISTRY }}/${{ github.repository_owner }}/${{ matrix.name }}"
+          NAME="$(echo "${NAME}" | tr '[:upper:]' '[:lower:]')"
+          TAGS="$(echo "${TAGS}" | tr -d '[:space:]' | tr ',' '\n' | sort -uV | sed "s|^|${NAME}:|" | tr '\n' ',')"
+          TAGS="${TAGS%,}"
+          echo "image-name=${NAME}" | tee -a "${GITHUB_OUTPUT}"
+          echo "image-tags=${TAGS}" | tee -a "${GITHUB_OUTPUT}"
 
       - name: Login to Container Registry
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
@@ -98,7 +103,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.context }}
-          tags: "${{ steps.tag.outputs.image-name }}:${{ steps.tag.outputs.image-tag }}${{ github.event_name == 'release' && format(',{0}:latest', steps.tag.outputs.image-name) || '' }}"
+          file: ${{ matrix.dockerfile }}
+          tags: ${{ steps.tag.outputs.image-tags }}
           platforms: linux/amd64,linux/arm64
           pull: true
           push: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true') }}

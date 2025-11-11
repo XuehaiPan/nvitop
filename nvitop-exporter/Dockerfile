@@ -1,3 +1,10 @@
+# Dockerfile for nvitop-exporter
+#
+# Build the image in the repository root with:
+#
+#  docker build --tag nvitop-exporter:latest --file nvitop-exporter/Dockerfile .
+#
+# ==============================================================================
 FROM ubuntu:latest
 
 RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] || \
@@ -5,17 +12,30 @@ RUN . /etc/os-release && [ "${NAME}" = "Ubuntu" ] || \
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Setup locale
+# Install Python 3
 RUN apt-get update && \
-  apt-get install --quiet --yes --no-install-recommends python3 locales && \
+  apt-get install --quiet --yes --no-install-recommends python3-dev python3-venv locales && \
   rm -rf /var/lib/apt/lists/*
+
+# Setup locale
 ENV LC_ALL=C.UTF-8
 RUN update-locale LC_ALL="C.UTF-8"
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Setup environment
+RUN python3 -m venv /venv && \
+  . /venv/bin/activate && \
+  python3 -m pip install --upgrade pip setuptools && \
+  rm -rf /root/.cache && \
+  ( echo && echo && echo "source /venv/bin/activate" ) >> /root/.bashrc
+ENV SHELL=/bin/bash
 
-# Install nvitop-exporter
-RUN /bin/uv tool install nvitop-exporter
+# Install nvitop
+COPY .. /nvitop
+WORKDIR /nvitop
+RUN . /venv/bin/activate && \
+  python3 -m pip install /nvitop && \
+  python3 -m pip install /nvitop/nvitop-exporter && \
+  rm -rf /root/.cache
 
-ENTRYPOINT [ "/bin/uvx", "--quiet", "--offline", "nvitop-exporter" ]
+# Entrypoint
+ENTRYPOINT [ "/venv/bin/python3", "-m", "nvitop_exporter" ]
