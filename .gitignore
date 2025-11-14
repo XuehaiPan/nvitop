@@ -157,7 +157,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .envrc
 .venv
 env/
@@ -433,7 +432,6 @@ http-client.private.env.json
 
 
 ##### VisualStudioCode.gitignore #####
-.vscode/*
 #!.vscode/settings.json
 #!.vscode/tasks.json
 #!.vscode/launch.json
@@ -469,3 +467,5 @@ Sessionx.vim
 tags
 # Persistent undo
 [._]*.un~
+config.bat
+node_modules
