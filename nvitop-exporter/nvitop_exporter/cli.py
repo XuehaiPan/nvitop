@@ -178,7 +178,11 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         else:
             cprint(f'INFO: GPU {device.index}: {name} (UUID: {uuid})', file=sys.stderr)
 
-    exporter = PrometheusExporter(devices, hostname=args.hostname, interval=args.interval)
+    exporter = PrometheusExporter(
+        devices,
+        hostname=args.hostname,
+        interval=args.interval,
+    )
 
     try:
         start_wsgi_server(port=args.port, addr=args.bind_address)

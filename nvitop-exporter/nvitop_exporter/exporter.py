@@ -407,70 +407,261 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
         self.process_info = Info(
             name='process_info',
             documentation='Process information.',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_running_time = Gauge(
             name='process_running_time',
             documentation='Process running time (s).',
             unit='Second',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_cpu_percent = Gauge(
             name='process_cpu_percent',
             documentation='Process CPU percent (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_rss_memory = Gauge(
             name='process_rss_memory',
             documentation='Process memory resident set size (MiB).',
             unit='MiB',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_memory_percent = Gauge(
             name='process_memory_percent',
             documentation='Process memory percent (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_gpu_memory = Gauge(
             name='process_gpu_memory',
             documentation='Process GPU memory (MiB).',
             unit='MiB',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_gpu_sm_utilization = Gauge(
             name='process_gpu_sm_utilization',
             documentation='Process GPU SM utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_gpu_memory_utilization = Gauge(
             name='process_gpu_memory_utilization',
             documentation='Process GPU memory utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_gpu_encoder_utilization = Gauge(
             name='process_gpu_encoder_utilization',
             documentation='Process GPU encoder utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
         self.process_gpu_decoder_utilization = Gauge(
             name='process_gpu_decoder_utilization',
             documentation='Process GPU decoder utilization (%).',
             unit='Percentage',
-            labelnames=['hostname', 'index', 'devicename', 'uuid', 'pid', 'username'],
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
+            registry=self.registry,
+        )
+
+        # Kubernetes-specific metrics
+        self.process_pod_labels = Info(
+            name='process_pod_labels',
+            documentation='Kubernetes pod labels for the process.',
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
+            registry=self.registry,
+        )
+        self.process_nvidia_gpu_requests = Gauge(
+            name='process_nvidia_gpu_requests',
+            documentation='NVIDIA GPU requests for the process pod.',
+            unit='Count',
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
+            registry=self.registry,
+        )
+        self.process_nvidia_gpu_limits = Gauge(
+            name='process_nvidia_gpu_limits',
+            documentation='NVIDIA GPU limits for the process pod.',
+            unit='Count',
+            labelnames=[
+                'hostname',
+                'index',
+                'devicename',
+                'uuid',
+                'pid',
+                'username',
+                'pod_name',
+                'pod_namespace',
+                'pod_uid',
+                'container_name',
+                'container_id',
+                'node_name',
+            ],
             registry=self.registry,
         )
 
@@ -605,6 +796,24 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         host_snapshot = host_snapshots[pid, username] = process.host_snapshot()
                     else:
                         host_snapshot = host_snapshots[pid, username]
+
+                    # Collect Kubernetes information (always enabled)
+                    try:
+                        k8s_pod_name = process.pod_name()
+                        k8s_pod_namespace = process.pod_namespace()
+                        k8s_pod_uid = process.pod_uid()
+                        k8s_container_name = process.container_name()
+                        k8s_container_id = process.container_id()
+                        k8s_node_name = process.node_name()
+                        k8s_pod_labels = process.pod_labels()
+                        k8s_gpu_requests = process.nvidia_gpu_requests()
+                        k8s_gpu_limits = process.nvidia_gpu_limits()
+                    except (ImportError, OSError, AttributeError, KeyError, ValueError):
+                        k8s_pod_name = k8s_pod_namespace = k8s_pod_uid = 'N/A'
+                        k8s_container_name = k8s_container_id = k8s_node_name = 'N/A'
+                        k8s_pod_labels = {}
+                        k8s_gpu_requests = k8s_gpu_limits = 0
+
                     self.process_info.labels(
                         hostname=self.hostname,
                         index=index,
@@ -612,6 +821,12 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         uuid=uuid,
                         pid=pid,
                         username=username,
+                        pod_name=k8s_pod_name,
+                        pod_namespace=k8s_pod_namespace,
+                        pod_uid=k8s_pod_uid,
+                        container_name=k8s_container_name,
+                        container_id=k8s_container_id,
+                        node_name=k8s_node_name,
                     ).info(
                         {
                             'status': host_snapshot.status,
@@ -655,10 +870,73 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                             uuid=uuid,
                             pid=pid,
                             username=username,
+                            pod_name=k8s_pod_name,
+                            pod_namespace=k8s_pod_namespace,
+                            pod_uid=k8s_pod_uid,
+                            container_name=k8s_container_name,
+                            container_id=k8s_container_id,
+                            node_name=k8s_node_name,
                         ).set(value)
+
+                    # Set Kubernetes-specific metrics
+                    self.process_pod_labels.labels(
+                        hostname=self.hostname,
+                        index=index,
+                        devicename=name,
+                        uuid=uuid,
+                        pid=pid,
+                        username=username,
+                        pod_name=k8s_pod_name,
+                        pod_namespace=k8s_pod_namespace,
+                        pod_uid=k8s_pod_uid,
+                        container_name=k8s_container_name,
+                        container_id=k8s_container_id,
+                        node_name=k8s_node_name,
+                    ).info(k8s_pod_labels if k8s_pod_labels else {})
+
+                    self.process_nvidia_gpu_requests.labels(
+                        hostname=self.hostname,
+                        index=index,
+                        devicename=name,
+                        uuid=uuid,
+                        pid=pid,
+                        username=username,
+                        pod_name=k8s_pod_name,
+                        pod_namespace=k8s_pod_namespace,
+                        pod_uid=k8s_pod_uid,
+                        container_name=k8s_container_name,
+                        container_id=k8s_container_id,
+                        node_name=k8s_node_name,
+                    ).set(k8s_gpu_requests)
+
+                    self.process_nvidia_gpu_limits.labels(
+                        hostname=self.hostname,
+                        index=index,
+                        devicename=name,
+                        uuid=uuid,
+                        pid=pid,
+                        username=username,
+                        pod_name=k8s_pod_name,
+                        pod_namespace=k8s_pod_namespace,
+                        pod_uid=k8s_pod_uid,
+                        container_name=k8s_container_name,
+                        container_id=k8s_container_id,
+                        node_name=k8s_node_name,
+                    ).set(k8s_gpu_limits)
 
         alive_pids.update(host_snapshots)
         for pid, username in previous_alive_pids.difference(alive_pids):
+            # For dead processes, we need to try removing with various Kubernetes label combinations
+            # since we don't have the actual K8s info anymore
+            k8s_na_values = {
+                'pod_name': 'N/A',
+                'pod_namespace': 'N/A',
+                'pod_uid': 'N/A',
+                'container_name': 'N/A',
+                'container_id': 'N/A',
+                'node_name': 'N/A',
+            }
+
             for collector in (
                 self.process_info,
                 self.process_running_time,
@@ -670,6 +948,9 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                 self.process_gpu_memory_utilization,
                 self.process_gpu_encoder_utilization,
                 self.process_gpu_decoder_utilization,
+                self.process_pod_labels,
+                self.process_nvidia_gpu_requests,
+                self.process_nvidia_gpu_limits,
             ):
                 try:
                     collector.remove(
@@ -679,6 +960,12 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                         uuid,
                         pid,
                         username,
+                        k8s_na_values['pod_name'],
+                        k8s_na_values['pod_namespace'],
+                        k8s_na_values['pod_uid'],
+                        k8s_na_values['container_name'],
+                        k8s_na_values['container_id'],
+                        k8s_na_values['node_name'],
                     )
                 except KeyError:  # noqa: PERF203
                     pass
