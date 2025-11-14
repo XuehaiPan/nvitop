@@ -364,8 +364,14 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
 
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))
         for snapshot in snapshots:
+            if hasattr(snapshot, 'pod_name') and snapshot.pod_name not in ('N/A', '', None):
+                k8s_info = f'[{snapshot.pod_name}/{snapshot.pod_namespace}]'
+            else:
+                k8s_info = 'NA'
+
             snapshot.host_info = WideString(
-                '{:>5} {:>5}  {}  {}'.format(
+                '{:<20} {:>5} {:>5}  {}  {}'.format(
+                    k8s_info,
                     snapshot.cpu_percent_string.replace('%', ''),
                     snapshot.memory_percent_string.replace('%', ''),
                     ' ' * (time_length - len(snapshot.running_time_human))
@@ -386,11 +392,12 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             time.sleep(self.SNAPSHOT_INTERVAL)
 
     def header_lines(self) -> list[str]:
+        pod_headers = ['POD', *self.host_headers]
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
             r'│ GPU     PID      USER  GPU-MEM %SM %GMBW  {} │'.format(
-                '  '.join(self.host_headers).ljust(self.width - 46),
+                '  '.join(pod_headers).ljust(self.width - 46),
             ),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
