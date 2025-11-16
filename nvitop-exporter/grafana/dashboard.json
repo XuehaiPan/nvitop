@@ -2772,6 +2772,70 @@
         "refresh": 1,
         "regex": "",
         "type": "query"
+      },
+      {
+        "current": {},
+        "definition": "label_values(pod_name)",
+        "description": "Kubernetes pod name",
+        "includeAll": true,
+        "multi": true,
+        "name": "pod_name",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(pod_name)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {},
+        "definition": "label_values(pod_namespace)",
+        "description": "Kubernetes namespace",
+        "includeAll": true,
+        "multi": true,
+        "name": "pod_namespace",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(pod_namespace)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {},
+        "definition": "label_values(container_name)",
+        "description": "Kubernetes container name",
+        "includeAll": true,
+        "multi": true,
+        "name": "container_name",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(container_name)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {},
+        "definition": "label_values(node_name)",
+        "description": "Kubernetes node name",
+        "includeAll": true,
+        "multi": true,
+        "name": "node_name",
+        "options": [],
+        "query": {
+          "qryType": 1,
+          "query": "label_values(node_name)"
+        },
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
       }
     ]
   },
