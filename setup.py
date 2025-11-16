@@ -73,6 +73,8 @@ def vcs_version(name: str, path: Path | str) -> Generator[ModuleType]:
 
 if __name__ == '__main__':
     extra_requirements = {
+        'exporter': ['nvitop-exporter'],
+        'prometheus': ['nvitop-exporter'],
         'lint': [
             'ruff',
             'pylint[spelling]',
