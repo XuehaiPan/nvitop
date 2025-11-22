@@ -212,8 +212,7 @@ pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
 Or, clone this repo and install manually:
 
 ```bash
-git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
-cd nvitop
+git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop
 pip3 install .
 ```
 
