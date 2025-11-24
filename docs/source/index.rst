@@ -77,8 +77,7 @@ Or, clone this repo and install manually:
 
 .. code:: bash
 
-    git clone --depth=1 https://github.com/XuehaiPan/nvitop.git
-    cd nvitop
+    git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop
     pip3 install .
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗. |GitHub Repo Stars|_
