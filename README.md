@@ -37,6 +37,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
   - [Device and Process Status](#device-and-process-status)
   - [Resource Monitor](#resource-monitor)
     - [For Docker Users](#for-docker-users)
+    - [For Kubernetes Users](#for-kubernetes-users)
     - [For SSH Users](#for-ssh-users)
     - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
@@ -98,6 +99,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
   - get host process information using the cross-platform library [psutil](https://github.com/giampaolo/psutil) instead of calling `ps -p <pid>` in a subprocess. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop) & [py3nvml](https://github.com/fbcotter/py3nvml))
   - written in pure Python, easy to install with `pip`. (vs. [nvtop](https://github.com/Syllo/nvtop))
 - **Integrable**: easy to integrate into other applications, more than monitoring. (vs. [nvidia-htop](https://github.com/peci1/nvidia-htop) & [nvtop](https://github.com/Syllo/nvtop))
+- **Kubernetes support**: display pod name, namespace, container information, and GPU resource requests/limits for processes running in Kubernetes clusters
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/129374533-fe06c01a-630d-4994-b54b-821cccd0d33c.png" alt="Windows">
@@ -115,6 +117,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 - NVIDIA Management Library (NVML)
 - nvidia-ml-py
 - psutil
+- kubernetes (for Kubernetes pod information, optional)
 - curses<sup>[*](#curses)</sup> (with `libncursesw`)
 
 **NOTE:** The [NVIDIA Management Library (*NVML*)](https://developer.nvidia.com/nvidia-management-library-nvml) is a C-based programmatic interface for monitoring and managing various states. The runtime version of the NVML library ships with the NVIDIA display driver (available at [Download Drivers | NVIDIA](https://www.nvidia.com/Download/index.aspx)), or can be downloaded as part of the NVIDIA CUDA Toolkit (available at [CUDA Toolkit | NVIDIA Developer](https://developer.nvidia.com/cuda-downloads)). The lists of OS platforms and NVIDIA-GPUs supported by the NVML library can be found in the [NVML API Reference](https://docs.nvidia.com/deploy/nvml-api/nvml-api-reference.html).
@@ -324,6 +327,143 @@ docker compose --project-directory=nvitop-exporter/grafana up --build --detach
 ```
 
 See [`nvitop-exporter`](./nvitop-exporter/README.md) for more details.
+
+#### For Kubernetes Users
+
+`nvitop` supports Kubernetes integration and can display pod information for processes running in containers. When running inside a Kubernetes cluster, `nvitop` will automatically detect the environment and show:
+
+- **Pod Name**: Name of the Kubernetes pod
+- **Pod Namespace**: Kubernetes namespace the pod belongs to
+- **Pod UID**: Unique identifier for the pod
+- **Container Name**: Name of the container running the process
+- **Container ID**: Unique container identifier
+- **Node Name**: Kubernetes node where the pod is running
+- **Pod Labels**: Kubernetes labels applied to the pod
+- **NVIDIA GPU Requests**: Number of GPUs requested by the container
+- **NVIDIA GPU Limits**: GPU limits set for the container
+
+**Running as DaemonSet:**
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nvitop
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: nvitop
+  template:
+    metadata:
+      labels:
+        name: nvitop
+    spec:
+      serviceAccountName: nvitop
+      hostPID: true
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: nvitop
+        image: nvitop:latest
+        command: ["sleep", "infinity"]
+  runtimeClassName: nvidia
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nvitop
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: nvitop
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: nvitop
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: nvitop
+subjects:
+- kind: ServiceAccount
+  name: nvitop
+  namespace: kube-system
+```
+
+**Key Requirements for Kubernetes:**
+- `hostPID: true` for process visibility (access to host /proc)
+- NVIDIA Container Toolkit or NVIDIA device plugin
+- Service account with appropriate RBAC permissions (optional, for pod details)
+
+**Environment Variables:**
+- `KUBECONFIG`: Path to kubeconfig file for cluster access
+
+**Usage Examples:**
+
+```bash
+# Run nvitop in the pod
+kubectl exec -n kube-system -it <nvitop-pod> -- nvitop
+
+# Monitor all nodes
+kubectl get pods -n kube-system -l name=nvitop -o wide
+
+# View logs
+kubectl logs -n kube-system -l name=nvitop
+```
+
+#### Local Monitoring with KUBECONFIG
+
+You can also run `nvitop` on your local machine and monitor GPU processes on Kubernetes cluster nodes by using kubeconfig:
+
+```bash
+# Set your kubeconfig environment
+export KUBECONFIG=~/.kube/config
+
+# Run nvitop locally - it will try to match processes to pods
+nvitop
+
+# Or specify a specific context
+KUBECONFIG=~/.kube/production-config nvitop
+
+# For Docker environments
+docker run -it --rm --runtime=nvidia --gpus=all --pid=host \
+  -v ~/.kube:/root/.kube:ro \
+  ghcr.io/xuehaipan/nvitop:latest
+```
+
+**How it works:**
+1. `nvitop` detects local GPU processes
+2. Extracts container information from `/proc/<pid>/cgroup`
+3. Uses container ID to find matching pods via Kubernetes API
+4. Displays pod information alongside process details
+
+**Requirements for local monitoring:**
+- Valid kubeconfig with cluster access
+- Network connectivity to Kubernetes API server
+- GPU processes running in containers on accessible nodes
+- Access to host proc filesystem via `--pid=host`
+
+#### For Docker Users with Kubernetes
+
+Build and run the Docker image with [nvidia-container-toolkit](https://github.com/NVIDIA/nvidia-container-toolkit) and kubeconfig:
+
+```bash
+docker run -it --rm --runtime=nvidia --gpus=all --pid=host \
+  -v ~/.kube:/root/.kube:ro \
+  ghcr.io/xuehaipan/nvitop:latest
+```
+
+**NOTE:** Don't forget to add the `--pid=host` option and mount your kubeconfig for Kubernetes pod information when running the container.
 
 #### For SSH Users
 

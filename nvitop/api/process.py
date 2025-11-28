@@ -42,6 +42,27 @@ from nvitop.api.utils import (
 )
 
 
+# Optional Kubernetes integration
+try:
+    from nvitop.api import kubernetes
+    from nvitop.api.kubernetes import KubernetesInfo
+except ImportError:
+    kubernetes = None  # type: ignore[assignment]
+
+    def kubernetes_info_fallback(**kwargs: Any) -> Any:
+        """Fallback function for when kubernetes module is not available.
+
+        Args:
+            **kwargs: Arbitrary keyword arguments to be added to the fallback object.
+
+        Returns:
+            A dynamic object with the provided kwargs as attributes.
+        """
+        return type('KubernetesInfo', (), kwargs)()
+
+    KubernetesInfo = kubernetes_info_fallback  # type: ignore[misc, assignment]
+
+
 if TYPE_CHECKING:
     from collections.abc import Callable, Generator, Iterable
     from typing_extensions import Self  # Python 3.11+
@@ -131,7 +152,11 @@ def auto_garbage_clean(
                 except KeyError:
                     pass
                 # See also `GpuProcess.failsafe`
-                if fallback is _RAISE or not getattr(_USE_FALLBACK_WHEN_RAISE, 'value', False):
+                if fallback is _RAISE or not getattr(
+                    _USE_FALLBACK_WHEN_RAISE,
+                    'value',
+                    False,
+                ):
                     raise
                 if isinstance(fallback, tuple):
                     if isinstance(ex, host.AccessDenied) and fallback == ('No Such Process',):
@@ -317,7 +342,9 @@ class HostProcess(host.Process, ABC):
             host.AccessDenied:
                 If the user does not have read privilege to the process' status file.
         """
-        return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
+        return datetime.datetime.now() - datetime.datetime.fromtimestamp(
+            self.create_time(),
+        )
 
     def running_time_human(self) -> str:
         """Return the elapsed time this process has been running in human-readable format.
@@ -413,10 +440,77 @@ class HostProcess(host.Process, ABC):
                     try:
                         self.cmdline.cache_activate(self)  # type: ignore[attr-defined]
                         self.running_time.cache_activate(self)  # type: ignore[attr-defined]
+                        self._get_kubernetes_info.cache_activate(self)  # type: ignore[attr-defined]
                         yield
                     finally:
                         self.cmdline.cache_deactivate(self)  # type: ignore[attr-defined]
                         self.running_time.cache_deactivate(self)  # type: ignore[attr-defined]
+                        self._get_kubernetes_info.cache_deactivate(self)  # type: ignore[attr-defined]
+
+    # Kubernetes integration methods
+    @memoize_when_activated
+    def _get_kubernetes_info(self) -> KubernetesInfo:
+        """Get cached Kubernetes information for this process."""
+        if kubernetes is not None:
+            try:
+                return kubernetes.get_kubernetes_info(self.pid)
+            except (ImportError, kubernetes.KubernetesError, OSError):
+                pass
+
+        return KubernetesInfo(
+            pod_name=NA,
+            pod_namespace=NA,
+            pod_uid=NA,
+            container_name=NA,
+            container_id=NA,
+            node_name=NA,
+            metadata={},
+        )
+
+    @auto_garbage_clean(fallback=NA)
+    def pod_name(self) -> str | NaType:
+        """Get the Kubernetes pod name if running in a pod."""
+        return self._get_kubernetes_info().pod_name
+
+    @auto_garbage_clean(fallback=NA)
+    def pod_namespace(self) -> str | NaType:
+        """Get the Kubernetes pod namespace if running in a pod."""
+        return self._get_kubernetes_info().pod_namespace
+
+    @auto_garbage_clean(fallback=NA)
+    def pod_uid(self) -> str | NaType:
+        """Get the Kubernetes pod UID if running in a pod."""
+        return self._get_kubernetes_info().pod_uid
+
+    @auto_garbage_clean(fallback=NA)
+    def container_name(self) -> str | NaType:
+        """Get the container name if running in a container."""
+        return self._get_kubernetes_info().container_name
+
+    @auto_garbage_clean(fallback=NA)
+    def container_id(self) -> str | NaType:
+        """Get the container ID if running in a container."""
+        return self._get_kubernetes_info().container_id
+
+    @auto_garbage_clean(fallback=NA)
+    def node_name(self) -> str | NaType:
+        """Get the Kubernetes node name if running in a pod."""
+        return self._get_kubernetes_info().node_name
+
+    @auto_garbage_clean(fallback=NA)
+    def pod_labels(self) -> dict[str, str] | NaType:
+        """Get the Kubernetes pod labels if running in a pod."""
+        return self._get_kubernetes_info().pod_labels
+
+    @auto_garbage_clean(fallback=NA)
+    def nvidia_gpu_requests(self) -> int | NaType:
+        """Get the number of NVIDIA GPUs requested by this process's container."""
+        return self._get_kubernetes_info().nvidia_gpu_requests
+
+    @auto_garbage_clean(fallback=NA)
+    def nvidia_gpu_limits(self) -> int | NaType:
+        """Get the number of NVIDIA GPUs limited to this process's container."""
+        return self._get_kubernetes_info().nvidia_gpu_limits
 
     def as_snapshot(
         self,
@@ -551,7 +645,9 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     def __hash__(self) -> int:
         """Return a hash value of the GPU process."""
         if self._hash is None:  # pylint: disable=access-member-before-definition
-            self._hash = hash(self._ident)  # pylint: disable=attribute-defined-outside-init
+            self._hash = hash(
+                self._ident,
+            )  # pylint: disable=attribute-defined-outside-init
         return self._hash
 
     def __getattr__(self, name: str) -> Any | Callable[..., Any]:
@@ -639,7 +735,10 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self._gpu_memory_human = bytes2human(self.gpu_memory())
         memory_total = self.device.memory_total()
         gpu_memory_percent = NA
-        if libnvml.nvmlCheckReturn(memory_used, int) and libnvml.nvmlCheckReturn(memory_total, int):
+        if libnvml.nvmlCheckReturn(memory_used, int) and libnvml.nvmlCheckReturn(
+            memory_total,
+            int,
+        ):
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)  # type: ignore[assignment]
         self._gpu_memory_percent = gpu_memory_percent
 
@@ -1001,6 +1100,43 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             gpu_encoder_utilization=self.gpu_encoder_utilization(),
             gpu_decoder_utilization=self.gpu_decoder_utilization(),
         )
+
+    # Kubernetes integration methods - delegate to host process
+    def pod_name(self) -> str | NaType:
+        """Get the Kubernetes pod name if running in a pod."""
+        return self.host.pod_name()
+
+    def pod_namespace(self) -> str | NaType:
+        """Get the Kubernetes pod namespace if running in a pod."""
+        return self.host.pod_namespace()
+
+    def pod_uid(self) -> str | NaType:
+        """Get the Kubernetes pod UID if running in a pod."""
+        return self.host.pod_uid()
+
+    def container_name(self) -> str | NaType:
+        """Get the container name if running in a container."""
+        return self.host.container_name()
+
+    def container_id(self) -> str | NaType:
+        """Get the container ID if running in a container."""
+        return self.host.container_id()
+
+    def node_name(self) -> str | NaType:
+        """Get the Kubernetes node name if running in a pod."""
+        return self.host.node_name()
+
+    def pod_labels(self) -> dict[str, str] | NaType:
+        """Get the Kubernetes pod labels if running in a pod."""
+        return self.host.pod_labels()
+
+    def nvidia_gpu_requests(self) -> int | NaType:
+        """Get the number of NVIDIA GPUs requested by this process's container."""
+        return self.host.nvidia_gpu_requests()
+
+    def nvidia_gpu_limits(self) -> int | NaType:
+        """Get the number of NVIDIA GPUs limited to this process's container."""
+        return self.host.nvidia_gpu_limits()
 
     @classmethod
     def take_snapshots(  # batched version of `as_snapshot`
