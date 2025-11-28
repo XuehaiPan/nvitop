@@ -92,7 +92,7 @@ else:
 
 
 def command_join(cmdline: list[str]) -> str:
-    """Return a shell-escaped string from command line arguments."""
+    """Return a shell-escaped string from a list of command line arguments."""
     if len(cmdline) == 1 and not (
         # May be modified by `setproctitle`
         os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0])
@@ -110,8 +110,8 @@ def auto_garbage_clean(
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Remove the object references in the instance cache if the method call fails (the process is gone).
 
-    The fallback value will be used with `:meth:`GpuProcess.failsafe`` context manager, otherwise
-    raises an exception when falls.
+    The fallback value will be used with the :meth:`GpuProcess.failsafe` context manager; otherwise,
+    an exception is raised when failed.
     """
 
     def wrapper(func: Callable[..., Any], /) -> Callable[..., Any]:
@@ -147,8 +147,8 @@ def auto_garbage_clean(
 class HostProcess(host.Process, ABC):
     """Represent an OS process with the given PID.
 
-    If PID is omitted current process PID (:func:`os.getpid`) is used. The instance will be cache
-    during the lifetime of the process.
+    If PID is omitted, the current process PID (:func:`os.getpid`) is used. The instance will be
+    cached during the lifetime of the process.
 
     Examples:
         >>> HostProcess()  # the current process
@@ -246,7 +246,7 @@ class HostProcess(host.Process, ABC):
     if host.WINDOWS:
 
         def username(self) -> str:
-            """The name of the user that owns the process.
+            """Return the name of the user that owns the process.
 
             On Windows, the domain name will be removed if it is present.
 
@@ -254,7 +254,7 @@ class HostProcess(host.Process, ABC):
                 host.NoSuchProcess:
                     If the process is gone.
                 host.AccessDenied:
-                    If the user do not have read privilege to the process' status file.
+                    If the user does not have read privilege to the process' status file.
             """
             if self._username is None:  # pylint: disable=access-member-before-definition
                 self._username = (  # pylint: disable=attribute-defined-outside-init
@@ -265,7 +265,7 @@ class HostProcess(host.Process, ABC):
     else:
 
         def username(self) -> str:
-            """The name of the user that owns the process.
+            """Return the name of the user that owns the process.
 
             On UNIX this is calculated by using *real* process uid.
 
@@ -273,7 +273,7 @@ class HostProcess(host.Process, ABC):
                 host.NoSuchProcess:
                     If the process is gone.
                 host.AccessDenied:
-                    If the user do not have read privilege to the process' status file.
+                    If the user does not have read privilege to the process' status file.
             """
             if self._username is None:  # pylint: disable=access-member-before-definition
                 self._username = (  # pylint: disable=attribute-defined-outside-init
@@ -283,13 +283,13 @@ class HostProcess(host.Process, ABC):
 
     @memoize_when_activated
     def cmdline(self) -> list[str]:
-        """The command line this process has been called with.
+        """Return the command line this process has been called with.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         cmdline = super().cmdline()
         if len(cmdline) > 1:
@@ -303,41 +303,41 @@ class HostProcess(host.Process, ABC):
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         return command_join(self.cmdline())
 
     @memoize_when_activated
     def running_time(self) -> datetime.timedelta:
-        """The elapsed time this process has been running in :class:`datetime.timedelta`.
+        """Return the elapsed time this process has been running as a :class:`datetime.timedelta`.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         return datetime.datetime.now() - datetime.datetime.fromtimestamp(self.create_time())
 
     def running_time_human(self) -> str:
-        """The elapsed time this process has been running in human readable format.
+        """Return the elapsed time this process has been running in human-readable format.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         return timedelta2human(self.running_time())
 
     def running_time_in_seconds(self) -> float:  # in seconds
-        """The elapsed time this process has been running in seconds.
+        """Return the elapsed time this process has been running in seconds.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         return self.running_time().total_seconds()
 
@@ -346,13 +346,13 @@ class HostProcess(host.Process, ABC):
     elapsed_time_in_seconds = running_time_in_seconds
 
     def rss_memory(self) -> int:  # in bytes
-        """The used resident set size (RSS) memory of the process in bytes.
+        """Return the used resident set size (RSS) memory of the process in bytes.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         return self.memory_info().rss
 
@@ -363,7 +363,7 @@ class HostProcess(host.Process, ABC):
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         parent = super().parent()
         if parent is not None:
@@ -379,7 +379,7 @@ class HostProcess(host.Process, ABC):
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         return [HostProcess(child.pid) for child in super().children(recursive)]
 
@@ -423,7 +423,7 @@ class HostProcess(host.Process, ABC):
         attrs: Iterable[str] | None = None,
         ad_value: Any | None = None,
     ) -> Snapshot:
-        """Return a onetime snapshot of the process."""
+        """Return a one-time snapshot of the process."""
         with self.oneshot():
             attributes = self.as_dict(attrs=attrs, ad_value=ad_value)
 
@@ -441,7 +441,7 @@ class HostProcess(host.Process, ABC):
 class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Represent a process with the given PID running on the given GPU device.
 
-    The instance will be cache during the lifetime of the process.
+    The instance will be cached during the lifetime of the process.
 
     The same host process can use multiple GPU devices. The :class:`GpuProcess` instances
     representing the same PID on the host but different GPU devices are different.
@@ -563,7 +563,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
         """
         try:
             return super().__getattr__(name)  # type: ignore[misc]
@@ -597,39 +597,39 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self._device
 
     def gpu_instance_id(self) -> int | NaType:
-        """The GPU instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
+        """Return the GPU instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_instance_id
 
     def compute_instance_id(self) -> int | NaType:
-        """The compute instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
+        """Return the compute instance ID of the MIG device, or :const:`nvitop.NA` if not applicable."""
         return self._compute_instance_id
 
     def gpu_memory(self) -> int | NaType:  # in bytes
-        """The used GPU memory in bytes, or :const:`nvitop.NA` if not applicable."""
+        """Return the used GPU memory in bytes, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory
 
-    def gpu_memory_human(self) -> str | NaType:  # in human readable
-        """The used GPU memory in human readable format, or :const:`nvitop.NA` if not applicable."""
+    def gpu_memory_human(self) -> str | NaType:  # in human-readable
+        """Return the used GPU memory in human-readable format, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_human
 
     def gpu_memory_percent(self) -> float | NaType:  # in percentage
-        """The percentage of used GPU memory by the process, or :const:`nvitop.NA` if not applicable."""
+        """Return the percentage of used GPU memory by the process, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_percent
 
     def gpu_sm_utilization(self) -> int | NaType:  # in percentage
-        """The utilization rate of SM (Streaming Multiprocessor), or :const:`nvitop.NA` if not applicable."""
+        """Return the utilization rate of SM (Streaming Multiprocessor), or :const:`nvitop.NA` if not applicable."""
         return self._gpu_sm_utilization
 
     def gpu_memory_utilization(self) -> int | NaType:  # in percentage
-        """The utilization rate of GPU memory bandwidth, or :const:`nvitop.NA` if not applicable."""
+        """Return the utilization rate of GPU memory bandwidth, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_memory_utilization
 
     def gpu_encoder_utilization(self) -> int | NaType:  # in percentage
-        """The utilization rate of the encoder, or :const:`nvitop.NA` if not applicable."""
+        """Return the utilization rate of the encoder, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_encoder_utilization
 
     def gpu_decoder_utilization(self) -> int | NaType:  # in percentage
-        """The utilization rate of the decoder, or :const:`nvitop.NA` if not applicable."""
+        """Return the utilization rate of the decoder, or :const:`nvitop.NA` if not applicable."""
         return self._gpu_decoder_utilization
 
     def set_gpu_memory(self, value: int | NaType) -> None:
@@ -709,13 +709,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback='terminated')
     def status(self) -> str:
-        """The process current status.
+        """Return the process current status.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -725,13 +725,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def create_time(self) -> float | NaType:
-        """The process creation time as a floating point number expressed in seconds since the epoch.
+        """Return the process creation time as a floating point number expressed in seconds since the epoch.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -741,13 +741,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def running_time(self) -> datetime.timedelta | NaType:
-        """The elapsed time this process has been running in :class:`datetime.timedelta`.
+        """Return the elapsed time this process has been running as a :class:`datetime.timedelta`.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -756,13 +756,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.running_time()
 
     def running_time_human(self) -> str | NaType:
-        """The elapsed time this process has been running in human readable format.
+        """Return the elapsed time this process has been running in human-readable format.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -771,13 +771,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return timedelta2human(self.running_time())
 
     def running_time_in_seconds(self) -> float | NaType:
-        """The elapsed time this process has been running in seconds.
+        """Return the elapsed time this process has been running in seconds.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -794,13 +794,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def username(self) -> str | NaType:
-        """The name of the user that owns the process.
+        """Return the name of the user that owns the process.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -812,13 +812,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def name(self) -> str | NaType:
-        """The process name.
+        """Return the process name.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -834,7 +834,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -850,7 +850,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -862,13 +862,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=NA)
     def host_memory(self) -> int | NaType:  # in bytes
-        """The used resident set size (RSS) memory of the process in bytes.
+        """Return the used resident set size (RSS) memory of the process in bytes.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -877,13 +877,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         return self.host.rss_memory()
 
     def host_memory_human(self) -> str | NaType:
-        """The used resident set size (RSS) memory of the process in human readable format.
+        """Return the used resident set size (RSS) memory of the process in human-readable format.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -896,13 +896,13 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     # For `AccessDenied` error the fallback value is `['No Permissions']`
     @auto_garbage_clean(fallback=('No Such Process',))
     def cmdline(self) -> list[str]:
-        """The command line this process has been called with.
+        """Return the command line this process has been called with.
 
         Raises:
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -920,7 +920,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:
-                If the user do not have read privilege to the process' status file.
+                If the user does not have read privilege to the process' status file.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
@@ -930,7 +930,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
     @auto_garbage_clean(fallback=_RAISE)
     def host_snapshot(self) -> Snapshot:
-        """Return a onetime snapshot of the host process."""
+        """Return a one-time snapshot of the host process."""
         with self.host.oneshot():
             return Snapshot(
                 real=self.host,
@@ -955,7 +955,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         *,
         host_process_snapshot_cache: dict[int, Snapshot] | None = None,
     ) -> Snapshot:
-        """Return a onetime snapshot of the process on the GPU device.
+        """Return a one-time snapshot of the process on the GPU device.
 
         Note:
             To return the fallback value rather than raise an exception, please use the context
