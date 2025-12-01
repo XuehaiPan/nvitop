@@ -1015,7 +1015,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             The percentage of used memory over total memory, or :const:`nvitop.NA` when not applicable.
         """
         total, _, used = self.memory_info()
-        if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int):
+        if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int) and total > 0:
             return round(100.0 * used / total, 1)
         return NA
 
@@ -1099,7 +1099,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             The percentage of used BAR1 memory over total BAR1 memory, or :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
         total, _, used = self.bar1_memory_info()
-        if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int):
+        if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int) and total > 0:
             return round(100.0 * used / total, 1)
         return NA
 
