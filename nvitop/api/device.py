@@ -149,7 +149,14 @@ __all__ = [
 
 
 class MemoryInfo(NamedTuple):  # in bytes
-    """Device memory information in bytes."""
+    """Device memory information in bytes.
+
+    Attributes:
+        total: Total device memory.
+        free: Unallocated device memory.
+        used: Allocated device memory.
+        reserved: Memory reserved for system use (default: NA).
+    """
 
     total: int | NaType
     free: int | NaType
@@ -158,7 +165,14 @@ class MemoryInfo(NamedTuple):  # in bytes
 
 
 class ClockInfos(NamedTuple):  # in MHz
-    """Clock speeds information in MHz."""
+    """Clock speeds information in MHz.
+
+    Attributes:
+        graphics: Graphics clock speed.
+        sm: SM (streaming multiprocessor) clock speed.
+        memory: Memory clock speed.
+        video: Video encoder/decoder clock speed.
+    """
 
     graphics: int | NaType
     sm: int | NaType
@@ -167,14 +181,26 @@ class ClockInfos(NamedTuple):  # in MHz
 
 
 class ClockSpeedInfos(NamedTuple):
-    """Clock speeds information in MHz."""
+    """Clock speeds information in MHz.
+
+    Attributes:
+        current: Current clock speeds.
+        max: Maximum clock speeds.
+    """
 
     current: ClockInfos
     max: ClockInfos
 
 
 class UtilizationRates(NamedTuple):  # in percentage
-    """Utilization rates in percentage."""
+    """Utilization rates in percentage.
+
+    Attributes:
+        gpu: Percent of time over the past sample period during which one or more kernels was executing on the GPU.
+        memory: Percent of time over the past sample period during which global (device) memory was being read or written.
+        encoder: Video encoder utilization rate.
+        decoder: Video decoder utilization rate.
+    """  # pylint: disable=line-too-long
 
     gpu: int | NaType
     memory: int | NaType
@@ -183,7 +209,12 @@ class UtilizationRates(NamedTuple):  # in percentage
 
 
 class ThroughputInfo(NamedTuple):  # in KiB/s
-    """Throughput information in KiB/s."""
+    """Throughput information in KiB/s.
+
+    Attributes:
+        tx: Transmit throughput in KiB/s.
+        rx: Receive throughput in KiB/s.
+    """
 
     tx: int | NaType
     rx: int | NaType
@@ -943,7 +974,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             memory_info = libnvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self._handle)
             if libnvml.nvmlCheckReturn(memory_info):
                 if memory_info.total == 0:
-                    # Device with unified memory
+                    # Device with unified memory (indicated by total == 0 from NVML)
+                    # Use system virtual memory as these devices share host memory
                     vm = host.virtual_memory()
                     return MemoryInfo(total=vm.total, free=vm.free, used=vm.used, reserved=NA)
                 return MemoryInfo(
