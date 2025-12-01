@@ -117,7 +117,7 @@ import time
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, overload
 
-from nvitop.api import libcuda, libcudart, libnvml
+from nvitop.api import host, libcuda, libcudart, libnvml
 from nvitop.api.process import GpuProcess
 from nvitop.api.utils import (
     NA,
@@ -148,32 +148,43 @@ __all__ = [
 # Class definitions ################################################################################
 
 
-class MemoryInfo(NamedTuple):  # in bytes # pylint: disable=missing-class-docstring
+class MemoryInfo(NamedTuple):  # in bytes
+    """Device memory information in bytes."""
+
     total: int | NaType
     free: int | NaType
     used: int | NaType
+    reserved: int | NaType = NA
 
 
-class ClockInfos(NamedTuple):  # in MHz # pylint: disable=missing-class-docstring
+class ClockInfos(NamedTuple):  # in MHz
+    """Clock speeds information in MHz."""
+
     graphics: int | NaType
     sm: int | NaType
     memory: int | NaType
     video: int | NaType
 
 
-class ClockSpeedInfos(NamedTuple):  # pylint: disable=missing-class-docstring
+class ClockSpeedInfos(NamedTuple):
+    """Clock speeds information in MHz."""
+
     current: ClockInfos
     max: ClockInfos
 
 
-class UtilizationRates(NamedTuple):  # in percentage # pylint: disable=missing-class-docstring
+class UtilizationRates(NamedTuple):  # in percentage
+    """Utilization rates in percentage."""
+
     gpu: int | NaType
     memory: int | NaType
     encoder: int | NaType
     decoder: int | NaType
 
 
-class ThroughputInfo(NamedTuple):  # in KiB/s # pylint: disable=missing-class-docstring
+class ThroughputInfo(NamedTuple):  # in KiB/s
+    """Throughput information in KiB/s."""
+
     tx: int | NaType
     rx: int | NaType
 
@@ -925,18 +936,23 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def memory_info(self) -> MemoryInfo:  # in bytes
         """Return a named tuple with memory information (in bytes) for the device.
 
-        Returns: MemoryInfo(total, free, used)
+        Returns: MemoryInfo(total, free, used, reserved)
             A named tuple with memory information, the item could be :const:`nvitop.NA` when not applicable.
         """
         if self._handle is not None:
             memory_info = libnvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self._handle)
             if libnvml.nvmlCheckReturn(memory_info):
+                if memory_info.total == 0:
+                    # Device with unified memory
+                    vm = host.virtual_memory()
+                    return MemoryInfo(total=vm.total, free=vm.free, used=vm.used, reserved=NA)
                 return MemoryInfo(
                     total=memory_info.total,
                     free=memory_info.free,
                     used=memory_info.used,
+                    reserved=getattr(memory_info, 'reserved', NA),
                 )
-        return MemoryInfo(total=NA, free=NA, used=NA)
+        return MemoryInfo(total=NA, free=NA, used=NA, reserved=NA)
 
     def memory_total(self) -> int | NaType:  # in bytes
         """Total installed GPU memory in bytes.
@@ -1014,7 +1030,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[float, NaType]
             The percentage of used memory over total memory, or :const:`nvitop.NA` when not applicable.
         """
-        total, _, used = self.memory_info()
+        total, _, used, _ = self.memory_info()
         if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int) and total > 0:
             return round(100.0 * used / total, 1)
         return NA
@@ -1098,7 +1114,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[float, NaType]
             The percentage of used BAR1 memory over total BAR1 memory, or :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
-        total, _, used = self.bar1_memory_info()
+        total, _, used, _ = self.bar1_memory_info()
         if libnvml.nvmlCheckReturn(used, int) and libnvml.nvmlCheckReturn(total, int) and total > 0:
             return round(100.0 * used / total, 1)
         return NA
