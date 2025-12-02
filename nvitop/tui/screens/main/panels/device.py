@@ -486,7 +486,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             prefix,
                             utilization,
                             width=width,
-                            extra_text=extra_text,
+                            extra_text=extra_text if 'N/A' not in extra_text else '',
                             swap_text=not extra_text.endswith('MHz'),
                             extra_blank='  ',
                         )
@@ -665,7 +665,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                                 prefix,
                                 utilization,
                                 width=width,
-                                extra_text=extra_text,
+                                extra_text=extra_text if 'N/A' not in extra_text else '',
                                 swap_text=not extra_text.endswith('MHz'),
                                 extra_blank='  ',
                             )
