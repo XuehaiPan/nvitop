@@ -971,19 +971,31 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             A named tuple with memory information, the item could be :const:`nvitop.NA` when not applicable.
         """
         if self._handle is not None:
-            memory_info = libnvml.nvmlQuery('nvmlDeviceGetMemoryInfo', self._handle)
-            if libnvml.nvmlCheckReturn(memory_info):
-                if memory_info.total == 0:
-                    # Device with unified memory (indicated by total == 0 from NVML)
-                    # Use system virtual memory as these devices share host memory
-                    vm = host.virtual_memory()
-                    return MemoryInfo(total=vm.total, free=vm.free, used=vm.used, reserved=NA)
-                return MemoryInfo(
-                    total=memory_info.total,
-                    free=memory_info.free,
-                    used=memory_info.used,
-                    reserved=getattr(memory_info, 'reserved', NA),
+            has_unified_memory = False
+            try:
+                memory_info = libnvml.nvmlQuery(
+                    'nvmlDeviceGetMemoryInfo',
+                    self._handle,
+                    ignore_errors=False,
                 )
+            except libnvml.NVMLError_NotSupported:
+                has_unified_memory = True
+            except libnvml.NVMLError:
+                memory_info = NA
+            if libnvml.nvmlCheckReturn(memory_info):
+                if memory_info.total > 0:
+                    return MemoryInfo(
+                        total=memory_info.total,
+                        free=memory_info.free,
+                        used=memory_info.used,
+                        reserved=getattr(memory_info, 'reserved', NA),
+                    )
+                has_unified_memory = True
+            if has_unified_memory:
+                # Device with unified memory
+                # Use system virtual memory as these devices share host memory
+                vm = host.virtual_memory()
+                return MemoryInfo(total=vm.total, free=vm.free, used=vm.used, reserved=NA)
         return MemoryInfo(total=NA, free=NA, used=NA, reserved=NA)
 
     def memory_total(self) -> int | NaType:  # in bytes
