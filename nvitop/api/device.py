@@ -980,6 +980,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 )
             except libnvml.NVMLError_NotSupported:
                 has_unified_memory = True
+                memory_info = NA
             except libnvml.NVMLError:
                 memory_info = NA
             if libnvml.nvmlCheckReturn(memory_info):
