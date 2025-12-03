@@ -639,7 +639,11 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
         self._gpu_memory_human = bytes2human(self.gpu_memory())
         memory_total = self.device.memory_total()
         gpu_memory_percent = NA
-        if libnvml.nvmlCheckReturn(memory_used, int) and libnvml.nvmlCheckReturn(memory_total, int):
+        if (
+            libnvml.nvmlCheckReturn(memory_used, int)
+            and libnvml.nvmlCheckReturn(memory_total, int)
+            and memory_total > 0
+        ):
             gpu_memory_percent = round(100.0 * memory_used / memory_total, 1)  # type: ignore[assignment]
         self._gpu_memory_percent = gpu_memory_percent
 
