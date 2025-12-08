@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Support devices with unified memory (e.g., NVIDIA Spark) by [@XuehaiPan](https://github.com/XuehaiPan) in [#195](https://github.com/XuehaiPan/nvitop/pull/195). Issued by [@FlorinAndrei](https://github.com/FlorinAndrei).
 
 ### Changed
 
