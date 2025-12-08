@@ -125,8 +125,15 @@ def make_bar_chart(
         else:
             text = f'{min(round(percent), 100):d}%'.replace('100%', 'MAX')  # type: ignore[arg-type]
     else:
-        bar_chart += '░' * (width - len(bar_chart) - 4)
         text = 'N/A'
+        if (
+            extra_text
+            and 'N/A' not in extra_text.upper()
+            and swap_text
+            and len(bar_chart) + len(extra_text) + 2 <= width
+        ):
+            text, extra_text = extra_text, ''
+        bar_chart += '░' * (width - len(bar_chart) - len(text) - 1)
     if extra_text:
         if len(f'{bar_chart} {text} {extra_blank}{extra_text}') <= width:
             if swap_text:
