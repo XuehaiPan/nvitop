@@ -488,7 +488,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             width=width,
                             extra_text=extra_text if 'N/A' not in extra_text else '',
                             swap_text=not extra_text.endswith('MHz'),
-                            extra_blank='  ',
+                            extra_blank=' ',
                         )
                         self.addstr(y, x_offset, f'{bar_chart} │')
                         if self.TERM_256COLOR:
@@ -667,7 +667,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                                 width=width,
                                 extra_text=extra_text if 'N/A' not in extra_text else '',
                                 swap_text=not extra_text.endswith('MHz'),
-                                extra_blank='  ',
+                                extra_blank=' ',
                             )
                             lines[y] += f' {colored(bar_chart, color)} │'  # type: ignore[arg-type]
 

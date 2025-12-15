@@ -290,7 +290,8 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                     'CPU',
                     self.cpu_percent,
                     width_left - 4,
-                    extra_text=f'  UPTIME: {timedelta2human(host.uptime(), round=True)}',
+                    extra_text=f'UPTIME: {timedelta2human(host.uptime(), round=True)}',
+                    extra_blank=' ',
                 ),
             )
             memory_bar = '[ {} ]'.format(
@@ -298,7 +299,8 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                     'MEM',
                     self.virtual_memory.percent,
                     width_left - 4,
-                    extra_text=f'  USED: {bytes2human(self.virtual_memory.used, min_unit=GiB)}',
+                    extra_text=f'USED: {bytes2human(self.virtual_memory.used, min_unit=GiB)}',
+                    extra_blank=' ',
                 ),
             )
             swap_bar = '[ {} ]'.format(
@@ -435,7 +437,8 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 'CPU',
                 self.cpu_percent,
                 width_left - 4,
-                extra_text=f'  UPTIME: {timedelta2human(host.uptime(), round=True)}',
+                extra_text=f'UPTIME: {timedelta2human(host.uptime(), round=True)}',
+                extra_blank=' ',
             ),
         )
         memory_bar = '[ {} ]'.format(
@@ -443,7 +446,8 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 'MEM',
                 self.virtual_memory.percent,
                 width_left - 4,
-                extra_text=f'  USED: {bytes2human(self.virtual_memory.used, min_unit=GiB)}',
+                extra_text=f'USED: {bytes2human(self.virtual_memory.used, min_unit=GiB)}',
+                extra_blank=' ',
             ),
         )
         swap_bar = '[ {} ]'.format(make_bar_chart('SWP', self.swap_memory.percent, width_right - 4))
