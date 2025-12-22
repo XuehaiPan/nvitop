@@ -37,13 +37,20 @@ from typing import ClassVar as _ClassVar
 
 # Python Bindings for the NVIDIA Management Library (NVML)
 # https://pypi.org/project/nvidia-ml-py
-import pynvml as _pynvml
-from pynvml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
-from pynvml import nvmlDeviceGetPciInfo  # appease mypy # noqa: F401 # pylint: disable=unused-import
 
-from nvitop.api.utils import NA, UINT_MAX, ULONGLONG_MAX, NaType
+from nvitop.api.utils import NA, UINT_MAX, ULONGLONG_MAX, NaType, is_musa
 from nvitop.api.utils import colored as __colored
 
+_is_musa = is_musa()
+
+if not _is_musa:
+    import pynvml as _pynvml
+    from pynvml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
+    from pynvml import nvmlDeviceGetPciInfo  # appease mypy # noqa: F401 # pylint: disable=unused-import
+else:
+    import pymtml as _pynvml
+    from pymtml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
+    from pymtml import nvmlDeviceGetPciInfo  # appease mypy # noqa: F401 # pylint: disable=unused-import
 
 if _TYPE_CHECKING:
     from collections.abc import Callable as _Callable
@@ -540,7 +547,10 @@ _pynvml_installation_corrupted: bool = not callable(
 # Patch function `nvmlDeviceGet{Compute,Graphics,MPSCompute}RunningProcesses`
 if not _pynvml_installation_corrupted:
     # pylint: disable-next=ungrouped-imports
-    from pynvml import _nvmlGetFunctionPointer, _PrintableStructure, nvmlStructToFriendlyObject
+    if not _is_musa:
+        from pynvml import _nvmlGetFunctionPointer, _PrintableStructure, nvmlStructToFriendlyObject
+    else:
+        from pymtml import _nvmlGetFunctionPointer, _PrintableStructure, nvmlStructToFriendlyObject
 
     def _nvmlLookupFunctionPointer(symbol: str) -> _Any | None:
         try:
@@ -671,7 +681,11 @@ if not _pynvml_installation_corrupted:
 
         # First call to get the size
         c_count = _ctypes.c_uint(0)
-        fn = _nvmlGetFunctionPointer(f'{func}{version_suffix}')
+        try:
+            fn = _nvmlGetFunctionPointer(f'{func}{version_suffix}')
+        except Exception:
+            return []
+        
         ret = fn(handle, _ctypes.byref(c_count), None)
 
         if ret == NVML_SUCCESS:
@@ -876,7 +890,11 @@ if not _pynvml_installation_corrupted:
                 'function `nvmlDeviceGetMemoryInfo`.',
             )
 
-        fn = _nvmlGetFunctionPointer(f'nvmlDeviceGetMemoryInfo{version_suffix}')
+        try:
+            fn = _nvmlGetFunctionPointer(f'nvmlDeviceGetMemoryInfo{version_suffix}')
+        except Exception:
+            return NA
+        
         ret = fn(handle, _ctypes.byref(c_memory))
         if ret != NVML_SUCCESS:
             raise NVMLError(ret)
@@ -952,7 +970,10 @@ if not _pynvml_installation_corrupted:
             c_temp_v1.version = nvmlTemperature_v1
             # pylint: disable-next=attribute-defined-outside-init
             c_temp_v1.sensorType = _ctypes.c_uint(sensor)
-            fn = _nvmlGetFunctionPointer('nvmlDeviceGetTemperatureV')
+            try:
+                fn = _nvmlGetFunctionPointer(f'nvmlDeviceGetTemperatureV{version_suffix}')
+            except Exception:
+                return NA
             ret = fn(handle, _ctypes.byref(c_temp_v1))
             if ret != NVML_SUCCESS:
                 raise NVMLError(ret)
@@ -960,7 +981,10 @@ if not _pynvml_installation_corrupted:
 
         if version_suffix == '':
             c_temp = _ctypes.c_uint(0)
-            fn = _nvmlGetFunctionPointer('nvmlDeviceGetTemperature')
+            try:
+                fn = _nvmlGetFunctionPointer('nvmlDeviceGetTemperature')
+            except Exception:
+                return NA
             ret = fn(handle, _ctypes.c_uint(sensor), _ctypes.byref(c_temp))
             if ret != NVML_SUCCESS:
                 raise NVMLError(ret)
