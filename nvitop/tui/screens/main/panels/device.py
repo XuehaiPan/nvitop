@@ -95,13 +95,13 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
         self.formats_compact: list[str] = [
             '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
-            '{performance_state:>3} {power_status:>12} '
+            '{performance_state:<3}{power_status:>13} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
         self.formats_full: list[str] = [
             '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
             '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
-            '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4}  {power_status:>12} '
+            '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4} {power_status:>13} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 
