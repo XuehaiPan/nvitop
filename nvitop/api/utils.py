@@ -792,6 +792,16 @@ def memoize_when_activated(method: Method, /) -> Method:
     wrapped.cache_deactivate = cache_deactivate  # type: ignore[attr-defined]
     return wrapped  # type: ignore[return-value]
 
+def is_musa() -> bool:
+    """Check if the current Python interpreter is Musa."""
+    try:
+        import pymtml  # noqa: F401
+        pymtml.nvmlInit()
+        pymtml.nvmlShutdown()
+    except Exception:
+        return False
+    
+    return True
 
 if __name__ == '__main__':
     import doctest
