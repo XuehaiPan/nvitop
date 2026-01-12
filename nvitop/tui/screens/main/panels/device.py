@@ -101,7 +101,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self.formats_full: list[str] = [
             '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
             '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
-            '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:>4} {power_status:>13} '
+            '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:^4} {power_status:>13} '
             '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
         ]
 
@@ -121,6 +121,11 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             self.formats_full[0] = self.formats_full[0].replace(
                 '{total_volatile_uncorrected_ecc_errors:>20}',
                 '{mig_mode:>8}  {total_volatile_uncorrected_ecc_errors:>10}',
+            )
+        if all(len(device.power_status.rpartition(' / ')[-1]) < 5 for device in self.snapshots):
+            self.formats_compact[0] = self.formats_compact[0].replace(
+                'performance_state:<3',
+                'performance_state:>3',
             )
 
     @property
