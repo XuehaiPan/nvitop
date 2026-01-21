@@ -78,7 +78,7 @@ def take_snapshots(
         A named tuple containing two lists of snapshots.
 
     Note:
-        If not arguments are specified, all devices and all GPU processes will
+        If no arguments are specified, all devices and all GPU processes will
         be returned.
 
     Examples:
@@ -216,7 +216,7 @@ def collect_in_background(
         on_start (Optional[Callable[[ResourceMetricCollector], None]]):
             A function to initialize the daemon thread and collector.
         on_stop (Optional[Callable[[ResourceMetricCollector], None]]):
-            A function that do some necessary cleanup after the daemon thread is stopped.
+            A function that does some necessary cleanup after the daemon thread is stopped.
         tag (str):
             The tag prefix used for metrics results.
         start (bool):
@@ -670,7 +670,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         )
 
     def __del__(self) -> None:
-        """Clean up the demon thread on destruction."""
+        """Clean up the daemon thread on destruction."""
         self._daemon_running.clear()
 
     # pylint: disable-next=too-many-branches,too-many-locals,too-many-statements

@@ -191,7 +191,7 @@ CUDA_ERROR_MPS_SERVER_NOT_READY = 807
 CUDA_ERROR_MPS_MAX_CLIENTS_REACHED = 808
 """This error indicates that the hardware resources required to create MPS client have been exhausted."""
 CUDA_ERROR_MPS_MAX_CONNECTIONS_REACHED = 809
-"""This error indicates the the hardware resources required to support device connections have been exhausted."""
+"""This error indicates that the hardware resources required to support device connections have been exhausted."""
 CUDA_ERROR_STREAM_CAPTURE_UNSUPPORTED = 900
 """This error indicates that the operation is not permitted when the stream is capturing."""
 CUDA_ERROR_STREAM_CAPTURE_INVALIDATED = 901
@@ -294,7 +294,7 @@ def _extract_cuda_errors_as_classes() -> None:
     Each CUDA Error gets a new :class:`CUDAError` subclass. This way try-except blocks can filter
     appropriate exceptions more easily.
 
-    :class:`CUDAError` is a parent class. Each ``CUDA_ERROR_*`` gets it's own subclass.
+    :class:`CUDAError` is a parent class. Each ``CUDA_ERROR_*`` gets its own subclass.
     e.g. :data:`CUDA_ERROR_INVALID_VALUE` will be turned into :class:`CUDAError_InvalidValue`.
     """
     this_module = _sys.modules[__name__]

@@ -17,7 +17,7 @@
 """The live classes for GPU devices.
 
 The core classes are :class:`Device` and :class:`CudaDevice` (also aliased as :attr:`Device.cuda`).
-The type of returned instance created by ``Class(args)`` is depending on the given arguments.
+The type of the returned instance created by ``Class(args)`` depends on the given arguments.
 
 ``Device()`` returns:
 
@@ -612,7 +612,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             - (uuid: str)         -> Union[PhysicalDevice, MigDevice]  # depending on the UUID value
             - (bus_id: str)       -> PhysicalDevice
 
-        Note: This method takes exact 1 non-None argument.
+        Note: This method takes exactly 1 non-None argument.
 
         Returns: Union[PhysicalDevice, MigDevice]
             A :class:`PhysicalDevice` instance or a :class:`MigDevice` instance.
@@ -2892,7 +2892,7 @@ class CudaDevice(Device):
             - (nvml_index: int)        -> CudaDevice
             - (nvml_index: (int, int)) -> CudaMigDevice
 
-        Note: This method takes exact 1 non-None argument.
+        Note: This method takes exactly 1 non-None argument.
 
         Returns: Union[CudaDevice, CudaMigDevice]
             A :class:`CudaDevice` instance or a :class:`CudaMigDevice` instance.

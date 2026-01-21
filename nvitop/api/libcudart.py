@@ -231,7 +231,7 @@ cudaErrorMpsServerNotReady = 807
 cudaErrorMpsMaxClientsReached = 808
 """This error indicates that the hardware resources required to create MPS client have been exhausted."""
 cudaErrorMpsMaxConnectionsReached = 809
-"""This error indicates the the hardware resources required to device connections have been exhausted."""
+"""This error indicates that the hardware resources required for device connections have been exhausted."""
 cudaErrorMpsClientTerminated = 810
 """This error indicates that the MPS client has been terminated by the server. To continue using CUDA, the process must be terminated and relaunched."""
 cudaErrorCdpNotSupported = 811
@@ -342,7 +342,7 @@ def _extract_cuda_errors_as_classes() -> None:
     Each CUDA Error gets a new :class:`cudaError` subclass. This way try-except blocks can filter
     appropriate exceptions more easily.
 
-    :class:`cudaError` is a parent class. Each ``cudaError*`` gets it's own subclass.
+    :class:`cudaError` is a parent class. Each ``cudaError*`` gets its own subclass.
     e.g. :data:`cudaErrorInvalidValue` will be turned into :class:`cudaError_InvalidValue`.
     """
     this_module = _sys.modules[__name__]

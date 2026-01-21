@@ -148,7 +148,7 @@ def select_devices(
     """Select a subset of devices satisfying the specified criteria.
 
     Note:
-        The *min count* constraint may not be satisfied if the no enough devices are available. This
+        The *min count* constraint may not be satisfied if not enough devices are available. This
         constraint is only enforced when there are both MIG and non-MIG devices present.
 
     Examples:
@@ -456,7 +456,7 @@ def parse_arguments() -> argparse.Namespace:
         metavar='TOL',
         help=(
             'The constraints tolerance (in percentage). (default: 0, i.e., strict)\n'
-            'This option can loose the constraints if the requested resource is not available.\n'
+            'This option can loosen the constraints if the requested resource is not available.\n'
             'For example, set `--tolerance=20` will accept a device with only 4GiB of free\n'
             'memory when set `--min-free-memory=5GiB`.'
         ),

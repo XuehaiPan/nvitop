@@ -58,7 +58,7 @@ Install from PyPI (|PyPI Package|_):
 
 .. note::
 
-    Python 3.8+ is required, and Python versions lower than 3.8 is not supported.
+    Python 3.8+ is required, and Python versions lower than 3.8 are not supported.
 
 Install from conda-forge (|Conda-forge Package|_):
 

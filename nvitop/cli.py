@@ -112,7 +112,7 @@ def parse_arguments() -> argparse.Namespace:
             'Use gradient colors to get spectrum-like bar charts. This option is only available\n'
             'when the terminal supports 256 colors. You may need to set environment variable\n'
             '`TERM="xterm-256color"`. Note that the terminal multiplexer, such as `tmux`, may\n'
-            'override the `TREM` variable.'
+            'override the `TERM` variable.'
         ),
     )
     coloring.add_argument(

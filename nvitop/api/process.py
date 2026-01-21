@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""The live classes for process running on the host and the GPU devices."""
+"""The live classes for processes running on the host and the GPU devices."""
 
 # pylint: disable=too-many-lines
 
@@ -559,7 +559,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
 
         Raises:
             AttributeError:
-                If the attribute is not defined in either :class:`GpuProcess` nor :class:`HostProcess`.
+                If the attribute is not defined in either :class:`GpuProcess` or :class:`HostProcess`.
             host.NoSuchProcess:
                 If the process is gone.
             host.AccessDenied:

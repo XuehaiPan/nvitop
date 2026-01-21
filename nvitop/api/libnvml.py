@@ -546,7 +546,7 @@ if not _pynvml_installation_corrupted:
         try:
             ptr = _nvmlGetFunctionPointer(symbol)
         except NVMLError_FunctionNotFound:
-            LOGGER.debug('Failed to found symbol `%s`.', symbol)
+            LOGGER.debug('Failed to find symbol `%s`.', symbol)
             return None
         LOGGER.debug('Found symbol `%s`.', symbol)
         return ptr
