@@ -990,6 +990,7 @@ class _TerminalState:  # pylint: disable=too-many-instance-attributes
             81: KEY_NPAGE,
             82: KEY_IC,
             83: KEY_DC,
+            15: KEY_BTAB,  # Shift+Tab
             59: KEY_F1,
             60: KEY_F2,
             61: KEY_F3,
@@ -1005,17 +1006,33 @@ class _TerminalState:  # pylint: disable=too-many-instance-attributes
         }
         return key_map.get(ext, -1)
 
-    def _map_escape_sequence(self, seq: str) -> int:
-        """Map ANSI escape sequences to curses key codes."""
-        seq_map = {
-            # Arrow keys
+    def _map_escape_sequence(self, seq: str) -> int:  # pylint: disable=too-many-return-statements
+        """Map ANSI escape sequences to curses key codes.
+
+        Handles both simple sequences (e.g., '[A' for Up) and parameterized
+        sequences with modifiers (e.g., '[1;2A' for Shift+Up).
+
+        Modifier encoding (xterm-style):
+            2 = Shift, 3 = Alt, 4 = Shift+Alt, 5 = Ctrl,
+            6 = Shift+Ctrl, 7 = Alt+Ctrl, 8 = Shift+Alt+Ctrl
+        """
+        # Simple sequences (no parameters)
+        simple_map = {
+            # Arrow keys (CSI format: ESC [ X)
             '[A': KEY_UP,
             '[B': KEY_DOWN,
             '[C': KEY_RIGHT,
             '[D': KEY_LEFT,
+            # Arrow keys (SS3 format: ESC O X - application cursor mode)
+            'OA': KEY_UP,
+            'OB': KEY_DOWN,
+            'OC': KEY_RIGHT,
+            'OD': KEY_LEFT,
             # Navigation keys
             '[H': KEY_HOME,
             '[F': KEY_END,
+            'OH': KEY_HOME,  # SS3 home (application mode)
+            'OF': KEY_END,  # SS3 end (application mode)
             '[5~': KEY_PPAGE,
             '[6~': KEY_NPAGE,
             '[2~': KEY_IC,
@@ -1024,6 +1041,10 @@ class _TerminalState:  # pylint: disable=too-many-instance-attributes
             '[4~': KEY_END,  # alternative end
             '[7~': KEY_HOME,  # rxvt home
             '[8~': KEY_END,  # rxvt end
+            # Shift+Tab (back tab)
+            '[Z': KEY_BTAB,
+            # Keypad Enter (SS3 format - sent in application mode)
+            'OM': KEY_ENTER,
             # Function keys (SS3 format)
             'OP': KEY_F1,
             'OQ': KEY_F2,
@@ -1044,7 +1065,89 @@ class _TerminalState:  # pylint: disable=too-many-instance-attributes
             '[13~': KEY_F3,
             '[14~': KEY_F4,
         }
-        return seq_map.get(seq, 27)
+
+        if seq in simple_map:
+            return simple_map[seq]
+
+        # Parse parameterized sequences: [n;modifier X] or [n;modifier ~]
+        # Format: [ (parameters separated by ;) terminator
+        if seq.startswith('[') and len(seq) >= 4:
+            terminator = seq[-1]
+            params_str = seq[1:-1]
+
+            # Split parameters by semicolon
+            params = params_str.split(';')
+            if len(params) == 2:
+                try:
+                    _code = int(params[0]) if params[0] else 1
+                    modifier = int(params[1]) if params[1] else 1
+                except ValueError:
+                    return 27  # Invalid sequence
+
+                # Map terminator to base key
+                base_key_map = {
+                    'A': KEY_UP,
+                    'B': KEY_DOWN,
+                    'C': KEY_RIGHT,
+                    'D': KEY_LEFT,
+                    'H': KEY_HOME,
+                    'F': KEY_END,
+                    'P': KEY_F1,
+                    'Q': KEY_F2,
+                    'R': KEY_F3,
+                    'S': KEY_F4,
+                }
+
+                # Handle arrow/navigation keys with modifier: [1;modifier X]
+                if terminator in base_key_map:
+                    base = base_key_map[terminator]
+                    return self._apply_modifier(base, modifier)
+
+                # Handle keys with ~ terminator: [n;m~
+                if terminator == '~':
+                    tilde_base_map = {
+                        2: KEY_IC,
+                        3: KEY_DC,
+                        5: KEY_PPAGE,
+                        6: KEY_NPAGE,
+                        15: KEY_F5,
+                        17: KEY_F6,
+                        18: KEY_F7,
+                        19: KEY_F8,
+                        20: KEY_F9,
+                        21: KEY_F10,
+                        23: KEY_F11,
+                        24: KEY_F12,
+                    }
+                    if _code in tilde_base_map:
+                        base = tilde_base_map[_code]
+                        return self._apply_modifier(base, modifier)
+
+        return 27  # Unrecognized sequence, return ESC
+
+    def _apply_modifier(self, base_key: int, modifier: int) -> int:
+        """Apply xterm modifier to a base key code.
+
+        Returns shifted key variants where defined, otherwise the base key.
+        Modifier values: 2=Shift, 3=Alt, 5=Ctrl (and combinations)
+        """
+        # Shifted key mappings (modifier & 1 means Shift is pressed)
+        shift_map = {
+            KEY_LEFT: KEY_SLEFT,
+            KEY_RIGHT: KEY_SRIGHT,
+            KEY_HOME: KEY_SHOME,
+            KEY_END: KEY_SEND,
+            KEY_DC: KEY_SDC,
+            KEY_IC: KEY_SIC,
+        }
+
+        # For Shift modifier (2, 4, 6, 8), return shifted variant if available
+        if modifier in (2, 4, 6, 8) and base_key in shift_map:
+            return shift_map[base_key]
+
+        # For other modifiers or keys without shifted variants, return base key
+        # (Alt/Ctrl handling would need additional logic in the input handler)
+        return base_key
 
 
 # Global terminal state instance
