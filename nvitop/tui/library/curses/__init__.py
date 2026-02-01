@@ -23,7 +23,7 @@ else:
 if not HAS_CURSES_MODULE:
     # pylint: disable-next=redefined-builtin
     from nvitop.tui.library.curses import ascii  # type: ignore[no-redef]
-    from nvitop.tui.library.curses._curses import *  # type: ignore[assignment,no-redef] # noqa: F403
+    from nvitop.tui.library.curses._curses import *  # type: ignore[assignment] # noqa: F403
 
     if _TYPE_CHECKING:
         from collections.abc import Callable as _Callable
@@ -77,7 +77,7 @@ if not HAS_CURSES_MODULE:
     def start_color() -> None:  # pylint: disable=function-redefined
         from nvitop.tui.library.curses import _curses
 
-        retval = _curses.start_color()  # type: ignore[func-returns-value]
+        retval = _curses.start_color()  # type: ignore[func-returns-value] # pylint: disable=assignment-from-no-return
         if hasattr(_curses, 'COLORS'):
             globals()['COLORS'] = _curses.COLORS
         if hasattr(_curses, 'COLOR_PAIRS'):

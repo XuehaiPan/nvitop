@@ -6,8 +6,8 @@
 
 from __future__ import annotations
 
+import unicodedata
 from typing import TYPE_CHECKING, Literal
-from unicodedata import east_asian_width
 
 
 if TYPE_CHECKING:
@@ -18,27 +18,50 @@ __all__ = ['WideString', 'wcslen']
 
 
 ASCIIONLY: frozenset[str] = frozenset(map(chr, range(1, 128)))
+COMBINING: Literal[0] = 0
 NARROW: Literal[1] = 1
 WIDE: Literal[2] = 2
 WIDE_SYMBOLS: frozenset[str] = frozenset('WF')
 
 
-def utf_char_width(string: str) -> Literal[1, 2]:
-    """Return the width of a single character."""
-    if east_asian_width(string) in WIDE_SYMBOLS:
-        return WIDE
+def utf_char_width(string: str) -> Literal[0, 1, 2]:  # pylint: disable=too-many-return-statements
+    """Return the width of a single character (0 for combining, 2 for wide, 1 otherwise)."""
+    try:
+        import wcwidth  # pylint: disable=import-outside-toplevel
+
+        w = wcwidth.wcwidth(string)
+        if w < 0:
+            return NARROW  # control characters treated as width 1
+        if w == 0:
+            return COMBINING
+        if w >= 2:
+            return WIDE
+    except ImportError:
+        # Fallback to unicodedata
+        if unicodedata.combining(string):
+            return COMBINING
+        if unicodedata.east_asian_width(string) in WIDE_SYMBOLS:
+            return WIDE
     return NARROW
 
 
 def string_to_charlist(string: str) -> list[str]:
-    """Return a list of characters with extra empty strings after wide chars."""
+    """Return a list of characters with extra empty strings after wide chars.
+
+    Combining characters (width 0) are merged with the preceding character.
+    """
     if ASCIIONLY.issuperset(string):
         return list(string)
-    result = []
+    result: list[str] = []
     for char in string:
-        result.append(char)
-        if east_asian_width(char) in WIDE_SYMBOLS:
-            result.append('')
+        width = utf_char_width(char)
+        if width == COMBINING and result:
+            # Merge combining character with the previous character
+            result[-1] += char
+        else:
+            result.append(char)
+            if width == WIDE:
+                result.append('')
     return result
 
 

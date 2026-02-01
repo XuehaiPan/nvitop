@@ -193,14 +193,14 @@ def alt(c: int | str) -> int | str:
 
 
 @overload
-def unctrl(c: int) -> int: ...
+def unctrl(c: int) -> str: ...
 
 
 @overload
 def unctrl(c: str) -> str: ...
 
 
-def unctrl(c: int | str) -> int | str:
+def unctrl(c: int | str) -> str:
     bits = _ctoi(c)
     if bits == 0x7F:
         rep = '^?'
