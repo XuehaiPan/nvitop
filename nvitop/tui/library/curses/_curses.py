@@ -623,10 +623,37 @@ class _TerminalState:  # pylint: disable=too-many-instance-attributes
         self.screen_buffer = [[(' ', 0) for _ in range(self.cols)] for _ in range(self.lines)]
 
     def get_ansi_color_code(self, color: int, is_fg: bool) -> str:
-        """Convert curses color number to ANSI escape code."""
+        """Convert curses color number to ANSI escape code.
+
+        Checks color_table for custom RGB colors defined via init_color().
+        Uses true-color (24-bit) ANSI for custom colors, otherwise standard codes.
+        """
         if color == -1:  # default color
             return '39' if is_fg else '49'
 
+        # Check if this color was customized via init_color()
+        # Colors 0-7 have default values; only use true-color if RGB differs from default
+        default_rgb = {
+            0: (0, 0, 0),
+            1: (1000, 0, 0),
+            2: (0, 1000, 0),
+            3: (1000, 1000, 0),
+            4: (0, 0, 1000),
+            5: (1000, 0, 1000),
+            6: (0, 1000, 1000),
+            7: (1000, 1000, 1000),
+        }
+        if color in self.color_table:
+            rgb = self.color_table[color]
+            # Use true-color if this is a custom color (index >= 8) or RGB was modified
+            if color >= 8 or rgb != default_rgb.get(color):
+                # Convert curses RGB (0-1000) to ANSI RGB (0-255)
+                r = (rgb[0] * 255) // 1000
+                g = (rgb[1] * 255) // 1000
+                b = (rgb[2] * 255) // 1000
+                return f'{"38" if is_fg else "48"};2;{r};{g};{b}'
+
+        # Standard color codes
         base = 30 if is_fg else 40
         if 0 <= color < 8:
             return str(base + color)
