@@ -3,7 +3,7 @@
 
 # pylint: disable=missing-module-docstring
 
-from nvitop.tui.library import host
+from nvitop.tui.library import curses, host
 from nvitop.tui.library.device import Device, MigDevice
 from nvitop.tui.library.displayable import Displayable, DisplayableContainer
 from nvitop.tui.library.history import BufferedHistoryGraph, HistoryGraph
@@ -80,6 +80,7 @@ __all__ = [
     'WideString',
     'bytes2human',
     'colored',
+    'curses',
     'cut_string',
     'host',
     'libcurses',
