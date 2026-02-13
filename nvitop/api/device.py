@@ -3241,12 +3241,15 @@ def _parse_cuda_visible_devices(  # pylint: disable=too-many-branches,too-many-s
                         """,
                     ),
                 ],
+                stderr=subprocess.DEVNULL,
+                text=True,
+                encoding='utf-8',
+                timeout=120.0,
             )
-            .decode('utf-8', errors='replace')
             .strip()
             .split(',')
         )
-    except subprocess.CalledProcessError:
+    except subprocess.SubprocessError:
         pass
     else:
         uuids = [
