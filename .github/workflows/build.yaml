@@ -170,7 +170,7 @@ jobs:
           fi
 
       - name: Download built sdist and wheels
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           # unpacks default artifact into dist/
           # if `name: artifact` is omitted, the action will create extra parent dir
