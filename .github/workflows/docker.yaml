@@ -113,7 +113,7 @@ jobs:
 
       - name: Generate artifact attestation
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true')
-        uses: actions/attest-build-provenance@v3
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ steps.tag.outputs.image-name }}
           subject-digest: ${{ steps.build.outputs.digest }}
