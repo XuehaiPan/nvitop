@@ -6,14 +6,13 @@
 
 from __future__ import annotations
 
-import curses
 import string
 import threading
 import time
 from functools import partial
 from typing import TYPE_CHECKING, Literal
 
-from nvitop.tui.library import host
+from nvitop.tui.library import curses, host
 from nvitop.tui.library.displayable import Displayable
 from nvitop.tui.library.keybinding import NAMED_SPECIAL_KEYS, normalize_keybinding
 from nvitop.tui.library.utils import cut_string

@@ -104,13 +104,12 @@ if TYPE_CHECKING:
 __all__ = ['colored', 'cprint']
 
 
-if os.name == 'nt':  # Windows
-    try:
-        from colorama import init
-    except ImportError:
-        pass
-    else:
-        init()
+try:
+    from colorama import just_fix_windows_console
+except ImportError:
+    pass
+else:
+    just_fix_windows_console()
 
 
 ATTRIBUTES: dict[Attribute, int] = {
@@ -122,7 +121,6 @@ ATTRIBUTES: dict[Attribute, int] = {
     'concealed': 8,
     'strike': 9,
 }
-
 HIGHLIGHTS: dict[Highlight, int] = {
     'on_black': 40,
     'on_grey': 40,  # Actually black but kept for backwards compatibility
@@ -142,7 +140,6 @@ HIGHLIGHTS: dict[Highlight, int] = {
     'on_light_cyan': 106,
     'on_white': 107,
 }
-
 COLORS: dict[Color, int] = {
     'black': 30,
     'grey': 30,  # Actually black but kept for backwards compatibility
@@ -162,8 +159,6 @@ COLORS: dict[Color, int] = {
     'light_cyan': 96,
     'white': 97,
 }
-
-
 RESET = '\033[0m'
 
 
@@ -239,19 +234,15 @@ def colored(
     if not _can_do_color(no_color=no_color, force_color=force_color):
         return result
 
-    fmt_str = '\033[%dm%s'
+    sequence = []
     if color is not None:
-        result = fmt_str % (COLORS[color], result)
-
+        sequence.append(COLORS[color])
     if on_color is not None:
-        result = fmt_str % (HIGHLIGHTS[on_color], result)
-
+        sequence.append(HIGHLIGHTS[on_color])
     if attrs is not None:
-        for attr in attrs:
-            result = fmt_str % (ATTRIBUTES[attr], result)
-
-    result += RESET
-
+        sequence.extend(ATTRIBUTES[attr] for attr in attrs)
+    if sequence:
+        return f'\033[{";".join(map(str, sequence))}m{result}{RESET}'
     return result
 
 

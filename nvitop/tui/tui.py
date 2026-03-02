@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import curses
 import shutil
 import time
 from typing import TYPE_CHECKING, Literal, Union
@@ -19,6 +18,7 @@ from nvitop.tui.library import (
     MessageBox,
     MouseEvent,
     Snapshot,
+    curses,
 )
 from nvitop.tui.screens import (
     BaseScreen,
