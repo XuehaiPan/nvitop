@@ -65,7 +65,7 @@ if not __release__:
 
 
 # The package `nvidia-ml-py` is not backward compatible over releases. This may
-# cause problems with Old versions of NVIDIA drivers.
+# cause problems with old versions of NVIDIA drivers.
 # The ideal solution is to let the user install the best-fit version of `nvidia-ml-py`.
 PYNVML_VERSION_CANDIDATES = (
     # Sync with pyproject.toml and requirements.txt
@@ -126,3 +126,16 @@ Note:
     which are incompatible with some old NVIDIA drivers. ``nvitop`` may not display the processes
     correctly due to this incompatibility.
 """
+
+
+# Check that PYNVML_VERSION_CANDIDATES is sorted.
+if not __release__:
+    try:
+        from packaging.version import Version as _Version
+    except ImportError:
+        pass
+    else:
+        assert (
+            tuple(sorted(PYNVML_VERSION_CANDIDATES, key=_Version)) == PYNVML_VERSION_CANDIDATES
+        ), 'PYNVML_VERSION_CANDIDATES is not sorted.'
+        del _Version
