@@ -2107,6 +2107,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             return {
                 libnvml.NVML_DRIVER_WDDM: 'WDDM',
                 libnvml.NVML_DRIVER_WDM: 'WDM',
+                libnvml.NVML_DRIVER_MCDM: 'MCDM',
             }.get(libnvml.nvmlQuery('nvmlDeviceGetCurrentDriverModel', self._handle), NA)
         return NA
 

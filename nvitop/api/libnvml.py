@@ -200,6 +200,7 @@ NVML_CLOCK_VIDEO: int = _pynvml.NVML_CLOCK_VIDEO
 NVML_TEMPERATURE_GPU: int = _pynvml.NVML_TEMPERATURE_GPU
 NVML_DRIVER_WDDM: int = _pynvml.NVML_DRIVER_WDDM
 NVML_DRIVER_WDM: int = _pynvml.NVML_DRIVER_WDM
+NVML_DRIVER_MCDM: int = getattr(_pynvml, 'NVML_DRIVER_MCDM', 2)
 NVML_MEMORY_ERROR_TYPE_UNCORRECTED: int = _pynvml.NVML_MEMORY_ERROR_TYPE_UNCORRECTED
 NVML_VOLATILE_ECC: int = _pynvml.NVML_VOLATILE_ECC
 NVML_COMPUTEMODE_DEFAULT: int = _pynvml.NVML_COMPUTEMODE_DEFAULT
@@ -974,6 +975,102 @@ else:
     LOGGER.warning(
         'Your installed package `nvidia-ml-py` is corrupted. '
         'Skip patch functions `nvmlDeviceGetTemperature`. '
+        'You may get incorrect or incomplete results. Please consider reinstall package '
+        '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
+    )
+
+# Patch function `nvmlDeviceGetDriverModel`
+# Since `nvidia-ml-py` 13.595.45, `nvmlDeviceGetDriverModel` dispatches to `_v2` which calls the
+# C function `nvmlDeviceGetDriverModel_v2`. Older drivers may not have this symbol.
+if not _pynvml_installation_corrupted:
+    __get_driver_model_version_suffix: str | None = None
+
+    def __determine_get_driver_model_version_suffix() -> str:
+        global __get_driver_model_version_suffix  # pylint: disable=global-statement
+
+        if __get_driver_model_version_suffix is None:
+            __get_driver_model_version_suffix = '_v2'
+            if _nvmlLookupFunctionPointer('nvmlDeviceGetDriverModel_v2') is not None:
+                LOGGER.debug('NVML get driver model version 2 API is available.')
+            else:
+                __get_driver_model_version_suffix = ''
+                LOGGER.debug(
+                    'NVML get driver model version 2 API is not available due to incompatible '
+                    'NVIDIA driver. Fallback to use NVML get driver model version 1 API.',
+                )
+
+        return __get_driver_model_version_suffix
+
+    def nvmlDeviceGetDriverModel(  # pylint: disable=function-redefined
+        handle: c_nvmlDevice_t,
+    ) -> list[int]:
+        """Retrieve the driver model (WDDM or WDM/TCC) for the device.
+
+        Returns a list of two values: [current driver model, pending driver model].
+
+        Raises:
+            NVMLError_Uninitialized:
+                If NVML was not first initialized with :func:`nvmlInit`.
+            NVMLError_InvalidArgument:
+                If device is invalid.
+            NVMLError_GpuIsLost:
+                If the target GPU has fallen off the bus or is otherwise inaccessible.
+            NVMLError_NotSupported:
+                If the device does not support this feature (e.g. on Linux).
+            NVMLError_Unknown:
+                On any unexpected error.
+        """
+        version_suffix = __determine_get_driver_model_version_suffix()
+        c_curr_model = _ctypes.c_uint()
+        c_pending_model = _ctypes.c_uint()
+        fn = _nvmlGetFunctionPointer(f'nvmlDeviceGetDriverModel{version_suffix}')
+        ret = fn(handle, _ctypes.byref(c_curr_model), _ctypes.byref(c_pending_model))
+        if ret != NVML_SUCCESS:
+            raise NVMLError(ret)
+        return [c_curr_model.value, c_pending_model.value]
+
+    def nvmlDeviceGetCurrentDriverModel(  # pylint: disable=function-redefined
+        handle: c_nvmlDevice_t,
+    ) -> int:
+        """Retrieve the current driver model (WDDM or WDM/TCC) for the device.
+
+        Raises:
+            NVMLError_Uninitialized:
+                If NVML was not first initialized with :func:`nvmlInit`.
+            NVMLError_InvalidArgument:
+                If device is invalid.
+            NVMLError_GpuIsLost:
+                If the target GPU has fallen off the bus or is otherwise inaccessible.
+            NVMLError_NotSupported:
+                If the device does not support this feature (e.g. on Linux).
+            NVMLError_Unknown:
+                On any unexpected error.
+        """
+        return nvmlDeviceGetDriverModel(handle)[0]
+
+    def nvmlDeviceGetPendingDriverModel(  # pylint: disable=function-redefined
+        handle: c_nvmlDevice_t,
+    ) -> int:
+        """Retrieve the pending driver model (WDDM or WDM/TCC) for the device.
+
+        Raises:
+            NVMLError_Uninitialized:
+                If NVML was not first initialized with :func:`nvmlInit`.
+            NVMLError_InvalidArgument:
+                If device is invalid.
+            NVMLError_GpuIsLost:
+                If the target GPU has fallen off the bus or is otherwise inaccessible.
+            NVMLError_NotSupported:
+                If the device does not support this feature (e.g. on Linux).
+            NVMLError_Unknown:
+                On any unexpected error.
+        """
+        return nvmlDeviceGetDriverModel(handle)[1]
+
+else:
+    LOGGER.warning(
+        'Your installed package `nvidia-ml-py` is corrupted. '
+        'Skip patch functions `nvmlDeviceGetDriverModel`. '
         'You may get incorrect or incomplete results. Please consider reinstall package '
         '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
     )
