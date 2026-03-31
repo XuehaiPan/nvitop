@@ -27,7 +27,6 @@ __all__ = [
     'QUANT_KEY',
     'REVERSED_SPECIAL_KEYS',
     'SPECIAL_KEYS',
-    'SPECIAL_KEYS',
     'SPECIAL_KEYS_UNCASED',
     'KeyBuffer',
     'KeyMaps',

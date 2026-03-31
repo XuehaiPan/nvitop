@@ -28,7 +28,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 .. |Documentation Status| image:: https://img.shields.io/readthedocs/nvitop?label=docs&logo=readthedocs
 .. _Documentation Status: https://nvitop.readthedocs.io
 
-.. |Downloads| image:: https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=grey&right_color=blue&left_text=downloads
+.. |Downloads| image:: https://static.pepy.tech/personalized-badge/nvitop?period=total&left_color=gray&right_color=blue&left_text=downloads
 .. _Downloads: https://pepy.tech/project/nvitop
 
 .. |GitHub Repo Stars| image:: https://img.shields.io/github/stars/XuehaiPan/nvitop?label=stars&logo=github&color=brightgreen

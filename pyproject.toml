@@ -104,6 +104,7 @@ spelling.spelling-dict = "en_US"
 spelling.spelling-private-dict-file = "docs/source/spelling_wordlist.txt"
 
 [tool.codespell]
+builtin = "clear,rare,en-GB_to_en-US"
 ignore-words = "docs/source/spelling_wordlist.txt"
 
 [tool.ruff]

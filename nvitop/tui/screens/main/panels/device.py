@@ -94,20 +94,28 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self._daemon_running = threading.Event()
 
         self.formats_compact: list[str] = [
-            '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
-            '{performance_state:<3}{power_status:>13} '
-            '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
+            (
+                '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
+                '{performance_state:<3}{power_status:>13} '
+                '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+            ),
         ]
         self.formats_full: list[str] = [
-            '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
-            '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │',
-            '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:^4} {power_status:>13} '
-            '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │',
+            (
+                '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
+                '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │'
+            ),
+            (
+                '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:^4} {power_status:>13} '
+                '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+            ),
         ]
 
         self.mig_formats: list[str] = [
-            '│{physical_index:>2}:{mig_index:<2}{name:>12} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
-            '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │',
+            (
+                '│{physical_index:>2}:{mig_index:<2}{name:>12} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
+                '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │'
+            ),
         ]
 
         if IS_WINDOWS:
