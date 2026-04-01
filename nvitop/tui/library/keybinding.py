@@ -372,7 +372,7 @@ class KeyBuffer:  # pylint: disable=too-many-instance-attributes
             and self.quantifier_key in self.keymap
             and self.keymap[self.quantifier_key] is self.QUANTIFIER_KEY_FINISHED  # type: ignore[comparison-overlap]
         ):
-            self.finished_parsing_quantifier = True
+            self.finished_parsing_quantifier = True  # type: ignore[unreachable]
 
     def clear(self) -> None:
         self.__init__(self.keymap)  # type: ignore[misc] # pylint: disable=unnecessary-dunder-call

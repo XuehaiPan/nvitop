@@ -152,17 +152,17 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
 
         def format_cpu_percent(value: float) -> str:
             if value is NA:  # type: ignore[comparison-overlap]
-                return f'CPU: {value}'
+                return f'CPU: {value}'  # type: ignore[unreachable]
             return f'CPU: {value:.1f}%'
 
         def format_max_cpu_percent(value: float) -> str:
             if value is NA:  # type: ignore[comparison-overlap]
-                return f'MAX CPU: {value}'
+                return f'MAX CPU: {value}'  # type: ignore[unreachable]
             return f'MAX CPU: {value:.1f}%'
 
         def format_host_memory(value: float) -> str:
             if value is NA:  # type: ignore[comparison-overlap]
-                return f'HOST-MEM: {value}'
+                return f'HOST-MEM: {value}'  # type: ignore[unreachable]
             return (
                 f'HOST-MEM: {bytes2human(value)} '
                 f'({round(100.0 * value / total_host_memory, 1):.1f}%)'
@@ -170,7 +170,7 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
 
         def format_max_host_memory(value: float) -> str:
             if value is NA:  # type: ignore[comparison-overlap]
-                return f'MAX HOST-MEM: {value}'
+                return f'MAX HOST-MEM: {value}'  # type: ignore[unreachable]
             return (
                 f'MAX HOST-MEM: {bytes2human(value)} '
                 f'({round(100.0 * value / total_host_memory, 1):.1f}%) '
@@ -196,12 +196,12 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
 
         def format_sm(value: float) -> str:
             if value is NA:  # type: ignore[comparison-overlap]
-                return f'GPU-SM: {value}'
+                return f'GPU-SM: {value}'  # type: ignore[unreachable]
             return f'GPU-SM: {value:.1f}%'
 
         def format_max_sm(value: float) -> str:
             if value is NA:  # type: ignore[comparison-overlap]
-                return f'MAX GPU-SM: {value}'
+                return f'MAX GPU-SM: {value}'  # type: ignore[unreachable]
             return f'MAX GPU-SM: {value:.1f}%'
 
         with self.snapshot_lock:

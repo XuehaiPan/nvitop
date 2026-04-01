@@ -233,7 +233,7 @@ class HistoryGraph:  # pylint: disable=too-many-instance-attributes
 
     def add(self, value: float) -> None:
         if value is NA:  # type: ignore[comparison-overlap]
-            value = self.baseline - 0.1
+            value = self.baseline - 0.1  # type: ignore[unreachable]
         assert isinstance(value, (int, float))
 
         with self.write_lock:
@@ -368,7 +368,7 @@ class BufferedHistoryGraph(HistoryGraph):
 
     def add(self, value: float) -> None:
         if value is NA:  # type: ignore[comparison-overlap]
-            value = self.baseline - 0.1
+            value = self.baseline - 0.1  # type: ignore[unreachable]
         assert isinstance(value, (int, float))
 
         timestamp = time.monotonic()
