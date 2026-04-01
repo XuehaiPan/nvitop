@@ -90,6 +90,7 @@ warn_redundant_casts = true
 warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
+no_site_packages = true
 
 [tool.pylint]
 main.py-version = "3.8"
@@ -174,6 +175,9 @@ ignore = [
     # TRY003: avoid specifying long messages outside the exception class
     # long messages are necessary for clarity
     "TRY003",
+    # FURB152: literals that are similar to constants in `math` module.
+    # change code semantics
+    "FURB152",
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -207,6 +211,7 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["nvitop", "nvitop_exporter"]
 extra-standard-library = ["typing_extensions"]
+known-local-folder = ["tests"]
 lines-after-imports = 2
 
 [tool.ruff.lint.pydocstyle]
