@@ -206,7 +206,7 @@ Install the latest version from GitHub (![Commit Count](https://img.shields.io/g
 
 ```bash
 pip3 install --upgrade pip setuptools
-pip3 install git+https://github.com/XuehaiPan/nvitop.git#egg=nvitop
+pip3 install git+https://github.com/XuehaiPan/nvitop.git
 ```
 
 Or, clone this repo and install manually:
