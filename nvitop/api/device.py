@@ -985,13 +985,21 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 memory_info = NA
             if libnvml.nvmlCheckReturn(memory_info):
                 if memory_info.total > 0:
-                    return MemoryInfo(
-                        total=memory_info.total,
-                        free=memory_info.free,
-                        used=memory_info.used,
-                        reserved=getattr(memory_info, 'reserved', NA),
-                    )
-                has_unified_memory = True
+                    # Detect coherent UMA platforms (e.g. GB10 Grace Blackwell):
+                    # nvmlDeviceGetMemoryInfo returns NVML_SUCCESS with total == system MemTotal (~121GB).
+                    # If total >= 90% of system RAM, treat as unified memory and use MemAvailable instead.
+                    vm = host.virtual_memory()
+                    if vm.total > 0 and memory_info.total >= vm.total * 9 // 10:
+                        has_unified_memory = True
+                    else:
+                        return MemoryInfo(
+                            total=memory_info.total,
+                            free=memory_info.free,
+                            used=memory_info.used,
+                            reserved=getattr(memory_info, 'reserved', NA),
+                        )
+                else:
+                    has_unified_memory = True
             if has_unified_memory:
                 # Device with unified memory
                 # Use system virtual memory as these devices share host memory
