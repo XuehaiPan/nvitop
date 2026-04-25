@@ -84,6 +84,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self._snapshot_buffer: list[Snapshot] = []
         self._snapshots: list[Snapshot] = []
         self.snapshot_lock = threading.Lock()
+        self._name_maxlen: int = 19  # default; updated after has_vram_temp is determined
         self.snapshots: list[Snapshot] = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(
             name='device-snapshot-daemon',
