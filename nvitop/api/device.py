@@ -1473,6 +1473,23 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
         return NA
 
+    def vram_temperature(self) -> int | NaType:  # in Celsius
+        """VRAM (memory) temperature in degrees C, read via BAR0 register.
+
+        Requires root access and kernel parameter ``iomem=relaxed``.
+        Only supported on specific NVIDIA GPUs with GDDR6/GDDR6X memory.
+
+        Returns: Union[int, NaType]
+            The VRAM temperature in Celsius degrees, or :const:`nvitop.NA` when not applicable.
+        """
+        from nvitop.api.libgddr6 import read_vram_temperature
+
+        bus_id = self.bus_id()
+        if bus_id is NA:
+            return NA
+        temp = read_vram_temperature(bus_id)
+        return temp if temp is not None else NA
+
     @memoize_when_activated
     def power_usage(self) -> int | NaType:  # in milliwatts (mW)
         """The last measured power draw for the entire board in milliwatts.
@@ -2398,6 +2415,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'memory_clock',
         'fan_speed',
         'temperature',
+        'vram_temperature',
         'power_usage',
         'power_limit',
         'power_status',

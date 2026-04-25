@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `nvidia-ml-py` 13.595.45 to support list.
+- Add GDDR6/GDDR6X VRAM memory temperature reading via GPU BAR0 registers for supported NVIDIA GPUs (Linux, root, `iomem=relaxed` required).
+- Add conditional MTmp column to TUI device panel when VRAM temperature data is available.
 
 ### Changed
 
