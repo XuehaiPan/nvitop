@@ -117,7 +117,7 @@ import time
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, overload
 
-from nvitop.api import host, libcuda, libcudart, libnvml
+from nvitop.api import host, libcuda, libcudart, libmxsmi, libnvml
 from nvitop.api.process import GpuProcess
 from nvitop.api.utils import (
     NA,
@@ -240,6 +240,38 @@ _VALUE_OMITTED: str = ValueOmitted()  # type: ignore[assignment]
 del ValueOmitted
 
 
+_ACTIVE_BACKEND: str | None = None
+_ACTIVE_BACKEND_LOCK: threading.RLock = threading.RLock()
+
+
+def _set_active_backend(backend: str) -> None:
+    global _ACTIVE_BACKEND  # pylint: disable=global-statement
+
+    with _ACTIVE_BACKEND_LOCK:
+        _ACTIVE_BACKEND = backend
+
+
+def _get_active_backend() -> str | None:
+    with _ACTIVE_BACKEND_LOCK:
+        return _ACTIVE_BACKEND
+
+
+def _should_use_mxsmi_backend() -> bool:
+    return libmxsmi.is_forced() or _get_active_backend() == 'mx-smi'
+
+
+@contextlib.contextmanager
+def _nvml_probe() -> Generator[None]:
+    suppress_logs = libmxsmi.is_available()
+    logger_disabled = libnvml.LOGGER.disabled
+    if suppress_logs:
+        libnvml.LOGGER.disabled = True
+    try:
+        yield
+    finally:
+        libnvml.LOGGER.disabled = logger_disabled
+
+
 class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     """Live class of the GPU devices, different from the device snapshots.
 
@@ -333,8 +365,32 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         """Test whether there are any devices and the NVML library is successfully loaded."""
         try:
             return cls.count() > 0
-        except libnvml.NVMLError:
+        except (libnvml.NVMLError, libmxsmi.MxSmiError):
             return False
+
+    @staticmethod
+    def backend() -> str:
+        """Return the active GPU query backend."""
+        active_backend = _get_active_backend()
+        if libmxsmi.is_forced():
+            return 'mx-smi'
+        if active_backend is not None:
+            return active_backend
+        try:
+            with _nvml_probe():
+                device_count = libnvml.nvmlQuery('nvmlDeviceGetCount', default=0)
+            if device_count > 0:
+                _set_active_backend('nvml')
+                return 'nvml'
+        except libnvml.NVMLError:
+            if libmxsmi.is_available():
+                _set_active_backend('mx-smi')
+                return 'mx-smi'
+            raise
+        if libmxsmi.is_available():
+            _set_active_backend('mx-smi')
+            return 'mx-smi'
+        return 'nvml'
 
     @staticmethod
     def driver_version() -> str | NaType:
@@ -355,7 +411,18 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
                 driver without reloading the kernel module.
         """
-        return libnvml.nvmlQuery('nvmlSystemGetDriverVersion')
+        if _should_use_mxsmi_backend():
+            return libmxsmi.driver_version()
+        try:
+            with _nvml_probe():
+                driver_version = libnvml.nvmlQuery('nvmlSystemGetDriverVersion')
+        except libnvml.NVMLError:
+            if libmxsmi.is_available():
+                _set_active_backend('mx-smi')
+                return libmxsmi.driver_version()
+            raise
+        _set_active_backend('nvml')
+        return driver_version
 
     @staticmethod
     def cuda_driver_version() -> str | NaType:
@@ -375,7 +442,17 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
                 driver without reloading the kernel module.
         """
-        cuda_driver_version = libnvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
+        if _should_use_mxsmi_backend():
+            return libmxsmi.maca_version()
+        try:
+            with _nvml_probe():
+                cuda_driver_version = libnvml.nvmlQuery('nvmlSystemGetCudaDriverVersion')
+        except libnvml.NVMLError:
+            if libmxsmi.is_available():
+                _set_active_backend('mx-smi')
+                return libmxsmi.maca_version()
+            raise
+        _set_active_backend('nvml')
         if libnvml.nvmlCheckReturn(cuda_driver_version, int):
             major = cuda_driver_version // 1000
             minor = (cuda_driver_version % 1000) // 10
@@ -423,7 +500,22 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 If RM detects a driver/library version mismatch, usually after an upgrade for NVIDIA
                 driver without reloading the kernel module.
         """
-        return libnvml.nvmlQuery('nvmlDeviceGetCount', default=0)
+        if _should_use_mxsmi_backend():
+            return libmxsmi.device_count()
+        try:
+            with _nvml_probe():
+                count = libnvml.nvmlQuery('nvmlDeviceGetCount', default=0)
+        except libnvml.NVMLError:
+            if libmxsmi.is_available():
+                _set_active_backend('mx-smi')
+                return libmxsmi.device_count()
+            raise
+        if count == 0 and libmxsmi.is_available():
+            _set_active_backend('mx-smi')
+            return libmxsmi.device_count()
+        if count > 0:
+            _set_active_backend('nvml')
+        return count
 
     @classmethod
     def all(cls) -> list[PhysicalDevice]:
@@ -700,36 +792,50 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         self._is_mig_device: bool | None = None
         self._cuda_index: int | None = None
         self._cuda_compute_capability: tuple[int, int] | NaType | None = None
+        self._backend: str = 'nvml'
 
         self._handle: libnvml.c_nvmlDevice_t | None
-        if index is not None:
+        if _should_use_mxsmi_backend():
+            self._init_mxsmi(index=index, uuid=uuid, bus_id=bus_id)
+        elif index is not None:
             self._nvml_index = index  # type: ignore[assignment]
             try:
-                self._handle = libnvml.nvmlQuery(
-                    'nvmlDeviceGetHandleByIndex',
-                    index,
-                    ignore_errors=False,
-                )
+                with _nvml_probe():
+                    self._handle = libnvml.nvmlQuery(
+                        'nvmlDeviceGetHandleByIndex',
+                        index,
+                        ignore_errors=False,
+                    )
             except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
                 self._name = 'ERROR: GPU is Lost'
             except libnvml.NVMLError_Unknown:
                 self._handle = None
                 self._name = 'ERROR: Unknown'
+            except libnvml.NVMLError:
+                if libmxsmi.is_available():
+                    _set_active_backend('mx-smi')
+                    self._init_mxsmi(index=index)
+                else:
+                    raise
+            else:
+                _set_active_backend('nvml')
         else:
             try:
                 if uuid is not None:
-                    self._handle = libnvml.nvmlQuery(
-                        'nvmlDeviceGetHandleByUUID',
-                        uuid,
-                        ignore_errors=False,
-                    )
+                    with _nvml_probe():
+                        self._handle = libnvml.nvmlQuery(
+                            'nvmlDeviceGetHandleByUUID',
+                            uuid,
+                            ignore_errors=False,
+                        )
                 else:
-                    self._handle = libnvml.nvmlQuery(
-                        'nvmlDeviceGetHandleByPciBusId',
-                        bus_id,
-                        ignore_errors=False,
-                    )
+                    with _nvml_probe():
+                        self._handle = libnvml.nvmlQuery(
+                            'nvmlDeviceGetHandleByPciBusId',
+                            bus_id,
+                            ignore_errors=False,
+                        )
             except libnvml.NVMLError_GpuIsLost:
                 self._handle = None
                 self._nvml_index = NA  # type: ignore[assignment]
@@ -738,7 +844,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 self._handle = None
                 self._nvml_index = NA  # type: ignore[assignment]
                 self._name = 'ERROR: Unknown'
+            except libnvml.NVMLError:
+                if libmxsmi.is_available():
+                    _set_active_backend('mx-smi')
+                    self._init_mxsmi(uuid=uuid, bus_id=bus_id)
+                else:
+                    raise
             else:
+                _set_active_backend('nvml')
                 self._nvml_index = libnvml.nvmlQuery('nvmlDeviceGetIndex', self._handle)
 
         self._max_clock_infos: ClockInfos = ClockInfos(graphics=NA, sm=NA, memory=NA, video=NA)
@@ -746,6 +859,36 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
         self._ident: tuple[Hashable, str] = (self.index, self.uuid())
         self._hash: int | None = None
+
+    def _init_mxsmi(
+        self,
+        *,
+        index: int | tuple[int, int] | bytes | None = None,
+        uuid: bytes | None = None,
+        bus_id: bytes | None = None,
+    ) -> None:
+        """Initialize this device from the MetaX ``mx-smi`` backend."""
+        if isinstance(index, tuple):
+            raise libnvml.NVMLError_NotSupported
+        try:
+            info = libmxsmi.get_device(index=index, uuid=uuid, bus_id=bus_id)
+        except libmxsmi.MxSmiDeviceNotFound as ex:
+            raise libnvml.NVMLError_NotFound from ex
+
+        _set_active_backend('mx-smi')
+        self._backend = 'mx-smi'
+        self._handle = None
+        self._nvml_index = info.index
+        self._name = info.name
+        self._uuid = info.uuid
+        self._bus_id = info.bus_id
+        self._memory_total = info.memory_total
+
+    def _is_mxsmi_device(self) -> bool:
+        return self._backend == 'mx-smi'
+
+    def _mxsmi_info(self) -> libmxsmi.DeviceInfo:
+        return libmxsmi.get_device(index=self.physical_index)
 
     def __repr__(self) -> str:
         """Return a string representation of the device."""
@@ -904,6 +1047,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=name
         """
+        if self._is_mxsmi_device():
+            self._name = self._mxsmi_info().name
+            return self._name
         if self._handle is not None and self._name is NA:
             self._name = libnvml.nvmlQuery('nvmlDeviceGetName', self._handle)
         return self._name
@@ -922,6 +1068,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=name
         """
+        if self._is_mxsmi_device():
+            self._uuid = self._mxsmi_info().uuid
+            return self._uuid
         if self._handle is not None and self._uuid is NA:
             self._uuid = libnvml.nvmlQuery('nvmlDeviceGetUUID', self._handle)
         return self._uuid
@@ -938,6 +1087,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=pci.bus_id
         """
+        if self._is_mxsmi_device():
+            self._bus_id = self._mxsmi_info().bus_id
+            return self._bus_id
         if self._handle is not None and self._bus_id is NA:
             self._bus_id = libnvml.nvmlQuery(
                 lambda handle: libnvml.nvmlDeviceGetPciInfo(handle).busId,
@@ -959,6 +1111,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=serial
         """
+        if self._is_mxsmi_device():
+            return NA
         if self._handle is not None:
             return libnvml.nvmlQuery('nvmlDeviceGetSerial', self._handle)
         return NA
@@ -970,6 +1124,14 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: MemoryInfo(total, free, used, reserved)
             A named tuple with memory information, the item could be :const:`nvitop.NA` when not applicable.
         """
+        if self._is_mxsmi_device():
+            info = self._mxsmi_info()
+            return MemoryInfo(
+                total=info.memory_total,
+                free=info.memory_free,
+                used=info.memory_used,
+                reserved=NA,
+            )
         if self._handle is not None:
             has_unified_memory = False
             try:
@@ -1179,6 +1341,15 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: UtilizationRates(gpu, memory, encoder, decoder)
             A named tuple with GPU utilization rates (in percentage) for the device, the item could be :const:`nvitop.NA` when not applicable.
         """  # pylint: disable=line-too-long
+        if self._is_mxsmi_device():
+            info = self._mxsmi_info()
+            return UtilizationRates(
+                gpu=info.gpu_utilization,
+                memory=info.memory_utilization,
+                encoder=NA,
+                decoder=NA,
+            )
+
         gpu, memory, encoder, decoder = NA, NA, NA, NA
 
         if self._handle is not None:
@@ -1449,6 +1620,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=fan.speed
         """  # pylint: disable=line-too-long
+        if self._is_mxsmi_device():
+            return self._mxsmi_info().fan_speed
         if self._handle is not None:
             return libnvml.nvmlQuery('nvmlDeviceGetFanSpeed', self._handle)
         return NA
@@ -1465,6 +1638,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=temperature.gpu
         """
+        if self._is_mxsmi_device():
+            return self._mxsmi_info().temperature
         if self._handle is not None:
             return libnvml.nvmlQuery(
                 'nvmlDeviceGetTemperature',
@@ -1486,6 +1661,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             $(( "$(nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=power.draw)" * 1000 ))
         """
+        if self._is_mxsmi_device():
+            return self._mxsmi_info().power_usage
         if self._handle is not None:
             return libnvml.nvmlQuery('nvmlDeviceGetPowerUsage', self._handle)
         return NA
@@ -1507,6 +1684,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             $(( "$(nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=power.limit)" * 1000 ))
         """
+        if self._is_mxsmi_device():
+            return self._mxsmi_info().power_limit
         if self._handle is not None:
             return libnvml.nvmlQuery('nvmlDeviceGetPowerManagementLimit', self._handle)
         return NA
@@ -1547,6 +1726,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[int, NaType]
             The current PCIe transmit throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
         """
+        if self._is_mxsmi_device():
+            return NA
         if self._handle is not None:
             return libnvml.nvmlQuery(
                 'nvmlDeviceGetPcieThroughput',
@@ -1565,6 +1746,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Union[int, NaType]
             The current PCIe receive throughput in KiB/s, or :const:`nvitop.NA` when not applicable.
         """
+        if self._is_mxsmi_device():
+            return NA
         if self._handle is not None:
             return libnvml.nvmlQuery(
                 'nvmlDeviceGetPcieThroughput',
@@ -2131,6 +2314,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=persistence_mode
         """  # pylint: disable=line-too-long
+        if self._is_mxsmi_device():
+            return self._mxsmi_info().persistence_mode
         if self._handle is not None:
             return {
                 0: 'Disabled',
@@ -2150,6 +2335,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=pstate
         """  # pylint: disable=line-too-long
+        if self._is_mxsmi_device():
+            return self._mxsmi_info().performance_state
         if self._handle is not None:
             performance_state = libnvml.nvmlQuery('nvmlDeviceGetPerformanceState', self._handle)
             if libnvml.nvmlCheckReturn(performance_state, int):
@@ -2194,6 +2381,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_mode
         """  # pylint: disable=line-too-long
+        if self._is_mxsmi_device():
+            return 'Default'
         if self._handle is not None:
             return {
                 libnvml.NVML_COMPUTEMODE_DEFAULT: 'Default',
@@ -2215,6 +2404,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=compute_cap
         """
+        if self._is_mxsmi_device():
+            return NA
         if self._handle is not None:
             if self._cuda_compute_capability is None:
                 self._cuda_compute_capability = libnvml.nvmlQuery(
@@ -2226,6 +2417,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
     def is_mig_device(self) -> bool:
         """Return whether or not the device is a MIG device."""
+        if self._is_mxsmi_device():
+            return False
         if self._handle is not None:
             if self._is_mig_device is None:
                 is_mig_device = libnvml.nvmlQuery(
@@ -2253,6 +2446,8 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
 
             nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=mig.mode.current
         """
+        if self._is_mxsmi_device():
+            return NA
         if self._handle is None:
             return NA
         if self.is_mig_device():
@@ -2313,6 +2508,17 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         Returns: Dict[int, GpuProcess]
             A dictionary mapping PID to GPU process instance.
         """
+        if self._is_mxsmi_device():
+            processes = {}
+            for process in libmxsmi.processes(self.physical_index):
+                processes[process.pid] = self.GPU_PROCESS_CLASS(
+                    pid=process.pid,
+                    device=self,
+                    gpu_memory=process.used_memory,
+                    type='C',
+                )
+            return processes
+
         if self._handle is None:
             return {}
 
