@@ -109,6 +109,15 @@ _CACHE_LOCK = threading.RLock()
 _CACHE: MxSmiSnapshot | None = None
 _CACHE_EXPIRES_AT = 0.0
 
+# Inventory data (UUID / name / bus_id) from ``mx-smi -L`` changes very rarely,
+# so we keep it in a separate cache with a much longer TTL to avoid spawning an
+# extra subprocess on every 0.25 s snapshot refresh.
+_LIST_CACHE_TTL = 60.0
+_LIST_CACHE_LOCK = threading.RLock()
+_LIST_CACHE: dict[int, DeviceInfo] | None = None
+_LIST_CACHE_VERSION: str | NaType = NA
+_LIST_CACHE_EXPIRES_AT = 0.0
+
 _LIST_RE = re.compile(
     r'^GPU#(?P<index>\d+)\s+'
     r'(?P<name>.+?)\s+'
@@ -220,16 +229,40 @@ def snapshot(*, ttl: float = _CACHE_TTL) -> MxSmiSnapshot:
 
 
 def clear_cache() -> None:
-    """Clear the cached ``mx-smi`` snapshot."""
+    """Clear the cached ``mx-smi`` snapshot and device inventory."""
     global _CACHE, _CACHE_EXPIRES_AT  # pylint: disable=global-statement
+    global _LIST_CACHE, _LIST_CACHE_VERSION, _LIST_CACHE_EXPIRES_AT  # pylint: disable=global-statement
 
     with _CACHE_LOCK:
         _CACHE = None
         _CACHE_EXPIRES_AT = 0.0
 
+    with _LIST_CACHE_LOCK:
+        _LIST_CACHE = None
+        _LIST_CACHE_VERSION = NA
+        _LIST_CACHE_EXPIRES_AT = 0.0
+
+
+def _get_inventory_cache() -> tuple[dict[int, DeviceInfo], str | NaType]:
+    """Return the cached ``mx-smi -L`` inventory, refreshing when stale."""
+    global _LIST_CACHE, _LIST_CACHE_VERSION, _LIST_CACHE_EXPIRES_AT  # pylint: disable=global-statement
+
+    now = time.monotonic()
+    with _LIST_CACHE_LOCK:
+        if _LIST_CACHE is not None and now < _LIST_CACHE_EXPIRES_AT:
+            return _LIST_CACHE, _LIST_CACHE_VERSION
+
+    listed_devices, mxsmi_version = _parse_list_output(_run_mxsmi('-L'))
+
+    with _LIST_CACHE_LOCK:
+        _LIST_CACHE = listed_devices
+        _LIST_CACHE_VERSION = mxsmi_version
+        _LIST_CACHE_EXPIRES_AT = time.monotonic() + _LIST_CACHE_TTL
+        return _LIST_CACHE, _LIST_CACHE_VERSION
+
 
 def _take_snapshot() -> MxSmiSnapshot:
-    listed_devices, listed_mxsmi_version = _parse_list_output(_run_mxsmi('-L'))
+    listed_devices, listed_mxsmi_version = _get_inventory_cache()
     summary = _parse_summary_output(_run_mxsmi())
 
     devices = listed_devices.copy()
