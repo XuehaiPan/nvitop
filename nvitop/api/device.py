@@ -109,6 +109,7 @@ import functools
 import multiprocessing as mp
 import os
 import re
+import shutil
 import subprocess
 import sys
 import textwrap
@@ -262,7 +263,7 @@ def _should_use_mxsmi_backend() -> bool:
 
 @contextlib.contextmanager
 def _nvml_probe() -> Generator[None]:
-    suppress_logs = libmxsmi.is_available()
+    suppress_logs = libmxsmi.is_forced() or shutil.which('mx-smi') is not None
     logger_disabled = libnvml.LOGGER.disabled
     if suppress_logs:
         libnvml.LOGGER.disabled = True
