@@ -154,7 +154,7 @@ class Displayable(CursesShortcuts):  # pylint: disable=too-many-instance-attribu
 
     @need_redraw.setter
     def need_redraw(self, value: bool) -> None:
-        if self._need_redraw != value:
+        if value or self._need_redraw != value:
             self._need_redraw = value
             if value and self.parent is not None and not self.parent.need_redraw:
                 self.parent.need_redraw = True

@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Propagate `need_redraw=True` to parent if `self.need_redraw` has been already updated to `True` to avoid missing redraws by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Removed
 
