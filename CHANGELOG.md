@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `nvidia-ml-py` 13.595.45 to support list.
+- Add support for open kernel-module driver packages (e.g., `nvidia-driver-595-open`) in `install-nvidia-driver.sh` with new `--proprietary` and `--open` flags by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Changed
 

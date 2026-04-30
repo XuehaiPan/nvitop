@@ -128,8 +128,9 @@ git clone --depth=1 https://github.com/XuehaiPan/nvitop.git && cd nvitop
 # Optional for SSH users
 sudo chvt 3  # or use keyboard shortcut: Ctrl-LeftAlt-F3
 
-bash install-nvidia-driver.sh --package=nvidia-driver-470  # install the R470 driver from ppa:graphics-drivers
+bash install-nvidia-driver.sh --package=nvidia-driver-595  # install the R595 driver from ppa:graphics-drivers
 bash install-nvidia-driver.sh --latest                     # install the latest driver from ppa:graphics-drivers
+bash install-nvidia-driver.sh --latest --open              # install the latest open-kernel-module driver
 ```
 
 <p align="center">
