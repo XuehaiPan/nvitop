@@ -46,11 +46,14 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         *,
         win: curses.window | None,
         root: TUI,
+        base_width: int = 79,
     ) -> None:
         super().__init__(win, root)
 
         self.devices: list[Device | MigDevice] = devices
         self.device_count: int = len(self.devices)
+        self.base_width: int = base_width
+        self._fsw: int = base_width - 48  # first section width (matches device panel)
 
         if win is not None:
             self.average_gpu_memory_percent: HistoryGraph | None = None
@@ -58,7 +61,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             self.enable_history()
 
         self._compact: bool = compact
-        self.width: int = max(79, root.width)
+        self.width: int = max(self.base_width, root.width)
         self.full_height: int = 12
         self.compact_height: int = 2
         self.height: int = self.compact_height if compact else self.full_height
@@ -80,11 +83,11 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
     @width.setter
     def width(self, value: int) -> None:
-        width = max(79, value)
+        width = max(self.base_width, value)
         if self._width != width:
             if self.visible:
                 self.need_redraw = True
-            graph_width = max(width - 80, 20)
+            graph_width = max(width - self.base_width - 1, 20)
             if self.win is not None:
                 self.average_gpu_memory_percent.width = graph_width  # type: ignore[union-attr]
                 self.average_gpu_utilization.width = graph_width  # type: ignore[union-attr]
@@ -106,9 +109,10 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             self.height = self.compact_height if self.compact else self.full_height
 
     def enable_history(self) -> None:
+        graph_width = self.base_width - 2
         host.cpu_percent = BufferedHistoryGraph(
             interval=1.0,
-            width=77,
+            width=graph_width,
             height=5,
             upsidedown=False,
             baseline=0.0,
@@ -118,7 +122,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         )(host.cpu_percent)
         host.virtual_memory = BufferedHistoryGraph(
             interval=1.0,
-            width=77,
+            width=graph_width,
             height=4,
             upsidedown=True,
             baseline=0.0,
@@ -128,7 +132,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         )(host.virtual_memory, get_value=lambda vm: vm.percent)
         host.swap_memory = BufferedHistoryGraph(
             interval=1.0,
-            width=77,
+            width=graph_width,
             height=1,
             upsidedown=False,
             baseline=0.0,
@@ -235,19 +239,24 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         if compact or self.no_unicode:
             return []
 
-        remaining_width = self.width - 79
-        data_line = (
-            '│                                                                             │'
-        )
-        separator_line = (
-            '├────────────╴120s├─────────────────────────╴60s├──────────╴30s├──────────────┤'
-        )
-        if self.width >= 100:
+        bw = self.base_width
+        inner = bw - 2
+        bar_threshold = bw + 21
+        remaining_width = self.width - bw
+        data_line = f'│{" " * inner}│'
+        # Build separator with time markers positioned from the right edge
+        sep_chars = list('─' * inner)
+        for from_right, marker in [(19, '╴30s├'), (34, '╴60s├'), (65, '╴120s├')]:
+            start = inner - from_right
+            if start >= 0 and start + len(marker) <= inner:
+                sep_chars[start : start + len(marker)] = marker
+        separator_line = f'├{"".join(sep_chars)}┤'
+        if self.width >= bar_threshold:
             data_line += ' ' * (remaining_width - 1) + '│'
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
         frame = [
-            '╞═══════════════════════════════╧══════════════════════╧══════════════════════╡',
+            f'╞{"═" * self._fsw}╧{"═" * 22}╧{"═" * 22}╡',
             data_line,
             data_line,
             data_line,
@@ -259,9 +268,9 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             data_line,
             data_line,
             data_line,
-            '╘═════════════════════════════════════════════════════════════════════════════╛',
+            f'╘{"═" * inner}╛',
         ]
-        if self.width >= 100:
+        if self.width >= bar_threshold:
             frame[0] = frame[0][:-1] + '╪' + '═' * (remaining_width - 1) + '╡'
             frame[-1] = frame[-1][:-1] + '╧' + '═' * (remaining_width - 1) + '╛'
 
@@ -324,16 +333,20 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             )
             return
 
-        remaining_width = self.width - 79
+        bw = self.base_width
+        inner = bw - 2
+        bar_threshold = bw + 21
+        remaining_width = self.width - bw
 
         if self.need_redraw:
             for y, line in enumerate(self.frame_lines(), start=self.y - 1):
                 self.addstr(y, self.x, line)
-            self.color_at(self.y + 5, self.x + 14, width=4, attr='dim')
-            self.color_at(self.y + 5, self.x + 45, width=3, attr='dim')
-            self.color_at(self.y + 5, self.x + 60, width=3, attr='dim')
+            # Highlight the time marker labels in the separator line
+            self.color_at(self.y + 5, self.x + inner - 63, width=4, attr='dim')  # 120s
+            self.color_at(self.y + 5, self.x + inner - 32, width=3, attr='dim')  # 60s
+            self.color_at(self.y + 5, self.x + inner - 17, width=3, attr='dim')  # 30s
 
-            if self.width >= 100:
+            if self.width >= bar_threshold:
                 for offset, string in (
                     (20, '╴30s├'),
                     (35, '╴60s├'),
@@ -364,7 +377,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         for y, line in enumerate(host.swap_memory.history.graph, start=self.y + 10):  # type: ignore[attr-defined]
             self.addstr(y, self.x + 1, line)
 
-        if self.width >= 100:
+        if self.width >= bar_threshold:
             if self.device_count > 1 and self.parent.selection.is_set():
                 device = self.parent.selection.process.device  # type: ignore[union-attr]
                 gpu_memory_percent = device.memory_percent.history  # type: ignore[union-attr]
@@ -375,18 +388,18 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
             if self.TERM_256COLOR:
                 for i, (y, line) in enumerate(enumerate(gpu_memory_percent.graph, start=self.y)):
-                    self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
+                    self.addstr(y, self.x + bw, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
 
                 for i, (y, line) in enumerate(enumerate(gpu_utilization.graph, start=self.y + 6)):
-                    self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=i / 4.0))
+                    self.addstr(y, self.x + bw, line, self.get_fg_bg_attr(fg=i / 4.0))
             else:
                 self.color(fg=Device.color_of(gpu_memory_percent.last_value, type='memory'))
                 for y, line in enumerate(gpu_memory_percent.graph, start=self.y):
-                    self.addstr(y, self.x + 79, line)
+                    self.addstr(y, self.x + bw, line)
 
                 self.color(fg=Device.color_of(gpu_utilization.last_value, type='gpu'))
                 for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
-                    self.addstr(y, self.x + 79, line)
+                    self.addstr(y, self.x + bw, line)
 
         self.color_reset()
         self.addstr(self.y, self.x + 1, f' {load_average} ')
@@ -407,18 +420,18 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 f'({host.swap_memory.history}) '  # type: ignore[attr-defined]
             ),
         )
-        if self.width >= 100:
-            self.addstr(self.y, self.x + 79, f' {gpu_memory_percent} ')
-            self.addstr(self.y + 10, self.x + 79, f' {gpu_utilization} ')
+        if self.width >= bar_threshold:
+            self.addstr(self.y, self.x + bw, f' {gpu_memory_percent} ')
+            self.addstr(self.y + 10, self.x + bw, f' {gpu_utilization} ')
 
     def destroy(self) -> None:
         super().destroy()
         self._daemon_running.clear()
 
     def print_width(self) -> int:
-        if self.device_count > 0 and self.width >= 100:
+        if self.device_count > 0 and self.width >= self.base_width + 21:
             return self.width
-        return 79
+        return self.base_width
 
     def print(self) -> None:
         self.cpu_percent = host.cpu_percent()

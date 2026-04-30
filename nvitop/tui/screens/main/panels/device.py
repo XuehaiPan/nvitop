@@ -70,7 +70,6 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self.leaf_device_count: int = len(self.leaf_devices)
 
         self._compact: bool = compact
-        self.width: int = max(79, root.width)
         self.compact_height: int = (
             4 + 2 * (self.device_count + 1) + self.mig_device_count + self.mig_enabled_device_count
         )
@@ -85,6 +84,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self._snapshot_buffer: list[Snapshot] = []
         self._snapshots: list[Snapshot] = []
         self.snapshot_lock = threading.Lock()
+        self._name_maxlen: int = 19  # default; updated after has_vram_temp is determined
         self.snapshots: list[Snapshot] = self.take_snapshots()
         self._snapshot_daemon = threading.Thread(
             name='device-snapshot-daemon',
@@ -93,30 +93,72 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         )
         self._daemon_running = threading.Event()
 
-        self.formats_compact: list[str] = [
-            (
-                '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
-                '{performance_state:<3}{power_status:>13} '
-                '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
-            ),
-        ]
-        self.formats_full: list[str] = [
-            (
-                '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
-                '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │'
-            ),
-            (
-                '│ {fan_speed_string:>3}  {temperature_string:>4}  {performance_state:^4} {power_status:>13} '
-                '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
-            ),
-        ]
+        self.has_vram_temp: bool = any(
+            device.vram_temperature is not NA
+            for device in self.snapshots
+            if not device.is_mig_device
+        )
+        self.base_width: int = 84 if self.has_vram_temp else 79
+        self._fsw: int = 36 if self.has_vram_temp else 31  # first section width
+        self._name_maxlen: int = 24 if self.has_vram_temp else 19
+        self._mig_name_width: int = 17 if self.has_vram_temp else 12
 
-        self.mig_formats: list[str] = [
-            (
-                '│{physical_index:>2}:{mig_index:<2}{name:>12} @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
-                '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8} / {bar1_memory_percent_string:>3} │'
-            ),
-        ]
+        self.width: int = max(self.base_width, root.width)
+
+        if self.has_vram_temp:
+            self.formats_compact: list[str] = [
+                (
+                    '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
+                    '{vram_temperature_string:>4} {performance_state:<3}{power_status:>13} '
+                    '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+                ),
+            ]
+            self.formats_full: list[str] = [
+                (
+                    '│ {physical_index:>3}  {name:<24} {persistence_mode:>4} '
+                    '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │'
+                ),
+                (
+                    '│ {fan_speed_string:>3}  {temperature_string:>4} {vram_temperature_string:>4}  '
+                    '{performance_state:^4} {power_status:>13} '
+                    '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+                ),
+            ]
+            self.mig_formats: list[str] = [
+                (
+                    '│{physical_index:>2}:{mig_index:<2}{name:>17}'
+                    ' @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
+                    '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8}'
+                    ' / {bar1_memory_percent_string:>3} │'
+                ),
+            ]
+        else:
+            self.formats_compact: list[str] = [  # type: ignore[no-redef]
+                (
+                    '│ {physical_index:>3} {fan_speed_string:>3} {temperature_string:>4} '
+                    '{performance_state:<3}{power_status:>13} '
+                    '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+                ),
+            ]
+            self.formats_full: list[str] = [  # type: ignore[no-redef]
+                (
+                    '│ {physical_index:>3}  {name:<19} {persistence_mode:>4} '
+                    '│ {bus_id:<16} {display_active:>3} │ {total_volatile_uncorrected_ecc_errors:>20} │'
+                ),
+                (
+                    '│ {fan_speed_string:>3}  {temperature_string:>4}  '
+                    '{performance_state:^4} {power_status:>13} '
+                    '│ {memory_usage:>20} │ {gpu_utilization_string:>7}  {compute_mode:>11} │'
+                ),
+            ]
+            self.mig_formats: list[str] = [  # type: ignore[no-redef]
+                (
+                    '│{physical_index:>2}:{mig_index:<2}{name:>12}'
+                    ' @ GI/CI:{gpu_instance_id:>2}/{compute_instance_id:<2}'
+                    '│ {memory_usage:>20} │ BAR1: {bar1_memory_used_human:>8}'
+                    ' / {bar1_memory_percent_string:>3} │'
+                ),
+            ]
 
         if IS_WINDOWS:
             self.formats_full[0] = self.formats_full[0].replace(
@@ -142,7 +184,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
     @width.setter
     def width(self, value: int) -> None:
-        width = max(79, value)
+        width = max(self.base_width, value)
         if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
@@ -194,7 +236,12 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         else f'{round(device.bar1_memory_percent)}%'
                     )
             else:
-                device.name = cut_string(device.name, maxlen=19, padstr='..', align='right')
+                device.name = cut_string(
+                    device.name,
+                    maxlen=self._name_maxlen,
+                    padstr='..',
+                    align='right',
+                )
                 device.current_driver_model = device.current_driver_model.replace('WDM', 'TCC')
                 device.display_active = device.display_active.replace('Enabled', 'On').replace(
                     'Disabled',
@@ -224,47 +271,65 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         if compact is None:
             compact = self.compact
 
+        w1 = self._fsw
+        inner = self.base_width - 2
+
         version_infos = [
             'NVITOP {}'.format(__version__.partition('+')[0]),
             f'Driver Version: {self.driver_version}',
             f'CUDA Driver Version: {self.cuda_driver_version}',
         ]
-        if sum(len(v) for v in version_infos) % 2 == 0:
+        if sum(len(v) for v in version_infos) % 2 == (inner + 1) % 2:
             version_infos[0] += ' '
-        version_seps = ' ' * max(2, (75 - sum(len(v) for v in version_infos)) // 2)
+        version_seps = ' ' * max(2, (inner - 2 - sum(len(v) for v in version_infos)) // 2)
 
         header = [
-            '╒═════════════════════════════════════════════════════════════════════════════╕',
-            '│ {} │'.format(version_seps.join(version_infos).ljust(75, ' ')),
+            f'╒{"═" * inner}╕',
+            '│ {} │'.format(version_seps.join(version_infos).ljust(inner - 2, ' ')),
         ]
         if self.device_count > 0:
-            header.append(
-                '├───────────────────────────────┬──────────────────────┬──────────────────────┤',
-            )
+            header.append(f'├{"─" * w1}┬{"─" * 22}┬{"─" * 22}┤')
             if compact:
-                header.append(
-                    '│ GPU Fan Temp Perf Pwr:Usg/Cap │         Memory-Usage │ GPU-Util  Compute M. │',
-                )
+                if self.has_vram_temp:
+                    header.append(
+                        '│ GPU Fan Temp MTmp Perf Pwr:Usg/Cap │'
+                        '         Memory-Usage │ GPU-Util  Compute M. │',
+                    )
+                else:
+                    header.append(
+                        '│ GPU Fan Temp Perf Pwr:Usg/Cap │'
+                        '         Memory-Usage │ GPU-Util  Compute M. │',
+                    )
             else:
-                header.extend(
-                    (
-                        '│ GPU  Name        Persistence-M│ Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
-                        '│ Fan  Temp  Perf  Pwr:Usage/Cap│         Memory-Usage │ GPU-Util  Compute M. │',
-                    ),
-                )
+                if self.has_vram_temp:
+                    header.extend(
+                        (
+                            '│ GPU  Name             Persistence-M│'
+                            ' Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                            '│ Fan  Temp MTmp  Perf  Pwr:Usage/Cap│'
+                            '         Memory-Usage │ GPU-Util  Compute M. │',
+                        ),
+                    )
+                else:
+                    header.extend(
+                        (
+                            '│ GPU  Name        Persistence-M│'
+                            ' Bus-Id        Disp.A │ Volatile Uncorr. ECC │',
+                            '│ Fan  Temp  Perf  Pwr:Usage/Cap│'
+                            '         Memory-Usage │ GPU-Util  Compute M. │',
+                        ),
+                    )
                 if IS_WINDOWS:
                     header[-2] = header[-2].replace('Persistence-M', '    TCC/WDDM ')
                 if self.support_mig:
                     header[-2] = header[-2].replace('Volatile Uncorr. ECC', 'MIG M.   Uncorr. ECC')
-            header.append(
-                '╞═══════════════════════════════╪══════════════════════╪══════════════════════╡',
-            )
+            header.append(f'╞{"═" * w1}╪{"═" * 22}╪{"═" * 22}╡')
         else:
             header.extend(
                 (
-                    '╞═════════════════════════════════════════════════════════════════════════════╡',
-                    '│  No visible devices found                                                   │',
-                    '╘═════════════════════════════════════════════════════════════════════════════╛',
+                    f'╞{"═" * inner}╡',
+                    f'│  No visible devices found{" " * (inner - 27)}│',
+                    f'╘{"═" * inner}╛',
                 ),
             )
         return header
@@ -275,14 +340,12 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
         frame = self.header_lines(compact)
 
-        remaining_width = self.width - 79
-        data_line = (
-            '│                               │                      │                      │'
-        )
-        separator_line = (
-            '├───────────────────────────────┼──────────────────────┼──────────────────────┤'
-        )
-        if self.width >= 100:
+        w1 = self._fsw
+        bar_threshold = self.base_width + 21
+        remaining_width = self.width - self.base_width
+        data_line = f'│{" " * w1}│{" " * 22}│{" " * 22}│'
+        separator_line = f'├{"─" * w1}┼{"─" * 22}┼{"─" * 22}┤'
+        if self.width >= bar_threshold:
             data_line += ' ' * (remaining_width - 1) + '│'
             separator_line = separator_line[:-1] + '┼' + '─' * (remaining_width - 1) + '┤'
 
@@ -296,10 +359,8 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                     frame.extend((data_line,) * mig_device_count + (separator_line,))
 
             frame.pop()
-            frame.append(
-                '╘═══════════════════════════════╧══════════════════════╧══════════════════════╛',
-            )
-            if self.width >= 100:
+            frame.append(f'╘{"═" * w1}╧{"═" * 22}╧{"═" * 22}╛')
+            if self.width >= bar_threshold:
                 frame[5 - int(compact)] = (
                     frame[5 - int(compact)][:-1] + '╪' + '═' * (remaining_width - 1) + '╕'
                 )
@@ -320,10 +381,15 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
     def draw(self) -> None:
         self.color_reset()
 
+        bw = self.base_width
+        w1 = self._fsw
+        bar_start = bw + 1
+        bar_threshold = bw + 21
+
         if self.need_redraw:
-            self.addstr(self.y, self.x, '(Press h for help or q to quit)'.rjust(79))
-            self.color_at(self.y, self.x + 55, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y, self.x + 69, width=1, fg='magenta', attr='bold | italic')
+            self.addstr(self.y, self.x, '(Press h for help or q to quit)'.rjust(bw))
+            self.color_at(self.y, self.x + bw - 24, width=1, fg='magenta', attr='bold | italic')
+            self.color_at(self.y, self.x + bw - 10, width=1, fg='magenta', attr='bold | italic')
             for y, line in enumerate(self.frame_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
 
@@ -331,8 +397,8 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
         formats = self.formats_compact if self.compact else self.formats_full
 
-        remaining_width = self.width - 79
-        draw_bars = self.width >= 100
+        remaining_width = self.width - bw
+        draw_bars = self.width >= bar_threshold
         try:
             selected_device = self.parent.selection.process.device  # type: ignore[union-attr]
         except AttributeError:
@@ -359,9 +425,9 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             fmts = self.mig_formats if device.is_mig_device else formats
             for y, fmt in enumerate(fmts, start=y_start):
                 self.addstr(y, self.x, fmt.format(**device.__dict__))
-                self.color_at(y, self.x + 1, width=31, fg=device.display_color, attr=attr)
-                self.color_at(y, self.x + 33, width=22, fg=device.display_color, attr=attr)
-                self.color_at(y, self.x + 56, width=22, fg=device.display_color, attr=attr)
+                self.color_at(y, self.x + 1, width=w1, fg=device.display_color, attr=attr)
+                self.color_at(y, self.x + w1 + 2, width=22, fg=device.display_color, attr=attr)
+                self.color_at(y, self.x + w1 + 25, width=22, fg=device.display_color, attr=attr)
 
             if draw_bars:
                 left_width = (remaining_width - 6 + 1) // 2 - 1
@@ -371,7 +437,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                     matrix = [
                         [
                             (
-                                self.x + 80,
+                                self.x + bar_start,
                                 remaining_width - 3,
                                 'MEM',
                                 device.memory_percent,
@@ -381,13 +447,13 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         ],
                     ]
                     if remaining_width >= 44 and len(prev_device_index) == 1:
-                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, '┴')
+                        self.addstr(y_start - 1, self.x + bar_start + left_width + 1, '┴')
                 elif self.compact:
                     if remaining_width >= 44:
                         matrix = [
                             [
                                 (
-                                    self.x + 80,
+                                    self.x + bar_start,
                                     left_width,
                                     'MEM',
                                     device.memory_percent,
@@ -395,7 +461,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                                     device.memory_used_human,
                                 ),
                                 (
-                                    self.x + 80 + left_width + 3,
+                                    self.x + bar_start + left_width + 3,
                                     right_width,
                                     'UTL',
                                     device.gpu_utilization,
@@ -407,14 +473,14 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         separator = '┼' if index > 0 else '╤'
                         if len(prev_device_index) == 2:
                             separator = '┬'
-                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, separator)
+                        self.addstr(y_start - 1, self.x + bar_start + left_width + 1, separator)
                         if index == len(self.snapshots) - 1:
-                            self.addstr(y_start + 1, self.x + 80 + left_width + 1, '╧')
+                            self.addstr(y_start + 1, self.x + bar_start + left_width + 1, '╧')
                     else:
                         matrix = [
                             [
                                 (
-                                    self.x + 80,
+                                    self.x + bar_start,
                                     remaining_width - 3,
                                     'MEM',
                                     device.memory_percent,
@@ -428,7 +494,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         matrix = [
                             [
                                 (
-                                    self.x + 80,
+                                    self.x + bar_start,
                                     left_width,
                                     'MEM',
                                     device.memory_percent,
@@ -436,7 +502,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                                     device.memory_used_human,
                                 ),
                                 (
-                                    self.x + 80 + left_width + 3,
+                                    self.x + bar_start + left_width + 3,
                                     right_width,
                                     'MBW',
                                     device.memory_utilization,
@@ -446,7 +512,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             ],
                             [
                                 (
-                                    self.x + 80,
+                                    self.x + bar_start,
                                     left_width,
                                     'UTL',
                                     device.gpu_utilization,
@@ -454,7 +520,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                                     f'@ {device.clock_infos.sm}MHz',
                                 ),
                                 (
-                                    self.x + 80 + left_width + 3,
+                                    self.x + bar_start + left_width + 3,
                                     right_width,
                                     'PWR',
                                     device.power_utilization,
@@ -466,14 +532,14 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         separator = '┼' if index > 0 else '╤'
                         if len(prev_device_index) == 2:
                             separator = '┬'
-                        self.addstr(y_start - 1, self.x + 80 + left_width + 1, separator)
+                        self.addstr(y_start - 1, self.x + bar_start + left_width + 1, separator)
                         if index == len(self.snapshots) - 1:
-                            self.addstr(y_start + 2, self.x + 80 + left_width + 1, '╧')
+                            self.addstr(y_start + 2, self.x + bar_start + left_width + 1, '╧')
                     else:
                         matrix = [
                             [
                                 (
-                                    self.x + 80,
+                                    self.x + bar_start,
                                     remaining_width - 3,
                                     'MEM',
                                     device.memory_percent,
@@ -483,7 +549,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                             ],
                             [
                                 (
-                                    self.x + 80,
+                                    self.x + bar_start,
                                     remaining_width - 3,
                                     'UTL',
                                     device.gpu_utilization,
@@ -533,12 +599,15 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self._daemon_running.clear()
 
     def print_width(self) -> int:
-        if self.device_count > 0 and self.width >= 100:
+        if self.device_count > 0 and self.width >= self.base_width + 21:
             return self.width
-        return 79
+        return self.base_width
 
     def print(self) -> None:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         lines = [time.strftime('%a %b %d %H:%M:%S %Y'), *self.header_lines(compact=False)]
+
+        w1 = self._fsw
+        bar_threshold = self.base_width + 21
 
         if self.device_count > 0:
             prev_device_index = self.snapshots[0].tuple_index
@@ -548,7 +617,7 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                     or prev_device_index[0] != device.tuple_index[0]
                 ):
                     lines.append(
-                        '├───────────────────────────────┼──────────────────────┼──────────────────────┤',
+                        f'├{"─" * w1}┼{"─" * 22}┼{"─" * 22}┤',
                     )
 
                 def colorize(s: str) -> str:
@@ -564,12 +633,10 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
                 prev_device_index = device.tuple_index
 
-            lines.append(
-                '╘═══════════════════════════════╧══════════════════════╧══════════════════════╛',
-            )
+            lines.append(f'╘{"═" * w1}╧{"═" * 22}╧{"═" * 22}╛')
 
-            if self.width >= 100:
-                remaining_width = self.width - 79
+            if self.width >= bar_threshold:
+                remaining_width = self.width - self.base_width
                 y_start = 7
                 prev_device_index = self.snapshots[0].tuple_index
                 for index, device in enumerate(self.snapshots):

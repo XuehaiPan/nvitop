@@ -51,6 +51,7 @@ class Device(DeviceBase):  # pylint: disable=too-many-public-methods
         'memory_utilization',
         'fan_speed',
         'temperature',
+        'vram_temperature',
         'power_usage',
         'power_limit',
         'power_status',
@@ -68,6 +69,7 @@ class Device(DeviceBase):  # pylint: disable=too-many-public-methods
         'gpu_utilization_string',
         'fan_speed_string',
         'temperature_string',
+        'vram_temperature_string',
         'memory_loading_intensity',
         'memory_display_color',
         'bandwidth_loading_intensity',
@@ -117,6 +119,7 @@ class Device(DeviceBase):  # pylint: disable=too-many-public-methods
 
     fan_speed = ttl_cache(ttl=5.0)(DeviceBase.fan_speed)
     temperature = ttl_cache(ttl=5.0)(DeviceBase.temperature)
+    vram_temperature = ttl_cache(ttl=5.0)(DeviceBase.vram_temperature)
     display_active = ttl_cache(ttl=5.0)(DeviceBase.display_active)
     display_mode = ttl_cache(ttl=5.0)(DeviceBase.display_mode)
     current_driver_model = ttl_cache(ttl=5.0)(DeviceBase.current_driver_model)
@@ -152,6 +155,10 @@ class Device(DeviceBase):  # pylint: disable=too-many-public-methods
     def temperature_string(self) -> str:  # in Celsius
         temperature = self.temperature()
         return f'{temperature}C' if libnvml.nvmlCheckReturn(temperature, int) else NA
+
+    def vram_temperature_string(self) -> str:  # in Celsius
+        vram_temp = self.vram_temperature()
+        return f'{vram_temp}C' if vram_temp is not NA and isinstance(vram_temp, int) else NA
 
     def memory_loading_intensity(self) -> LoadingIntensity:
         return self.loading_intensity_of(self.memory_percent(), type='memory')

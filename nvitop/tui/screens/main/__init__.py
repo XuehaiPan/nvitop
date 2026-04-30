@@ -78,6 +78,7 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
             compact,
             win=win,
             root=root,
+            base_width=self.device_panel.base_width,
         )
         self.host_panel.focused = False
         self.add_child(self.host_panel)
@@ -191,7 +192,7 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
             print_width = min(panel.print_width() for panel in self.container)
             self.width = max(print_width, min(self.width, 140))
         else:
-            self.width = 79
+            self.width = self.device_panel.base_width
         for panel in self.container:
             panel.width = self.width
             panel.print()
