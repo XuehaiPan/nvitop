@@ -7,11 +7,11 @@
 from __future__ import annotations
 
 import copy
-import curses
-import curses.ascii
 import string
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Callable, Dict, Tuple, Union
+
+from nvitop.tui.library import curses
 
 
 if TYPE_CHECKING:
