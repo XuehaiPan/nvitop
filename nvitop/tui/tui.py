@@ -51,6 +51,7 @@ class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disab
         no_unicode: bool = False,
         mode: MonitorMode = 'auto',
         interval: float | None = None,
+        readonly: bool = False,
         win: curses.window | None = None,
     ) -> None:
         super().__init__(win, root=self)
@@ -61,6 +62,7 @@ class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disab
         self.termsize: tuple[int, int] | None = None
 
         self.no_unicode: bool = no_unicode
+        self.readonly: bool = readonly
 
         self.devices: list[Device] = devices
         self.device_count: int = len(self.devices)

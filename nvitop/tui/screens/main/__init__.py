@@ -295,35 +295,7 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
         keymaps.bind('main', '<Esc>', select_clear)
         keymaps.bind('main', '<Space>', tag)
 
-        keymaps.bind(
-            'main',
-            'T',
-            partial(
-                MessageBox.confirm_sending_signal_to_processes,
-                signal='terminate',
-                screen=self,
-            ),
-        )
-        keymaps.bind(
-            'main',
-            'K',
-            partial(
-                MessageBox.confirm_sending_signal_to_processes,
-                signal='kill',
-                screen=self,
-            ),
-        )
-        keymaps.alias('main', 'K', 'k')
-        keymaps.bind(
-            'main',
-            '<C-c>',
-            partial(
-                MessageBox.confirm_sending_signal_to_processes,
-                signal='interrupt',
-                screen=self,
-            ),
-        )
-        keymaps.alias('main', '<C-c>', 'I')
+        MessageBox.register_signal_keybindings(self, keymap_name='main')
 
         keymaps.bind('main', ',', order_previous)
         keymaps.alias('main', ',', '<')

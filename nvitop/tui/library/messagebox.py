@@ -11,7 +11,7 @@ import string
 import threading
 import time
 from functools import partial
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, ClassVar, Literal
 
 from nvitop.tui.library import host
 from nvitop.tui.library.displayable import Displayable
@@ -28,10 +28,29 @@ if TYPE_CHECKING:
     from nvitop.tui.tui import TUI
 
 
-__all__ = ['MessageBox']
+__all__ = ['SIGNAL_HINT_BLANK', 'SIGNAL_HINT_KEY_SPANS', 'SIGNAL_HINT_TEXT', 'MessageBox']
 
 
 DIGITS: frozenset[str] = frozenset(string.digits)
+
+SignalHintSpanKind = Literal['key', 'label']
+
+# Single source of truth for the on-screen hint that surfaces the kill/terminate/interrupt
+# bindings. The process panel and the tree-view screen both render this string with
+# screen-specific coloring; they share these positions and widths so the two layouts stay in
+# lockstep when the wording is updated.
+SIGNAL_HINT_TEXT: str = '(Press ^C(INT)/T(TERM)/K(KILL) to send signals)'
+SIGNAL_HINT_BLANK: str = ' ' * len(SIGNAL_HINT_TEXT)
+# (kind, offset_within_text, width) — ``kind`` is ``'key'`` for the shortcut tokens
+# (``^C``, ``T``, ``K``) and ``'label'`` for the signal names (``INT``, ``TERM``, ``KILL``).
+SIGNAL_HINT_KEY_SPANS: tuple[tuple[SignalHintSpanKind, int, int], ...] = (
+    ('key', 7, 2),
+    ('label', 10, 3),
+    ('key', 15, 1),
+    ('label', 17, 4),
+    ('key', 23, 1),
+    ('label', 25, 4),
+)
 
 
 class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
@@ -302,12 +321,45 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             keymaps.alias('messagebox', '<Left>', '<S-Tab>')
             keymaps.alias('messagebox', '<Right>', '<Tab>')
 
+    # Keybindings that route into `confirm_sending_signal_to_processes`. Centralized here so
+    # every selectable screen can register the same bindings without duplicating the
+    # `signal -> primary key + aliases` mapping.
+    _SIGNAL_KEYBINDINGS: ClassVar[
+        tuple[tuple[Literal['terminate', 'kill', 'interrupt'], str, tuple[str, ...]], ...]
+    ] = (
+        ('terminate', 'T', ()),
+        ('kill', 'K', ('k',)),
+        ('interrupt', '<C-c>', ('I',)),
+    )
+
+    @classmethod
+    def register_signal_keybindings(cls, screen: BaseSelectableScreen, keymap_name: str) -> None:
+        """Bind the kill/terminate/interrupt keys for ``screen`` under ``keymap_name``.
+
+        The bindings are skipped entirely when the selection is read-only so the
+        ``--readonly`` contract is honored at the keybinding layer in addition to the
+        :meth:`Selection` boundary.
+        """
+        if screen.selection.readonly:
+            return
+        keymaps = screen.root.keymaps
+        for signal, key, aliases in cls._SIGNAL_KEYBINDINGS:
+            keymaps.bind(
+                keymap_name,
+                key,
+                partial(cls.confirm_sending_signal_to_processes, signal=signal, screen=screen),
+            )
+            for alias in aliases:
+                keymaps.alias(keymap_name, key, alias)
+
     @staticmethod
     def confirm_sending_signal_to_processes(
         signal: Literal['terminate', 'kill', 'interrupt'],
         screen: BaseSelectableScreen,
     ) -> None:
         assert signal in ('terminate', 'kill', 'interrupt')
+        if screen.selection.readonly:
+            return
         default = {'terminate': 0, 'kill': 1, 'interrupt': 2}.get(signal)
         processes = []
         for process in screen.selection.processes():

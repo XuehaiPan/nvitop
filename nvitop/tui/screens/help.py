@@ -85,6 +85,11 @@ class HelpScreen(BaseScreen):  # pylint: disable=too-many-instance-attributes
             **dict.fromkeys(range(24, 29), ('blue', 'blue')),
             29: ('magenta', 'magenta'),
         }
+        # Rows whose right-hand action column is colored red are exactly the
+        # kill/terminate/interrupt keybindings — the same set ``--readonly`` disables.
+        self.readonly_disabled_rows: frozenset[int] = frozenset(
+            row for row, (_, right) in self.color_matrix.items() if right == 'red'
+        )
 
         self.x, self.y = root.x, root.y
         self.width: int = max(map(len, self.infos))
@@ -119,8 +124,12 @@ class HelpScreen(BaseScreen):  # pylint: disable=too-many-instance-attributes
         for dy, (left, right) in self.color_matrix.items():
             if left is not None:
                 self.color_at(self.y + dy, self.x, width=12, fg=left, attr='bold')
-            if right is not None:
+            if right is not None and not (self.root.readonly and dy in self.readonly_disabled_rows):
                 self.color_at(self.y + dy, self.x + 39, width=13, fg=right, attr='bold')
+
+        if self.root.readonly:
+            for dy in self.readonly_disabled_rows:
+                self.color_at(self.y + dy, self.x + 39, width=self.width - 39, attr='dim')
 
     def press(self, key: int) -> bool:
         self.root.keymaps.use_keymap('help')

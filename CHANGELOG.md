@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `nvidia-ml-py` 13.595.45 to support list.
 - Add support for open kernel-module driver packages (e.g., `nvidia-driver-595-open`) in `install-nvidia-driver.sh` with new `--proprietary` and `--open` flags by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add `--readonly` CLI flag (and equivalent `NVITOP_MONITOR_MODE="readonly"` env token) for monitor mode that disables all process-mutating shortcuts (`Ctrl-c` / `T` / `K` / `I` / `k`), hides the on-screen "Press ^C(INT)/T(TERM)/K(KILL) to send signals" hint, and dims the corresponding rows in the help screen. Useful for shared/multi-tenant boxes, demos, and non-admin viewer aliases by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Changed
 

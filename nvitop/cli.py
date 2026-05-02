@@ -102,6 +102,15 @@ def parse_arguments() -> argparse.Namespace:
         action='store_true',
         help='Use ASCII characters only, which is useful for terminals without Unicode support.',
     )
+    parser.add_argument(
+        '--readonly',
+        dest='readonly',
+        action='store_true',
+        help=(
+            'Disable all system and process changing features (e.g., terminating processes).\n'
+            'Set variable `NVITOP_MONITOR_MODE="readonly"` for convenience.'
+        ),
+    )
 
     coloring = parser.add_argument_group('coloring')
     coloring.add_argument(
@@ -109,10 +118,11 @@ def parse_arguments() -> argparse.Namespace:
         dest='colorful',
         action='store_true',
         help=(
-            'Use gradient colors to get spectrum-like bar charts. This option is only available\n'
-            'when the terminal supports 256 colors. You may need to set environment variable\n'
-            '`TERM="xterm-256color"`. Note that the terminal multiplexer, such as `tmux`, may\n'
-            'override the `TERM` variable.'
+            'Use gradient colors to get spectrum-like bar charts.\n'
+            'Set variable `NVITOP_MONITOR_MODE="colorful"` for convenience.\n'
+            'This option is only available when the terminal supports 256 colors.\n'
+            'You may need to set environment variable `TERM="xterm-256color"`. Note that the\n'
+            'terminal multiplexer, such as `tmux`, may override the `TERM` variable.'
         ),
     )
     coloring.add_argument(
@@ -234,6 +244,8 @@ def parse_arguments() -> argparse.Namespace:
         args.colorful = 'colorful' in NVITOP_MONITOR_MODE and 'plain' not in NVITOP_MONITOR_MODE
     if not args.light:
         args.light = 'light' in NVITOP_MONITOR_MODE and 'dark' not in NVITOP_MONITOR_MODE
+    if not args.readonly:
+        args.readonly = 'readonly' in NVITOP_MONITOR_MODE
     if args.user is not None and len(args.user) == 0:
         args.user.append(USERNAME)
     if args.gpu_util_thresh is None:
@@ -355,6 +367,7 @@ def main() -> int:
                     no_unicode=args.no_unicode,
                     mode=args.monitor,
                     interval=args.interval,
+                    readonly=args.readonly,
                     win=win,
                 )
                 tui.loop()
@@ -364,7 +377,7 @@ def main() -> int:
             messages.append(f'ERROR: Failed to initialize `curses` ({ex})')
 
     if tui is None:
-        tui = TUI(devices, filters, no_unicode=args.no_unicode)
+        tui = TUI(devices, filters, no_unicode=args.no_unicode, readonly=args.readonly)
         if not sys.stdout.isatty():
             parent = HostProcess().parent()
             if parent is not None:
