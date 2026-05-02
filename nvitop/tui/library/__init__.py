@@ -18,7 +18,12 @@ from nvitop.tui.library.keybinding import (
     normalize_keybinding,
 )
 from nvitop.tui.library.libcurses import libcurses, setlocale_utf8
-from nvitop.tui.library.messagebox import MessageBox
+from nvitop.tui.library.messagebox import (
+    SIGNAL_HINT_BLANK,
+    SIGNAL_HINT_KEY_SPANS,
+    SIGNAL_HINT_TEXT,
+    MessageBox,
+)
 from nvitop.tui.library.mouse import MouseEvent
 from nvitop.tui.library.process import GpuProcess, HostProcess
 from nvitop.tui.library.selection import Selection
@@ -58,6 +63,9 @@ __all__ = [
     'NA',
     'PASSIVE_ACTION',
     'QUANT_KEY',
+    'SIGNAL_HINT_BLANK',
+    'SIGNAL_HINT_KEY_SPANS',
+    'SIGNAL_HINT_TEXT',
     'SPECIAL_KEYS',
     'USERNAME',
     'USER_CONTEXT',

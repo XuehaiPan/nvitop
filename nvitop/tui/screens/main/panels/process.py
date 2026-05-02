@@ -18,6 +18,9 @@ from nvitop.tui.library import (
     IS_WINDOWS,
     IS_WSL,
     LARGE_INTEGER,
+    SIGNAL_HINT_BLANK,
+    SIGNAL_HINT_KEY_SPANS,
+    SIGNAL_HINT_TEXT,
     USER_CONTEXT,
     USERNAME,
     Device,
@@ -632,19 +635,25 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             message = ' No running processes found{} '.format(' (in WSL)' if IS_WSL else '')
             self.addstr(self.y + 5, self.x, f'│ {message.ljust(self.width - 4)} │')
 
-        text_offset = self.x + self.width - 47
-        if len(self.selection.tagged) > 0 or (
-            self.selection.owned() and self.selection.within_window
-        ):
-            self.addstr(self.y, text_offset, '(Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
-            self.color_at(self.y, text_offset + 7, width=2, fg='magenta', attr='bold | italic')
-            self.color_at(self.y, text_offset + 10, width=3, fg='red', attr='bold')
-            self.color_at(self.y, text_offset + 15, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y, text_offset + 17, width=4, fg='red', attr='bold')
-            self.color_at(self.y, text_offset + 23, width=1, fg='magenta', attr='bold | italic')
-            self.color_at(self.y, text_offset + 25, width=4, fg='red', attr='bold')
-        else:
-            self.addstr(self.y, text_offset, ' ' * 47)
+        if self.root.readonly:
+            return
+        text_offset = self.x + self.width - len(SIGNAL_HINT_TEXT)
+        if not self.selection.has_actionable_processes():
+            self.addstr(self.y, text_offset, SIGNAL_HINT_BLANK)
+            return
+
+        self.addstr(self.y, text_offset, SIGNAL_HINT_TEXT)
+        for kind, dx, width in SIGNAL_HINT_KEY_SPANS:
+            if kind == 'key':
+                self.color_at(
+                    self.y,
+                    text_offset + dx,
+                    width=width,
+                    fg='magenta',
+                    attr='bold | italic',
+                )
+            else:
+                self.color_at(self.y, text_offset + dx, width=width, fg='red', attr='bold')
 
     def finalize(self) -> None:
         self.y_mouse = None

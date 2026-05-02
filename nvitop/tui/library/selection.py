@@ -5,9 +5,10 @@
 
 from __future__ import annotations
 
+import functools
 import signal
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 from weakref import WeakValueDictionary
 
 from nvitop.api import NA, Snapshot
@@ -25,7 +26,27 @@ if TYPE_CHECKING:
 __all__ = ['Selection']
 
 
-class Selection:  # pylint: disable=too-many-instance-attributes
+_F = TypeVar('_F', bound='Callable[..., None]')
+
+
+def _writable_only(method: _F) -> _F:
+    """Defense-in-depth: skip the call when the bound root is read-only.
+
+    Closes the bypass where a dialog callback captured before the flag was flipped, or
+    any caller holding a reference to one of these methods, would otherwise route
+    around the keybinding and `MessageBox` guards.
+    """
+
+    @functools.wraps(method)
+    def wrapper(self: Selection, *args: object, **kwargs: object) -> None:
+        if self.readonly:
+            return
+        method(self, *args, **kwargs)
+
+    return wrapper  # type: ignore[return-value]
+
+
+class Selection:  # pylint: disable=too-many-instance-attributes,too-many-public-methods
     def __init__(self, displayable: Displayable) -> None:
         self.tagged: WeakValueDictionary[int, GpuProcess | HostProcess] = WeakValueDictionary()
         self.displayable: Displayable = displayable
@@ -114,6 +135,15 @@ class Selection:  # pylint: disable=too-many-instance-attributes
             return (self.process,)  # type: ignore[return-value]
         return ()
 
+    def has_actionable_processes(self) -> bool:
+        """Whether the selection currently identifies at least one process to send signals to.
+
+        Mirrors the visibility predicate of the on-screen
+        ``Press ^C(INT)/T(TERM)/K(KILL) to send signals`` hint: ``True`` if any process is
+        tagged, or if the focused process is owned by the user and within the visible window.
+        """
+        return len(self.tagged) > 0 or (self.owned() and self.within_window)
+
     def foreach(self, func: Callable[[GpuProcess | HostProcess], None]) -> None:
         flag = False
         for process in self.processes():
@@ -128,9 +158,15 @@ class Selection:  # pylint: disable=too-many-instance-attributes
             time.sleep(0.25)
         self.clear()
 
+    @property
+    def readonly(self) -> bool:
+        return bool(self.displayable.root.readonly)  # type: ignore[union-attr]
+
+    @_writable_only
     def send_signal(self, sig: int) -> None:
         self.foreach(lambda process: process.send_signal(sig))
 
+    @_writable_only
     def interrupt(self) -> None:
         try:
             # pylint: disable-next=no-member
@@ -138,9 +174,11 @@ class Selection:  # pylint: disable=too-many-instance-attributes
         except SystemError:
             pass
 
+    @_writable_only
     def terminate(self) -> None:
         self.foreach(lambda process: process.terminate())
 
+    @_writable_only
     def kill(self) -> None:
         self.foreach(lambda process: process.kill())
 
