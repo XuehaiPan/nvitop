@@ -79,8 +79,15 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         if self.device_count == 0:
             self.height = self.full_height = self.compact_height = 6
 
+        self.backend: str = Device.backend()
         self.driver_version: str = Device.driver_version()
         self.cuda_driver_version: str = Device.cuda_driver_version()
+        self.driver_version_label: str = (
+            'KMD Version' if self.backend == 'mx-smi' else 'Driver Version'
+        )
+        self.cuda_driver_version_label: str = (
+            'MACA Version' if self.backend == 'mx-smi' else 'CUDA Driver Version'
+        )
 
         self._snapshot_buffer: list[Snapshot] = []
         self._snapshots: list[Snapshot] = []
@@ -226,8 +233,8 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
         version_infos = [
             'NVITOP {}'.format(__version__.partition('+')[0]),
-            f'Driver Version: {self.driver_version}',
-            f'CUDA Driver Version: {self.cuda_driver_version}',
+            f'{self.driver_version_label}: {self.driver_version}',
+            f'{self.cuda_driver_version_label}: {self.cuda_driver_version}',
         ]
         if sum(len(v) for v in version_infos) % 2 == 0:
             version_infos[0] += ' '
