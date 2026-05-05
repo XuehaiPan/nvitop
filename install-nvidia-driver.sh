@@ -599,13 +599,6 @@ if [[ -n "${INSTALLED_FLAVOR}" && "${INSTALLED_FLAVOR}" != "${REQUESTED_FLAVOR}"
 	ohai "Switching kernel-module flavor from ${INSTALLED_FLAVOR} to ${REQUESTED_FLAVOR}."
 fi
 
-# Preflight the install plan before any teardown so an unsatisfiable APT transaction aborts
-# while the existing driver is still working. `--allow-change-held-packages` lets the simulate
-# plan past the existing apt-mark holds (the real `apt-mark unhold` runs in the teardown block).
-if [[ -n "${INSTALLED_DRIVER}" && "${INSTALLED_DRIVER}" != "${REQUESTED_DRIVER}" ]]; then
-	exec_cmd "sudo apt-get install --simulate --allow-change-held-packages --yes ${REQUESTED_DRIVER}"
-fi
-
 DM_SERVICES=()
 if [[ -n "$(sudo lsof -t /dev/nvidia* 2>/dev/null || true)" ]]; then
 	for dm in gdm3 lightdm; do
@@ -682,8 +675,7 @@ if [[ -n "${INSTALLED_DRIVER}" ]]; then
 		# Upgrade the existing driver packages
 		exec_cmd "sudo apt-get install --only-upgrade --yes ${NVIDIA_PACKAGES}"
 	else
-		# The install plan was already validated above with `apt-get install --simulate` (before
-		# any destructive teardown), so this purge is safe to run.
+		# Uninstall the existing driver packages
 		exec_cmd "sudo apt-get purge --yes ${NVIDIA_PACKAGES}"
 	fi
 fi
