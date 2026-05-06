@@ -15,10 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `nvidia-ml-py` 13.595.45 to support list.
 - Add support for open kernel-module driver packages (e.g., `nvidia-driver-595-open`) in `install-nvidia-driver.sh` with new `--proprietary` and `--open` flags by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add TLS and mutual TLS (mTLS) support for `nvitop-exporter` via new `--certfile`, `--keyfile`, `--client-cafile`, `--client-capath`, and `--client-auth-required` CLI flags by [@XuehaiPan](https://github.com/XuehaiPan) in [#213](https://github.com/XuehaiPan/nvitop/pull/213). Issued by [@StefanSander3](https://github.com/StefanSander3) in [#131](https://github.com/XuehaiPan/nvitop/issues/131).
 
 ### Changed
 
--
+- Bump minimum `prometheus-client` version to `0.19.0` for `nvitop-exporter` (required for TLS support) by [@XuehaiPan](https://github.com/XuehaiPan) in [#213](https://github.com/XuehaiPan/nvitop/pull/213).
 
 ### Fixed
 
