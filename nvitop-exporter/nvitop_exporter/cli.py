@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from typing import TextIO
 
@@ -118,11 +119,82 @@ def parse_arguments() -> argparse.Namespace:
         help='Interval between updates in seconds. (default: %(default)s)',
     )
 
+    tls_group = parser.add_argument_group('TLS / mTLS options')
+    tls_group.add_argument(
+        '--certfile',
+        dest='certfile',
+        type=str,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to the TLS certificate file (PEM).\n'
+            'Enables HTTPS when set together with `--keyfile`.'
+        ),
+    )
+    tls_group.add_argument(
+        '--keyfile',
+        dest='keyfile',
+        type=str,
+        default=None,
+        metavar='PATH',
+        help='Path to the TLS private key file (PEM).\nRequired if `--certfile` is set.',
+    )
+    tls_group.add_argument(
+        '--client-cafile',
+        dest='client_cafile',
+        type=str,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to a PEM bundle of trusted client CA certificates for mutual TLS.\n'
+            'Requires `--client-auth-required` to actually verify client certificates.'
+        ),
+    )
+    tls_group.add_argument(
+        '--client-capath',
+        dest='client_capath',
+        type=str,
+        default=None,
+        metavar='PATH',
+        help=(
+            'Path to a directory of trusted client CA certificates for mutual TLS.\n'
+            'Requires `--client-auth-required` to actually verify client certificates.'
+        ),
+    )
+    tls_group.add_argument(
+        '--client-auth-required',
+        dest='client_auth_required',
+        action='store_true',
+        help=(
+            'Require clients to present a valid certificate (mutual TLS).\n'
+            'Requires `--client-cafile` or `--client-capath`.'
+        ),
+    )
+
     args = parser.parse_args()
     if args.interval < 0.25:
         parser.error(
             f'the interval {args.interval:0.2g}s is too short, which may cause performance issues. '
             f'Expected 1/4 or higher.',
+        )
+
+    if (args.certfile is None) != (args.keyfile is None):
+        parser.error('`--certfile` and `--keyfile` must be specified together.')
+    if args.certfile is not None and not os.path.isfile(args.certfile):
+        parser.error(f'`--certfile` not found: {args.certfile}')
+    if args.keyfile is not None and not os.path.isfile(args.keyfile):
+        parser.error(f'`--keyfile` not found: {args.keyfile}')
+    if args.client_cafile is not None and not os.path.isfile(args.client_cafile):
+        parser.error(f'`--client-cafile` not found: {args.client_cafile}')
+    if args.client_capath is not None and not os.path.isdir(args.client_capath):
+        parser.error(f'`--client-capath` not a directory: {args.client_capath}')
+    ca_provided = args.client_cafile is not None or args.client_capath is not None
+    if (ca_provided or args.client_auth_required) and args.certfile is None:
+        parser.error('Mutual TLS options require `--certfile` and `--keyfile`.')
+    if ca_provided != args.client_auth_required:
+        parser.error(
+            '`--client-cafile` / `--client-capath` and `--client-auth-required` must be '
+            'specified together to enable mutual TLS.',
         )
 
     return args
@@ -131,6 +203,7 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     """Main function for ``nvitop-exporter`` CLI."""
     args = parse_arguments()
+    scheme = 'https' if args.certfile is not None else 'http'
 
     try:
         device_count = Device.count()
@@ -181,7 +254,15 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     exporter = PrometheusExporter(devices, hostname=args.hostname, interval=args.interval)
 
     try:
-        start_wsgi_server(port=args.port, addr=args.bind_address)
+        start_wsgi_server(
+            port=args.port,
+            addr=args.bind_address,
+            certfile=args.certfile,
+            keyfile=args.keyfile,
+            client_cafile=args.client_cafile,
+            client_capath=args.client_capath,
+            client_auth_required=args.client_auth_required,
+        )
     except OSError as ex:
         if 'address already in use' in str(ex).lower():
             cprint(
@@ -190,7 +271,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
                     'Please specify a different port via `--port <PORT>`.'
                 ).format(
                     colored(
-                        f'http://{args.bind_address}:{args.port}',
+                        f'{scheme}://{args.bind_address}:{args.port}',
                         color='blue',
                         attrs=('bold', 'underline'),
                     ),
@@ -204,7 +285,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
                     'Please specify a different address via `--bind-address <ADDRESS>`.'
                 ).format(
                     colored(
-                        f'http://{args.bind_address}:{args.port}',
+                        f'{scheme}://{args.bind_address}:{args.port}',
                         color='blue',
                         attrs=('bold', 'underline'),
                     ),
@@ -219,7 +300,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         'INFO: Start the exporter on {} at {}.'.format(
             colored(args.hostname, color='magenta', attrs=('bold',)),
             colored(
-                f'http://{args.bind_address}:{args.port}/metrics',
+                f'{scheme}://{args.bind_address}:{args.port}/metrics',
                 color='green',
                 attrs=('bold', 'underline'),
             ),
