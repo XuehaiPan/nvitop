@@ -292,6 +292,8 @@ You can configure the default monitor mode with the `NVITOP_MONITOR_MODE` enviro
 
 In monitor mode, you can use <kbd>Ctrl-c</kbd> / <kbd>T</kbd> / <kbd>K</kbd> keys to interrupt / terminate / kill a process. And it's recommended to *terminate* or *kill* a process in the **tree-view screen** (shortcut: <kbd>t</kbd>). For normal users, `nvitop` will shallow other users' processes (in low-intensity colors). For **system administrators**, you can use `sudo nvitop` to terminate other users' processes.
 
+To run `nvitop` as a viewer only and disable all process-mutating shortcuts, pass `--readonly` (or set `NVITOP_MONITOR_MODE="readonly"`). The signal keys above become no-ops, the on-screen "Press ^C(INT)/T(TERM)/K(KILL) to send signals" hint is hidden, and the corresponding rows in the help screen are dimmed. Use this when sharing a session over SSH, demoing on a multi-tenant box, or wrapping `nvitop` in a non-admin alias.
+
 Also, to enter the process metrics screen, select a process and then press the <kbd>Enter</kbd> / <kbd>Return</kbd> key . `nvitop` dynamically displays the process metrics with live graphs.
 
 <p align="center">
@@ -343,11 +345,11 @@ Type `nvitop --help` for more command options:
 
 ```text
 usage: nvitop [--help] [--version] [--once | --monitor [{auto,full,compact}]]
-              [--interval SEC] [--ascii] [--colorful] [--force-color] [--light]
-              [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
-              [--only INDEX [INDEX ...]] [--only-visible]
-              [--compute] [--only-compute] [--graphics] [--only-graphics]
-              [--user [USERNAME ...]] [--pid PID [PID ...]]
+              [--interval SEC] [--no-unicode] [--readonly] [--colorful]
+              [--force-color] [--light] [--gpu-util-thresh th1 th2]
+              [--mem-util-thresh th1 th2] [--only INDEX [INDEX ...]]
+              [--only-visible] [--compute] [--only-compute] [--graphics]
+              [--only-graphics] [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
 
@@ -355,19 +357,22 @@ options:
   --help, -h            Show this help message and exit.
   --version, -V         Show nvitop's version number and exit.
   --once, -1            Report query data only once.
-  --monitor [{auto,full,compact}], -m [{auto,full,compact}]
+  --monitor, -m [{auto,full,compact}]
                         Run as a resource monitor. Continuously report query data and handle user inputs.
                         If the argument is omitted, the value from `NVITOP_MONITOR_MODE` will be used.
                         (default fallback mode: auto)
   --interval SEC        Process status update interval in seconds. (default: 2)
-  --ascii, --no-unicode, -U
+  --no-unicode, --ascii, -U
                         Use ASCII characters only, which is useful for terminals without Unicode support.
+  --readonly            Disable all system and process changing features (e.g., terminating processes).
+                        Set variable `NVITOP_MONITOR_MODE="readonly"` for convenience.
 
 coloring:
-  --colorful            Use gradient colors to get spectrum-like bar charts. This option is only available
-                        when the terminal supports 256 colors. You may need to set environment variable
-                        `TERM="xterm-256color"`. Note that the terminal multiplexer, such as `tmux`, may
-                        override the `TERM` variable.
+  --colorful            Use gradient colors to get spectrum-like bar charts.
+                        Set variable `NVITOP_MONITOR_MODE="colorful"` for convenience.
+                        This option is only available when the terminal supports 256 colors.
+                        You may need to set environment variable `TERM="xterm-256color"`. Note that the
+                        terminal multiplexer, such as `tmux`, may override the `TERM` variable.
   --force-color         Force colorize even when `stdout` is not a TTY terminal.
   --light               Tweak visual results for light theme terminals in monitor mode.
                         Set variable `NVITOP_MONITOR_MODE="light"` on light terminals for convenience.
@@ -381,7 +386,7 @@ coloring:
                         ( 1 <= th1 < th2 <= 99, defaults: 10 80 )
 
 device filtering:
-  --only INDEX [INDEX ...], -o INDEX [INDEX ...]
+  --only, -o INDEX [INDEX ...]
                         Only show the specified devices, suppress option `--only-visible`.
   --only-visible, -ov   Only show devices in the `CUDA_VISIBLE_DEVICES` environment variable.
 
@@ -390,9 +395,9 @@ process filtering:
   --only-compute, -C    Only show GPU processes exactly with the compute context. (type: 'C' only)
   --graphics, -g        Only show GPU processes with the graphics context. (type: 'G' or 'C+G')
   --only-graphics, -G   Only show GPU processes exactly with the graphics context. (type: 'G' only)
-  --user [USERNAME ...], -u [USERNAME ...]
+  --user, -u [USERNAME ...]
                         Only show processes of the given users (or `$USER` for no argument).
-  --pid PID [PID ...], -p PID [PID ...]
+  --pid, -p PID [PID ...]
                         Only show processes of the given PIDs.
 ```
 
@@ -400,7 +405,7 @@ process filtering:
 
 | Name                                   | Description                                         | Valid Values                                                            | Default Value     |
 | -------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------------- |
-| `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light` | `auto,plain,dark` |
+| `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light`<br>`readonly` (disables process-mutating shortcuts) | `auto,plain,dark` |
 | `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                   | `10,75`           |
 | `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                   | `10,80`           |
 | `LOGLEVEL`                             | Log level for log messages                          | `DEBUG` , `INFO`, `WARNING`, ...                                        | `WARNING`         |
@@ -450,9 +455,9 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                            |                                                                                      |
 |                                                                  `<Space>` | Tag/untag current process.                                                           |
 |                                                                    `<Esc>` | Clear process selection.                                                             |
-|                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt).                            |
-|                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate).                           |
-|                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill).                                |
+|                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt). *(disabled under `--readonly`)* |
+|                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate). *(disabled under `--readonly`)* |
+|                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill). *(disabled under `--readonly`)*  |
 |                                                                            |                                                                                      |
 |                                                                        `e` | Show process environment.                                                            |
 |                                                                        `t` | Toggle tree-view screen.                                                             |

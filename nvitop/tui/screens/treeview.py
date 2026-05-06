@@ -16,6 +16,8 @@ from nvitop.tui.library import (
     IS_SUPERUSER,
     IS_WSL,
     NA,
+    SIGNAL_HINT_KEY_SPANS,
+    SIGNAL_HINT_TEXT,
     USERNAME,
     Device,
     GpuProcess,
@@ -395,7 +397,7 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
 
         super().poke()
 
-    def draw(self) -> None:  # pylint: disable=too-many-statements,too-many-locals
+    def draw(self) -> None:  # pylint: disable=too-many-statements,too-many-locals,too-many-branches
         self.color_reset()
 
         pid_width = max(3, max((len(str(process.pid)) for process in self.snapshots), default=3))
@@ -510,60 +512,32 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
         if not hint:
             self.selection.clear()
 
+        if self.root.readonly or not self.selection.has_actionable_processes():
+            return
+
         self.color(fg='cyan', attr='bold | reverse')
-        text_offset = self.x + self.width - 47
-        if len(self.selection.tagged) > 0 or (
-            self.selection.owned() and self.selection.within_window
-        ):
-            self.addstr(self.y, text_offset - 1, ' (Press ^C(INT)/T(TERM)/K(KILL) to send signals)')
-            self.color_at(
-                self.y,
-                text_offset + 7,
-                width=2,
-                fg='cyan',
-                bg='yellow',
-                attr='bold | italic | reverse',
-            )
-            self.color_at(
-                self.y,
-                text_offset + 10,
-                width=3,
-                fg='cyan',
-                bg='red',
-                attr='bold | reverse',
-            )
-            self.color_at(
-                self.y,
-                text_offset + 15,
-                width=1,
-                fg='cyan',
-                bg='yellow',
-                attr='bold | italic | reverse',
-            )
-            self.color_at(
-                self.y,
-                text_offset + 17,
-                width=4,
-                fg='cyan',
-                bg='red',
-                attr='bold | reverse',
-            )
-            self.color_at(
-                self.y,
-                text_offset + 23,
-                width=1,
-                fg='cyan',
-                bg='yellow',
-                attr='bold | italic | reverse',
-            )
-            self.color_at(
-                self.y,
-                text_offset + 25,
-                width=4,
-                fg='cyan',
-                bg='red',
-                attr='bold | reverse',
-            )
+        text_offset = self.x + self.width - len(SIGNAL_HINT_TEXT)
+        # Leading space lets the cell share the row-above's reverse-highlighted background.
+        self.addstr(self.y, text_offset - 1, ' ' + SIGNAL_HINT_TEXT)
+        for kind, dx, width in SIGNAL_HINT_KEY_SPANS:
+            if kind == 'key':
+                self.color_at(
+                    self.y,
+                    text_offset + dx,
+                    width=width,
+                    fg='cyan',
+                    bg='yellow',
+                    attr='bold | italic | reverse',
+                )
+            else:
+                self.color_at(
+                    self.y,
+                    text_offset + dx,
+                    width=width,
+                    fg='cyan',
+                    bg='red',
+                    attr='bold | reverse',
+                )
 
     def finalize(self) -> None:
         self.y_mouse = None
@@ -632,32 +606,4 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
         keymaps.bind('treeview', '<Esc>', select_clear)
         keymaps.bind('treeview', '<Space>', tag)
 
-        keymaps.bind(
-            'treeview',
-            'T',
-            partial(
-                MessageBox.confirm_sending_signal_to_processes,
-                signal='terminate',
-                screen=self,
-            ),
-        )
-        keymaps.bind(
-            'treeview',
-            'K',
-            partial(
-                MessageBox.confirm_sending_signal_to_processes,
-                signal='kill',
-                screen=self,
-            ),
-        )
-        keymaps.alias('treeview', 'K', 'k')
-        keymaps.bind(
-            'treeview',
-            '<C-c>',
-            partial(
-                MessageBox.confirm_sending_signal_to_processes,
-                signal='interrupt',
-                screen=self,
-            ),
-        )
-        keymaps.alias('treeview', '<C-c>', 'I')
+        MessageBox.register_signal_keybindings(self, keymap_name='treeview')
