@@ -22,28 +22,62 @@
 
 from __future__ import annotations
 
+import re
 import time
-import warnings
-from typing import TYPE_CHECKING, Any
 
-from pytorch_lightning.callbacks import Callback  # pylint: disable=import-error
-from pytorch_lightning.utilities import rank_zero_only  # pylint: disable=import-error
-from pytorch_lightning.utilities.exceptions import (  # pylint: disable=import-error
-    MisconfigurationException,
-)
+# pylint: disable-next=import-error,no-name-in-module
+from tensorflow.python.keras.callbacks import Callback
 
-from nvitop.api import libnvml
-from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
+from nvitop import CudaDevice, Device, MiB, libnvml
 
 
-if TYPE_CHECKING:
-    import pytorch_lightning as pl
+def get_devices_by_logical_ids(device_ids: list[int], unique: bool = True) -> list[CudaDevice]:
+    cuda_devices = CudaDevice.from_indices(device_ids)
+    devices = []
+    presented = set()
+    for device in cuda_devices:
+        if device.cuda_index in presented and unique:
+            continue
+        devices.append(device)
+        presented.add(device.cuda_index)
+    return devices
 
 
-# Modified from pytorch_lightning.callbacks.GPUStatsMonitor
+def get_gpu_stats(
+    devices: list[Device],
+    memory_utilization: bool = True,
+    gpu_utilization: bool = True,
+    fan_speed: bool = False,
+    temperature: bool = False,
+) -> dict[str, float]:
+    """Get the GPU status from NVML queries."""
+    stats = {}
+    for device in devices:
+        prefix = f'gpu_id: {device.cuda_index}'
+        if device.cuda_index != device.physical_index:
+            prefix += f' (physical index: {device.physical_index})'
+        with device.oneshot():
+            if memory_utilization or gpu_utilization:
+                utilization = device.utilization_rates()
+                if memory_utilization:
+                    stats[f'{prefix}/utilization.memory (%)'] = float(utilization.memory)
+                if gpu_utilization:
+                    stats[f'{prefix}/utilization.gpu (%)'] = float(utilization.gpu)
+            if memory_utilization:
+                stats[f'{prefix}/memory.used (MiB)'] = float(device.memory_used()) / MiB
+                stats[f'{prefix}/memory.free (MiB)'] = float(device.memory_free()) / MiB
+            if fan_speed:
+                stats[f'{prefix}/fan.speed (%)'] = float(device.fan_speed())
+            if temperature:
+                stats[f'{prefix}/temperature.gpu (C)'] = float(device.temperature())
+
+    return stats
+
+
+# Ported version of nvitop.callbacks.lightning.GpuStatsLogger for Keras
 class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     """Automatically log GPU stats during training stage. :class:`GpuStatsLogger` is a callback and
-    in order to use it you need to assign a logger in the ``Trainer``.
+    in order to use it you need to assign a TensorBoard callback or a CSVLogger callback to the model.
 
     Args:
         memory_utilization (bool):
@@ -63,14 +97,23 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
             Set to :data:`True` to log the gpu temperature in degree Celsius. Default: :data:`False`.
 
     Raises:
-        MisconfigurationException:
-            If NVIDIA driver is not installed, not running on GPUs, or ``Trainer`` has no logger.
+        ValueError:
+            If NVIDIA driver is not installed, or the `gpus` argument does not match available devices.
 
     Examples:
-        >>> from pytorch_lightning import Trainer
-        >>> from nvitop.callbacks.pytorch_lightning import GpuStatsLogger
-        >>> gpu_stats = GpuStatsLogger()
-        >>> trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
+        >>> from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
+        >>> from tensorflow.python.keras.callbacks import TensorBoard
+        >>> from gpu_stats_logger import GpuStatsLogger  # adapt to where you saved this file
+        >>> gpus = ['/gpu:0', '/gpu:1']  # or gpus = [0, 1] or gpus = 2
+        >>> model = Xception(weights=None, ..)
+        >>> model = multi_gpu_model(model, gpus)
+        >>> model.compile(..)
+        >>> tb_callback = TensorBoard(log_dir='./logs')
+        >>> gpu_stats = GpuStatsLogger(gpus)
+        >>> model.fit(.., callbacks=[gpu_stats, tb_callback])
+
+    Note::
+        The GpuStatsLogger callback should be placed before the TensorBoard / CSVLogger callback.
 
     GPU stats are mainly based on NVML queries. The description of the queries is as follows:
 
@@ -90,8 +133,11 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
     - **temperature** - Core GPU temperature, in degrees C.
     """
 
+    GPU_NAME_PATTERN = re.compile(r'^/(\w*device:)?GPU:(?P<ID>\d+)$', flags=re.IGNORECASE)
+
     def __init__(  # pylint: disable=too-many-arguments
         self,
+        gpus: int | list[int | str] | tuple[int | str, ...],
         *,
         memory_utilization: bool = True,
         gpu_utilization: bool = True,
@@ -100,21 +146,30 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         fan_speed: bool = False,
         temperature: bool = False,
     ) -> None:
-        warnings.warn(
-            f'The class `{__name__}.{self.__class__.__name__}` is deprecated '
-            'and will not be supported in the future. '
-            'Feel free to port and implement your own callback using `nvitop`.',
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
         super().__init__()
 
         try:
             libnvml.nvmlInit()
         except libnvml.NVMLError as ex:
-            raise MisconfigurationException(
-                'Cannot use GpuStatsLogger callback because NVIDIA driver is not installed.',
+            raise ValueError(
+                'Cannot use the GpuStatsLogger callback because the NVIDIA driver is not installed.',
+            ) from ex
+
+        if isinstance(gpus, (list, tuple)):
+            gpus = list(gpus)
+            for i, gpu_id in enumerate(gpus):
+                if isinstance(gpu_id, str) and self.GPU_NAME_PATTERN.match(gpu_id):
+                    gpus[i] = self.GPU_NAME_PATTERN.match(gpu_id).group('ID')
+            gpu_ids = sorted(set(map(int, gpus)))
+        else:
+            gpu_ids = list(range(gpus))
+
+        try:
+            self._devices = get_devices_by_logical_ids(gpu_ids, unique=True)
+        except (libnvml.NVMLError, RuntimeError) as ex:
+            raise ValueError(
+                f'Cannot use GpuStatsLogger callback because devices unavailable. '
+                f'Received: `gpus={gpu_ids}`',
             ) from ex
 
         self._memory_utilization = memory_utilization
@@ -124,46 +179,17 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         self._fan_speed = fan_speed
         self._temperature = temperature
 
-    def on_train_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
-        if not trainer.logger:
-            raise MisconfigurationException(
-                'Cannot use GpuStatsLogger callback with Trainer that has no logger.',
-            )
-
-        if trainer.strategy.root_device.type != 'cuda':
-            raise MisconfigurationException(
-                f'You are using GpuStatsLogger but are not running on GPU. '
-                f'The root device type is {trainer.strategy.root_device.type}.',
-            )
-
-        try:
-            device_ids = trainer.device_ids  # pytorch-lightning >= 1.6.0
-        except AttributeError:
-            device_ids = trainer.data_parallel_device_ids  # pytorch-lightning < 1.6.0
-
-        try:
-            self._devices = get_devices_by_logical_ids(device_ids, unique=True)
-        except (libnvml.NVMLError, RuntimeError) as ex:
-            raise ValueError(
-                f'Cannot use GpuStatsLogger callback because devices unavailable. '
-                f'Received: `gpus={device_ids}`',
-            ) from ex
-
-    def on_train_epoch_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+    def on_train_epoch_start(self, epoch, logs=None) -> None:
         self._snap_intra_step_time = None
         self._snap_inter_step_time = None
 
-    @rank_zero_only
-    def on_train_batch_start(  # pylint: disable=arguments-differ
-        self,
-        trainer: pl.Trainer,
-        pl_module: pl.LightningModule,
-        **kwargs: Any,
-    ) -> None:
+    def on_train_batch_start(self, batch, logs=None) -> None:
+        logs = logs or {}
+
         if self._intra_step_time:
             self._snap_intra_step_time = time.monotonic()
 
-        logs = self._get_gpu_stats()
+        logs.update(self._get_gpu_stats())
 
         if self._inter_step_time and self._snap_inter_step_time:
             # First log at beginning of second step
@@ -171,26 +197,18 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
                 time.monotonic() - self._snap_inter_step_time
             )
 
-        trainer.logger.log_metrics(logs, step=trainer.global_step)
+    def on_train_batch_end(self, batch, logs=None) -> None:
+        logs = logs or {}
 
-    @rank_zero_only
-    def on_train_batch_end(  # pylint: disable=arguments-differ
-        self,
-        trainer: pl.Trainer,
-        pl_module: pl.LightningModule,
-        **kwargs: Any,
-    ) -> None:
         if self._inter_step_time:
             self._snap_inter_step_time = time.monotonic()
 
-        logs = self._get_gpu_stats()
+        logs.update(self._get_gpu_stats())
 
         if self._intra_step_time and self._snap_intra_step_time:
             logs['batch_time/intra_step (ms)'] = 1000.0 * (
                 time.monotonic() - self._snap_intra_step_time
             )
-
-        trainer.logger.log_metrics(logs, step=trainer.global_step)
 
     def _get_gpu_stats(self) -> dict[str, float]:
         """Get the gpu status from NVML queries."""

@@ -190,12 +190,16 @@ ignore = [
 "nvitop/api/lib*.py" = [
     "N",       # pep8-naming
 ]
-"nvitop/callbacks/*.py" = [
-    "D",       # pydocstyle
-    "ANN",     # flake8-annotations
-]
 "nvitop/tui/**/*.py" = [
     "D",       # pydocstyle
+]
+"examples/**/*.py" = [
+    "INP001",  # flake8-no-pep420 (examples are intentionally not packages)
+    "T201",    # `print` allowed in examples
+]
+"examples/callbacks/*.py" = [
+    "ANN",     # flake8-annotations (framework callbacks have boilerplate signatures)
+    "D",       # pydocstyle (framework-mandated callback overrides are obvious without docstrings)
 ]
 "!nvitop/tui/**/*.py" = [
     "TID251",  # banned-api

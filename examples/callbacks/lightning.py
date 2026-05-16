@@ -23,17 +23,57 @@
 from __future__ import annotations
 
 import time
-import warnings
 from typing import TYPE_CHECKING, Any
 
-from lightning.pytorch.callbacks import Callback  # pylint: disable=import-error
-from lightning.pytorch.utilities import rank_zero_only  # pylint: disable=import-error
-from lightning.pytorch.utilities.exceptions import (  # pylint: disable=import-error
-    MisconfigurationException,
-)
+# pylint: disable=import-error,no-name-in-module
+from lightning.pytorch.callbacks import Callback
+from lightning.pytorch.utilities import rank_zero_only
+from lightning.pytorch.utilities.exceptions import MisconfigurationException
 
-from nvitop.api import libnvml
-from nvitop.callbacks.utils import get_devices_by_logical_ids, get_gpu_stats
+from nvitop import CudaDevice, Device, MiB, libnvml
+
+
+def get_devices_by_logical_ids(device_ids: list[int], unique: bool = True) -> list[CudaDevice]:
+    cuda_devices = CudaDevice.from_indices(device_ids)
+    devices = []
+    presented = set()
+    for device in cuda_devices:
+        if device.cuda_index in presented and unique:
+            continue
+        devices.append(device)
+        presented.add(device.cuda_index)
+    return devices
+
+
+def get_gpu_stats(
+    devices: list[Device],
+    memory_utilization: bool = True,
+    gpu_utilization: bool = True,
+    fan_speed: bool = False,
+    temperature: bool = False,
+) -> dict[str, float]:
+    """Get the GPU status from NVML queries."""
+    stats = {}
+    for device in devices:
+        prefix = f'gpu_id: {device.cuda_index}'
+        if device.cuda_index != device.physical_index:
+            prefix += f' (physical index: {device.physical_index})'
+        with device.oneshot():
+            if memory_utilization or gpu_utilization:
+                utilization = device.utilization_rates()
+                if memory_utilization:
+                    stats[f'{prefix}/utilization.memory (%)'] = float(utilization.memory)
+                if gpu_utilization:
+                    stats[f'{prefix}/utilization.gpu (%)'] = float(utilization.gpu)
+            if memory_utilization:
+                stats[f'{prefix}/memory.used (MiB)'] = float(device.memory_used()) / MiB
+                stats[f'{prefix}/memory.free (MiB)'] = float(device.memory_free()) / MiB
+            if fan_speed:
+                stats[f'{prefix}/fan.speed (%)'] = float(device.fan_speed())
+            if temperature:
+                stats[f'{prefix}/temperature.gpu (C)'] = float(device.temperature())
+
+    return stats
 
 
 if TYPE_CHECKING:
@@ -68,7 +108,7 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
 
     Examples:
         >>> from lightning.pytorch import Trainer
-        >>> from nvitop.callbacks.lightning import GpuStatsLogger
+        >>> from gpu_stats_logger import GpuStatsLogger  # adapt to where you saved this file
         >>> gpu_stats = GpuStatsLogger()
         >>> trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
 
@@ -100,14 +140,6 @@ class GpuStatsLogger(Callback):  # pylint: disable=too-many-instance-attributes
         fan_speed: bool = False,
         temperature: bool = False,
     ) -> None:
-        warnings.warn(
-            f'The class `{__name__}.{self.__class__.__name__}` is deprecated '
-            'and will not be supported in the future. '
-            'Feel free to port and implement your own callback using `nvitop`.',
-            category=FutureWarning,
-            stacklevel=2,
-        )
-
         super().__init__()
 
         try:

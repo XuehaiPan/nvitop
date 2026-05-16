@@ -41,10 +41,6 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
     - [Command Line Options and Environment Variables](#command-line-options-and-environment-variables)
     - [Keybindings for Monitor Mode](#keybindings-for-monitor-mode)
   - [CUDA Visible Devices Selection Tool](#cuda-visible-devices-selection-tool)
-  - [Callback Functions for Machine Learning Frameworks (DEPRECATED)](#callback-functions-for-machine-learning-frameworks-deprecated)
-    - [Callback for TensorFlow (Keras)](#callback-for-tensorflow-keras)
-    - [Callback for PyTorch Lightning](#callback-for-pytorch-lightning)
-    - [TensorBoard Integration](#tensorboard-integration)
   - [More than a Monitor](#more-than-a-monitor)
     - [Quick Start](#quick-start)
     - [Status Snapshot](#status-snapshot)
@@ -609,47 +605,9 @@ formatting:
 
 ------
 
-### Callback Functions for Machine Learning Frameworks (DEPRECATED)
-
-`nvitop` provides two builtin callbacks for [TensorFlow (Keras)](https://www.tensorflow.org) and [PyTorch Lightning](https://pytorchlightning.ai).
-
-#### Callback for [TensorFlow (Keras)](https://www.tensorflow.org)
-
-```python
-from tensorflow.python.keras.utils.multi_gpu_utils import multi_gpu_model
-from tensorflow.python.keras.callbacks import TensorBoard
-from nvitop.callbacks.keras import GpuStatsLogger
-gpus = ['/gpu:0', '/gpu:1']  # or `gpus = [0, 1]` or `gpus = 2`
-model = Xception(weights=None, ..)
-model = multi_gpu_model(model, gpus)  # optional
-model.compile(..)
-tb_callback = TensorBoard(log_dir='./logs')  # or `keras.callbacks.CSVLogger`
-gpu_stats = GpuStatsLogger(gpus)
-model.fit(.., callbacks=[gpu_stats, tb_callback])
-```
-
-**NOTE:** Users should assign a `keras.callbacks.TensorBoard` callback or a `keras.callbacks.CSVLogger` callback to the model. And the `GpuStatsLogger` callback should be placed before the `keras.callbacks.TensorBoard` / `keras.callbacks.CSVLogger` callback.
-
-#### Callback for [PyTorch Lightning](https://lightning.ai)
-
-```python
-from lightning.pytorch import Trainer
-from nvitop.callbacks.lightning import GpuStatsLogger
-gpu_stats = GpuStatsLogger()
-trainer = Trainer(gpus=[..], logger=True, callbacks=[gpu_stats])
-```
-
-**NOTE:** Users should assign a logger to the trainer.
-
-#### [TensorBoard](https://github.com/tensorflow/tensorboard) Integration
-
-Please refer to [Resource Metric Collector](#resource-metric-collector) for an example.
-
-------
-
 ### More than a Monitor
 
-`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references host at <https://nvitop.readthedocs.io>.
+`nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references host at <https://nvitop.readthedocs.io>. Runnable reference scripts live in [`examples/`](./examples/).
 
 #### Quick Start
 
@@ -882,7 +840,12 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
 from nvitop import CudaDevice, ResourceMetricCollector
-from nvitop.callbacks.tensorboard import add_scalar_dict
+
+
+def add_scalar_dict(writer, main_tag, tag_scalar_dict, global_step=None, walltime=None):
+    for tag, scalar in tag_scalar_dict.items():
+        writer.add_scalar(f'{main_tag}/{tag}', scalar, global_step=global_step, walltime=walltime)
+
 
 # Build networks and prepare datasets
 ...
