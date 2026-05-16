@@ -39,7 +39,6 @@ from typing import ClassVar as _ClassVar
 # https://pypi.org/project/nvidia-ml-py
 import pynvml as _pynvml
 from pynvml import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import
-from pynvml import nvmlDeviceGetPciInfo  # appease mypy # noqa: F401 # pylint: disable=unused-import
 
 from nvitop.api.utils import NA, UINT_MAX, ULONGLONG_MAX, NaType
 from nvitop.api.utils import colored as __colored
@@ -444,7 +443,7 @@ def nvmlQuery(
                 raise NVMLError_FunctionNotFound from e1
 
         try:
-            retval = func(*args, **kwargs)  # type: ignore[operator]
+            retval = func(*args, **kwargs)
         except UnicodeDecodeError as e2:
             raise NVMLError_Unknown from e2
     except NVMLError_FunctionNotFound as e3:

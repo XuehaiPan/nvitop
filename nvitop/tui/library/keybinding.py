@@ -296,27 +296,35 @@ class KeyMaps(Dict[str, KeyMapPointer]):
             return
         last_key = keys[-1]
         for key in keys[:-1]:
-            if key in pointer and isinstance(pointer[key], dict):
-                pointer = pointer[key]  # type: ignore[assignment]
+            nxt = pointer.get(key)
+            if isinstance(nxt, dict):
+                pointer = nxt
             else:
-                pointer = pointer[key] = {}
+                new: KeyMapPointer = {}
+                pointer[key] = new
+                pointer = new
         pointer[last_key] = leaf
 
     def alias(self, context: str, source: str, target: str) -> None:
         clean_source, pointer = self._clean_input(context, source)
         if not source:
             return
+        node: KeyMapPointer | Callable[[], None] = pointer
         for key in clean_source:
+            if not isinstance(node, dict):
+                raise KeyError(
+                    f'Tried to copy the keybinding `{source}`, but it was not found.',
+                )
             try:
-                pointer = pointer[key]  # type: ignore[assignment]
-            except KeyError as ex:  # noqa: PERF203
+                node = node[key]
+            except KeyError as ex:
                 raise KeyError(
                     f'Tried to copy the keybinding `{source}`, but it was not found.',
                 ) from ex
         try:
-            self.bind(context, target, copy.deepcopy(pointer))  # type: ignore[arg-type]
+            self.bind(context, target, copy.deepcopy(node))  # type: ignore[arg-type]
         except TypeError:
-            self.bind(context, target, pointer)  # type: ignore[arg-type]
+            self.bind(context, target, node)  # type: ignore[arg-type]
 
     def unbind(self, context: str, keybinding: str) -> None:
         keys, pointer = self._clean_input(context, keybinding)

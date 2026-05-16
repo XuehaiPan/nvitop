@@ -70,7 +70,7 @@ class Selection:  # pylint: disable=too-many-instance-attributes,too-many-public
     def process(self, process: Snapshot | GpuProcess | HostProcess | None) -> None:
         if isinstance(process, Snapshot):
             process = process.real
-        self._process = process  # type: ignore[assignment]
+        self._process = process
         self._ident = None
 
     @property

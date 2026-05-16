@@ -362,7 +362,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
     def take_snapshots(self) -> list[Snapshot]:
         snapshots = GpuProcess.take_snapshots(self.processes, failsafe=True)
         for condition in self.filters:
-            snapshots = filter(condition, snapshots)  # type: ignore[assignment]
+            snapshots = filter(condition, snapshots)
         snapshots = list(snapshots)
 
         time_length = max(4, max((len(p.running_time_human) for p in snapshots), default=4))

@@ -373,6 +373,8 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                 gpu_memory_percent = self.average_gpu_memory_percent
                 gpu_utilization = self.average_gpu_utilization
 
+            assert gpu_memory_percent is not None
+            assert gpu_utilization is not None
             if self.TERM_256COLOR:
                 for i, (y, line) in enumerate(enumerate(gpu_memory_percent.graph, start=self.y)):
                     self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
