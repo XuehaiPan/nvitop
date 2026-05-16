@@ -16,7 +16,7 @@
 # ==============================================================================
 # This file is part of nvitop, the interactive NVIDIA-GPU process viewer.
 #
-# Copyright 2021-2025 Xuehai Pan. All Rights Reserved.
+# Copyright 2021-2026 Xuehai Pan. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -118,55 +118,55 @@ while [[ "$#" -gt 0 ]]; do
 	arg="$1"
 	shift
 	case "${arg}" in
-		--package)
-			REQUESTED_DRIVER="$1"
-			shift
-			;;
-		--package=*)
-			REQUESTED_DRIVER="${arg#*=}"
-			;;
-		--upgrade-only)
-			if [[ -n "${LATEST}" ]]; then
-				abort 'Both option `--upgrade-only` and `--latest` are set.'
-			fi
-			UPGRADE_ONLY=1
-			;;
-		--latest)
-			if [[ -n "${UPGRADE_ONLY}" ]]; then
-				abort 'Both option `--upgrade-only` and `--latest` are set.'
-			fi
-			LATEST=1
-			;;
-		--proprietary)
-			if [[ "${FLAVOR}" == 'open' ]]; then
-				abort 'Both option `--proprietary` and `--open` are set.'
-			fi
-			FLAVOR='proprietary'
-			FLAVOR_EXPLICIT=1
-			;;
-		--open)
-			if [[ "${FLAVOR}" == 'proprietary' ]]; then
-				abort 'Both option `--proprietary` and `--open` are set.'
-			fi
-			FLAVOR='open'
-			FLAVOR_EXPLICIT=1
-			;;
-		--dry-run | -n)
-			DRY_RUN=1
-			HAVE_SUDO_ACCESS=1
-			;;
-		--yes | -y)
-			YES=1
-			;;
-		--help | -h)
-			usage
-			exit
-			;;
-		*)
-			usage >&2
-			echo >&2
-			abort "Invalid option '${arg}'"
-			;;
+	--package)
+		REQUESTED_DRIVER="$1"
+		shift
+		;;
+	--package=*)
+		REQUESTED_DRIVER="${arg#*=}"
+		;;
+	--upgrade-only)
+		if [[ -n "${LATEST}" ]]; then
+			abort 'Both option `--upgrade-only` and `--latest` are set.'
+		fi
+		UPGRADE_ONLY=1
+		;;
+	--latest)
+		if [[ -n "${UPGRADE_ONLY}" ]]; then
+			abort 'Both option `--upgrade-only` and `--latest` are set.'
+		fi
+		LATEST=1
+		;;
+	--proprietary)
+		if [[ "${FLAVOR}" == 'open' ]]; then
+			abort 'Both option `--proprietary` and `--open` are set.'
+		fi
+		FLAVOR='proprietary'
+		FLAVOR_EXPLICIT=1
+		;;
+	--open)
+		if [[ "${FLAVOR}" == 'proprietary' ]]; then
+			abort 'Both option `--proprietary` and `--open` are set.'
+		fi
+		FLAVOR='open'
+		FLAVOR_EXPLICIT=1
+		;;
+	--dry-run | -n)
+		DRY_RUN=1
+		HAVE_SUDO_ACCESS=1
+		;;
+	--yes | -y)
+		YES=1
+		;;
+	--help | -h)
+		usage
+		exit
+		;;
+	*)
+		usage >&2
+		echo >&2
+		abort "Invalid option '${arg}'"
+		;;
 	esac
 done
 

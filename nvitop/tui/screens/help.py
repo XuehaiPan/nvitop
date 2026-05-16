@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 __all__ = ['HelpScreen']
 
 
-HELP_TEMPLATE = r"""nvitop {} - (C) Xuehai Pan, 2021-2025.
+HELP_TEMPLATE = r"""nvitop {} - (C) Xuehai Pan, 2021-2026.
 Released under the GNU GPLv3 License.
 
 GPU Process Type: C: Compute, G: Graphics, X: Mixed.

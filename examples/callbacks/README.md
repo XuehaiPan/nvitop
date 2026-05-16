@@ -12,14 +12,6 @@ Self-contained `GpuStatsLogger` callbacks for [Keras] and [Lightning], plus a ti
 
 Each `requirements-*.txt` pins only what that single file needs, so you do not pull in [TensorFlow] when you only want the [Lightning] callback.
 
-## Smoke Test
-
-```bash
-python3 -m py_compile examples/callbacks/*.py
-```
-
-(A real test requires the corresponding ML framework, a CUDA driver, and a GPU.)
-
 See [`../README.md`](../README.md) for the full example index.
 
 [Keras]: https://keras.io
