@@ -206,7 +206,7 @@ class CursesShortcuts:
 
     def addstr(self, *args: str | int | Color, **kwargs: str | int | Color) -> None:
         if self.no_unicode:
-            args = [  # type: ignore[assignment]
+            args = [
                 arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
                 for arg in args
             ]
@@ -219,7 +219,7 @@ class CursesShortcuts:
 
     def addnstr(self, *args: str | int | Color, **kwargs: str | int | Color) -> None:
         if self.no_unicode:
-            args = [  # type: ignore[assignment]
+            args = [
                 arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
                 for arg in args
             ]
@@ -232,7 +232,7 @@ class CursesShortcuts:
 
     def addch(self, *args: str | int | Color, **kwargs: str | int | Color) -> None:
         if self.no_unicode:
-            args = [  # type: ignore[assignment]
+            args = [
                 arg.translate(self.ASCII_TRANSTABLE) if isinstance(arg, str) else arg
                 for arg in args
             ]

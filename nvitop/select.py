@@ -62,7 +62,7 @@ import math
 import os
 import sys
 import warnings
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Literal, cast, overload
 
 from nvitop.api import Device, GpuProcess, Snapshot, colored, host, human2bytes, libnvml
 from nvitop.version import __version__
@@ -77,55 +77,55 @@ __all__ = ['select_devices']
 
 @overload
 def select_devices(  # pylint: disable=too-many-arguments
-    devices: Iterable[Device] | None,
+    devices: Iterable[Device] | None = ...,
     *,
-    format: Literal['index'],  # pylint: disable=redefined-builtin
-    force_index: bool,
-    min_count: int,
-    max_count: int | None,
-    min_free_memory: int | str | None,
-    min_total_memory: int | str | None,
-    max_gpu_utilization: int | None,
-    max_memory_utilization: int | None,
-    tolerance: int,
-    free_accounts: list[str] | None,
-    sort: bool,
+    format: Literal['index'] = ...,  # pylint: disable=redefined-builtin
+    force_index: bool = ...,
+    min_count: int = ...,
+    max_count: int | None = ...,
+    min_free_memory: int | str | None = ...,
+    min_total_memory: int | str | None = ...,
+    max_gpu_utilization: int | None = ...,
+    max_memory_utilization: int | None = ...,
+    tolerance: int = ...,
+    free_accounts: list[str] | None = ...,
+    sort: bool = ...,
 ) -> list[int] | list[tuple[int, int]]: ...
 
 
 @overload
 def select_devices(  # pylint: disable=too-many-arguments
-    devices: Iterable[Device] | None,
+    devices: Iterable[Device] | None = ...,
     *,
     format: Literal['uuid'],  # pylint: disable=redefined-builtin
-    force_index: bool,
-    min_count: int,
-    max_count: int | None,
-    min_free_memory: int | str | None,
-    min_total_memory: int | str | None,
-    max_gpu_utilization: int | None,
-    max_memory_utilization: int | None,
-    tolerance: int,
-    free_accounts: list[str] | None,
-    sort: bool,
-) -> list[int] | list[tuple[int, int]]: ...
+    force_index: bool = ...,
+    min_count: int = ...,
+    max_count: int | None = ...,
+    min_free_memory: int | str | None = ...,
+    min_total_memory: int | str | None = ...,
+    max_gpu_utilization: int | None = ...,
+    max_memory_utilization: int | None = ...,
+    tolerance: int = ...,
+    free_accounts: list[str] | None = ...,
+    sort: bool = ...,
+) -> list[str]: ...
 
 
 @overload
 def select_devices(  # pylint: disable=too-many-arguments
-    devices: Iterable[Device] | None,
+    devices: Iterable[Device] | None = ...,
     *,
     format: Literal['device'],  # pylint: disable=redefined-builtin
-    force_index: bool,
-    min_count: int,
-    max_count: int | None,
-    min_free_memory: int | str | None,
-    min_total_memory: int | str | None,
-    max_gpu_utilization: int | None,
-    max_memory_utilization: int | None,
-    tolerance: int,
-    free_accounts: list[str] | None,
-    sort: bool,
+    force_index: bool = ...,
+    min_count: int = ...,
+    max_count: int | None = ...,
+    min_free_memory: int | str | None = ...,
+    min_total_memory: int | str | None = ...,
+    max_gpu_utilization: int | None = ...,
+    max_memory_utilization: int | None = ...,
+    tolerance: int = ...,
+    free_accounts: list[str] | None = ...,
+    sort: bool = ...,
 ) -> list[Device]: ...
 
 
@@ -561,9 +561,9 @@ def main() -> int:
         )
         return 3
 
-    identifiers = select_devices(  # type: ignore[call-overload]
+    identifiers = select_devices(
         devices,
-        format=args.format,
+        format=cast('Literal["index", "uuid"]', args.format),
         min_count=args.min_count,
         max_count=args.max_count,
         min_free_memory=args.min_free_memory,

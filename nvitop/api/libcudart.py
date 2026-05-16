@@ -292,10 +292,10 @@ class cudaError(Exception):
         """Map value to a proper subclass of :class:`cudaError`."""
         if cls is cudaError:
             # pylint: disable-next=self-cls-assignment
-            cls = cudaError._value_class_mapping.get(value, cls)  # type: ignore[assignment]
+            cls = cudaError._value_class_mapping.get(value, cls)
         obj = Exception.__new__(cls)
         obj.value = value
-        return obj
+        return obj  # type: ignore[return-value]
 
     def __repr__(self) -> str:
         """Return a string representation of the error."""

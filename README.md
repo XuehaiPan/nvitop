@@ -403,12 +403,12 @@ process filtering:
 
 `nvitop` can accept the following environment variables for monitor mode:
 
-| Name                                   | Description                                         | Valid Values                                                            | Default Value     |
-| -------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------------- |
+| Name                                   | Description                                         | Valid Values                                                                                                                | Default Value     |
+| -------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light`<br>`readonly` (disables process-mutating shortcuts) | `auto,plain,dark` |
-| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                   | `10,75`           |
-| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                   | `10,80`           |
-| `LOGLEVEL`                             | Log level for log messages                          | `DEBUG` , `INFO`, `WARNING`, ...                                        | `WARNING`         |
+| `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                                                                       | `10,75`           |
+| `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                                                                       | `10,80`           |
+| `LOGLEVEL`                             | Log level for log messages                          | `DEBUG` , `INFO`, `WARNING`, ...                                                                                            | `WARNING`         |
 
 For example:
 
@@ -438,41 +438,41 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 
 #### Keybindings for Monitor Mode
 
-|                                                                        Key | Binding                                                                              |
-| -------------------------------------------------------------------------: | :----------------------------------------------------------------------------------- |
-|                                                                        `q` | Quit and return to the terminal.                                                     |
-|                                                                  `h` / `?` | Go to the help screen.                                                               |
-|                                                            `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                              |
-|                                                     `r` / `<C-r>` / `<F5>` | Force refresh the window.                                                            |
-|                                                                            |                                                                                      |
-| `<Up>` / `<Down>`<br>`<A-k>` / `<A-j>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                      |
-|                   `<Left>` / `<Right>`<br>`<A-h>` / `<A-l>`<br>`<S-Wheel>` | Scroll the host information of processes.                                            |
-|                                                                   `<Home>` | Select the first process.                                                            |
-|                                                                    `<End>` | Select the last process.                                                             |
-|                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).          |
-|                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                     |
-|              `<PageUp>` / `<PageDown>`<br/> `<A-K>` / `<A-J>`<br>`[` / `]` | scroll entire screen (for large amounts of processes).                               |
-|                                                                            |                                                                                      |
-|                                                                  `<Space>` | Tag/untag current process.                                                           |
-|                                                                    `<Esc>` | Clear process selection.                                                             |
-|                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt). *(disabled under `--readonly`)* |
+|                                                                        Key | Binding                                                                                    |
+| -------------------------------------------------------------------------: | :----------------------------------------------------------------------------------------- |
+|                                                                        `q` | Quit and return to the terminal.                                                           |
+|                                                                  `h` / `?` | Go to the help screen.                                                                     |
+|                                                            `a` / `f` / `c` | Change the display mode to *auto* / *full* / *compact*.                                    |
+|                                                     `r` / `<C-r>` / `<F5>` | Force refresh the window.                                                                  |
+|                                                                            |                                                                                            |
+| `<Up>` / `<Down>`<br>`<A-k>` / `<A-j>`<br>`<Tab>` / `<S-Tab>`<br>`<Wheel>` | Select and highlight a process.                                                            |
+|                   `<Left>` / `<Right>`<br>`<A-h>` / `<A-l>`<br>`<S-Wheel>` | Scroll the host information of processes.                                                  |
+|                                                                   `<Home>` | Select the first process.                                                                  |
+|                                                                    `<End>` | Select the last process.                                                                   |
+|                                                             `<C-a>`<br>`^` | Scroll left to the beginning of the process entry (i.e. beginning of line).                |
+|                                                             `<C-e>`<br>`$` | Scroll right to the end of the process entry (i.e. end of line).                           |
+|              `<PageUp>` / `<PageDown>`<br/> `<A-K>` / `<A-J>`<br>`[` / `]` | scroll entire screen (for large amounts of processes).                                     |
+|                                                                            |                                                                                            |
+|                                                                  `<Space>` | Tag/untag current process.                                                                 |
+|                                                                    `<Esc>` | Clear process selection.                                                                   |
+|                                                             `<C-c>`<br>`I` | Send `signal.SIGINT` to the selected process (interrupt). *(disabled under `--readonly`)*  |
 |                                                                        `T` | Send `signal.SIGTERM` to the selected process (terminate). *(disabled under `--readonly`)* |
-|                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill). *(disabled under `--readonly`)*  |
-|                                                                            |                                                                                      |
-|                                                                        `e` | Show process environment.                                                            |
-|                                                                        `t` | Toggle tree-view screen.                                                             |
-|                                                                  `<Enter>` | Show process metrics.                                                                |
-|                                                                            |                                                                                      |
-|                                                                  `,` / `.` | Select the sort column.                                                              |
-|                                                                        `/` | Reverse the sort order.                                                              |
-|                                                                `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`. |
-|                                                                `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                            |
-|                                                                `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                             |
-|                                                                `og` (`oG`) | Sort processes by `GPU-MEM` in descending (ascending) order.                         |
-|                                                                `os` (`oS`) | Sort processes by `%SM` in descending (ascending) order.                             |
-|                                                                `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                            |
-|                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                            |
-|                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                            |
+|                                                                        `K` | Send `signal.SIGKILL` to the selected process (kill). *(disabled under `--readonly`)*      |
+|                                                                            |                                                                                            |
+|                                                                        `e` | Show process environment.                                                                  |
+|                                                                        `t` | Toggle tree-view screen.                                                                   |
+|                                                                  `<Enter>` | Show process metrics.                                                                      |
+|                                                                            |                                                                                            |
+|                                                                  `,` / `.` | Select the sort column.                                                                    |
+|                                                                        `/` | Reverse the sort order.                                                                    |
+|                                                                `on` (`oN`) | Sort processes in the natural order, i.e., in ascending (descending) order of `GPU`.       |
+|                                                                `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                                  |
+|                                                                `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                                   |
+|                                                                `og` (`oG`) | Sort processes by `GPU-MEM` in descending (ascending) order.                               |
+|                                                                `os` (`oS`) | Sort processes by `%SM` in descending (ascending) order.                                   |
+|                                                                `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                                  |
+|                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                                  |
+|                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                                  |
 
 **HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).
 

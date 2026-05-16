@@ -183,10 +183,13 @@ def take_snapshots(
             itertools.chain.from_iterable(device.processes().values() for device in leaf_devices),
         )
 
-    devices = [device.as_snapshot() for device in devices]  # type: ignore[union-attr]
-    gpu_processes = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
+    device_snapshots: list[Snapshot] = [
+        device.as_snapshot()
+        for device in devices  # type: ignore[union-attr]
+    ]
+    gpu_process_snapshots = GpuProcess.take_snapshots(gpu_processes, failsafe=True)
 
-    return SnapshotResult(devices, gpu_processes)
+    return SnapshotResult(device_snapshots, gpu_process_snapshots)
 
 
 # pylint: disable-next=too-many-arguments
@@ -412,7 +415,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         if devices is None:
             devices = Device.all()
 
-        root_pids: set[int] = {os.getpid()} if root_pids is None else set(root_pids)
+        resolved_root_pids: set[int] = {os.getpid()} if root_pids is None else set(root_pids)
 
         self.interval: float = interval
 
@@ -428,7 +431,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             else:
                 self.leaf_devices.append(device)
 
-        self.root_pids: set[int] = root_pids
+        self.root_pids: set[int] = resolved_root_pids
         self._positive_processes: WeakSet[HostProcess] = WeakSet(
             HostProcess(pid) for pid in self.root_pids
         )
@@ -505,12 +508,12 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 )
 
             buffer = self._metric_buffer
-            while True:
+            while buffer is not None:
                 self._tags.remove(buffer.tag)
                 if buffer.tag == tag:
                     self._metric_buffer = buffer.prev
                     break
-                buffer = buffer.prev  # type: ignore[assignment]
+                buffer = buffer.prev
 
             if self._metric_buffer is None:
                 self._daemon_running.clear()
@@ -584,11 +587,11 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                 )
 
             buffer = self._metric_buffer
-            while True:
+            while buffer is not None:
                 buffer.clear()
                 if buffer.tag == tag:
                     break
-                buffer = buffer.prev  # type: ignore[assignment]
+                buffer = buffer.prev
 
     reset = clear
 
@@ -697,7 +700,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
                             positive = True
                             break
                         try:
-                            p = p.parent()  # type: ignore[assignment]
+                            p = p.parent()
                         except host.PsutilError:
                             break
                     if positive:
