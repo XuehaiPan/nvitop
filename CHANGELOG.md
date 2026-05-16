@@ -13,7 +13,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `nvidia-ml-py` 13.595.45 to support list.
+-
+
+### Changed
+
+-
+
+### Fixed
+
+-
+
+### Removed
+
+-
+
+------
+
+## [1.7.0] - 2026-05-16
+
+### Added
+
+- Add `nvidia-ml-py` 13.595.45 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
 - Add support for open kernel-module driver packages (e.g., `nvidia-driver-595-open`) in `install-nvidia-driver.sh` with new `--proprietary` and `--open` flags by [@XuehaiPan](https://github.com/XuehaiPan).
 - Add TLS and mutual TLS (mTLS) support for `nvitop-exporter` via new `--certfile`, `--keyfile`, `--client-cafile`, `--client-capath`, and `--client-auth-required` CLI flags by [@XuehaiPan](https://github.com/XuehaiPan) in [#213](https://github.com/XuehaiPan/nvitop/pull/213). Issued by [@StefanSander3](https://github.com/StefanSander3) in [#131](https://github.com/XuehaiPan/nvitop/issues/131).
 - Add `--readonly` CLI flag (and equivalent `NVITOP_MONITOR_MODE="readonly"` env token) for monitor mode that disables all process-mutating shortcuts (`Ctrl-c` / `T` / `K` / `I` / `k`) by [@XuehaiPan](https://github.com/XuehaiPan) in [#214](https://github.com/XuehaiPan/nvitop/pull/214).
@@ -263,7 +283,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.6.2...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/XuehaiPan/nvitop/compare/v1.6.2...v1.7.0
 [1.6.2]: https://github.com/XuehaiPan/nvitop/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/XuehaiPan/nvitop/compare/v1.6.0...v1.6.1
 [1.6.0]: https://github.com/XuehaiPan/nvitop/compare/v1.5.3...v1.6.0

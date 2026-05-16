@@ -82,7 +82,7 @@ Or, clone this repo and install manually:
 
 If this repo is useful to you, please star ⭐️ it to let more people know 🤗. |GitHub Repo Stars|_
 
-.. |Commit Count| image:: https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.6.2
+.. |Commit Count| image:: https://img.shields.io/github/commits-since/XuehaiPan/nvitop/v1.7.0
 
 ------
 
