@@ -94,6 +94,7 @@ pci
 physicaldevice
 pid
 ppid
+programmatically
 pstate
 psutil
 py

@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `nvidia-ml-py` 13.595.45 to support list.
 - Add support for open kernel-module driver packages (e.g., `nvidia-driver-595-open`) in `install-nvidia-driver.sh` with new `--proprietary` and `--open` flags by [@XuehaiPan](https://github.com/XuehaiPan).
 - Add TLS and mutual TLS (mTLS) support for `nvitop-exporter` via new `--certfile`, `--keyfile`, `--client-cafile`, `--client-capath`, and `--client-auth-required` CLI flags by [@XuehaiPan](https://github.com/XuehaiPan) in [#213](https://github.com/XuehaiPan/nvitop/pull/213). Issued by [@StefanSander3](https://github.com/StefanSander3) in [#131](https://github.com/XuehaiPan/nvitop/issues/131).
-- Add `--readonly` CLI flag (and equivalent `NVITOP_MONITOR_MODE="readonly"` env token) for monitor mode that disables all process-mutating shortcuts (`Ctrl-c` / `T` / `K` / `I` / `k`) by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add `--readonly` CLI flag (and equivalent `NVITOP_MONITOR_MODE="readonly"` env token) for monitor mode that disables all process-mutating shortcuts (`Ctrl-c` / `T` / `K` / `I` / `k`) by [@XuehaiPan](https://github.com/XuehaiPan) in [#214](https://github.com/XuehaiPan/nvitop/pull/214).
+- Add `examples/` directory with self-contained runnable scripts by [@XuehaiPan](https://github.com/XuehaiPan) in [#216](https://github.com/XuehaiPan/nvitop/pull/216).
 
 ### Changed
 
@@ -28,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
--
+- Relocate the `nvitop.callbacks` subpackage (Keras / Lightning / TensorBoard `GpuStatsLogger` and `add_scalar_dict`) to [`examples/callbacks/`](./examples/callbacks/) by [@XuehaiPan](https://github.com/XuehaiPan) in [#216](https://github.com/XuehaiPan/nvitop/pull/216).
 
 ------
 

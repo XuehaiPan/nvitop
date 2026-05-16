@@ -1,0 +1,3 @@
+nvitop
+torch
+tensorboard
