@@ -197,7 +197,7 @@ ignore = [
     "INP001",  # flake8-no-pep420 (examples are intentionally not packages)
     "T201",    # `print` allowed in examples
 ]
-"examples/callbacks/*.py" = [
+"examples/ml-framework-callbacks/*.py" = [
     "ANN",     # flake8-annotations (framework callbacks have boilerplate signatures)
     "D",       # pydocstyle (framework-mandated callback overrides are obvious without docstrings)
 ]

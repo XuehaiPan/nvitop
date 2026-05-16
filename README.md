@@ -1427,9 +1427,6 @@ nvitop           (GPL-3.0)
 ├── api          (Apache-2.0)
 │   ├── LICENSE  (Apache-2.0)
 │   └── *        (Apache-2.0)
-├── callbacks    (Apache-2.0)
-│   ├── LICENSE  (Apache-2.0)
-│   └── *        (Apache-2.0)
 ├── select.py    (Apache-2.0)
 ├── __main__.py  (GPL-3.0)
 ├── cli.py       (GPL-3.0)
@@ -1452,7 +1449,7 @@ from nvitop.api import *
 from nvitop import Device, ResourceMetricCollector
 ```
 
-The public APIs from `nvitop` are released under the **Apache License, Version 2.0 (Apache-2.0)**. The original license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE), [nvitop/api/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/api/LICENSE), and [nvitop/callbacks/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/callbacks/LICENSE).
+The public APIs from `nvitop` are released under the **Apache License, Version 2.0 (Apache-2.0)**. The original license files can be found at [LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/LICENSE), [nvitop/api/LICENSE](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/api/LICENSE).
 
 The CLI of `nvitop` is released under the **GNU General Public License, Version 3 (GPL-3.0)**. The original license files can be found at [COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/COPYING) and [nvitop/tui/COPYING](https://github.com/XuehaiPan/nvitop/blob/HEAD/nvitop/tui/COPYING). If you dynamically load the source code of `nvitop`'s CLI or TUI:
 

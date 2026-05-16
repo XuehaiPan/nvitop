@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Relocate the `nvitop.callbacks` subpackage (Keras / Lightning / TensorBoard `GpuStatsLogger` and `add_scalar_dict`) to [`examples/callbacks/`](./examples/callbacks/) by [@XuehaiPan](https://github.com/XuehaiPan) in [#216](https://github.com/XuehaiPan/nvitop/pull/216).
+- Relocate the `nvitop.callbacks` subpackage (Keras / Lightning / TensorBoard `GpuStatsLogger` and `add_scalar_dict`) to [`examples/ml-framework-callbacks/`](./examples/ml-framework-callbacks/) by [@XuehaiPan](https://github.com/XuehaiPan) in [#216](https://github.com/XuehaiPan/nvitop/pull/216).
 
 ------
 
