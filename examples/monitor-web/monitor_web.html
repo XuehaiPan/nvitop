@@ -95,10 +95,43 @@
         height: 260px;
         width: 100%;
       }
+      .chart-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        margin-bottom: 16px;
+      }
+      .gpu-chart {
+        height: 260px;
+        width: 100%;
+      }
+      .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 8px 0 6px;
+        color: var(--text);
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        white-space: nowrap;
+      }
+      .legend-swatch {
+        width: 28px;
+        height: 2px;
+        border-radius: 999px;
+        flex: 0 0 auto;
+      }
       .cards {
         display: grid;
         gap: 16px;
         grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        margin-bottom: 16px;
       }
       .card {
         background: var(--card);
@@ -217,6 +250,7 @@
       <div class="host-chart" id="host-chart"></div>
     </section>
     <div id="cards" class="cards"></div>
+    <div class="chart-grid" id="gpu-charts"></div>
     <script>
       (() => {
         const KEY_PREFIX = "monitor/";
@@ -239,7 +273,8 @@
         let historyWindowSeconds = HISTORY_RANGES[historyRange];
         let chartSamples = [];
         let chartXRange = null;
-        let chartRelayoutHandlerAttached = false;
+        let currentDevices = [];
+        const chartRelayoutHandlersAttached = new Set();
 
         const $ = (id) => document.getElementById(id);
         const setText = (id, text) => {
@@ -257,6 +292,11 @@
           if (Math.abs(value) >= 1024) return (value / 1024).toFixed(1) + "TiB";
           if (Math.abs(value) < 1) return (value * 1024).toFixed(0) + "MiB";
           return value.toFixed(1) + "GiB";
+        };
+        const fmtMibUsage = (value) => {
+          if (!Number.isFinite(value)) return "—";
+          if (Math.abs(value) >= 1024) return (value / 1024).toFixed(1) + "GiB";
+          return value.toFixed(0) + "MiB";
         };
         const fmtAge = (s) => {
           if (!Number.isFinite(s) || s < 0) return "—";
@@ -292,6 +332,8 @@
           }
           return NaN;
         };
+        const sampleDeviceMetric = (sample, scope, name) =>
+          pickMean(sample.metrics || {}, scope, name);
 
         const barClass = (pct) =>
           pct >= 90
@@ -299,6 +341,11 @@
             : pct >= 70
               ? "bar-fill warn"
               : "bar-fill";
+        const plotHoverLabel = {
+          bgcolor: "#181b22",
+          bordercolor: "#2a2f3a",
+          font: { color: "#e2e8f0", size: 12 },
+        };
 
         const historySeconds = () =>
           historyWindowSeconds || HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
@@ -355,9 +402,56 @@
           return NaN;
         };
 
+        const latestVisibleDeviceMetric = (scope, name) => {
+          const samples = visibleChartSamples();
+          for (let i = samples.length - 1; i >= 0; i -= 1) {
+            const value = sampleDeviceMetric(samples[i], scope, name);
+            if (Number.isFinite(value)) return value;
+          }
+          return NaN;
+        };
+
+        const samplePowerPercent = (sample, scope) => {
+          const power = sampleDeviceMetric(sample, scope, "power_usage");
+          const powerLimit = sampleDeviceMetric(sample, scope, "power_limit");
+          if (
+            Number.isFinite(power) &&
+            Number.isFinite(powerLimit) &&
+            powerLimit > 0
+          ) {
+            return (power / powerLimit) * 100;
+          }
+          return NaN;
+        };
+
+        const latestVisibleGpuMemoryUsage = (scope) =>
+          latestVisibleDeviceMetric(scope, "memory_used");
+
+        const latestVisibleGpuPowerUsage = (scope) =>
+          latestVisibleDeviceMetric(scope, "power_usage");
+
         const tracePercentName = (label, value) =>
           Number.isFinite(value) ? `${label} ${fmtPercentOne(value)}` : `${label} —`;
         const traceUsageName = (label, value) => `${label} ${fmtGibUsage(value)}`;
+        const traceMemoryName = (label, usage, pct) =>
+          `${label} ${fmtMibUsage(usage)} (${fmtPercentOne(pct)})`;
+        const tracePowerName = (label, watts) => `${label} ${fmtW(watts)}`;
+
+        const setChartLegend = (legend, items) => {
+          legend.replaceChildren(
+            ...items.map((item) => {
+              const entry = document.createElement("span");
+              entry.className = "legend-item";
+              const swatch = document.createElement("span");
+              swatch.className = "legend-swatch";
+              swatch.style.background = item.color;
+              const label = document.createElement("span");
+              label.textContent = item.label;
+              entry.append(swatch, label);
+              return entry;
+            }),
+          );
+        };
 
         const setActiveHistoryRange = (activeButton) => {
           const rangeEl = $("history-range");
@@ -383,24 +477,42 @@
           return null;
         };
 
+        const xRangesEqual = (left, right) =>
+          left !== null &&
+          right !== null &&
+          left.length === 2 &&
+          right.length === 2 &&
+          String(left[0]) === String(right[0]) &&
+          String(left[1]) === String(right[1]);
+
         const handleChartRelayout = (event) => {
           const range = xRangeFromRelayout(event);
           if (range !== null) {
+            const changed = historyRange !== null || !xRangesEqual(chartXRange, range);
             historyRange = null;
             chartXRange = range;
             setActiveHistoryRange(null);
+            if (changed) renderAllCharts();
           } else if (event && event["xaxis.autorange"]) {
+            const restoredRange = selectedHistoryRange || DEFAULT_HISTORY_RANGE;
+            const changed = historyRange !== restoredRange || chartXRange !== null;
             historyRange = selectedHistoryRange || DEFAULT_HISTORY_RANGE;
             chartXRange = null;
             setActiveHistoryRange(historyButton(historyRange));
+            if (changed) renderAllCharts();
           }
         };
 
-        const attachChartRelayoutHandler = () => {
-          const chart = $("host-chart");
-          if (chartRelayoutHandlerAttached || typeof chart.on !== "function") return;
+        const attachChartRelayoutHandler = (chartId) => {
+          const chart = $(chartId);
+          if (
+            chartRelayoutHandlersAttached.has(chartId) ||
+            typeof chart.on !== "function"
+          ) {
+            return;
+          }
           chart.on("plotly_relayout", handleChartRelayout);
-          chartRelayoutHandlerAttached = true;
+          chartRelayoutHandlersAttached.add(chartId);
         };
 
         const renderHostChart = () => {
@@ -419,6 +531,9 @@
             const value = pickHostMean(sample.metrics, "memory_percent");
             return Number.isFinite(value) ? value : null;
           });
+          const memoryUsage = chartSamples.map((sample) =>
+            fmtGibUsage(pickHostMean(sample.metrics, "memory_used")),
+          );
           const xaxis = {
             gridcolor: "#2a2f3a",
             linecolor: "#2a2f3a",
@@ -433,6 +548,7 @@
           const layout = {
             autosize: true,
             font: { color: "#e2e8f0", size: 12 },
+            hoverlabel: plotHoverLabel,
             hovermode: "x unified",
             legend: {
               bgcolor: "rgba(0,0,0,0)",
@@ -456,6 +572,8 @@
           };
           const traces = [
             {
+              hoverlabel: plotHoverLabel,
+              hovertemplate: "CPU %{y:.1f}%<extra></extra>",
               line: { color: "#4ade80", width: 2 },
               mode: "lines",
               name: tracePercentName("CPU", latestVisiblePercent("cpu_percent")),
@@ -464,9 +582,12 @@
               y: cpu,
             },
             {
+              hoverlabel: plotHoverLabel,
+              hovertemplate: "Host Memory %{text}<extra></extra>",
               line: { color: "#38bdf8", width: 2 },
               mode: "lines",
               name: traceUsageName("Host Memory", latestVisibleHostMemoryUsage()),
+              text: memoryUsage,
               type: "scatter",
               x,
               y: memory,
@@ -477,11 +598,221 @@
             responsive: true,
           });
           if (rendered && typeof rendered.then === "function") {
-            rendered.then(attachChartRelayoutHandler);
+            rendered.then(() => attachChartRelayoutHandler("host-chart"));
           } else {
-            attachChartRelayoutHandler();
+            attachChartRelayoutHandler("host-chart");
           }
           setText("chart-status", chartSampleCount());
+        };
+
+        const gpuChartId = (info) => `gpu-chart-${info.index}`;
+        const gpuTitleParts = (info) => ({
+          index: `#${info.index}`,
+          name: info.name,
+        });
+        const gpuTitle = (info) => {
+          const parts = gpuTitleParts(info);
+          return `${parts.index} ${parts.name}`;
+        };
+
+        const buildGpuChartPanel = (info) => {
+          const panel = document.createElement("section");
+          panel.className = "chart-panel";
+          panel.dataset.chartId = gpuChartId(info);
+
+          const head = document.createElement("div");
+          head.className = "chart-head";
+          const title = document.createElement("h2");
+          title.textContent = gpuTitle(info);
+          head.appendChild(title);
+          panel.appendChild(head);
+
+          const legend = document.createElement("div");
+          legend.className = "chart-legend";
+          legend.dataset.gpuLegend = gpuChartId(info);
+          panel.appendChild(legend);
+
+          const chart = document.createElement("div");
+          chart.className = "gpu-chart";
+          chart.id = gpuChartId(info);
+          panel.appendChild(chart);
+          return panel;
+        };
+
+        const syncGpuChartPanels = (devices) => {
+          const chartsEl = $("gpu-charts");
+          const nextIds = devices.map(gpuChartId);
+          const currentIds = Array.from(chartsEl.children).map(
+            (child) => child.dataset.chartId || "",
+          );
+          if (
+            nextIds.length !== currentIds.length ||
+            nextIds.some((id, index) => id !== currentIds[index])
+          ) {
+            for (const id of currentIds) chartRelayoutHandlersAttached.delete(id);
+            chartsEl.replaceChildren(...devices.map(buildGpuChartPanel));
+          }
+        };
+
+        const renderGpuCharts = () => {
+          if (!window.Plotly) return;
+
+          const x = chartSamples.map((sample) => new Date(sample.epoch * 1000));
+          for (const info of currentDevices) {
+            const chartId = gpuChartId(info);
+            if (!$(chartId)) continue;
+            const scope = deviceScope(info);
+            const colors = {
+              gpu: "#4ade80",
+              membw: "#fbbf24",
+              memory: "#38bdf8",
+              power: "#f87171",
+            };
+            const gpu = chartSamples.map((sample) => {
+              const value = sampleDeviceMetric(sample, scope, "gpu_utilization");
+              return Number.isFinite(value) ? value : null;
+            });
+            const membw = chartSamples.map((sample) => {
+              const value = sampleDeviceMetric(sample, scope, "memory_utilization");
+              return Number.isFinite(value) ? value : null;
+            });
+            const memory = chartSamples.map((sample) => {
+              const value = sampleDeviceMetric(sample, scope, "memory_percent");
+              return Number.isFinite(value) ? value : null;
+            });
+            const memoryUsage = chartSamples.map((sample) =>
+              fmtMibUsage(sampleDeviceMetric(sample, scope, "memory_used")),
+            );
+            const power = chartSamples.map((sample) => {
+              const value = samplePowerPercent(sample, scope);
+              return Number.isFinite(value) ? value : null;
+            });
+            const powerUsage = chartSamples.map((sample) =>
+              fmtW(sampleDeviceMetric(sample, scope, "power_usage")),
+            );
+            const xaxis = {
+              gridcolor: "#2a2f3a",
+              linecolor: "#2a2f3a",
+              tickformat: "%H:%M:%S",
+              tickfont: { color: "#94a3b8" },
+              zeroline: false,
+            };
+            if (chartXRange !== null) {
+              xaxis.range = chartXRange;
+            }
+            const legendItems = [
+              {
+                color: colors.gpu,
+                label: tracePercentName(
+                  "GPU",
+                  latestVisibleDeviceMetric(scope, "gpu_utilization"),
+                ),
+              },
+              {
+                color: colors.membw,
+                label: tracePercentName(
+                  "GMBW",
+                  latestVisibleDeviceMetric(scope, "memory_utilization"),
+                ),
+              },
+              {
+                color: colors.memory,
+                label: traceMemoryName(
+                  "GMEM",
+                  latestVisibleGpuMemoryUsage(scope),
+                  latestVisibleDeviceMetric(scope, "memory_percent"),
+                ),
+              },
+              {
+                color: colors.power,
+                label: tracePowerName(
+                  "Power",
+                  latestVisibleGpuPowerUsage(scope),
+                ),
+              },
+            ];
+            const legend = document.querySelector(`[data-gpu-legend="${chartId}"]`);
+            if (legend) setChartLegend(legend, legendItems);
+
+            const layout = {
+              autosize: true,
+              font: { color: "#e2e8f0", size: 12 },
+              hoverlabel: plotHoverLabel,
+              hovermode: "x unified",
+              showlegend: false,
+              margin: { b: 34, l: 42, r: 16, t: 8 },
+              paper_bgcolor: "rgba(0,0,0,0)",
+              plot_bgcolor: "#0b0d12",
+              uirevision: historyRange || "custom",
+              xaxis,
+              yaxis: {
+                gridcolor: "#2a2f3a",
+                linecolor: "#2a2f3a",
+                range: [0, 100],
+                ticksuffix: "%",
+                tickfont: { color: "#94a3b8" },
+                zeroline: false,
+              },
+            };
+            const traces = [
+              {
+                hoverlabel: plotHoverLabel,
+                hovertemplate: "GPU %{y:.1f}%<extra></extra>",
+                line: { color: colors.gpu, width: 2 },
+                mode: "lines",
+                name: "GPU",
+                type: "scatter",
+                x,
+                y: gpu,
+              },
+              {
+                hoverlabel: plotHoverLabel,
+                hovertemplate: "GMBW %{y:.1f}%<extra></extra>",
+                line: { color: colors.membw, width: 2 },
+                mode: "lines",
+                name: "GMBW",
+                type: "scatter",
+                x,
+                y: membw,
+              },
+              {
+                hoverlabel: plotHoverLabel,
+                hovertemplate: "GMEM %{text}<extra></extra>",
+                line: { color: colors.memory, width: 2 },
+                mode: "lines",
+                name: "GMEM",
+                text: memoryUsage,
+                type: "scatter",
+                x,
+                y: memory,
+              },
+              {
+                hoverlabel: plotHoverLabel,
+                hovertemplate: "Power %{text}<extra></extra>",
+                line: { color: colors.power, width: 2 },
+                mode: "lines",
+                name: "Power",
+                text: powerUsage,
+                type: "scatter",
+                x,
+                y: power,
+              },
+            ];
+            const rendered = Plotly.react(chartId, traces, layout, {
+              displayModeBar: false,
+              responsive: true,
+            });
+            if (rendered && typeof rendered.then === "function") {
+              rendered.then(() => attachChartRelayoutHandler(chartId));
+            } else {
+              attachChartRelayoutHandler(chartId);
+            }
+          }
+        };
+
+        const renderAllCharts = () => {
+          renderHostChart();
+          renderGpuCharts();
         };
 
         const appendChartSample = (epoch, metrics) => {
@@ -494,7 +825,7 @@
             chartSamples.push(sample);
           }
           trimChartSamples(epoch);
-          renderHostChart();
+          renderAllCharts();
         };
 
         async function syncHistory() {
@@ -519,7 +850,7 @@
             }))
             .filter((sample) => Number.isFinite(sample.epoch) && sample.epoch > 0);
           trimChartSamples();
-          renderHostChart();
+          renderAllCharts();
         }
 
         const initHistoryRange = () => {
@@ -593,11 +924,12 @@
           title.className = "card-title";
 
           const titleLeft = document.createElement("span");
+          const titleParts = gpuTitleParts(info);
           const titleIdx = document.createElement("span");
           titleIdx.className = "idx";
-          titleIdx.textContent = "#" + info.index;
+          titleIdx.textContent = titleParts.index;
           titleLeft.appendChild(titleIdx);
-          titleLeft.appendChild(document.createTextNode(info.name));
+          titleLeft.appendChild(document.createTextNode(titleParts.name));
 
           const titleRight = document.createElement("span");
           titleRight.className = "total";
@@ -687,6 +1019,8 @@
 
           const cardsEl = $("cards");
           const devices = payload.devices || [];
+          currentDevices = devices;
+          syncGpuChartPanels(devices);
           if (cardsEl.children.length !== devices.length) {
             cardsEl.replaceChildren(...devices.map(buildCard));
           }
