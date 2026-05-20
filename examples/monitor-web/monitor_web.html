@@ -242,7 +242,7 @@
 
           card.appendChild(makeRow("GPU", "util", true));
           card.appendChild(makeRow("Memory", "mem", true));
-          card.appendChild(makeRow("Temp", "temp", true));
+          card.appendChild(makeRow("Temp", "temp", false));
           card.appendChild(makeRow("Fan", "fan", false));
           card.appendChild(makeRow("Power", "power", false));
           return card;
@@ -272,13 +272,22 @@
           };
           setBar("util", util);
           setBar("mem", memPct);
-          setBar("temp", temp);
 
           card.querySelector('[data-val="util"]').textContent =
             fmtPercent(util);
           card.querySelector('[data-val="mem"]').textContent =
             `${fmtMib(memUsed)} / ${fmtMib(memTotal)}`;
-          card.querySelector('[data-val="temp"]').textContent = fmtC(temp);
+          const tempEl = card.querySelector('[data-val="temp"]');
+          tempEl.textContent = fmtC(temp);
+          // Temperature is degrees Celsius, not a fraction — no bar, but keep the
+          // warn/danger color cue on the numeric value (>=70 warn, >=90 danger).
+          tempEl.style.color = !Number.isFinite(temp)
+            ? ""
+            : temp >= 90
+              ? "var(--danger)"
+              : temp >= 70
+                ? "var(--warn)"
+                : "";
           card.querySelector('[data-val="fan"]').textContent = fmtPercent(fan);
           card.querySelector('[data-val="power"]').textContent = fmtW(power);
         };
