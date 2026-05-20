@@ -310,32 +310,32 @@
 
         const deviceScope = (info) => `gpu:${info.index}`;
 
-        const pickMean = (metrics, scope, name) => {
+        const pickLast = (metrics, scope, name) => {
           const prefix = `${KEY_PREFIX}${scope}/${name} (`;
           for (const key of Object.keys(metrics)) {
-            if (key.startsWith(prefix) && key.endsWith("/mean"))
+            if (key.startsWith(prefix) && key.endsWith("/last"))
               return metrics[key];
           }
           return NaN;
         };
-        const pickHumanMean = (metricsHuman, scope, name) => {
+        const pickHumanLast = (metricsHuman, scope, name) => {
           const prefix = `${KEY_PREFIX}${scope}/${name} (`;
           for (const key of Object.keys(metricsHuman)) {
-            if (key.startsWith(prefix) && key.endsWith("/mean"))
+            if (key.startsWith(prefix) && key.endsWith("/last"))
               return metricsHuman[key];
           }
           return "—";
         };
-        const pickHostMean = (metrics, name) => {
+        const pickHostLast = (metrics, name) => {
           const prefix = `${KEY_PREFIX}host/${name} (`;
           for (const key of Object.keys(metrics)) {
-            if (key.startsWith(prefix) && key.endsWith("/mean"))
+            if (key.startsWith(prefix) && key.endsWith("/last"))
               return metrics[key];
           }
           return NaN;
         };
         const sampleDeviceMetric = (sample, scope, name) =>
-          pickMean(sample.metrics || {}, scope, name);
+          pickLast(sample.metrics || {}, scope, name);
 
         const barClass = (pct) =>
           pct >= 90
@@ -389,7 +389,7 @@
         const latestVisiblePercent = (name) => {
           const samples = visibleChartSamples();
           for (let i = samples.length - 1; i >= 0; i -= 1) {
-            const value = pickHostMean(samples[i].metrics, name);
+            const value = pickHostLast(samples[i].metrics, name);
             if (Number.isFinite(value)) return value;
           }
           return NaN;
@@ -398,7 +398,7 @@
         const latestVisibleHostMemoryUsage = () => {
           const samples = visibleChartSamples();
           for (let i = samples.length - 1; i >= 0; i -= 1) {
-            const value = pickHostMean(samples[i].metrics, "memory_used");
+            const value = pickHostLast(samples[i].metrics, "memory_used");
             if (Number.isFinite(value)) return value;
           }
           return NaN;
@@ -526,15 +526,15 @@
           trimChartSamples();
           const x = chartSamples.map((sample) => new Date(sample.epoch * 1000));
           const cpu = chartSamples.map((sample) => {
-            const value = pickHostMean(sample.metrics, "cpu_percent");
+            const value = pickHostLast(sample.metrics, "cpu_percent");
             return Number.isFinite(value) ? value : null;
           });
           const memory = chartSamples.map((sample) => {
-            const value = pickHostMean(sample.metrics, "memory_percent");
+            const value = pickHostLast(sample.metrics, "memory_percent");
             return Number.isFinite(value) ? value : null;
           });
           const memoryUsage = chartSamples.map((sample) =>
-            fmtGibUsage(pickHostMean(sample.metrics, "memory_used")),
+            fmtGibUsage(pickHostLast(sample.metrics, "memory_used")),
           );
           const xaxis = {
             gridcolor: "#2a2f3a",
@@ -951,18 +951,18 @@
 
         const updateCard = (card, info, metrics, metricsHuman) => {
           const scope = deviceScope(info);
-          const util = pickMean(metrics, scope, "gpu_utilization");
-          const memBw = pickMean(metrics, scope, "memory_utilization");
-          const memUsedHuman = pickHumanMean(
+          const util = pickLast(metrics, scope, "gpu_utilization");
+          const memBw = pickLast(metrics, scope, "memory_utilization");
+          const memUsedHuman = pickHumanLast(
             metricsHuman,
             scope,
             "memory_used",
           );
-          const memPct = pickMean(metrics, scope, "memory_percent");
-          const temp = pickMean(metrics, scope, "temperature");
-          const fan = pickMean(metrics, scope, "fan_speed");
-          const power = pickMean(metrics, scope, "power_usage");
-          const powerLimit = pickMean(metrics, scope, "power_limit");
+          const memPct = pickLast(metrics, scope, "memory_percent");
+          const temp = pickLast(metrics, scope, "temperature");
+          const fan = pickLast(metrics, scope, "fan_speed");
+          const power = pickLast(metrics, scope, "power_usage");
+          const powerLimit = pickLast(metrics, scope, "power_limit");
           const powerPct =
             Number.isFinite(power) &&
             Number.isFinite(powerLimit) &&
@@ -1036,16 +1036,16 @@
           );
 
           const m = payload.metrics || {};
-          const hostMemoryUsed = pickHumanMean(
+          const hostMemoryUsed = pickHumanLast(
             payload.metrics_human || {},
             "host",
             "memory_used",
           );
           setText(
             "host",
-            `Host: CPU ${fmtPercent(pickHostMean(m, "cpu_percent"))}` +
-              ` · Memory ${hostMemoryUsed} (${fmtPercent(pickHostMean(m, "memory_percent"))})` +
-              ` · Swap ${fmtPercent(pickHostMean(m, "swap_percent"))}`,
+            `Host: CPU ${fmtPercent(pickHostLast(m, "cpu_percent"))}` +
+              ` · Memory ${hostMemoryUsed} (${fmtPercent(pickHostLast(m, "memory_percent"))})` +
+              ` · Swap ${fmtPercent(pickHostLast(m, "swap_percent"))}`,
           );
 
           const b = payload.buffer || {};
