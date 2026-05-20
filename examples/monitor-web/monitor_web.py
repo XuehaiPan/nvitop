@@ -134,9 +134,9 @@ def cprint(text: str = '', *, file: TextIO | None = None) -> None:
 class MetricStore:
     """Lock-protected rotating buffer of collector samples.
 
-    Each entry is ``(epoch_timestamp, metrics_dict)``. The buffer keeps at most
-    ``int(retention_seconds / interval)`` samples; older entries are evicted automatically by
-    :class:`deque`.
+    Each entry is ``(timestamp, metrics_dict)``.
+    The buffer keeps at most ``int(retention / interval)`` samples; older entries are evicted
+    automatically by :class:`deque`.
     """
 
     def __init__(self, *, retention_seconds: float, interval: float) -> None:
@@ -267,9 +267,9 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._send_json(payload)
 
     def _send_json(self, payload: object) -> None:
-        # `allow_nan=False` makes strict JSON; ``_finite()`` first maps
-        # `math.nan`/`math.inf` (which the collector emits for missing samples)
-        # to `None` so the browser's `JSON.parse` accepts the body.
+        # `allow_nan=False` makes strict JSON; ``_finite()`` first maps `math.nan`/`math.inf` (which
+        # the collector emits for missing samples) to `None` so the browser's `JSON.parse` accepts
+        # the body.
         body = json.dumps(_finite(payload), allow_nan=False, default=float).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')

@@ -609,6 +609,14 @@ formatting:
 
 `nvitop` can be easily integrated into other applications. You can use `nvitop` to make your own monitoring tools. The full API references host at <https://nvitop.readthedocs.io>. Runnable reference scripts live in [`examples/`](./examples/).
 
+<p align="center">
+  <a href="./examples/monitor-web">
+    <img width="100%" src="https://github.com/user-attachments/assets/a8688e16-52ec-4310-bc48-d5b303331481" alt="Web Monitor Dashboard">
+  </a>
+  <br/>
+  A browser dashboard example built on top of <code>nvitop.collect_in_background</code>.
+</p>
+
 #### Quick Start
 
 A minimal script to monitor the GPU devices based on APIs from `nvitop`:

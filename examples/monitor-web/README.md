@@ -1,13 +1,31 @@
-# Web Monitor (stdlib HTTP(S))
+# Web Monitor (HTTP(S) Dashboard)
 
-A minimal browser dashboard for [`nvitop.collect_in_background`][cib]: the collector ticks on a daemon thread, samples are pushed into a rotating ring buffer (24h by default), and a tiny `http.server`-based router serves both a one-page HTML dashboard and JSON snapshots at `/metrics.json` and `/history.json`. Stdlib only — no Flask, no TensorBoard, no extra dependencies. Supports HTTPS and mutual TLS via the same flag names as [`nvitop-exporter`][exporter].
+`monitor_web.py` serves a small browser dashboard for [`nvitop.collect_in_background`][cib]. The Python side uses the standard-library `http.server` stack, stores collector samples in a rotating in-memory buffer, and exposes the same data through JSON endpoints. The browser side loads [Plotly] from a CDN for the time-series charts.
 
 ## APIs Used
 
 - [`nvitop.collect_in_background`][cib]
 - [`nvitop.ResourceMetricCollector`][collector]
-- [`nvitop.Device.cuda.all()`][cuda-all]
-- [`nvitop.colored`][colored] (for the startup banner)
+- [`nvitop.Device.all()`][device-all]
+- [`nvitop.bytes2human()`][bytes2human]
+- [`nvitop.colored()`][colored] for the startup banner
+
+## What It Shows
+
+- Host CPU, host memory, swap, and buffer status badges.
+- A host history chart for CPU percent and host memory percent, labeled with memory usage.
+- One card per GPU, using the raw NVIDIA/NVML GPU index.
+- Per-GPU current bars for GPU utilization, memory bandwidth, GPU memory, and power.
+- One history chart per GPU under the cards, plotting the same four metrics.
+- History range buttons for `1m`, `5m`, `15m`, `30m`, `1h`, `3h`, `6h`, `12h`, and `24h`.
+
+Cards display current values from the collector's `/last` metrics. Plot legends display the latest visible sample in the selected range, also using `/last` keys. The JSON payload still includes aggregate keys such as `/mean`, `/min`, `/max`, and `/last`.
+
+Process snapshots are disabled with `root_pids={}` so the dashboard tracks host and device metrics without collecting per-process GPU rows.
+
+## Screenshot
+
+![nvitop web dashboard](https://github.com/user-attachments/assets/a8688e16-52ec-4310-bc48-d5b303331481)
 
 ## Run
 
@@ -15,61 +33,80 @@ A minimal browser dashboard for [`nvitop.collect_in_background`][cib]: the colle
 python3 examples/monitor-web/monitor_web.py --port 5555
 ```
 
-The startup banner (printed to `stderr`, mirroring [`nvitop-exporter`][exporter]) reports the device count, per-GPU UUIDs, the retention/interval summary, and the three URLs:
+Open <http://127.0.0.1:5555/> in a browser.
+
+The backend collector samples every `--interval` seconds, defaulting to `1.0`. The frontend polls `/metrics.json` every second and marks the dashboard stale if the latest sample is too old.
+
+The startup banner is printed to `stderr`:
 
 ```text
-INFO: Found 1 device(s).
-INFO: GPU 0: NVIDIA RTX 6000 Ada Generation (UUID: GPU-...)
-INFO: Retention 1d at 1.0s interval (max 86400 samples).
+INFO: Found 4 device(s).
+INFO: GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-...)
+INFO: Retention 1d at 1s interval (max 86400 samples).
 INFO: Serving the dashboard at http://127.0.0.1:5555/
-INFO:   - JSON snapshot:         http://127.0.0.1:5555/metrics.json
-INFO:   - JSON history:          http://127.0.0.1:5555/history.json
+INFO:   - JSON snapshot:       http://127.0.0.1:5555/metrics.json
+INFO:   - JSON history:        http://127.0.0.1:5555/history.json
 ```
 
-The browser dashboard polls `/metrics.json` every `--interval` seconds and renders a card per visible GPU (utilization, memory, temperature, fan, power) plus a host footer.
+## JSON Endpoints
 
-Inspect the raw JSON from the CLI:
+`/metrics.json` returns the latest sample plus metadata:
+
+- `interval`: collector interval in seconds.
+- `server_time`: current server timestamp.
+- `sample_time`: timestamp for the latest collected sample.
+- `stale_seconds`: age of the latest sample.
+- `buffer`: count, max count, retention, oldest sample, and newest sample.
+- `devices`: raw GPU index, name, memory total, and UUID.
+- `metrics`: raw collector metric keys and numeric values.
+- `metrics_human`: human-readable memory values for finite MiB/GiB metrics.
+
+Inspect it from the shell:
 
 ```bash
-curl -s http://127.0.0.1:5555/metrics.json | python3 -m json.tool | head -30
-curl -s 'http://127.0.0.1:5555/history.json?limit=10' | python3 -m json.tool | head -30
+curl -s http://127.0.0.1:5555/metrics.json | python3 -m json.tool | head -60
 ```
 
-`/history.json` accepts two optional query parameters:
+`/history.json` returns buffered samples:
 
-- `?limit=N` — return only the most recent `N` samples.
-- `?since=EPOCH` — return samples strictly newer than the Unix timestamp `EPOCH`.
+```bash
+curl -s 'http://127.0.0.1:5555/history.json?limit=10' | python3 -m json.tool
+curl -s 'http://127.0.0.1:5555/history.json?since=1779270000' | python3 -m json.tool
+```
 
-## Retention
+Supported query parameters:
 
-Use `--retention` to size the rotating buffer. The flag accepts `s`/`m`/`h`/`d` suffixes; a bare number is treated as seconds.
+- `limit=N`: return only the most recent `N` samples.
+- `since=EPOCH`: return samples strictly newer than the Unix timestamp `EPOCH`.
+
+JSON responses are strict JSON. Non-finite collector values such as `NaN` and `Infinity` are serialized as `null`.
+
+## History And Retention
+
+Use `--retention` to size the rotating buffer. The flag accepts `s`, `m`/`min`, `h`, and `d` suffixes; a bare number is treated as seconds.
 
 ```bash
 python3 examples/monitor-web/monitor_web.py --retention 12h
 python3 examples/monitor-web/monitor_web.py --retention 30min --interval 5
-python3 examples/monitor-web/monitor_web.py --retention 600    # 600 seconds
+python3 examples/monitor-web/monitor_web.py --retention 600
 ```
 
-The buffer holds at most `int(retention / interval)` samples, so memory scales as `samples × keys_per_sample × 8 B`. Bump `--interval` (e.g. `--interval 5`) to keep the same retention at lower memory cost.
+The buffer holds at most `int(retention / interval)` samples. Each sample stores the collector's metric dictionary, including aggregate keys such as `mean`, `min`, `max`, and `last`, so memory use depends on the sample count, the exported metric-key count, and normal Python object overhead. Increase `--interval` to keep the same retention window with fewer stored samples.
 
-## HTTPS / mTLS
+## TLS And Mutual TLS
 
-Generate a throw-away self-signed certificate for local testing:
+Serve plain HTTP by default, or pass a certificate and key to enable HTTPS:
 
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -days 365 \
     -subj '/CN=localhost' \
     -keyout key.pem -out cert.pem
-```
 
-Then serve over HTTPS:
-
-```bash
 python3 examples/monitor-web/monitor_web.py --port 5555 \
     --certfile cert.pem --keyfile key.pem
 ```
 
-For mutual TLS (require the client to present a trusted certificate):
+To require client certificates, also provide a trusted client CA bundle or CA directory:
 
 ```bash
 python3 examples/monitor-web/monitor_web.py --port 5555 \
@@ -77,12 +114,23 @@ python3 examples/monitor-web/monitor_web.py --port 5555 \
     --client-cafile ca.pem --client-auth-required
 ```
 
-The TLS / mTLS flag names match [`nvitop-exporter`][exporter] so the same cert/key combo works for both tools.
+`--client-cafile` or `--client-capath` must be specified together with `--client-auth-required`.
+
+## Useful Flags
+
+- `--bind-address ADDRESS`, `--bind ADDRESS`, `-B ADDRESS`: bind address, default `127.0.0.1`.
+- `--port PORT`, `-p PORT`: listen port, default `5555`.
+- `--interval SEC`: collector interval in seconds, minimum `0.25`, default `1.0`.
+- `--retention DURATION`: history retention, default `1d`.
+- `--certfile PATH` and `--keyfile PATH`: enable HTTPS.
+- `--client-cafile PATH` or `--client-capath PATH`: trusted client CAs for mutual TLS.
+- `--client-auth-required`: require a valid client certificate.
 
 See [`../README.md`](../README.md) for the full example index.
 
+[Plotly]: https://plotly.com/javascript/
+[bytes2human]: https://nvitop.readthedocs.io/en/latest/api/utils.html#nvitop.bytes2human
 [cib]: https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.collect_in_background
 [collector]: https://nvitop.readthedocs.io/en/latest/api/collector.html#nvitop.ResourceMetricCollector
 [colored]: https://nvitop.readthedocs.io/en/latest/api/utils.html#nvitop.colored
-[cuda-all]: https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.CudaDevice.all
-[exporter]: https://github.com/XuehaiPan/nvitop/tree/main/nvitop-exporter
+[device-all]: https://nvitop.readthedocs.io/en/latest/api/device.html#nvitop.Device.all

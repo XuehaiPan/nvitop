@@ -354,7 +354,9 @@
 
         const trimChartSamples = (nowEpoch = Date.now() / 1000) => {
           const minEpoch = nowEpoch - historySeconds();
-          chartSamples = chartSamples.filter((sample) => sample.epoch >= minEpoch);
+          chartSamples = chartSamples.filter(
+            (sample) => sample.epoch >= minEpoch,
+          );
         };
 
         const chartSampleCount = () =>
@@ -370,7 +372,8 @@
           const parsed = Date.parse(value);
           if (Number.isFinite(parsed)) return parsed / 1000;
           const numeric = Number(value);
-          if (Number.isFinite(numeric)) return numeric > 1e12 ? numeric / 1000 : numeric;
+          if (Number.isFinite(numeric))
+            return numeric > 1e12 ? numeric / 1000 : numeric;
           return NaN;
         };
 
@@ -378,7 +381,8 @@
           if (chartXRange === null) return chartSamples;
           const start = epochFromRangeValue(chartXRange[0]);
           const end = epochFromRangeValue(chartXRange[1]);
-          if (!Number.isFinite(start) || !Number.isFinite(end)) return chartSamples;
+          if (!Number.isFinite(start) || !Number.isFinite(end))
+            return chartSamples;
           const minEpoch = Math.min(start, end);
           const maxEpoch = Math.max(start, end);
           return chartSamples.filter(
@@ -433,8 +437,11 @@
           latestVisibleDeviceMetric(scope, "power_usage");
 
         const tracePercentName = (label, value) =>
-          Number.isFinite(value) ? `${label} ${fmtPercentOne(value)}` : `${label} —`;
-        const traceUsageName = (label, value) => `${label} ${fmtGibUsage(value)}`;
+          Number.isFinite(value)
+            ? `${label} ${fmtPercentOne(value)}`
+            : `${label} —`;
+        const traceUsageName = (label, value) =>
+          `${label} ${fmtGibUsage(value)}`;
         const traceMemoryName = (label, usage, pct) =>
           `${label} ${fmtMibUsage(usage)} (${fmtPercentOne(pct)})`;
         const tracePowerName = (label, watts) => `${label} ${fmtW(watts)}`;
@@ -467,7 +474,10 @@
 
         const xRangeFromRelayout = (event) => {
           if (!event) return null;
-          if (Array.isArray(event["xaxis.range"]) && event["xaxis.range"].length === 2) {
+          if (
+            Array.isArray(event["xaxis.range"]) &&
+            event["xaxis.range"].length === 2
+          ) {
             return event["xaxis.range"];
           }
           if (
@@ -490,14 +500,16 @@
         const handleChartRelayout = (event) => {
           const range = xRangeFromRelayout(event);
           if (range !== null) {
-            const changed = historyRange !== null || !xRangesEqual(chartXRange, range);
+            const changed =
+              historyRange !== null || !xRangesEqual(chartXRange, range);
             historyRange = null;
             chartXRange = range;
             setActiveHistoryRange(null);
             if (changed) renderAllCharts();
           } else if (event && event["xaxis.autorange"]) {
             const restoredRange = selectedHistoryRange || DEFAULT_HISTORY_RANGE;
-            const changed = historyRange !== restoredRange || chartXRange !== null;
+            const changed =
+              historyRange !== restoredRange || chartXRange !== null;
             historyRange = selectedHistoryRange || DEFAULT_HISTORY_RANGE;
             chartXRange = null;
             setActiveHistoryRange(historyButton(historyRange));
@@ -578,7 +590,10 @@
               hovertemplate: "CPU %{y:.1f}%<extra></extra>",
               line: { color: "#4ade80", width: 2 },
               mode: "lines",
-              name: tracePercentName("CPU", latestVisiblePercent("cpu_percent")),
+              name: tracePercentName(
+                "CPU",
+                latestVisiblePercent("cpu_percent"),
+              ),
               type: "scatter",
               x,
               y: cpu,
@@ -588,7 +603,10 @@
               hovertemplate: "Host Memory %{text}<extra></extra>",
               line: { color: "#38bdf8", width: 2 },
               mode: "lines",
-              name: traceUsageName("Host Memory", latestVisibleHostMemoryUsage()),
+              name: traceUsageName(
+                "Host Memory",
+                latestVisibleHostMemoryUsage(),
+              ),
               text: memoryUsage,
               type: "scatter",
               x,
@@ -651,7 +669,8 @@
             nextIds.length !== currentIds.length ||
             nextIds.some((id, index) => id !== currentIds[index])
           ) {
-            for (const id of currentIds) chartRelayoutHandlersAttached.delete(id);
+            for (const id of currentIds)
+              chartRelayoutHandlersAttached.delete(id);
             chartsEl.replaceChildren(...devices.map(buildGpuChartPanel));
           }
         };
@@ -671,11 +690,19 @@
               power: "#f87171",
             };
             const gpu = chartSamples.map((sample) => {
-              const value = sampleDeviceMetric(sample, scope, "gpu_utilization");
+              const value = sampleDeviceMetric(
+                sample,
+                scope,
+                "gpu_utilization",
+              );
               return Number.isFinite(value) ? value : null;
             });
             const membw = chartSamples.map((sample) => {
-              const value = sampleDeviceMetric(sample, scope, "memory_utilization");
+              const value = sampleDeviceMetric(
+                sample,
+                scope,
+                "memory_utilization",
+              );
               return Number.isFinite(value) ? value : null;
             });
             const memory = chartSamples.map((sample) => {
@@ -733,7 +760,9 @@
                 ),
               },
             ];
-            const legend = document.querySelector(`[data-gpu-legend="${chartId}"]`);
+            const legend = document.querySelector(
+              `[data-gpu-legend="${chartId}"]`,
+            );
             if (legend) setChartLegend(legend, legendItems);
 
             const layout = {
@@ -822,7 +851,8 @@
           const sample = { epoch, metrics: metrics || {} };
           const last = chartSamples[chartSamples.length - 1];
           if (last && epoch <= last.epoch) {
-            if (epoch === last.epoch) chartSamples[chartSamples.length - 1] = sample;
+            if (epoch === last.epoch)
+              chartSamples[chartSamples.length - 1] = sample;
           } else {
             chartSamples.push(sample);
           }
@@ -850,7 +880,9 @@
               epoch: Number(sample.epoch),
               metrics: sample.metrics || {},
             }))
-            .filter((sample) => Number.isFinite(sample.epoch) && sample.epoch > 0);
+            .filter(
+              (sample) => Number.isFinite(sample.epoch) && sample.epoch > 0,
+            );
           trimChartSamples();
           renderAllCharts();
         }
@@ -863,7 +895,8 @@
             historyRange = button.dataset.range || DEFAULT_HISTORY_RANGE;
             selectedHistoryRange = historyRange;
             historyWindowSeconds =
-              HISTORY_RANGES[historyRange] || HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
+              HISTORY_RANGES[historyRange] ||
+              HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
             chartXRange = null;
             setActiveHistoryRange(button);
             syncHistory();
@@ -992,8 +1025,8 @@
             `${memUsedHuman} (${fmtPercentOne(memPct)})`;
           const tempEl = card.querySelector('[data-val="temp"]');
           tempEl.textContent = fmtC(temp);
-          // Temperature is degrees Celsius, not a fraction — no bar, but keep the
-          // warn/danger color cue on the numeric value (>=70 warn, >=90 danger).
+          // Temperature is degrees Celsius, not a fraction — no bar, but keep the warn/danger color
+          // cue on the numeric value (>=70 warn, >=90 danger).
           tempEl.style.color = !Number.isFinite(temp)
             ? ""
             : temp >= 90
