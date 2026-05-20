@@ -241,6 +241,7 @@
           card.appendChild(title);
 
           card.appendChild(makeRow("GPU", "util", true));
+          card.appendChild(makeRow("Mem BW", "membw", true));
           card.appendChild(makeRow("Memory", "mem", true));
           card.appendChild(makeRow("Temp", "temp", false));
           card.appendChild(makeRow("Fan", "fan", false));
@@ -251,6 +252,7 @@
         const updateCard = (card, info, metrics) => {
           const scope = deviceScope(info);
           const util = pickMean(metrics, scope, "gpu_utilization");
+          const memBw = pickMean(metrics, scope, "memory_utilization");
           const memUsed = pickMean(metrics, scope, "memory_used");
           const memTotal = info.memory_total_mib;
           const memPct =
@@ -271,10 +273,13 @@
             bar.className = barClass(pct);
           };
           setBar("util", util);
+          setBar("membw", memBw);
           setBar("mem", memPct);
 
           card.querySelector('[data-val="util"]').textContent =
             fmtPercent(util);
+          card.querySelector('[data-val="membw"]').textContent =
+            fmtPercent(memBw);
           card.querySelector('[data-val="mem"]').textContent =
             `${fmtMib(memUsed)} / ${fmtMib(memTotal)}`;
           const tempEl = card.querySelector('[data-val="temp"]');
