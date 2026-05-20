@@ -8,6 +8,7 @@ Runnable reference scripts that exercise the public `nvitop` API. Each subfolder
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------- | -------------------------- |
 | [`monitor-minimal/`](./monitor-minimal/)               | Minimal plain-text GPU monitor using `Device.all()`.                                        | —                          |
 | [`monitor-colored/`](./monitor-colored/)               | Colored monitor with per-process snapshots.                                                 | —                          |
+| [`monitor-web/`](./monitor-web/)                       | Minimal stdlib HTTP(S) dashboard backed by `collect_in_background` with a rotating buffer.  | —                          |
 | [`take-snapshots/`](./take-snapshots/)                 | Every form of `take_snapshots` — NVML, CUDA, single-device, processes off.                  | —                          |
 | [`collector-tensorboard/`](./collector-tensorboard/)   | Log `ResourceMetricCollector` output to [TensorBoard] around a tiny [PyTorch] loop.         | [`torch`], [`tensorboard`] |
 | [`collector-csv/`](./collector-csv/)                   | Append `ResourceMetricCollector` samples to a CSV file via [pandas].                        | [`pandas`]                 |

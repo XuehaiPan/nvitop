@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>nvitop monitor</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1115;
+        --card: #181b22;
+        --border: #2a2f3a;
+        --accent: #4ade80;
+        --warn: #fbbf24;
+        --danger: #f87171;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 16px;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      h1 small {
+        color: var(--muted);
+        font-weight: 400;
+        margin-left: 8px;
+      }
+      .cards {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px;
+      }
+      .card-title {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        font-weight: 600;
+      }
+      .card-title .idx {
+        color: var(--accent);
+        margin-right: 6px;
+      }
+      .card-title .total {
+        color: var(--muted);
+        font-weight: 400;
+        font-size: 13px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 80px 1fr 140px;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-variant-numeric: tabular-nums;
+      }
+      .row > label {
+        color: var(--muted);
+      }
+      .row > .value {
+        text-align: right;
+      }
+      .bar {
+        position: relative;
+        height: 10px;
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        overflow: hidden;
+      }
+      .bar-fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent), #22d3ee);
+        transition: width 200ms linear;
+      }
+      .bar-fill.warn {
+        background: linear-gradient(90deg, var(--warn), #f97316);
+      }
+      .bar-fill.danger {
+        background: linear-gradient(90deg, var(--danger), #be123c);
+      }
+      footer {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+        color: var(--muted);
+        font-size: 13px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .badge {
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+      .stale {
+        color: var(--danger);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>nvitop monitor <small id="origin"></small></h1>
+      <span class="badge" id="updated">Updated: —</span>
+    </header>
+    <div id="cards" class="cards"></div>
+    <footer>
+      <span class="badge" id="host">Host: —</span>
+      <span class="badge" id="buffer">Buffer: —</span>
+      <span id="stale" class="stale" hidden></span>
+    </footer>
+    <script>
+      (() => {
+        const KEY_PREFIX = "monitor/";
+        let pollMs = 1000;
+        let timer = null;
+
+        const $ = (id) => document.getElementById(id);
+        const setText = (id, text) => {
+          $(id).textContent = text;
+        };
+
+        const fmtPercent = (v) =>
+          Number.isFinite(v) ? v.toFixed(0) + "%" : "—";
+        const fmtMib = (v) =>
+          Number.isFinite(v) ? Math.round(v) + " MiB" : "—";
+        const fmtC = (v) => (Number.isFinite(v) ? v.toFixed(0) + " °C" : "—");
+        const fmtW = (v) => (Number.isFinite(v) ? v.toFixed(1) + " W" : "—");
+        const fmtAge = (s) => {
+          if (!Number.isFinite(s) || s < 0) return "—";
+          if (s < 60) return s.toFixed(0) + "s";
+          if (s < 3600) return (s / 60).toFixed(0) + "m";
+          if (s < 86400) return (s / 3600).toFixed(1) + "h";
+          return (s / 86400).toFixed(1) + "d";
+        };
+
+        const deviceScope = (info) =>
+          info.cuda_index === null || info.cuda_index === undefined
+            ? `gpu:${info.index}`
+            : `cuda:${info.cuda_index} (gpu:${info.index})`;
+
+        const pickMean = (metrics, scope, name) => {
+          const prefix = `${KEY_PREFIX}${scope}/${name} (`;
+          for (const key of Object.keys(metrics)) {
+            if (key.startsWith(prefix) && key.endsWith("/mean"))
+              return metrics[key];
+          }
+          return NaN;
+        };
+        const pickHostMean = (metrics, name) => {
+          const prefix = `${KEY_PREFIX}host/${name} (`;
+          for (const key of Object.keys(metrics)) {
+            if (key.startsWith(prefix) && key.endsWith("/mean"))
+              return metrics[key];
+          }
+          return NaN;
+        };
+
+        const barClass = (pct) =>
+          pct >= 90
+            ? "bar-fill danger"
+            : pct >= 70
+              ? "bar-fill warn"
+              : "bar-fill";
+
+        const makeRow = (label, key, withBar) => {
+          const row = document.createElement("div");
+          row.className = "row";
+          const lab = document.createElement("label");
+          lab.textContent = label;
+          row.appendChild(lab);
+          if (withBar) {
+            const bar = document.createElement("div");
+            bar.className = "bar";
+            const fill = document.createElement("div");
+            fill.className = "bar-fill";
+            fill.dataset.bar = key;
+            bar.appendChild(fill);
+            row.appendChild(bar);
+          } else {
+            row.appendChild(document.createElement("span"));
+          }
+          const val = document.createElement("span");
+          val.className = "value";
+          val.dataset.val = key;
+          val.textContent = "—";
+          row.appendChild(val);
+          return row;
+        };
+
+        const buildCard = (info) => {
+          const card = document.createElement("div");
+          card.className = "card";
+          card.dataset.scope = deviceScope(info);
+
+          const title = document.createElement("div");
+          title.className = "card-title";
+
+          const titleLeft = document.createElement("span");
+          const titleIdx = document.createElement("span");
+          titleIdx.className = "idx";
+          titleIdx.textContent = "#" + info.index;
+          titleLeft.appendChild(titleIdx);
+          titleLeft.appendChild(document.createTextNode(info.name));
+
+          const titleRight = document.createElement("span");
+          titleRight.className = "total";
+          titleRight.textContent = info.memory_total_mib + " MiB";
+
+          title.appendChild(titleLeft);
+          title.appendChild(titleRight);
+          card.appendChild(title);
+
+          card.appendChild(makeRow("GPU", "util", true));
+          card.appendChild(makeRow("Memory", "mem", true));
+          card.appendChild(makeRow("Temp", "temp", true));
+          card.appendChild(makeRow("Fan", "fan", false));
+          card.appendChild(makeRow("Power", "power", false));
+          return card;
+        };
+
+        const updateCard = (card, info, metrics) => {
+          const scope = deviceScope(info);
+          const util = pickMean(metrics, scope, "gpu_utilization");
+          const memUsed = pickMean(metrics, scope, "memory_used");
+          const memTotal = info.memory_total_mib;
+          const memPct =
+            Number.isFinite(memUsed) && memTotal > 0
+              ? (memUsed / memTotal) * 100
+              : NaN;
+          const temp = pickMean(metrics, scope, "temperature");
+          const fan = pickMean(metrics, scope, "fan_speed");
+          const power = pickMean(metrics, scope, "power_usage");
+
+          const setBar = (name, pct) => {
+            const bar = card.querySelector(`[data-bar="${name}"]`);
+            if (!bar) return;
+            const clamped = Number.isFinite(pct)
+              ? Math.max(0, Math.min(100, pct))
+              : 0;
+            bar.style.width = clamped + "%";
+            bar.className = barClass(pct);
+          };
+          setBar("util", util);
+          setBar("mem", memPct);
+          setBar("temp", temp);
+
+          card.querySelector('[data-val="util"]').textContent =
+            fmtPercent(util);
+          card.querySelector('[data-val="mem"]').textContent =
+            `${fmtMib(memUsed)} / ${fmtMib(memTotal)}`;
+          card.querySelector('[data-val="temp"]').textContent = fmtC(temp);
+          card.querySelector('[data-val="fan"]').textContent = fmtPercent(fan);
+          card.querySelector('[data-val="power"]').textContent = fmtW(power);
+        };
+
+        const schedule = (ms) => {
+          if (timer !== null) clearTimeout(timer);
+          timer = setTimeout(tick, ms);
+        };
+
+        async function tick() {
+          let payload;
+          try {
+            const resp = await fetch("/metrics.json", { cache: "no-store" });
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            payload = await resp.json();
+          } catch (err) {
+            $("stale").hidden = false;
+            $("stale").textContent = "fetch failed: " + err.message;
+            schedule(pollMs);
+            return;
+          }
+
+          pollMs = Math.max(250, Math.round((payload.interval || 1.0) * 1000));
+          setText("origin", location.origin);
+
+          const cardsEl = $("cards");
+          const devices = payload.devices || [];
+          if (cardsEl.children.length !== devices.length) {
+            cardsEl.replaceChildren(...devices.map(buildCard));
+          }
+          devices.forEach((info, i) =>
+            updateCard(cardsEl.children[i], info, payload.metrics || {}),
+          );
+
+          const m = payload.metrics || {};
+          setText(
+            "host",
+            `Host: CPU ${fmtPercent(pickHostMean(m, "cpu_percent"))}` +
+              ` · Memory ${fmtPercent(pickHostMean(m, "memory_percent"))}` +
+              ` · Swap ${fmtPercent(pickHostMean(m, "swap_percent"))}`,
+          );
+
+          const b = payload.buffer || {};
+          const age =
+            b.oldest_epoch && b.count > 0
+              ? payload.server_time - b.oldest_epoch
+              : 0;
+          setText(
+            "buffer",
+            `Buffer: ${b.count}/${b.max_count} samples` +
+              ` · retention ${b.retention_human}` +
+              ` · oldest ${fmtAge(age)} ago`,
+          );
+
+          const stale = payload.stale_seconds || 0;
+          const staleEl = $("stale");
+          if (stale > 2 * (payload.interval || 1.0)) {
+            staleEl.hidden = false;
+            staleEl.textContent = "stale " + fmtAge(stale);
+          } else {
+            staleEl.hidden = true;
+          }
+
+          const t = payload.sample_time || 0;
+          setText(
+            "updated",
+            "Updated: " + (t ? new Date(t * 1000).toLocaleTimeString() : "—"),
+          );
+
+          schedule(pollMs);
+        }
+
+        tick();
+      })();
+    </script>
+  </body>
+</html>

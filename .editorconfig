@@ -13,6 +13,9 @@ insert_final_newline = true
 [*.py]
 indent_size = 4
 
+[*.{js,ts,jsx,tsx,mjs,css,scss,html,htm,vue}]
+indent_size = 2
+
 [*.{yaml,yml,json,xml}]
 indent_size = 2
 

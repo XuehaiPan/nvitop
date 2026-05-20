@@ -21,6 +21,7 @@ cudadevice
 cudaerror
 cudaxx
 cwd
+deque
 devicesnapshot
 displayables
 divmod
@@ -53,6 +54,7 @@ ints
 ipython
 isinstance
 iterable
+json
 keras
 kib
 kmd
@@ -114,6 +116,7 @@ selectable
 shader
 sm
 smi
+stdlib
 str
 struct
 subclasses
