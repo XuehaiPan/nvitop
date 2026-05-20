@@ -252,6 +252,12 @@
           Number.isFinite(v) ? v.toFixed(1) + "%" : "—";
         const fmtC = (v) => (Number.isFinite(v) ? v.toFixed(0) + " °C" : "—");
         const fmtW = (v) => (Number.isFinite(v) ? v.toFixed(1) + " W" : "—");
+        const fmtGibUsage = (value) => {
+          if (!Number.isFinite(value)) return "—";
+          if (Math.abs(value) >= 1024) return (value / 1024).toFixed(1) + "TiB";
+          if (Math.abs(value) < 1) return (value * 1024).toFixed(0) + "MiB";
+          return value.toFixed(1) + "GiB";
+        };
         const fmtAge = (s) => {
           if (!Number.isFinite(s) || s < 0) return "—";
           if (s < 60) return s.toFixed(0) + "s";
@@ -340,8 +346,18 @@
           return NaN;
         };
 
-        const traceName = (label, value) =>
+        const latestVisibleHostMemoryUsage = () => {
+          const samples = visibleChartSamples();
+          for (let i = samples.length - 1; i >= 0; i -= 1) {
+            const value = pickHostMean(samples[i].metrics, "memory_used");
+            if (Number.isFinite(value)) return value;
+          }
+          return NaN;
+        };
+
+        const tracePercentName = (label, value) =>
           Number.isFinite(value) ? `${label} ${fmtPercentOne(value)}` : `${label} —`;
+        const traceUsageName = (label, value) => `${label} ${fmtGibUsage(value)}`;
 
         const setActiveHistoryRange = (activeButton) => {
           const rangeEl = $("history-range");
@@ -442,7 +458,7 @@
             {
               line: { color: "#4ade80", width: 2 },
               mode: "lines",
-              name: traceName("CPU", latestVisiblePercent("cpu_percent")),
+              name: tracePercentName("CPU", latestVisiblePercent("cpu_percent")),
               type: "scatter",
               x,
               y: cpu,
@@ -450,7 +466,7 @@
             {
               line: { color: "#38bdf8", width: 2 },
               mode: "lines",
-              name: traceName("Host Memory", latestVisiblePercent("memory_percent")),
+              name: traceUsageName("Host Memory", latestVisibleHostMemoryUsage()),
               type: "scatter",
               x,
               y: memory,
