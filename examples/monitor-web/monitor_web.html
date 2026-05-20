@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>nvitop monitor</title>
+    <title>nvitop web</title>
     <style>
       :root {
         color-scheme: dark;
@@ -105,10 +105,8 @@
       .bar-fill.danger {
         background: linear-gradient(90deg, var(--danger), #be123c);
       }
-      footer {
-        margin-top: 16px;
-        padding-top: 12px;
-        border-top: 1px solid var(--border);
+      .status {
+        margin-bottom: 16px;
         color: var(--muted);
         font-size: 13px;
         display: flex;
@@ -122,6 +120,12 @@
         border-radius: 999px;
         padding: 4px 10px;
       }
+      .thermal-value {
+        display: flex;
+        justify-content: flex-end;
+        gap: 6px;
+        white-space: nowrap;
+      }
       .stale {
         color: var(--danger);
       }
@@ -129,19 +133,19 @@
   </head>
   <body>
     <header>
-      <h1>nvitop monitor <small id="origin"></small></h1>
+      <h1>nvitop web <small id="origin"></small></h1>
       <span class="badge" id="updated">Updated: —</span>
     </header>
-    <div id="cards" class="cards"></div>
-    <footer>
+    <div class="status">
       <span class="badge" id="host">Host: —</span>
       <span class="badge" id="buffer">Buffer: —</span>
       <span id="stale" class="stale" hidden></span>
-    </footer>
+    </div>
+    <div id="cards" class="cards"></div>
     <script>
       (() => {
         const KEY_PREFIX = "monitor/";
-        let pollMs = 1000;
+        const POLL_MS = 1000;
         let timer = null;
 
         const $ = (id) => document.getElementById(id);
@@ -151,8 +155,8 @@
 
         const fmtPercent = (v) =>
           Number.isFinite(v) ? v.toFixed(0) + "%" : "—";
-        const fmtMib = (v) =>
-          Number.isFinite(v) ? Math.round(v) + " MiB" : "—";
+        const fmtPercentOne = (v) =>
+          Number.isFinite(v) ? v.toFixed(1) + "%" : "—";
         const fmtC = (v) => (Number.isFinite(v) ? v.toFixed(0) + " °C" : "—");
         const fmtW = (v) => (Number.isFinite(v) ? v.toFixed(1) + " W" : "—");
         const fmtAge = (s) => {
@@ -163,10 +167,7 @@
           return (s / 86400).toFixed(1) + "d";
         };
 
-        const deviceScope = (info) =>
-          info.cuda_index === null || info.cuda_index === undefined
-            ? `gpu:${info.index}`
-            : `cuda:${info.cuda_index} (gpu:${info.index})`;
+        const deviceScope = (info) => `gpu:${info.index}`;
 
         const pickMean = (metrics, scope, name) => {
           const prefix = `${KEY_PREFIX}${scope}/${name} (`;
@@ -175,6 +176,14 @@
               return metrics[key];
           }
           return NaN;
+        };
+        const pickHumanMean = (metricsHuman, scope, name) => {
+          const prefix = `${KEY_PREFIX}${scope}/${name} (`;
+          for (const key of Object.keys(metricsHuman)) {
+            if (key.startsWith(prefix) && key.endsWith("/mean"))
+              return metricsHuman[key];
+          }
+          return "—";
         };
         const pickHostMean = (metrics, name) => {
           const prefix = `${KEY_PREFIX}host/${name} (`;
@@ -217,6 +226,28 @@
           return row;
         };
 
+        const makeThermalRow = () => {
+          const row = document.createElement("div");
+          row.className = "row";
+          const lab = document.createElement("label");
+          lab.textContent = "Temp / Fan";
+          row.appendChild(lab);
+          row.appendChild(document.createElement("span"));
+          const val = document.createElement("span");
+          val.className = "value thermal-value";
+          const temp = document.createElement("span");
+          temp.dataset.val = "temp";
+          temp.textContent = "—";
+          const sep = document.createElement("span");
+          sep.textContent = "·";
+          const fan = document.createElement("span");
+          fan.dataset.val = "fan";
+          fan.textContent = "—";
+          val.append(temp, sep, fan);
+          row.appendChild(val);
+          return row;
+        };
+
         const buildCard = (info) => {
           const card = document.createElement("div");
           card.className = "card";
@@ -234,7 +265,7 @@
 
           const titleRight = document.createElement("span");
           titleRight.className = "total";
-          titleRight.textContent = info.memory_total_mib + " MiB";
+          titleRight.textContent = info.memory_total_human || "—";
 
           title.appendChild(titleLeft);
           title.appendChild(titleRight);
@@ -243,25 +274,31 @@
           card.appendChild(makeRow("GPU", "util", true));
           card.appendChild(makeRow("GMBW", "membw", true));
           card.appendChild(makeRow("GMEM", "mem", true));
-          card.appendChild(makeRow("Temp", "temp", false));
-          card.appendChild(makeRow("Fan", "fan", false));
-          card.appendChild(makeRow("Power", "power", false));
+          card.appendChild(makeThermalRow());
+          card.appendChild(makeRow("Power", "power", true));
           return card;
         };
 
-        const updateCard = (card, info, metrics) => {
+        const updateCard = (card, info, metrics, metricsHuman) => {
           const scope = deviceScope(info);
           const util = pickMean(metrics, scope, "gpu_utilization");
           const memBw = pickMean(metrics, scope, "memory_utilization");
-          const memUsed = pickMean(metrics, scope, "memory_used");
-          const memTotal = info.memory_total_mib;
-          const memPct =
-            Number.isFinite(memUsed) && memTotal > 0
-              ? (memUsed / memTotal) * 100
-              : NaN;
+          const memUsedHuman = pickHumanMean(
+            metricsHuman,
+            scope,
+            "memory_used",
+          );
+          const memPct = pickMean(metrics, scope, "memory_percent");
           const temp = pickMean(metrics, scope, "temperature");
           const fan = pickMean(metrics, scope, "fan_speed");
           const power = pickMean(metrics, scope, "power_usage");
+          const powerLimit = pickMean(metrics, scope, "power_limit");
+          const powerPct =
+            Number.isFinite(power) &&
+            Number.isFinite(powerLimit) &&
+            powerLimit > 0
+              ? (power / powerLimit) * 100
+              : NaN;
 
           const setBar = (name, pct) => {
             const bar = card.querySelector(`[data-bar="${name}"]`);
@@ -275,13 +312,14 @@
           setBar("util", util);
           setBar("membw", memBw);
           setBar("mem", memPct);
+          setBar("power", powerPct);
 
           card.querySelector('[data-val="util"]').textContent =
             fmtPercent(util);
           card.querySelector('[data-val="membw"]').textContent =
             fmtPercent(memBw);
           card.querySelector('[data-val="mem"]').textContent =
-            `${fmtMib(memUsed)} / ${fmtMib(memTotal)}`;
+            `${memUsedHuman} (${fmtPercentOne(memPct)})`;
           const tempEl = card.querySelector('[data-val="temp"]');
           tempEl.textContent = fmtC(temp);
           // Temperature is degrees Celsius, not a fraction — no bar, but keep the
@@ -297,11 +335,6 @@
           card.querySelector('[data-val="power"]').textContent = fmtW(power);
         };
 
-        const schedule = (ms) => {
-          if (timer !== null) clearTimeout(timer);
-          timer = setTimeout(tick, ms);
-        };
-
         async function tick() {
           let payload;
           try {
@@ -311,11 +344,9 @@
           } catch (err) {
             $("stale").hidden = false;
             $("stale").textContent = "fetch failed: " + err.message;
-            schedule(pollMs);
             return;
           }
 
-          pollMs = Math.max(250, Math.round((payload.interval || 1.0) * 1000));
           setText("origin", location.origin);
 
           const cardsEl = $("cards");
@@ -324,14 +355,24 @@
             cardsEl.replaceChildren(...devices.map(buildCard));
           }
           devices.forEach((info, i) =>
-            updateCard(cardsEl.children[i], info, payload.metrics || {}),
+            updateCard(
+              cardsEl.children[i],
+              info,
+              payload.metrics || {},
+              payload.metrics_human || {},
+            ),
           );
 
           const m = payload.metrics || {};
+          const hostMemoryUsed = pickHumanMean(
+            payload.metrics_human || {},
+            "host",
+            "memory_used",
+          );
           setText(
             "host",
             `Host: CPU ${fmtPercent(pickHostMean(m, "cpu_percent"))}` +
-              ` · Memory ${fmtPercent(pickHostMean(m, "memory_percent"))}` +
+              ` · Memory ${hostMemoryUsed} (${fmtPercent(pickHostMean(m, "memory_percent"))})` +
               ` · Swap ${fmtPercent(pickHostMean(m, "swap_percent"))}`,
           );
 
@@ -356,16 +397,18 @@
             staleEl.hidden = true;
           }
 
-          const t = payload.sample_time || 0;
+          const t = payload.server_time || 0;
           setText(
             "updated",
             "Updated: " + (t ? new Date(t * 1000).toLocaleTimeString() : "—"),
           );
-
-          schedule(pollMs);
         }
 
         tick();
+        timer = setInterval(tick, POLL_MS);
+        window.addEventListener("pagehide", () => {
+          if (timer !== null) clearInterval(timer);
+        });
       })();
     </script>
   </body>

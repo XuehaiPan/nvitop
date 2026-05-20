@@ -39,7 +39,15 @@ from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, TextIO
 
-from nvitop import CudaDevice, Device, ResourceMetricCollector, collect_in_background, colored
+from nvitop import (
+    Device,
+    GiB,
+    MiB,
+    ResourceMetricCollector,
+    bytes2human,
+    collect_in_background,
+    colored,
+)
 
 
 if TYPE_CHECKING:
@@ -192,7 +200,7 @@ class MetricStore:
             return self._closed
 
 
-HTML_PAGE = Path(__file__).resolve().with_suffix('.html').read_text(encoding='utf-8')
+HTML_PATH = Path(__file__).resolve().with_suffix('.html')
 
 
 class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -222,7 +230,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
             self._send_404()
 
     def _send_html(self) -> None:
-        body = HTML_PAGE.encode('utf-8')
+        body = HTML_PATH.read_bytes()
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')
@@ -243,6 +251,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
             'buffer': self.store.stats(),
             'devices': self.devices_info,
             'metrics': metrics,
+            'metrics_human': _humanize_metrics(metrics),
         }
         self._send_json(payload)
 
@@ -292,6 +301,18 @@ def _finite(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_finite(v) for v in value]
     return value
+
+
+def _humanize_metrics(metrics: dict[str, float]) -> dict[str, str]:
+    human: dict[str, str] = {}
+    for key, value in metrics.items():
+        if not isinstance(value, (float, int)) or not math.isfinite(value):
+            continue
+        if ' (MiB)' in key:
+            human[key] = bytes2human(value * MiB, min_unit=MiB)
+        elif ' (GiB)' in key:
+            human[key] = bytes2human(value * GiB, min_unit=GiB)
+    return human
 
 
 def _maybe_positive_int(text: str | None) -> int | None:
@@ -472,14 +493,16 @@ def _describe_devices(devices: Sequence[Device]) -> list[dict[str, Any]]:
     info: list[dict[str, Any]] = []
     for device in devices:
         memory_total = device.memory_total()
-        memory_total_mib = memory_total // (1024 * 1024) if isinstance(memory_total, int) else 0
+        memory_total_mib = (
+            int(memory_total) // (1024 * 1024) if isinstance(memory_total, int) else 0
+        )
         uuid = device.uuid()
         info.append(
             {
                 'index': device.physical_index,
-                'cuda_index': device.cuda_index if isinstance(device, CudaDevice) else None,
                 'name': str(device.name()),
                 'memory_total_mib': memory_total_mib,
+                'memory_total_human': bytes2human(memory_total),
                 'uuid': uuid if isinstance(uuid, str) else None,
             },
         )
@@ -491,7 +514,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     args = parse_arguments()
     scheme = 'https' if args.certfile is not None else 'http'
 
-    devices = Device.cuda.all() or Device.all()
+    devices = Device.all()
     if not devices:
         cprint('ERROR: No NVIDIA devices found.', file=sys.stderr)
         return 1
@@ -505,21 +528,24 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         file=sys.stderr,
     )
     for info in devices_info:
-        gpu_index = info['cuda_index'] if info['cuda_index'] is not None else info['index']
         cprint(
-            f'INFO: GPU {gpu_index}: {info["name"]} (UUID: {info["uuid"]})',
+            f'INFO: GPU {info["index"]}: {info["name"]} (UUID: {info["uuid"]})',
             file=sys.stderr,
         )
 
     store = MetricStore(retention_seconds=args.retention, interval=args.interval)
     cprint(
-        'INFO: Retention {} at {}s interval (max {} samples).'.format(
+        'INFO: Retention {} at {} interval (max {} samples).'.format(
             colored(
                 format_duration(args.retention),
                 color='magenta',
                 attrs=('bold',),
             ),
-            args.interval,
+            colored(
+                f'{args.interval:g}s',
+                color='magenta',
+                attrs=('bold',),
+            ),
             colored(
                 str(store.stats()['max_count']),
                 color='magenta',
@@ -535,7 +561,8 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         store.update(metrics)
         return True
 
-    def on_stop(_collector: ResourceMetricCollector) -> None:
+    def on_stop(collector: ResourceMetricCollector) -> None:
+        del collector  # suppress unused variable warning
         store.close()
 
     collect_in_background(
@@ -585,9 +612,9 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         server.socket = ssl_context.wrap_socket(server.socket, server_side=True)
 
     for label, suffix in (
-        ('Serving the dashboard at', '/'),
-        ('  - JSON snapshot:        ', '/metrics.json'),
-        ('  - JSON history:         ', '/history.json'),
+        ('Serving the dashboard at', ''),
+        ('  - JSON snapshot:      ', '/metrics.json'),
+        ('  - JSON history:       ', '/history.json'),
     ):
         cprint(
             'INFO: {} {}'.format(

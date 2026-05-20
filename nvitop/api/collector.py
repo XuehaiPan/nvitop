@@ -347,6 +347,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
             '<tag>/cuda:0 (gpu:3)/fan_speed (%)/mean': 22.0,
             '<tag>/cuda:0 (gpu:3)/temperature (C)/mean': 25.0,
             '<tag>/cuda:0 (gpu:3)/power_usage (W)/mean': 19.11166264116916,
+            '<tag>/cuda:0 (gpu:3)/power_limit (W)/mean': 250.0,
             ...,
             '<tag>/cuda:1 (gpu:2)/memory_used (MiB)/mean': 8878.875,
             ...,
@@ -382,6 +383,7 @@ class ResourceMetricCollector:  # pylint: disable=too-many-instance-attributes
         ('fan_speed', 'fan_speed (%)', 1.0),
         ('temperature', 'temperature (C)', 1.0),
         ('power_usage', 'power_usage (W)', 1000.0),
+        ('power_limit', 'power_limit (W)', 1000.0),
     ]
 
     PROCESS_METRICS: ClassVar[list[tuple[str, str | None, str, float | int]]] = [
