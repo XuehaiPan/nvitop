@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import http.server
 import json
+import math
 import os
 import re
 import ssl
@@ -257,7 +258,10 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._send_json(payload)
 
     def _send_json(self, payload: object) -> None:
-        body = json.dumps(payload, default=float).encode('utf-8')
+        # `allow_nan=False` makes strict JSON; ``_finite()`` first maps
+        # `math.nan`/`math.inf` (which the collector emits for missing samples)
+        # to `None` so the browser's `JSON.parse` accepts the body.
+        body = json.dumps(_finite(payload), allow_nan=False, default=float).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')
@@ -272,6 +276,22 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+
+def _finite(value: Any) -> Any:
+    """Replace `nan`/`+inf`/`-inf` with :data:`None` so the result is strict JSON.
+
+    The collector writes :data:`math.nan` for any metric key that was sampled previously but is
+    missing from the current snapshot (see :class:`nvitop.ResourceMetricCollector`), and strict
+    JSON has no representation for ``NaN`` or ``Infinity``.
+    """
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, dict):
+        return {k: _finite(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_finite(v) for v in value]
+    return value
 
 
 def _maybe_positive_int(text: str | None) -> int | None:
