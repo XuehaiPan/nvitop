@@ -567,7 +567,11 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
 
     collect_in_background(
         on_collect,
-        ResourceMetricCollector(devices, interval=args.interval),
+        ResourceMetricCollector(
+            devices,
+            root_pids={},  # disable process snapshots
+            interval=args.interval,
+        ),
         interval=args.interval,
         on_stop=on_stop,
         tag='monitor',
