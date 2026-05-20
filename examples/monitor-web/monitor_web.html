@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <title>nvitop web</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
     <style>
       :root {
         color-scheme: dark;
@@ -41,6 +42,58 @@
         color: var(--muted);
         font-weight: 400;
         margin-left: 8px;
+      }
+      h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      button {
+        color: inherit;
+        font: inherit;
+      }
+      .history-toolbar {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 8px;
+      }
+      .chart-panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        margin-bottom: 16px;
+        padding: 12px 16px 8px;
+      }
+      .chart-head {
+        margin-bottom: 8px;
+      }
+      .chart-status {
+        color: var(--muted);
+        display: inline-block;
+        font-size: 12px;
+        margin-top: 3px;
+      }
+      .history-range {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: flex-end;
+      }
+      .history-range button {
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        cursor: pointer;
+        min-width: 42px;
+        padding: 4px 9px;
+      }
+      .history-range button.active {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .host-chart {
+        height: 260px;
+        width: 100%;
       }
       .cards {
         display: grid;
@@ -141,12 +194,52 @@
       <span class="badge" id="buffer">Buffer: —</span>
       <span id="stale" class="stale" hidden></span>
     </div>
+    <div class="history-toolbar">
+      <div class="history-range" id="history-range">
+        <button type="button" data-range="1m">1m</button>
+        <button type="button" data-range="5m">5m</button>
+        <button class="active" type="button" data-range="15m">15m</button>
+        <button type="button" data-range="30m">30m</button>
+        <button type="button" data-range="1h">1h</button>
+        <button type="button" data-range="3h">3h</button>
+        <button type="button" data-range="6h">6h</button>
+        <button type="button" data-range="12h">12h</button>
+        <button type="button" data-range="24h">24h</button>
+      </div>
+    </div>
+    <section class="chart-panel">
+      <div class="chart-head">
+        <div>
+          <h2>Host</h2>
+          <span class="chart-status" id="chart-status">—</span>
+        </div>
+      </div>
+      <div class="host-chart" id="host-chart"></div>
+    </section>
     <div id="cards" class="cards"></div>
     <script>
       (() => {
         const KEY_PREFIX = "monitor/";
         const POLL_MS = 1000;
+        const HISTORY_RANGES = {
+          "1m": 60,
+          "5m": 5 * 60,
+          "15m": 15 * 60,
+          "30m": 30 * 60,
+          "1h": 60 * 60,
+          "3h": 3 * 60 * 60,
+          "6h": 6 * 60 * 60,
+          "12h": 12 * 60 * 60,
+          "24h": 24 * 60 * 60,
+        };
+        const DEFAULT_HISTORY_RANGE = "15m";
         let timer = null;
+        let historyRange = DEFAULT_HISTORY_RANGE;
+        let selectedHistoryRange = historyRange;
+        let historyWindowSeconds = HISTORY_RANGES[historyRange];
+        let chartSamples = [];
+        let chartXRange = null;
+        let chartRelayoutHandlerAttached = false;
 
         const $ = (id) => document.getElementById(id);
         const setText = (id, text) => {
@@ -200,6 +293,233 @@
             : pct >= 70
               ? "bar-fill warn"
               : "bar-fill";
+
+        const historySeconds = () =>
+          historyWindowSeconds || HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
+
+        const trimChartSamples = (nowEpoch = Date.now() / 1000) => {
+          const minEpoch = nowEpoch - historySeconds();
+          chartSamples = chartSamples.filter((sample) => sample.epoch >= minEpoch);
+        };
+
+        const chartSampleCount = () =>
+          chartSamples.length === 1
+            ? "1 sample"
+            : `${chartSamples.length.toLocaleString()} samples`;
+
+        const epochFromRangeValue = (value) => {
+          if (value instanceof Date) return value.getTime() / 1000;
+          if (typeof value === "number") {
+            return value > 1e12 ? value / 1000 : value;
+          }
+          const parsed = Date.parse(value);
+          if (Number.isFinite(parsed)) return parsed / 1000;
+          const numeric = Number(value);
+          if (Number.isFinite(numeric)) return numeric > 1e12 ? numeric / 1000 : numeric;
+          return NaN;
+        };
+
+        const visibleChartSamples = () => {
+          if (chartXRange === null) return chartSamples;
+          const start = epochFromRangeValue(chartXRange[0]);
+          const end = epochFromRangeValue(chartXRange[1]);
+          if (!Number.isFinite(start) || !Number.isFinite(end)) return chartSamples;
+          const minEpoch = Math.min(start, end);
+          const maxEpoch = Math.max(start, end);
+          return chartSamples.filter(
+            (sample) => sample.epoch >= minEpoch && sample.epoch <= maxEpoch,
+          );
+        };
+
+        const latestVisiblePercent = (name) => {
+          const samples = visibleChartSamples();
+          for (let i = samples.length - 1; i >= 0; i -= 1) {
+            const value = pickHostMean(samples[i].metrics, name);
+            if (Number.isFinite(value)) return value;
+          }
+          return NaN;
+        };
+
+        const traceName = (label, value) =>
+          Number.isFinite(value) ? `${label} ${fmtPercentOne(value)}` : `${label} —`;
+
+        const setActiveHistoryRange = (activeButton) => {
+          const rangeEl = $("history-range");
+          for (const child of rangeEl.querySelectorAll("button[data-range]")) {
+            child.classList.toggle("active", child === activeButton);
+          }
+        };
+
+        const historyButton = (range) =>
+          $("history-range").querySelector(`[data-range="${range}"]`);
+
+        const xRangeFromRelayout = (event) => {
+          if (!event) return null;
+          if (Array.isArray(event["xaxis.range"]) && event["xaxis.range"].length === 2) {
+            return event["xaxis.range"];
+          }
+          if (
+            event["xaxis.range[0]"] !== undefined &&
+            event["xaxis.range[1]"] !== undefined
+          ) {
+            return [event["xaxis.range[0]"], event["xaxis.range[1]"]];
+          }
+          return null;
+        };
+
+        const handleChartRelayout = (event) => {
+          const range = xRangeFromRelayout(event);
+          if (range !== null) {
+            historyRange = null;
+            chartXRange = range;
+            setActiveHistoryRange(null);
+          } else if (event && event["xaxis.autorange"]) {
+            historyRange = selectedHistoryRange || DEFAULT_HISTORY_RANGE;
+            chartXRange = null;
+            setActiveHistoryRange(historyButton(historyRange));
+          }
+        };
+
+        const attachChartRelayoutHandler = () => {
+          const chart = $("host-chart");
+          if (chartRelayoutHandlerAttached || typeof chart.on !== "function") return;
+          chart.on("plotly_relayout", handleChartRelayout);
+          chartRelayoutHandlerAttached = true;
+        };
+
+        const renderHostChart = () => {
+          if (!window.Plotly) {
+            setText("chart-status", "Plotly unavailable");
+            return;
+          }
+
+          trimChartSamples();
+          const x = chartSamples.map((sample) => new Date(sample.epoch * 1000));
+          const cpu = chartSamples.map((sample) => {
+            const value = pickHostMean(sample.metrics, "cpu_percent");
+            return Number.isFinite(value) ? value : null;
+          });
+          const memory = chartSamples.map((sample) => {
+            const value = pickHostMean(sample.metrics, "memory_percent");
+            return Number.isFinite(value) ? value : null;
+          });
+          const xaxis = {
+            gridcolor: "#2a2f3a",
+            linecolor: "#2a2f3a",
+            tickformat: "%H:%M:%S",
+            tickfont: { color: "#94a3b8" },
+            zeroline: false,
+          };
+          if (chartXRange !== null) {
+            xaxis.range = chartXRange;
+          }
+
+          const layout = {
+            autosize: true,
+            font: { color: "#e2e8f0", size: 12 },
+            hovermode: "x unified",
+            legend: {
+              bgcolor: "rgba(0,0,0,0)",
+              orientation: "h",
+              x: 0,
+              y: 1.15,
+            },
+            margin: { b: 34, l: 42, r: 16, t: 8 },
+            paper_bgcolor: "rgba(0,0,0,0)",
+            plot_bgcolor: "#0b0d12",
+            uirevision: historyRange || "custom",
+            xaxis,
+            yaxis: {
+              gridcolor: "#2a2f3a",
+              linecolor: "#2a2f3a",
+              range: [0, 100],
+              ticksuffix: "%",
+              tickfont: { color: "#94a3b8" },
+              zeroline: false,
+            },
+          };
+          const traces = [
+            {
+              line: { color: "#4ade80", width: 2 },
+              mode: "lines",
+              name: traceName("CPU", latestVisiblePercent("cpu_percent")),
+              type: "scatter",
+              x,
+              y: cpu,
+            },
+            {
+              line: { color: "#38bdf8", width: 2 },
+              mode: "lines",
+              name: traceName("Host Memory", latestVisiblePercent("memory_percent")),
+              type: "scatter",
+              x,
+              y: memory,
+            },
+          ];
+          const rendered = Plotly.react("host-chart", traces, layout, {
+            displayModeBar: false,
+            responsive: true,
+          });
+          if (rendered && typeof rendered.then === "function") {
+            rendered.then(attachChartRelayoutHandler);
+          } else {
+            attachChartRelayoutHandler();
+          }
+          setText("chart-status", chartSampleCount());
+        };
+
+        const appendChartSample = (epoch, metrics) => {
+          if (!Number.isFinite(epoch) || epoch <= 0) return;
+          const sample = { epoch, metrics: metrics || {} };
+          const last = chartSamples[chartSamples.length - 1];
+          if (last && epoch <= last.epoch) {
+            if (epoch === last.epoch) chartSamples[chartSamples.length - 1] = sample;
+          } else {
+            chartSamples.push(sample);
+          }
+          trimChartSamples(epoch);
+          renderHostChart();
+        };
+
+        async function syncHistory() {
+          const since = Math.max(0, Date.now() / 1000 - historySeconds());
+          let payload;
+          try {
+            const resp = await fetch(
+              "/history.json?since=" + encodeURIComponent(since.toFixed(3)),
+              { cache: "no-store" },
+            );
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            payload = await resp.json();
+          } catch (err) {
+            setText("chart-status", "history failed: " + err.message);
+            return;
+          }
+
+          chartSamples = (payload.samples || [])
+            .map((sample) => ({
+              epoch: Number(sample.epoch),
+              metrics: sample.metrics || {},
+            }))
+            .filter((sample) => Number.isFinite(sample.epoch) && sample.epoch > 0);
+          trimChartSamples();
+          renderHostChart();
+        }
+
+        const initHistoryRange = () => {
+          const rangeEl = $("history-range");
+          rangeEl.addEventListener("click", (event) => {
+            const button = event.target.closest("button[data-range]");
+            if (!button) return;
+            historyRange = button.dataset.range || DEFAULT_HISTORY_RANGE;
+            selectedHistoryRange = historyRange;
+            historyWindowSeconds =
+              HISTORY_RANGES[historyRange] || HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
+            chartXRange = null;
+            setActiveHistoryRange(button);
+            syncHistory();
+          });
+        };
 
         const makeRow = (label, key, withBar) => {
           const row = document.createElement("div");
@@ -397,6 +717,8 @@
             staleEl.hidden = true;
           }
 
+          appendChartSample(payload.sample_time || payload.server_time || 0, m);
+
           const t = payload.server_time || 0;
           setText(
             "updated",
@@ -404,6 +726,8 @@
           );
         }
 
+        initHistoryRange();
+        syncHistory();
         tick();
         timer = setInterval(tick, POLL_MS);
         window.addEventListener("pagehide", () => {
