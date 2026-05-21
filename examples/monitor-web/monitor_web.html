@@ -304,6 +304,7 @@
       (() => {
         const KEY_PREFIX = "monitor/";
         const POLL_MS = 1000;
+        const HISTORY_BACKFILL_GAP_SECONDS = Math.max(5, 3 * POLL_MS / 1000);
         const MAX_HISTORY_SAMPLES = 3600;
         const HISTORY_RANGES = {
           "1m": 60,
@@ -341,6 +342,7 @@
         let currentHostname = location.hostname || "unknown";
         let historyAbortController = null;
         let historyRequestId = 0;
+        let historyRefreshPromise = null;
         const chartRelayoutHandlersAttached = new Set();
         const hiddenChartTraces = new Map();
 
@@ -436,6 +438,14 @@
           const minEpoch = nowEpoch - historySeconds();
           chartSamples = chartSamples.filter(
             (sample) => sample.epoch >= minEpoch,
+          );
+        };
+
+        const hasHistoryBackfillGap = (epoch) => {
+          const last = chartSamples[chartSamples.length - 1];
+          return (
+            last !== undefined &&
+            epoch > last.epoch + HISTORY_BACKFILL_GAP_SECONDS
           );
         };
 
@@ -1007,6 +1017,10 @@
 
         const appendChartSample = (epoch, metrics) => {
           if (!Number.isFinite(epoch) || epoch <= 0) return;
+          if (hasHistoryBackfillGap(epoch)) {
+            requestHistoryRefresh();
+            return;
+          }
           const sample = { epoch, metrics: metrics || {} };
           const last = chartSamples[chartSamples.length - 1];
           if (last && epoch <= last.epoch) {
@@ -1017,6 +1031,18 @@
           }
           trimChartSamples(epoch);
           renderAllCharts();
+        };
+
+        const requestHistoryRefresh = ({ force = false } = {}) => {
+          if (historyRefreshPromise !== null && !force) {
+            return historyRefreshPromise;
+          }
+          const promise = syncHistory();
+          historyRefreshPromise = promise;
+          promise.finally(() => {
+            if (historyRefreshPromise === promise) historyRefreshPromise = null;
+          });
+          return promise;
         };
 
         async function syncHistory() {
@@ -1074,7 +1100,7 @@
           chartXRange = null;
           setActiveHistoryRange(historyButton(historyRange));
           if (updateUrl) replaceUrlHistoryRange(historyRange);
-          if (sync) syncHistory();
+          if (sync) requestHistoryRefresh({ force: true });
         };
 
         const initHistoryRange = () => {
@@ -1300,14 +1326,34 @@
           );
         }
 
+        const refreshAfterForeground = () => {
+          if (document.visibilityState === "hidden") return;
+          startPolling();
+          requestHistoryRefresh();
+          tick();
+        };
+
+        const startPolling = () => {
+          if (timer === null) timer = setInterval(tick, POLL_MS);
+        };
+
+        const stopPolling = () => {
+          if (timer === null) return;
+          clearInterval(timer);
+          timer = null;
+        };
+
         initEndpointButtons();
         initHistoryRange();
-        syncHistory();
+        requestHistoryRefresh({ force: true });
         tick();
-        timer = setInterval(tick, POLL_MS);
-        window.addEventListener("pagehide", () => {
-          if (timer !== null) clearInterval(timer);
+        startPolling();
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") refreshAfterForeground();
         });
+        window.addEventListener("focus", refreshAfterForeground);
+        window.addEventListener("pageshow", refreshAfterForeground);
+        window.addEventListener("pagehide", stopPolling);
       })();
     </script>
   </body>
