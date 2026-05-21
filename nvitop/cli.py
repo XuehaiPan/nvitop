@@ -5,6 +5,7 @@
 
 import argparse
 import curses
+import math
 import os
 import sys
 import textwrap
@@ -34,7 +35,7 @@ def parse_arguments() -> argparse.Namespace:
 
     def posfloat(argstring: str) -> float:
         num = float(argstring)
-        if num <= 0:
+        if not math.isfinite(num) or num <= 0:
             raise ValueError
         return num
 

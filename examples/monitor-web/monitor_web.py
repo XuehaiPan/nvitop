@@ -426,9 +426,10 @@ def _maybe_float(text: str | None) -> float | None:
     if text is None:
         return None
     try:
-        return float(text)
+        value = float(text)
     except (TypeError, ValueError):
         return None
+    return value if math.isfinite(value) else None
 
 
 def _maybe_positive_float(text: str | None) -> float | None:
@@ -458,7 +459,7 @@ def parse_arguments() -> argparse.Namespace:
 
     def posfloat(arg: str) -> float:
         value = float(arg)
-        if value <= 0:
+        if not math.isfinite(value) or value <= 0:
             raise ValueError
         return value
 

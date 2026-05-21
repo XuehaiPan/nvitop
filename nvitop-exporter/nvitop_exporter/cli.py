@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+import math
 import os
 import sys
 from typing import TextIO
@@ -54,7 +55,7 @@ def parse_arguments() -> argparse.Namespace:
 
     def posfloat(argstring: str) -> float:
         num = float(argstring)
-        if num <= 0:
+        if not math.isfinite(num) or num <= 0:
             raise ValueError
         return num
 

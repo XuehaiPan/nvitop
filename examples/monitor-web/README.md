@@ -25,7 +25,7 @@ Process snapshots are disabled with `root_pids={}` so the dashboard tracks host 
 
 ## Screenshot
 
-![nvitop web dashboard](https://github.com/user-attachments/assets/ff107eb5-10cc-4398-a7e9-4940f536c5d6)
+![nvitop web dashboard](https://github.com/user-attachments/assets/b07abc8a-d0f0-4d0f-a7a2-09514cd28832)
 
 ## Run
 
