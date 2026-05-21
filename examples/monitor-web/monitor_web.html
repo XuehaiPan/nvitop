@@ -70,9 +70,28 @@
         border-color: var(--muted);
       }
       .history-toolbar {
+        align-items: center;
         display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
         justify-content: flex-end;
         margin-bottom: 8px;
+      }
+      .history-toggle {
+        align-items: center;
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        cursor: pointer;
+        display: inline-flex;
+        font-size: 13px;
+        font-weight: 600;
+        gap: 6px;
+        padding: 4px 9px;
+      }
+      .history-toggle input {
+        accent-color: var(--accent);
+        margin: 0;
       }
       .chart-panel {
         background: var(--card);
@@ -283,6 +302,13 @@
         <button type="button" data-range="12h">12h</button>
         <button type="button" data-range="24h">24h</button>
       </div>
+      <label
+        class="history-toggle"
+        title="Smooth plot curves with a 10s exponential moving average"
+      >
+        <input id="ema-toggle" type="checkbox" />
+        <span>EMA</span>
+      </label>
     </div>
     <section class="chart-panel">
       <div class="chart-head">
@@ -304,7 +330,9 @@
       (() => {
         const KEY_PREFIX = "monitor/";
         const POLL_MS = 1000;
-        const HISTORY_BACKFILL_GAP_SECONDS = Math.max(5, 3 * POLL_MS / 1000);
+        const EMA_DECAY_BASE = 0.1;
+        const EMA_WINDOW_SECONDS = 10;
+        const HISTORY_BACKFILL_GAP_SECONDS = Math.max(5, (3 * POLL_MS) / 1000);
         const MAX_HISTORY_SAMPLES = 3600;
         const HISTORY_RANGES = {
           "1m": 60,
@@ -328,15 +356,31 @@
           normalizeHistoryRange(
             new URLSearchParams(window.location.search).get("range"),
           );
+        const emaFromUrl = () => {
+          const value = new URLSearchParams(window.location.search).get("ema");
+          return ["1", "true", "yes", "on"].includes(
+            String(value || "").toLowerCase(),
+          );
+        };
         const replaceUrlHistoryRange = (range) => {
           const url = new URL(window.location.href);
           url.searchParams.set("range", normalizeHistoryRange(range));
+          history.replaceState(null, "", url);
+        };
+        const replaceUrlEma = (enabled) => {
+          const url = new URL(window.location.href);
+          if (enabled) {
+            url.searchParams.set("ema", "true");
+          } else {
+            url.searchParams.delete("ema");
+          }
           history.replaceState(null, "", url);
         };
         let timer = null;
         let historyRange = historyRangeFromUrl();
         let selectedHistoryRange = historyRange;
         let historyWindowSeconds = HISTORY_RANGES[historyRange];
+        let emaEnabled = emaFromUrl();
         let chartSamples = [];
         let chartXRange = null;
         let currentDevices = [];
@@ -455,6 +499,29 @@
             ? "1 sample"
             : `${chartSamples.length.toLocaleString()} samples`;
 
+        const emaSeries = (values) => {
+          let numerator = 0;
+          let denominator = 0;
+          let lastEpoch = NaN;
+          return values.map((value, index) => {
+            const epoch = chartSamples[index]?.epoch;
+            if (!Number.isFinite(value) || !Number.isFinite(epoch)) return null;
+            if (Number.isFinite(lastEpoch)) {
+              const dt = Math.max(0, epoch - lastEpoch);
+              const decay = Math.pow(EMA_DECAY_BASE, dt / EMA_WINDOW_SECONDS);
+              numerator *= decay;
+              denominator *= decay;
+            }
+            numerator += value;
+            denominator += 1;
+            lastEpoch = epoch;
+            return denominator > 0 ? numerator / denominator : null;
+          });
+        };
+
+        const chartSeries = (values) =>
+          emaEnabled ? emaSeries(values) : values;
+
         const epochFromRangeValue = (value) => {
           if (value instanceof Date) return value.getTime() / 1000;
           if (typeof value === "number") {
@@ -468,42 +535,25 @@
           return NaN;
         };
 
-        const visibleChartSamples = () => {
-          if (chartXRange === null) return chartSamples;
+        const visibleEpochBounds = () => {
+          if (chartXRange === null) return null;
           const start = epochFromRangeValue(chartXRange[0]);
           const end = epochFromRangeValue(chartXRange[1]);
-          if (!Number.isFinite(start) || !Number.isFinite(end))
-            return chartSamples;
-          const minEpoch = Math.min(start, end);
-          const maxEpoch = Math.max(start, end);
-          return chartSamples.filter(
-            (sample) => sample.epoch >= minEpoch && sample.epoch <= maxEpoch,
-          );
+          if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+          return [Math.min(start, end), Math.max(start, end)];
         };
 
-        const latestVisiblePercent = (name) => {
-          const samples = visibleChartSamples();
-          for (let i = samples.length - 1; i >= 0; i -= 1) {
-            const value = pickHostLast(samples[i].metrics, name);
-            if (Number.isFinite(value)) return value;
-          }
-          return NaN;
-        };
-
-        const latestVisibleHostMemoryUsage = () => {
-          const samples = visibleChartSamples();
-          for (let i = samples.length - 1; i >= 0; i -= 1) {
-            const value = pickHostLast(samples[i].metrics, "memory_used");
-            if (Number.isFinite(value)) return value;
-          }
-          return NaN;
-        };
-
-        const latestVisibleDeviceMetric = (scope, name) => {
-          const samples = visibleChartSamples();
-          for (let i = samples.length - 1; i >= 0; i -= 1) {
-            const value = sampleDeviceMetric(samples[i], scope, name);
-            if (Number.isFinite(value)) return value;
+        const latestVisibleSeriesValue = (values) => {
+          const bounds = visibleEpochBounds();
+          for (let i = values.length - 1; i >= 0; i -= 1) {
+            const sample = chartSamples[i];
+            if (
+              bounds !== null &&
+              (sample.epoch < bounds[0] || sample.epoch > bounds[1])
+            ) {
+              continue;
+            }
+            if (Number.isFinite(values[i])) return values[i];
           }
           return NaN;
         };
@@ -520,12 +570,6 @@
           }
           return NaN;
         };
-
-        const latestVisibleGpuMemoryUsage = (scope) =>
-          latestVisibleDeviceMetric(scope, "memory_used");
-
-        const latestVisibleGpuPowerUsage = (scope) =>
-          latestVisibleDeviceMetric(scope, "power_usage");
 
         const tracePercentName = (label, value) =>
           Number.isFinite(value)
@@ -593,11 +637,9 @@
           if (legendItem) syncLegendItemState(legendItem, hidden);
 
           if (window.Plotly && $(chartId)) {
-            Plotly.restyle(
-              chartId,
-              { visible: hidden ? "legendonly" : true },
-              [traceIndex],
-            );
+            Plotly.restyle(chartId, { visible: hidden ? "legendonly" : true }, [
+              traceIndex,
+            ]);
           }
         };
 
@@ -699,17 +741,22 @@
 
           trimChartSamples();
           const x = chartSamples.map((sample) => new Date(sample.epoch * 1000));
-          const cpu = chartSamples.map((sample) => {
+          const rawCpu = chartSamples.map((sample) => {
             const value = pickHostLast(sample.metrics, "cpu_percent");
             return Number.isFinite(value) ? value : null;
           });
-          const memory = chartSamples.map((sample) => {
+          const rawMemory = chartSamples.map((sample) => {
             const value = pickHostLast(sample.metrics, "memory_percent");
             return Number.isFinite(value) ? value : null;
           });
-          const memoryUsage = chartSamples.map((sample) =>
-            fmtGibUsage(pickHostLast(sample.metrics, "memory_used")),
-          );
+          const rawMemoryUsed = chartSamples.map((sample) => {
+            const value = pickHostLast(sample.metrics, "memory_used");
+            return Number.isFinite(value) ? value : null;
+          });
+          const cpu = chartSeries(rawCpu);
+          const memory = chartSeries(rawMemory);
+          const memoryUsed = chartSeries(rawMemoryUsed);
+          const memoryUsage = memoryUsed.map(fmtGibUsage);
           const xaxis = {
             gridcolor: "#2a2f3a",
             linecolor: "#2a2f3a",
@@ -724,10 +771,7 @@
             {
               color: "#4ade80",
               key: "cpu",
-              label: tracePercentName(
-                "CPU",
-                latestVisiblePercent("cpu_percent"),
-              ),
+              label: tracePercentName("CPU", latestVisibleSeriesValue(cpu)),
               name: "CPU",
             },
             {
@@ -735,7 +779,7 @@
               key: "memory",
               label: traceUsageName(
                 "Host Memory",
-                latestVisibleHostMemoryUsage(),
+                latestVisibleSeriesValue(memoryUsed),
               ),
               name: "Host Memory",
             },
@@ -867,7 +911,7 @@
               memory: "#38bdf8",
               power: "#f87171",
             };
-            const gpu = chartSamples.map((sample) => {
+            const rawGpu = chartSamples.map((sample) => {
               const value = sampleDeviceMetric(
                 sample,
                 scope,
@@ -875,7 +919,7 @@
               );
               return Number.isFinite(value) ? value : null;
             });
-            const membw = chartSamples.map((sample) => {
+            const rawMembw = chartSamples.map((sample) => {
               const value = sampleDeviceMetric(
                 sample,
                 scope,
@@ -883,20 +927,30 @@
               );
               return Number.isFinite(value) ? value : null;
             });
-            const memory = chartSamples.map((sample) => {
+            const rawMemory = chartSamples.map((sample) => {
               const value = sampleDeviceMetric(sample, scope, "memory_percent");
               return Number.isFinite(value) ? value : null;
             });
-            const memoryUsage = chartSamples.map((sample) =>
-              fmtMibUsage(sampleDeviceMetric(sample, scope, "memory_used")),
-            );
-            const power = chartSamples.map((sample) => {
+            const rawMemoryUsed = chartSamples.map((sample) => {
+              const value = sampleDeviceMetric(sample, scope, "memory_used");
+              return Number.isFinite(value) ? value : null;
+            });
+            const rawPower = chartSamples.map((sample) => {
               const value = samplePowerPercent(sample, scope);
               return Number.isFinite(value) ? value : null;
             });
-            const powerUsage = chartSamples.map((sample) =>
-              fmtW(sampleDeviceMetric(sample, scope, "power_usage")),
-            );
+            const rawPowerUsage = chartSamples.map((sample) => {
+              const value = sampleDeviceMetric(sample, scope, "power_usage");
+              return Number.isFinite(value) ? value : null;
+            });
+            const gpu = chartSeries(rawGpu);
+            const membw = chartSeries(rawMembw);
+            const memory = chartSeries(rawMemory);
+            const memoryUsed = chartSeries(rawMemoryUsed);
+            const memoryUsage = memoryUsed.map(fmtMibUsage);
+            const power = chartSeries(rawPower);
+            const powerUsage = chartSeries(rawPowerUsage);
+            const powerText = powerUsage.map(fmtW);
             const xaxis = {
               gridcolor: "#2a2f3a",
               linecolor: "#2a2f3a",
@@ -911,10 +965,7 @@
               {
                 color: colors.gpu,
                 key: "gpu",
-                label: tracePercentName(
-                  "GPU",
-                  latestVisibleDeviceMetric(scope, "gpu_utilization"),
-                ),
+                label: tracePercentName("GPU", latestVisibleSeriesValue(gpu)),
                 name: "GPU",
               },
               {
@@ -922,7 +973,7 @@
                 key: "membw",
                 label: tracePercentName(
                   "GMBW",
-                  latestVisibleDeviceMetric(scope, "memory_utilization"),
+                  latestVisibleSeriesValue(membw),
                 ),
                 name: "GMBW",
               },
@@ -931,8 +982,8 @@
                 key: "memory",
                 label: traceMemoryName(
                   "GMEM",
-                  latestVisibleGpuMemoryUsage(scope),
-                  latestVisibleDeviceMetric(scope, "memory_percent"),
+                  latestVisibleSeriesValue(memoryUsed),
+                  latestVisibleSeriesValue(memory),
                 ),
                 name: "GMEM",
               },
@@ -941,7 +992,7 @@
                 key: "power",
                 label: tracePowerName(
                   "Power",
-                  latestVisibleGpuPowerUsage(scope),
+                  latestVisibleSeriesValue(powerUsage),
                 ),
                 name: "Power",
               },
@@ -1010,7 +1061,7 @@
                 color: colors.power,
                 hovertemplate: "Power %{text}<extra></extra>",
                 name: "Power",
-                text: powerUsage,
+                text: powerText,
                 visible: traceVisible("power"),
                 x,
                 y: power,
@@ -1132,6 +1183,21 @@
               sync: true,
               updateUrl: true,
             });
+          });
+        };
+
+        const applyEmaEnabled = (enabled, { updateUrl = false } = {}) => {
+          emaEnabled = enabled;
+          $("ema-toggle").checked = emaEnabled;
+          if (updateUrl) replaceUrlEma(emaEnabled);
+          renderAllCharts();
+        };
+
+        const initEmaToggle = () => {
+          const toggle = $("ema-toggle");
+          toggle.checked = emaEnabled;
+          toggle.addEventListener("change", () => {
+            applyEmaEnabled(toggle.checked, { updateUrl: true });
           });
         };
 
@@ -1364,6 +1430,7 @@
 
         initEndpointButtons();
         initHistoryRange();
+        initEmaToggle();
         requestHistoryRefresh({ force: true });
         tick();
         startPolling();
