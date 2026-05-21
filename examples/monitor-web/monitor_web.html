@@ -132,11 +132,26 @@
         font-weight: 600;
       }
       .legend-item {
+        background: transparent;
+        border: 0;
+        color: inherit;
+        cursor: pointer;
         display: inline-flex;
+        font: inherit;
         align-items: center;
         gap: 6px;
         min-width: 0;
+        padding: 0;
         white-space: nowrap;
+      }
+      .legend-item.hidden {
+        color: var(--muted);
+        opacity: 0.55;
+      }
+      .legend-item:focus-visible {
+        border-radius: 2px;
+        outline: 1px solid var(--accent);
+        outline-offset: 2px;
       }
       .legend-swatch {
         width: 28px;
@@ -276,6 +291,11 @@
           <span class="chart-status" id="chart-status">—</span>
         </div>
       </div>
+      <div
+        class="chart-legend"
+        data-chart-legend="host-chart"
+        id="host-legend"
+      ></div>
       <div class="host-chart" id="host-chart"></div>
     </section>
     <div id="cards" class="cards"></div>
@@ -322,6 +342,7 @@
         let historyAbortController = null;
         let historyRequestId = 0;
         const chartRelayoutHandlersAttached = new Set();
+        const hiddenChartTraces = new Map();
 
         const $ = (id) => document.getElementById(id);
         const setText = (id, text) => {
@@ -505,17 +526,66 @@
           `${label} ${fmtMibUsage(usage)} (${fmtPercentOne(pct)})`;
         const tracePowerName = (label, watts) => `${label} ${fmtW(watts)}`;
 
-        const setChartLegend = (legend, items) => {
+        const isTraceHidden = (chartId, key) =>
+          hiddenChartTraces.get(chartId)?.has(key) || false;
+
+        const setTraceHidden = (chartId, key, hidden) => {
+          const hiddenTraces = hiddenChartTraces.get(chartId) || new Set();
+          if (hidden) {
+            hiddenTraces.add(key);
+            hiddenChartTraces.set(chartId, hiddenTraces);
+          } else {
+            hiddenTraces.delete(key);
+            if (hiddenTraces.size === 0) {
+              hiddenChartTraces.delete(chartId);
+            } else {
+              hiddenChartTraces.set(chartId, hiddenTraces);
+            }
+          }
+        };
+
+        const syncLegendItemState = (item, hidden) => {
+          item.classList.toggle("hidden", hidden);
+          item.setAttribute("aria-pressed", String(!hidden));
+          item.title = `${hidden ? "Show" : "Hide"} ${item.dataset.traceLabel}`;
+        };
+
+        const toggleChartTrace = (chartId, key, traceIndex) => {
+          const hidden = !isTraceHidden(chartId, key);
+          setTraceHidden(chartId, key, hidden);
+
+          const legendItem = document.querySelector(
+            `[data-chart-legend="${chartId}"] [data-trace="${key}"]`,
+          );
+          if (legendItem) syncLegendItemState(legendItem, hidden);
+
+          if (window.Plotly && $(chartId)) {
+            Plotly.restyle(
+              chartId,
+              { visible: hidden ? "legendonly" : true },
+              [traceIndex],
+            );
+          }
+        };
+
+        const setChartLegend = (legend, chartId, items) => {
           legend.replaceChildren(
-            ...items.map((item) => {
-              const entry = document.createElement("span");
+            ...items.map((item, traceIndex) => {
+              const entry = document.createElement("button");
               entry.className = "legend-item";
+              entry.type = "button";
+              entry.dataset.trace = item.key;
+              entry.dataset.traceLabel = item.name;
               const swatch = document.createElement("span");
               swatch.className = "legend-swatch";
               swatch.style.background = item.color;
               const label = document.createElement("span");
               label.textContent = item.label;
               entry.append(swatch, label);
+              syncLegendItemState(entry, isTraceHidden(chartId, item.key));
+              entry.addEventListener("click", () => {
+                toggleChartTrace(chartId, item.key, traceIndex);
+              });
               return entry;
             }),
           );
@@ -617,18 +687,36 @@
           if (chartXRange !== null) {
             xaxis.range = chartXRange;
           }
+          const legendItems = [
+            {
+              color: "#4ade80",
+              key: "cpu",
+              label: tracePercentName(
+                "CPU",
+                latestVisiblePercent("cpu_percent"),
+              ),
+              name: "CPU",
+            },
+            {
+              color: "#38bdf8",
+              key: "memory",
+              label: traceUsageName(
+                "Host Memory",
+                latestVisibleHostMemoryUsage(),
+              ),
+              name: "Host Memory",
+            },
+          ];
+          setChartLegend($("host-legend"), "host-chart", legendItems);
+          const traceVisible = (key) =>
+            isTraceHidden("host-chart", key) ? "legendonly" : true;
 
           const layout = {
             autosize: true,
             font: { color: "#e2e8f0", size: 12 },
             hoverlabel: plotHoverLabel,
             hovermode: "x unified",
-            legend: {
-              bgcolor: "rgba(0,0,0,0)",
-              orientation: "h",
-              x: 0,
-              y: 1.15,
-            },
+            showlegend: false,
             margin: { b: 34, l: 42, r: 16, t: 8 },
             paper_bgcolor: "rgba(0,0,0,0)",
             plot_bgcolor: "#0b0d12",
@@ -649,11 +737,9 @@
               hovertemplate: "CPU %{y:.1f}%<extra></extra>",
               line: { color: "#4ade80", width: PLOT_LINE_WIDTH },
               mode: "lines",
-              name: tracePercentName(
-                "CPU",
-                latestVisiblePercent("cpu_percent"),
-              ),
+              name: "CPU",
               type: "scatter",
+              visible: traceVisible("cpu"),
               x,
               y: cpu,
             },
@@ -662,12 +748,10 @@
               hovertemplate: "Host Memory %{text}<extra></extra>",
               line: { color: "#38bdf8", width: PLOT_LINE_WIDTH },
               mode: "lines",
-              name: traceUsageName(
-                "Host Memory",
-                latestVisibleHostMemoryUsage(),
-              ),
+              name: "Host Memory",
               text: memoryUsage,
               type: "scatter",
+              visible: traceVisible("memory"),
               x,
               y: memory,
             },
@@ -708,7 +792,7 @@
 
           const legend = document.createElement("div");
           legend.className = "chart-legend";
-          legend.dataset.gpuLegend = gpuChartId(info);
+          legend.dataset.chartLegend = gpuChartId(info);
           panel.appendChild(legend);
 
           const chart = document.createElement("div");
@@ -728,8 +812,10 @@
             nextIds.length !== currentIds.length ||
             nextIds.some((id, index) => id !== currentIds[index])
           ) {
-            for (const id of currentIds)
+            for (const id of currentIds) {
               chartRelayoutHandlersAttached.delete(id);
+              if (!nextIds.includes(id)) hiddenChartTraces.delete(id);
+            }
             chartsEl.replaceChildren(...devices.map(buildGpuChartPanel));
           }
         };
@@ -791,38 +877,48 @@
             const legendItems = [
               {
                 color: colors.gpu,
+                key: "gpu",
                 label: tracePercentName(
                   "GPU",
                   latestVisibleDeviceMetric(scope, "gpu_utilization"),
                 ),
+                name: "GPU",
               },
               {
                 color: colors.membw,
+                key: "membw",
                 label: tracePercentName(
                   "GMBW",
                   latestVisibleDeviceMetric(scope, "memory_utilization"),
                 ),
+                name: "GMBW",
               },
               {
                 color: colors.memory,
+                key: "memory",
                 label: traceMemoryName(
                   "GMEM",
                   latestVisibleGpuMemoryUsage(scope),
                   latestVisibleDeviceMetric(scope, "memory_percent"),
                 ),
+                name: "GMEM",
               },
               {
                 color: colors.power,
+                key: "power",
                 label: tracePowerName(
                   "Power",
                   latestVisibleGpuPowerUsage(scope),
                 ),
+                name: "Power",
               },
             ];
             const legend = document.querySelector(
-              `[data-gpu-legend="${chartId}"]`,
+              `[data-chart-legend="${chartId}"]`,
             );
-            if (legend) setChartLegend(legend, legendItems);
+            if (legend) setChartLegend(legend, chartId, legendItems);
+            const traceVisible = (key) =>
+              isTraceHidden(chartId, key) ? "legendonly" : true;
 
             const layout = {
               autosize: true,
@@ -852,6 +948,7 @@
                 mode: "lines",
                 name: "GPU",
                 type: "scatter",
+                visible: traceVisible("gpu"),
                 x,
                 y: gpu,
               },
@@ -862,6 +959,7 @@
                 mode: "lines",
                 name: "GMBW",
                 type: "scatter",
+                visible: traceVisible("membw"),
                 x,
                 y: membw,
               },
@@ -873,6 +971,7 @@
                 name: "GMEM",
                 text: memoryUsage,
                 type: "scatter",
+                visible: traceVisible("memory"),
                 x,
                 y: memory,
               },
@@ -884,6 +983,7 @@
                 name: "Power",
                 text: powerUsage,
                 type: "scatter",
+                visible: traceVisible("power"),
                 x,
                 y: power,
               },
