@@ -31,6 +31,7 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
+        gap: 12px;
         margin-bottom: 16px;
       }
       h1 {
@@ -51,6 +52,22 @@
       button {
         color: inherit;
         font: inherit;
+      }
+      .header-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+      .endpoint-button {
+        background: #0b0d12;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        cursor: pointer;
+        padding: 4px 10px;
+      }
+      .endpoint-button:hover {
+        border-color: var(--muted);
       }
       .history-toolbar {
         display: flex;
@@ -222,7 +239,17 @@
   <body>
     <header>
       <h1>nvitop web <small id="origin"></small></h1>
-      <span class="badge" id="updated">Updated: —</span>
+      <div class="header-actions">
+        <button
+          class="endpoint-button"
+          type="button"
+          data-endpoint="metrics-origin"
+          title="Get metrics.json for the current page"
+        >
+          Get metrics
+        </button>
+        <span class="badge" id="updated">Updated: —</span>
+      </div>
     </header>
     <div class="status">
       <span class="badge" id="host">Host: —</span>
@@ -233,8 +260,8 @@
       <div class="history-range" id="history-range">
         <button type="button" data-range="1m">1m</button>
         <button type="button" data-range="5m">5m</button>
-        <button class="active" type="button" data-range="15m">15m</button>
-        <button type="button" data-range="30m">30m</button>
+        <button type="button" data-range="15m">15m</button>
+        <button class="active" type="button" data-range="30m">30m</button>
         <button type="button" data-range="1h">1h</button>
         <button type="button" data-range="3h">3h</button>
         <button type="button" data-range="6h">6h</button>
@@ -269,7 +296,8 @@
           "12h": 12 * 60 * 60,
           "24h": 24 * 60 * 60,
         };
-        const DEFAULT_HISTORY_RANGE = "15m";
+        const DEFAULT_HISTORY_RANGE = "30m";
+        const PLOT_LINE_WIDTH = 1.5;
         const hasHistoryRange = (range) =>
           Object.prototype.hasOwnProperty.call(HISTORY_RANGES, range);
         const normalizeHistoryRange = (range) =>
@@ -290,6 +318,7 @@
         let chartSamples = [];
         let chartXRange = null;
         let currentDevices = [];
+        let currentHostname = location.hostname || "unknown";
         let historyAbortController = null;
         let historyRequestId = 0;
         const chartRelayoutHandlersAttached = new Set();
@@ -299,6 +328,17 @@
           $(id).textContent = text;
         };
         const pageTitle = (hostname) => `nvitop web - ${hostname}`;
+        const metricsEndpoint = () =>
+          new URL("/metrics.json", window.location.href).toString();
+
+        const initEndpointButtons = () => {
+          const buttons = document.querySelectorAll("button[data-endpoint]");
+          for (const button of buttons) {
+            button.addEventListener("click", () => {
+              window.open(metricsEndpoint(), "_blank", "noopener");
+            });
+          }
+        };
 
         const fmtPercent = (v) =>
           Number.isFinite(v) ? v.toFixed(0) + "%" : "—";
@@ -607,7 +647,7 @@
             {
               hoverlabel: plotHoverLabel,
               hovertemplate: "CPU %{y:.1f}%<extra></extra>",
-              line: { color: "#4ade80", width: 2 },
+              line: { color: "#4ade80", width: PLOT_LINE_WIDTH },
               mode: "lines",
               name: tracePercentName(
                 "CPU",
@@ -620,7 +660,7 @@
             {
               hoverlabel: plotHoverLabel,
               hovertemplate: "Host Memory %{text}<extra></extra>",
-              line: { color: "#38bdf8", width: 2 },
+              line: { color: "#38bdf8", width: PLOT_LINE_WIDTH },
               mode: "lines",
               name: traceUsageName(
                 "Host Memory",
@@ -808,7 +848,7 @@
               {
                 hoverlabel: plotHoverLabel,
                 hovertemplate: "GPU %{y:.1f}%<extra></extra>",
-                line: { color: colors.gpu, width: 2 },
+                line: { color: colors.gpu, width: PLOT_LINE_WIDTH },
                 mode: "lines",
                 name: "GPU",
                 type: "scatter",
@@ -818,7 +858,7 @@
               {
                 hoverlabel: plotHoverLabel,
                 hovertemplate: "GMBW %{y:.1f}%<extra></extra>",
-                line: { color: colors.membw, width: 2 },
+                line: { color: colors.membw, width: PLOT_LINE_WIDTH },
                 mode: "lines",
                 name: "GMBW",
                 type: "scatter",
@@ -828,7 +868,7 @@
               {
                 hoverlabel: plotHoverLabel,
                 hovertemplate: "GMEM %{text}<extra></extra>",
-                line: { color: colors.memory, width: 2 },
+                line: { color: colors.memory, width: PLOT_LINE_WIDTH },
                 mode: "lines",
                 name: "GMEM",
                 text: memoryUsage,
@@ -839,7 +879,7 @@
               {
                 hoverlabel: plotHoverLabel,
                 hovertemplate: "Power %{text}<extra></extra>",
-                line: { color: colors.power, width: 2 },
+                line: { color: colors.power, width: PLOT_LINE_WIDTH },
                 mode: "lines",
                 name: "Power",
                 text: powerUsage,
@@ -1097,9 +1137,9 @@
             return;
           }
 
-          const hostname = payload.hostname || location.hostname || "unknown";
-          document.title = pageTitle(hostname);
-          setText("origin", `${hostname} · ${location.origin}`);
+          currentHostname = payload.hostname || location.hostname || "unknown";
+          document.title = pageTitle(currentHostname);
+          setText("origin", `${currentHostname}`);
 
           const cardsEl = $("cards");
           const devices = payload.devices || [];
@@ -1125,9 +1165,9 @@
           );
           setText(
             "host",
-            `Host ${hostname}: CPU ${fmtPercent(pickHostLast(m, "cpu_percent"))}` +
-              ` · Memory ${hostMemoryUsed} (${fmtPercent(pickHostLast(m, "memory_percent"))})` +
-              ` · Swap ${fmtPercent(pickHostLast(m, "swap_percent"))}`,
+            `Host: CPU ${fmtPercentOne(pickHostLast(m, "cpu_percent"))}` +
+              ` · Memory ${hostMemoryUsed} (${fmtPercentOne(pickHostLast(m, "memory_percent"))})` +
+              ` · Swap ${fmtPercentOne(pickHostLast(m, "swap_percent"))}`,
           );
 
           const b = payload.buffer || {};
@@ -1160,6 +1200,7 @@
           );
         }
 
+        initEndpointButtons();
         initHistoryRange();
         syncHistory();
         tick();
