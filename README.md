@@ -611,7 +611,7 @@ formatting:
 
 <p align="center">
   <a href="./examples/monitor-web">
-    <img width="100%" src="https://github.com/user-attachments/assets/a8688e16-52ec-4310-bc48-d5b303331481" alt="Web Monitor Dashboard">
+    <img width="100%" src="https://github.com/user-attachments/assets/ff107eb5-10cc-4398-a7e9-4940f536c5d6" alt="Web Monitor Dashboard">
   </a>
   <br/>
   A browser dashboard example built on top of <code>nvitop.collect_in_background</code>.
