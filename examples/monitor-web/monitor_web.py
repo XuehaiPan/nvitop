@@ -250,7 +250,11 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
             self._send_404()
 
     def _send_html(self) -> None:
-        body = HTML_PATH.read_bytes()
+        try:
+            body = HTML_PATH.read_bytes()
+        except OSError:
+            self._send_500(b'500 HTML asset unavailable\n')
+            return
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')
@@ -310,6 +314,14 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         body = b'404 Not Found\n'
         self.send_response(404)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_500(self, body: bytes) -> None:
+        self.send_response(500)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
         self.wfile.write(body)
