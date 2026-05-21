@@ -30,6 +30,7 @@ import json
 import math
 import os
 import re
+import socket
 import ssl
 import sys
 import threading
@@ -88,6 +89,22 @@ _DURATION_MULTIPLIERS = {
     'day': 86400.0,
     'days': 86400.0,
 }
+
+
+# Reference: https://stackoverflow.com/a/28950776
+def get_ip_address() -> str:
+    """Get the IP address of the current machine."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0.0)
+    try:
+        # Doesn't even have to be reachable.
+        s.connect(('10.254.254.254', 1))
+        ip_address = s.getsockname()[0]
+    except Exception:  # noqa: BLE001 # pylint: disable=broad-except
+        ip_address = '127.0.0.1'
+    finally:
+        s.close()
+    return ip_address
 
 
 def parse_duration(text: str) -> float:
@@ -213,6 +230,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
 
     store: ClassVar[MetricStore]  # populated in main() before serve_forever
     devices_info: ClassVar[list[dict[str, Any]]] = []
+    hostname: ClassVar[str] = get_ip_address()
     interval: ClassVar[float] = 1.0
 
     def log_message(self, *_args: Any, **_kwargs: Any) -> None:
@@ -247,6 +265,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         now = time.time()
         payload = {
             'interval': self.interval,
+            'hostname': self.hostname,
             'server_time': now,
             'sample_time': sample_time,
             'stale_seconds': max(0.0, now - sample_time) if latest is not None else None,
@@ -458,6 +477,16 @@ def parse_arguments() -> argparse.Namespace:
         help='Show this help message and exit.',
     )
     parser.add_argument(
+        '--hostname',
+        '--host',
+        '-H',
+        dest='hostname',
+        type=str,
+        default=get_ip_address(),
+        metavar='HOSTNAME',
+        help='Hostname to display in the dashboard. (default: %(default)s)',
+    )
+    parser.add_argument(
         '--bind-address',
         '--bind',
         '-B',
@@ -663,6 +692,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
 
     MonitorRequestHandler.store = store
     MonitorRequestHandler.devices_info = devices_info
+    MonitorRequestHandler.hostname = args.hostname
     MonitorRequestHandler.interval = args.interval
 
     base_url = f'{scheme}://{args.bind_address}:{args.port}'

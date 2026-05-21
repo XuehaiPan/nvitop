@@ -298,6 +298,7 @@
         const setText = (id, text) => {
           $(id).textContent = text;
         };
+        const pageTitle = (hostname) => `nvitop web - ${hostname}`;
 
         const fmtPercent = (v) =>
           Number.isFinite(v) ? v.toFixed(0) + "%" : "—";
@@ -1096,7 +1097,9 @@
             return;
           }
 
-          setText("origin", location.origin);
+          const hostname = payload.hostname || location.hostname || "unknown";
+          document.title = pageTitle(hostname);
+          setText("origin", `${hostname} · ${location.origin}`);
 
           const cardsEl = $("cards");
           const devices = payload.devices || [];
@@ -1122,7 +1125,7 @@
           );
           setText(
             "host",
-            `Host: CPU ${fmtPercent(pickHostLast(m, "cpu_percent"))}` +
+            `Host ${hostname}: CPU ${fmtPercent(pickHostLast(m, "cpu_percent"))}` +
               ` · Memory ${hostMemoryUsed} (${fmtPercent(pickHostLast(m, "memory_percent"))})` +
               ` · Swap ${fmtPercent(pickHostLast(m, "swap_percent"))}`,
           );

@@ -53,6 +53,7 @@ INFO:   - JSON history:        http://127.0.0.1:5555/history.json
 `/metrics.json` returns the latest sample plus metadata:
 
 - `interval`: collector interval in seconds.
+- `hostname`: server hostname displayed in the browser header and tab title.
 - `server_time`: current server timestamp.
 - `sample_time`: timestamp for the latest collected sample.
 - `stale_seconds`: age of the latest sample.
@@ -121,6 +122,7 @@ python3 examples/monitor-web/monitor_web.py --port 5555 \
 ## Useful Flags
 
 - `--bind-address ADDRESS`, `--bind ADDRESS`, `-B ADDRESS`: bind address, default `127.0.0.1`.
+- `--hostname HOSTNAME`, `--host HOSTNAME`, `-H HOSTNAME`: hostname to display in the dashboard.
 - `--port PORT`, `-p PORT`: listen port, default `5555`.
 - `--interval SEC`: collector interval in seconds, minimum `0.25`, default `1.0`.
 - `--retention DURATION`: history retention, default `1d`.
