@@ -76,7 +76,9 @@ curl -s 'http://127.0.0.1:5555/history.json?since=1779270000' | python3 -m json.
 
 Supported query parameters:
 
+- `bucket_seconds=N`: average samples into epoch-aligned `N`-second buckets.
 - `limit=N`: return only the most recent `N` samples.
+- `max_samples=N`: return at most `N` samples after filtering and bucket averaging.
 - `since=EPOCH`: return samples strictly newer than the Unix timestamp `EPOCH`.
 
 JSON responses are strict JSON. Non-finite collector values such as `NaN` and `Infinity` are serialized as `null`.

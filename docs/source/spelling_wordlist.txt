@@ -27,6 +27,8 @@ displayables
 divmod
 docstring
 doctest
+downsample
+downsampled
 ecc
 enum
 env

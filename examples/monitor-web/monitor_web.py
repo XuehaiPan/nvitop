@@ -161,17 +161,19 @@ class MetricStore:
     def history(
         self,
         *,
+        bucket_seconds: float | None = None,
         limit: int | None = None,
+        max_samples: int | None = None,
         since: float | None = None,
     ) -> list[tuple[float, dict[str, float]]]:
-        """Snapshot copy of the buffer, optionally trimmed by ``limit`` and ``since``."""
+        """Snapshot copy of the buffer, optionally filtered, trimmed, and downsampled."""
         with self._lock:
             samples = list(self._samples)
         if since is not None:
             samples = [s for s in samples if s[0] > since]
         if limit is not None and len(samples) > limit:
             samples = samples[-limit:]
-        return samples
+        return _downsample_history(samples, max_samples, bucket_seconds=bucket_seconds)
 
     def stats(self) -> dict[str, Any]:
         """Return buffer statistics suitable for embedding in the JSON payload."""
@@ -257,9 +259,16 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_history_json(self, query: str) -> None:
         params = urllib.parse.parse_qs(query)
+        bucket_seconds = _maybe_positive_float(params.get('bucket_seconds', [None])[0])
         limit = _maybe_positive_int(params.get('limit', [None])[0])
+        max_samples = _maybe_positive_int(params.get('max_samples', [None])[0])
         since = _maybe_float(params.get('since', [None])[0])
-        history = self.store.history(limit=limit, since=since)
+        history = self.store.history(
+            bucket_seconds=bucket_seconds,
+            limit=limit,
+            max_samples=max_samples,
+            since=since,
+        )
         payload = {
             'buffer': self.store.stats(),
             'samples': [{'epoch': ts, 'metrics': metrics} for ts, metrics in history],
@@ -303,6 +312,75 @@ def _finite(value: Any) -> Any:
     return value
 
 
+def _downsample_history(
+    samples: list[tuple[float, dict[str, float]]],
+    max_samples: int | None,
+    *,
+    bucket_seconds: float | None = None,
+) -> list[tuple[float, dict[str, float]]]:
+    """Return averaged samples aligned to fixed time buckets."""
+    if not samples:
+        return []
+    if max_samples is None or len(samples) <= max_samples:
+        return samples
+    if bucket_seconds is not None:
+        downsampled = _average_history_time_buckets(samples, bucket_seconds=bucket_seconds)
+        while len(downsampled) > max_samples:
+            factor = math.ceil(len(downsampled) / max_samples)
+            bucket_seconds *= factor
+            downsampled = _average_history_time_buckets(samples, bucket_seconds=bucket_seconds)
+        return downsampled
+
+    if max_samples <= 1:
+        return [_average_history_bucket(samples)]
+
+    sample_count = len(samples)
+    downsampled = []
+    for bucket_index in range(max_samples):
+        start = bucket_index * sample_count // max_samples
+        stop = (bucket_index + 1) * sample_count // max_samples
+        downsampled.append(_average_history_bucket(samples[start:stop]))
+    return downsampled
+
+
+def _average_history_time_buckets(
+    samples: list[tuple[float, dict[str, float]]],
+    *,
+    bucket_seconds: float,
+) -> list[tuple[float, dict[str, float]]]:
+    buckets: dict[float, list[tuple[float, dict[str, float]]]] = {}
+    for timestamp, metrics in samples:
+        bucket_start = math.floor(timestamp / bucket_seconds) * bucket_seconds
+        buckets.setdefault(bucket_start, []).append((timestamp, metrics))
+    return [
+        _average_history_bucket(bucket, timestamp=bucket_start)
+        for bucket_start, bucket in sorted(buckets.items())
+    ]
+
+
+def _average_history_bucket(
+    samples: list[tuple[float, dict[str, float]]],
+    *,
+    timestamp: float | None = None,
+) -> tuple[float, dict[str, float]]:
+    if timestamp is None:
+        timestamp = sum(ts for ts, _metrics in samples) / len(samples)
+    keys = {key for _ts, metrics in samples for key in metrics}
+    metrics_sum = dict.fromkeys(keys, 0.0)
+    metrics_count = dict.fromkeys(keys, 0)
+    for _ts, metrics in samples:
+        for key, value in metrics.items():
+            if isinstance(value, (float, int)) and math.isfinite(value):
+                metrics_sum[key] += float(value)
+                metrics_count[key] += 1
+
+    metrics_average = {
+        key: metrics_sum[key] / metrics_count[key] if metrics_count[key] > 0 else math.nan
+        for key in keys
+    }
+    return timestamp, metrics_average
+
+
 def _humanize_metrics(metrics: dict[str, float]) -> dict[str, str]:
     human: dict[str, str] = {}
     for key, value in metrics.items():
@@ -334,6 +412,13 @@ def _maybe_float(text: str | None) -> float | None:
         return None
 
 
+def _maybe_positive_float(text: str | None) -> float | None:
+    value = _maybe_float(text)
+    if value is None or not math.isfinite(value) or value <= 0:
+        return None
+    return value
+
+
 def build_ssl_context(args: argparse.Namespace) -> ssl.SSLContext | None:
     """Build an :class:`ssl.SSLContext` from the parsed args, or :data:`None` for plain HTTP."""
     if args.certfile is None and args.keyfile is None:
@@ -361,7 +446,6 @@ def parse_arguments() -> argparse.Namespace:
     posfloat.__name__ = 'positive float'
 
     parser = argparse.ArgumentParser(
-        prog='monitor_web.py',
         description='Minimal stdlib HTTP(S) GPU dashboard built on `nvitop`.',
         formatter_class=argparse.RawTextHelpFormatter,
         add_help=False,

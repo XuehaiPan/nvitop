@@ -257,6 +257,7 @@
       (() => {
         const KEY_PREFIX = "monitor/";
         const POLL_MS = 1000;
+        const MAX_HISTORY_SAMPLES = 3600;
         const HISTORY_RANGES = {
           "1m": 60,
           "5m": 5 * 60,
@@ -269,13 +270,28 @@
           "24h": 24 * 60 * 60,
         };
         const DEFAULT_HISTORY_RANGE = "15m";
+        const hasHistoryRange = (range) =>
+          Object.prototype.hasOwnProperty.call(HISTORY_RANGES, range);
+        const normalizeHistoryRange = (range) =>
+          hasHistoryRange(range) ? range : DEFAULT_HISTORY_RANGE;
+        const historyRangeFromUrl = () =>
+          normalizeHistoryRange(
+            new URLSearchParams(window.location.search).get("range"),
+          );
+        const replaceUrlHistoryRange = (range) => {
+          const url = new URL(window.location.href);
+          url.searchParams.set("range", normalizeHistoryRange(range));
+          history.replaceState(null, "", url);
+        };
         let timer = null;
-        let historyRange = DEFAULT_HISTORY_RANGE;
+        let historyRange = historyRangeFromUrl();
         let selectedHistoryRange = historyRange;
         let historyWindowSeconds = HISTORY_RANGES[historyRange];
         let chartSamples = [];
         let chartXRange = null;
         let currentDevices = [];
+        let historyAbortController = null;
+        let historyRequestId = 0;
         const chartRelayoutHandlersAttached = new Set();
 
         const $ = (id) => document.getElementById(id);
@@ -351,6 +367,8 @@
 
         const historySeconds = () =>
           historyWindowSeconds || HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
+        const historyBucketSeconds = (seconds) =>
+          Math.max(1, Math.ceil(seconds / MAX_HISTORY_SAMPLES));
 
         const trimChartSamples = (nowEpoch = Date.now() / 1000) => {
           const minEpoch = nowEpoch - historySeconds();
@@ -861,19 +879,37 @@
         };
 
         async function syncHistory() {
-          const since = Math.max(0, Date.now() / 1000 - historySeconds());
+          const requestId = (historyRequestId += 1);
+          const seconds = historySeconds();
+          const bucketSeconds = historyBucketSeconds(seconds);
+          const since = Math.max(
+            0,
+            Math.floor((Date.now() / 1000 - seconds) / bucketSeconds) *
+              bucketSeconds,
+          );
+          if (historyAbortController !== null) {
+            historyAbortController.abort();
+          }
+          historyAbortController = new AbortController();
+          const params = new URLSearchParams({
+            bucket_seconds: String(bucketSeconds),
+            max_samples: String(MAX_HISTORY_SAMPLES),
+            since: since.toFixed(3),
+          });
           let payload;
           try {
-            const resp = await fetch(
-              "/history.json?since=" + encodeURIComponent(since.toFixed(3)),
-              { cache: "no-store" },
-            );
+            const resp = await fetch("/history.json?" + params.toString(), {
+              cache: "no-store",
+              signal: historyAbortController.signal,
+            });
             if (!resp.ok) throw new Error("HTTP " + resp.status);
             payload = await resp.json();
           } catch (err) {
+            if (err.name === "AbortError") return;
             setText("chart-status", "history failed: " + err.message);
             return;
           }
+          if (requestId !== historyRequestId) return;
 
           chartSamples = (payload.samples || [])
             .map((sample) => ({
@@ -887,19 +923,29 @@
           renderAllCharts();
         }
 
+        const applyHistoryRange = (
+          range,
+          { sync = false, updateUrl = false } = {},
+        ) => {
+          historyRange = normalizeHistoryRange(range);
+          selectedHistoryRange = historyRange;
+          historyWindowSeconds = HISTORY_RANGES[historyRange];
+          chartXRange = null;
+          setActiveHistoryRange(historyButton(historyRange));
+          if (updateUrl) replaceUrlHistoryRange(historyRange);
+          if (sync) syncHistory();
+        };
+
         const initHistoryRange = () => {
           const rangeEl = $("history-range");
+          applyHistoryRange(historyRange);
           rangeEl.addEventListener("click", (event) => {
             const button = event.target.closest("button[data-range]");
             if (!button) return;
-            historyRange = button.dataset.range || DEFAULT_HISTORY_RANGE;
-            selectedHistoryRange = historyRange;
-            historyWindowSeconds =
-              HISTORY_RANGES[historyRange] ||
-              HISTORY_RANGES[DEFAULT_HISTORY_RANGE];
-            chartXRange = null;
-            setActiveHistoryRange(button);
-            syncHistory();
+            applyHistoryRange(button.dataset.range, {
+              sync: true,
+              updateUrl: true,
+            });
           });
         };
 
