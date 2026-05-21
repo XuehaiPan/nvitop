@@ -319,6 +319,7 @@
         };
         const DEFAULT_HISTORY_RANGE = "30m";
         const PLOT_LINE_WIDTH = 1.5;
+        const PLOT_LINE_OPACITY = 0.8;
         const hasHistoryRange = (range) =>
           Object.prototype.hasOwnProperty.call(HISTORY_RANGES, range);
         const normalizeHistoryRange = (range) =>
@@ -535,6 +536,28 @@
         const traceMemoryName = (label, usage, pct) =>
           `${label} ${fmtMibUsage(usage)} (${fmtPercentOne(pct)})`;
         const tracePowerName = (label, watts) => `${label} ${fmtW(watts)}`;
+        const plotTrace = ({ color, name, visible, x, y, ...extra }) => ({
+          hoverlabel: plotHoverLabel,
+          line: { color, width: PLOT_LINE_WIDTH },
+          mode: "lines",
+          name,
+          opacity: PLOT_LINE_OPACITY,
+          type: "scatter",
+          visible,
+          x,
+          y,
+          ...extra,
+        });
+
+        const withTraceIndexes = (items, traceOrder) => {
+          const traceIndexes = new Map(
+            traceOrder.map((key, traceIndex) => [key, traceIndex]),
+          );
+          return items.map((item) => ({
+            ...item,
+            traceIndex: traceIndexes.get(item.key),
+          }));
+        };
 
         const isTraceHidden = (chartId, key) =>
           hiddenChartTraces.get(chartId)?.has(key) || false;
@@ -580,7 +603,7 @@
 
         const setChartLegend = (legend, chartId, items) => {
           legend.replaceChildren(
-            ...items.map((item, traceIndex) => {
+            ...items.map((item) => {
               const entry = document.createElement("button");
               entry.className = "legend-item";
               entry.type = "button";
@@ -594,7 +617,7 @@
               entry.append(swatch, label);
               syncLegendItemState(entry, isTraceHidden(chartId, item.key));
               entry.addEventListener("click", () => {
-                toggleChartTrace(chartId, item.key, traceIndex);
+                toggleChartTrace(chartId, item.key, item.traceIndex);
               });
               return entry;
             }),
@@ -717,7 +740,12 @@
               name: "Host Memory",
             },
           ];
-          setChartLegend($("host-legend"), "host-chart", legendItems);
+          const traceOrder = ["memory", "cpu"];
+          setChartLegend(
+            $("host-legend"),
+            "host-chart",
+            withTraceIndexes(legendItems, traceOrder),
+          );
           const traceVisible = (key) =>
             isTraceHidden("host-chart", key) ? "legendonly" : true;
 
@@ -741,31 +769,26 @@
               zeroline: false,
             },
           };
-          const traces = [
-            {
-              hoverlabel: plotHoverLabel,
+          const tracesByKey = {
+            cpu: plotTrace({
+              color: "#4ade80",
               hovertemplate: "CPU %{y:.1f}%<extra></extra>",
-              line: { color: "#4ade80", width: PLOT_LINE_WIDTH },
-              mode: "lines",
               name: "CPU",
-              type: "scatter",
               visible: traceVisible("cpu"),
               x,
               y: cpu,
-            },
-            {
-              hoverlabel: plotHoverLabel,
+            }),
+            memory: plotTrace({
+              color: "#38bdf8",
               hovertemplate: "Host Memory %{text}<extra></extra>",
-              line: { color: "#38bdf8", width: PLOT_LINE_WIDTH },
-              mode: "lines",
               name: "Host Memory",
               text: memoryUsage,
-              type: "scatter",
               visible: traceVisible("memory"),
               x,
               y: memory,
-            },
-          ];
+            }),
+          };
+          const traces = traceOrder.map((key) => tracesByKey[key]);
           const rendered = Plotly.react("host-chart", traces, layout, {
             displayModeBar: false,
             responsive: true,
@@ -926,7 +949,14 @@
             const legend = document.querySelector(
               `[data-chart-legend="${chartId}"]`,
             );
-            if (legend) setChartLegend(legend, chartId, legendItems);
+            const traceOrder = ["power", "memory", "membw", "gpu"];
+            if (legend) {
+              setChartLegend(
+                legend,
+                chartId,
+                withTraceIndexes(legendItems, traceOrder),
+              );
+            }
             const traceVisible = (key) =>
               isTraceHidden(chartId, key) ? "legendonly" : true;
 
@@ -950,54 +980,43 @@
                 zeroline: false,
               },
             };
-            const traces = [
-              {
-                hoverlabel: plotHoverLabel,
+            const tracesByKey = {
+              gpu: plotTrace({
+                color: colors.gpu,
                 hovertemplate: "GPU %{y:.1f}%<extra></extra>",
-                line: { color: colors.gpu, width: PLOT_LINE_WIDTH },
-                mode: "lines",
                 name: "GPU",
-                type: "scatter",
                 visible: traceVisible("gpu"),
                 x,
                 y: gpu,
-              },
-              {
-                hoverlabel: plotHoverLabel,
+              }),
+              membw: plotTrace({
+                color: colors.membw,
                 hovertemplate: "GMBW %{y:.1f}%<extra></extra>",
-                line: { color: colors.membw, width: PLOT_LINE_WIDTH },
-                mode: "lines",
                 name: "GMBW",
-                type: "scatter",
                 visible: traceVisible("membw"),
                 x,
                 y: membw,
-              },
-              {
-                hoverlabel: plotHoverLabel,
+              }),
+              memory: plotTrace({
+                color: colors.memory,
                 hovertemplate: "GMEM %{text}<extra></extra>",
-                line: { color: colors.memory, width: PLOT_LINE_WIDTH },
-                mode: "lines",
                 name: "GMEM",
                 text: memoryUsage,
-                type: "scatter",
                 visible: traceVisible("memory"),
                 x,
                 y: memory,
-              },
-              {
-                hoverlabel: plotHoverLabel,
+              }),
+              power: plotTrace({
+                color: colors.power,
                 hovertemplate: "Power %{text}<extra></extra>",
-                line: { color: colors.power, width: PLOT_LINE_WIDTH },
-                mode: "lines",
                 name: "Power",
                 text: powerUsage,
-                type: "scatter",
                 visible: traceVisible("power"),
                 x,
                 y: power,
-              },
-            ];
+              }),
+            };
+            const traces = traceOrder.map((key) => tracesByKey[key]);
             const rendered = Plotly.react(chartId, traces, layout, {
               displayModeBar: false,
               responsive: true,
