@@ -149,11 +149,15 @@ def cprint(text: str = '', *, file: TextIO | None = None) -> None:
 
 
 class MetricStore:
-    """Lock-protected rotating buffer of collector samples.
+    """Thread-safe rotating buffer of collector samples.
 
-    Each entry is ``(timestamp, metrics_dict)``.
-    The buffer keeps at most ``int(retention / interval)`` samples; older entries are evicted
-    automatically by :class:`deque`.
+    Each entry is ``(timestamp, metrics_dict)``. The deque, the closed flag, and the last collector
+    error are guarded by an internal lock. :meth:`history` snapshots the deque under the lock and
+    processes the copy outside the lock; per-sample metric mappings are defensively copied on
+    insertion, so callers cannot mutate stored entries.
+
+    The buffer keeps at most ``max(1, int(retention / interval))`` samples; older entries are
+    evicted automatically by :class:`deque`.
     """
 
     def __init__(self, *, retention_seconds: float, interval: float) -> None:
@@ -163,12 +167,14 @@ class MetricStore:
         self._retention_seconds = retention_seconds
         self._samples: deque[tuple[float, dict[str, float]]] = deque(maxlen=maxlen)
         self._closed = False
+        self._last_error: str | None = None
 
     def update(self, metrics: dict[str, float]) -> None:
         """Append one sample; oldest entries are evicted by the deque ``maxlen``."""
         sample = (time.time(), dict(metrics))
         with self._lock:
             self._samples.append(sample)
+            self._last_error = None
 
     def latest(self) -> tuple[float, dict[str, float]] | None:
         """Return the most recent sample, or :data:`None` if the buffer is empty."""
@@ -207,6 +213,16 @@ class MetricStore:
             'oldest_epoch': oldest,
             'newest_epoch': newest,
         }
+
+    def record_error(self, message: str) -> None:
+        """Record the most recent collector failure for surfacing through ``/metrics.json``."""
+        with self._lock:
+            self._last_error = message
+
+    def last_error(self) -> str | None:
+        """Return the most recent collector failure message, cleared by the next successful sample."""
+        with self._lock:
+            return self._last_error
 
     def close(self) -> None:
         """Mark the store closed so the next ``on_collect`` callback returns :data:`False`."""
@@ -267,12 +283,24 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         sample_time = latest[0] if latest is not None else 0.0
         metrics = latest[1] if latest is not None else {}
         now = time.time()
+        stale_seconds = max(0.0, now - sample_time) if latest is not None else None
+        collector_error = self.store.last_error()
+        if collector_error is not None:
+            status = 'failed'
+        elif latest is None:
+            status = 'warming_up'
+        elif stale_seconds is not None and stale_seconds > 2 * self.interval:
+            status = 'stalled'
+        else:
+            status = 'ready'
         payload = {
             'interval': self.interval,
             'hostname': self.hostname,
             'server_time': now,
             'sample_time': sample_time,
-            'stale_seconds': max(0.0, now - sample_time) if latest is not None else None,
+            'stale_seconds': stale_seconds,
+            'status': status,
+            'collector_error': collector_error,
             'buffer': self.store.stats(),
             'devices': self.devices_info,
             'metrics': metrics,
@@ -684,7 +712,13 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
     def on_collect(metrics: dict[str, float]) -> bool:
         if store.is_closed():
             return False
-        store.update(metrics)
+        try:
+            store.update(metrics)
+        except Exception as ex:  # noqa: BLE001 # pylint: disable=broad-except
+            message = f'{type(ex).__name__}: {ex}'
+            store.record_error(message)
+            cprint(f'ERROR: Failed to record metrics sample: {message}', file=sys.stderr)
+            return False
         return True
 
     def on_stop(collector: ResourceMetricCollector) -> None:

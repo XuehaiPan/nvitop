@@ -1394,8 +1394,19 @@
           );
 
           const stale = payload.stale_seconds || 0;
+          const status = payload.status || "ready";
           const staleEl = $("stale");
-          if (stale > 2 * (payload.interval || 1.0)) {
+          if (payload.collector_error) {
+            staleEl.hidden = false;
+            staleEl.textContent =
+              "collector stopped: " + payload.collector_error;
+          } else if (status === "warming_up") {
+            staleEl.hidden = false;
+            staleEl.textContent = "warming up…";
+          } else if (
+            status === "stalled" ||
+            stale > 2 * (payload.interval || 1.0)
+          ) {
             staleEl.hidden = false;
             staleEl.textContent = "stale " + fmtAge(stale);
           } else {
