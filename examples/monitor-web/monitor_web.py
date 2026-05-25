@@ -30,6 +30,7 @@ import json
 import math
 import os
 import re
+import signal
 import socket
 import ssl
 import sys
@@ -725,7 +726,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         del collector  # suppress unused variable warning
         store.close()
 
-    collect_in_background(
+    collector_thread = collect_in_background(
         on_collect,
         ResourceMetricCollector(
             devices,
@@ -793,15 +794,30 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
             file=sys.stderr,
         )
 
+    # Convert SIGTERM into the same KeyboardInterrupt path used by Ctrl-C so containerized
+    # / systemd-managed runs (which send SIGTERM, not SIGINT) follow the same graceful path
+    # and release the listening socket cleanly.
+    def _handle_sigterm(*_args: Any) -> None:
+        raise KeyboardInterrupt
+
+    previous_sigterm = signal.signal(signal.SIGTERM, _handle_sigterm)
+    join_timeout = max(2.0, args.interval + 1.0)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
         cprint(file=sys.stderr)
         cprint('INFO: Interrupted by user.', file=sys.stderr)
     finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
         store.close()
-        server.shutdown()
         server.server_close()
+        collector_thread.join(timeout=join_timeout)
+        if collector_thread.is_alive():
+            cprint(
+                f'WARNING: Collector thread did not stop within {join_timeout:.1f}s; '
+                'samples in flight may be lost.',
+                file=sys.stderr,
+            )
 
     return 0
 
