@@ -266,6 +266,14 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         else:
             self._send_404()
 
+    def _safe_write(self, body: bytes) -> None:
+        # Routine browser refreshes drop the connection mid-write; suppress these so the per-thread
+        # error handler in the standard library does not print a traceback for each one.
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+
     def _send_html(self) -> None:
         try:
             body = HTML_PATH.read_bytes()
@@ -277,7 +285,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self._safe_write(body)
 
     def _send_metrics_json(self) -> None:
         latest = self.store.latest()
@@ -341,7 +349,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self._safe_write(body)
 
     def _send_400(self, body: bytes) -> None:
         self.send_response(400)
@@ -349,7 +357,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self._safe_write(body)
 
     def _send_404(self) -> None:
         body = b'404 Not Found\n'
@@ -357,7 +365,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self._safe_write(body)
 
     def _send_500(self, body: bytes) -> None:
         self.send_response(500)
@@ -365,7 +373,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        self._safe_write(body)
 
 
 def _finite(value: Any) -> Any:
