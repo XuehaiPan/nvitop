@@ -19,7 +19,7 @@
 - One history chart per GPU under the cards, plotting the same four metrics.
 - History range buttons for `1m`, `5m`, `15m`, `30m`, `1h`, `3h`, `6h`, `12h`, and `24h`.
 
-Cards display current values from the collector's `/last` metrics. Plot legends display the latest visible sample in the selected range, also using `/last` keys. The JSON payload still includes aggregate keys such as `/mean`, `/min`, `/max`, and `/last`.
+Cards and plot legends read each metric's `…/last` keyed value from the collector snapshot (`/last` is a key suffix produced by `nvitop.ResourceMetricCollector`, not an HTTP route). The full JSON payload still includes aggregate variants such as `…/mean`, `…/min`, `…/max`, and `…/last`.
 
 Process snapshots are disabled with `root_pids={}` so the dashboard tracks host and device metrics without collecting per-process GPU rows.
 
@@ -40,8 +40,8 @@ The backend collector samples every `--interval` seconds, defaulting to `1.0`. T
 The startup banner is printed to `stderr`:
 
 ```text
-INFO: Found 4 device(s).
-INFO: GPU 0: NVIDIA H100 80GB HBM3 (UUID: GPU-...)
+INFO: Found N device(s).
+INFO: GPU 0: <name> (UUID: GPU-...)
 INFO: Retention 1d at 1s interval (max 86400 samples).
 INFO: Serving the dashboard at http://127.0.0.1:5555/
 INFO:   - JSON snapshot:       http://127.0.0.1:5555/metrics.json
@@ -56,9 +56,11 @@ INFO:   - JSON history:        http://127.0.0.1:5555/history.json
 - `hostname`: server hostname displayed in the browser header and tab title.
 - `server_time`: current server timestamp.
 - `sample_time`: timestamp for the latest collected sample.
-- `stale_seconds`: age of the latest sample.
-- `buffer`: count, max count, retention, oldest sample, and newest sample.
-- `devices`: raw GPU index, name, memory total, and UUID.
+- `stale_seconds`: age of the latest sample, or `null` if no sample has been collected yet.
+- `status`: lifecycle marker — `warming_up`, `ready`, `stalled`, or `failed`.
+- `collector_error`: most recent collector failure message (cleared on the next successful sample), or `null` when healthy.
+- `buffer`: object with `count`, `max_count`, `retention_seconds`, `retention_human`, `oldest_epoch`, and `newest_epoch`.
+- `devices`: list of objects with `index`, `name`, `memory_total_mib`, `memory_total_human`, and `uuid`.
 - `metrics`: raw collector metric keys and numeric values.
 - `metrics_human`: human-readable memory values for finite MiB/GiB metrics.
 
