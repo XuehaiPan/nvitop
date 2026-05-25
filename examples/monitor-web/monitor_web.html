@@ -733,6 +733,27 @@
           chartRelayoutHandlersAttached.add(chartId);
         };
 
+        // Wrap Plotly.react so chart failures surface in the status badge instead of
+        // disappearing into console-only `unhandledrejection` events.
+        const safeReact = async (chartId, traces, layout) => {
+          try {
+            const rendered = Plotly.react(chartId, traces, layout, {
+              displayModeBar: false,
+              responsive: true,
+            });
+            if (rendered && typeof rendered.then === "function") {
+              await rendered;
+            }
+            attachChartRelayoutHandler(chartId);
+          } catch (err) {
+            console.error(`Plotly.react failed for ${chartId}`, err);
+            setText(
+              "chart-status",
+              `chart render failed (${chartId}): ${err && err.message ? err.message : err}`,
+            );
+          }
+        };
+
         const renderHostChart = () => {
           if (!window.Plotly) {
             setText("chart-status", "Plotly unavailable");
@@ -833,15 +854,7 @@
             }),
           };
           const traces = traceOrder.map((key) => tracesByKey[key]);
-          const rendered = Plotly.react("host-chart", traces, layout, {
-            displayModeBar: false,
-            responsive: true,
-          });
-          if (rendered && typeof rendered.then === "function") {
-            rendered.then(() => attachChartRelayoutHandler("host-chart"));
-          } else {
-            attachChartRelayoutHandler("host-chart");
-          }
+          safeReact("host-chart", traces, layout);
           setText("chart-status", chartSampleCount());
         };
 
@@ -1068,15 +1081,7 @@
               }),
             };
             const traces = traceOrder.map((key) => tracesByKey[key]);
-            const rendered = Plotly.react(chartId, traces, layout, {
-              displayModeBar: false,
-              responsive: true,
-            });
-            if (rendered && typeof rendered.then === "function") {
-              rendered.then(() => attachChartRelayoutHandler(chartId));
-            } else {
-              attachChartRelayoutHandler(chartId);
-            }
+            safeReact(chartId, traces, layout);
           }
         };
 
@@ -1451,6 +1456,12 @@
         window.addEventListener("focus", refreshAfterForeground);
         window.addEventListener("pageshow", refreshAfterForeground);
         window.addEventListener("pagehide", stopPolling);
+        window.addEventListener("unhandledrejection", (event) => {
+          const reason = event.reason;
+          const message = reason && reason.message ? reason.message : reason;
+          console.error("Unhandled promise rejection", reason);
+          setText("chart-status", `error: ${message}`);
+        });
       })();
     </script>
   </body>
