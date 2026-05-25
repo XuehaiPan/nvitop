@@ -8,6 +8,8 @@ bg
 bool
 boolean
 bstate
+cafile
+capath
 cli
 cmdline
 colorscheme
@@ -58,6 +60,7 @@ isinstance
 iterable
 json
 keras
+keyfile
 kib
 kmd
 kwargs

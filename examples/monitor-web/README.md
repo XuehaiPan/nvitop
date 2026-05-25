@@ -117,7 +117,7 @@ python3 examples/monitor-web/monitor_web.py --port 5555 \
     --client-cafile ca.pem --client-auth-required
 ```
 
-`--client-cafile` or `--client-capath` must be specified together with `--client-auth-required`.
+`--client-cafile` (or `--client-capath`) and `--client-auth-required` are a single mutual-TLS bundle — they must be passed together. Passing only some of the three flags is rejected at startup.
 
 ## Useful Flags
 

@@ -484,14 +484,15 @@ def build_ssl_context(args: argparse.Namespace) -> ssl.SSLContext | None:
     """Build an :class:`ssl.SSLContext` from the parsed args, or :data:`None` for plain HTTP."""
     if args.certfile is None and args.keyfile is None:
         return None
-    # `parse_arguments()` already enforces that both flags are set together.
+    # `parse_arguments()` enforces that `--certfile`/`--keyfile` are paired and that the mTLS flags
+    # (`--client-cafile`/`--client-capath` + `--client-auth-required`) come as a set.
     assert args.certfile is not None
     assert args.keyfile is not None
     ctx = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
     ctx.load_cert_chain(certfile=args.certfile, keyfile=args.keyfile)
-    if args.client_cafile is not None or args.client_capath is not None:
+    if args.client_auth_required:
         ctx.load_verify_locations(cafile=args.client_cafile, capath=args.client_capath)
-        ctx.verify_mode = ssl.CERT_REQUIRED if args.client_auth_required else ssl.CERT_OPTIONAL
+        ctx.verify_mode = ssl.CERT_REQUIRED
     return ctx
 
 
@@ -589,7 +590,7 @@ def parse_arguments() -> argparse.Namespace:
         metavar='PATH',
         help=(
             'Path to a PEM bundle of trusted client CA certificates for mutual TLS.\n'
-            'Requires `--client-auth-required` to actually verify client certificates.'
+            'Must be passed together with `--client-auth-required`.'
         ),
     )
     tls.add_argument(
@@ -600,7 +601,7 @@ def parse_arguments() -> argparse.Namespace:
         metavar='PATH',
         help=(
             'Path to a directory of trusted client CA certificates for mutual TLS.\n'
-            'Requires `--client-auth-required` to actually verify client certificates.'
+            'Must be passed together with `--client-auth-required`.'
         ),
     )
     tls.add_argument(
@@ -609,7 +610,7 @@ def parse_arguments() -> argparse.Namespace:
         action='store_true',
         help=(
             'Require clients to present a valid certificate (mutual TLS).\n'
-            'Requires `--client-cafile` or `--client-capath`.'
+            'Must be passed together with `--client-cafile` or `--client-capath`.'
         ),
     )
 
