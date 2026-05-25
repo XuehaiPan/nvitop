@@ -145,6 +145,7 @@ uids
 unallocated
 uncase
 unicode
+unparsable
 uptime
 utils
 uuid

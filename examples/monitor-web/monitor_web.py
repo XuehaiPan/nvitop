@@ -311,10 +311,14 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_history_json(self, query: str) -> None:
         params = urllib.parse.parse_qs(query)
-        bucket_seconds = _maybe_positive_float(params.get('bucket_seconds', [None])[0])
-        limit = _maybe_positive_int(params.get('limit', [None])[0])
-        max_samples = _maybe_positive_int(params.get('max_samples', [None])[0])
-        since = _maybe_float(params.get('since', [None])[0])
+        try:
+            bucket_seconds = _parse_positive_float(params, 'bucket_seconds')
+            limit = _parse_positive_int(params, 'limit')
+            max_samples = _parse_positive_int(params, 'max_samples')
+            since = _parse_finite_float(params, 'since')
+        except _BadRequestError as ex:
+            self._send_400(f'400 Bad Request: {ex}\n'.encode())
+            return
         history = self.store.history(
             bucket_seconds=bucket_seconds,
             limit=limit,
@@ -334,6 +338,14 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         body = json.dumps(_finite(payload), allow_nan=False, default=float).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _send_400(self, body: bytes) -> None:
+        self.send_response(400)
+        self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')
         self.send_header('Content-Length', str(len(body)))
         self.end_headers()
@@ -453,30 +465,49 @@ def _humanize_metrics(metrics: dict[str, float]) -> dict[str, str]:
     return human
 
 
-def _maybe_positive_int(text: str | None) -> int | None:
+class _BadRequestError(ValueError):
+    """Raised when a query-parameter value is present but unparsable or out of range."""
+
+
+def _query_value(params: dict[str, list[str]], name: str) -> str | None:
+    """Return the first value for ``name`` in ``params`` (or :data:`None` if absent)."""
+    values = params.get(name)
+    return values[0] if values else None
+
+
+def _parse_positive_int(params: dict[str, list[str]], name: str) -> int | None:
+    """Return a strictly positive ``int``; raise :class:`_BadRequestError` if invalid."""
+    text = _query_value(params, name)
     if text is None:
         return None
     try:
         value = int(text)
-    except (TypeError, ValueError):
-        return None
-    return value if value > 0 else None
+    except ValueError as ex:
+        raise _BadRequestError(f'`{name}` expected positive integer, got {text!r}') from ex
+    if value <= 0:
+        raise _BadRequestError(f'`{name}` expected positive integer, got {value}')
+    return value
 
 
-def _maybe_float(text: str | None) -> float | None:
+def _parse_finite_float(params: dict[str, list[str]], name: str) -> float | None:
+    """Return a finite ``float``; raise :class:`_BadRequestError` if invalid."""
+    text = _query_value(params, name)
     if text is None:
         return None
     try:
         value = float(text)
-    except (TypeError, ValueError):
-        return None
-    return value if math.isfinite(value) else None
+    except ValueError as ex:
+        raise _BadRequestError(f'`{name}` expected finite float, got {text!r}') from ex
+    if not math.isfinite(value):
+        raise _BadRequestError(f'`{name}` expected finite float, got {text!r}')
+    return value
 
 
-def _maybe_positive_float(text: str | None) -> float | None:
-    value = _maybe_float(text)
-    if value is None or not math.isfinite(value) or value <= 0:
-        return None
+def _parse_positive_float(params: dict[str, list[str]], name: str) -> float | None:
+    """Return a strictly positive finite ``float``; raise :class:`_BadRequestError` if invalid."""
+    value = _parse_finite_float(params, name)
+    if value is not None and value <= 0:
+        raise _BadRequestError(f'`{name}` expected positive float, got {value}')
     return value
 
 

@@ -82,6 +82,8 @@ Supported query parameters:
 - `max_samples=N`: return at most `N` samples after filtering and bucket averaging.
 - `since=EPOCH`: return samples strictly newer than the Unix timestamp `EPOCH`.
 
+Unrecognized parameters are ignored. Parameters that are present but unparsable or out of range (non-numeric, `NaN`/`Infinity`, zero or negative for the positive-only parameters) return `400 Bad Request` with a message identifying the offending parameter, so typos surface immediately rather than silently returning the unfiltered history.
+
 JSON responses are strict JSON. Non-finite collector values such as `NaN` and `Infinity` are serialized as `null`.
 
 ## History And Retention
