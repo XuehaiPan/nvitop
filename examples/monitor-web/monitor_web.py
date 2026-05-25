@@ -151,8 +151,8 @@ def format_duration(seconds: float) -> str:
 
 
 def cprint(text: str = '', *, file: TextIO | None = None) -> None:
-    """Print colored ``INFO``/``WARNING``/``ERROR`` lines (mirrors ``nvitop-exporter``)."""
-    for prefix, color in (('INFO: ', 'yellow'), ('WARNING: ', 'yellow'), ('ERROR: ', 'red')):
+    """Print a line, applying a bold color to any leading ``INFO:`` / ``WARNING:`` / ``ERROR:`` prefix."""
+    for prefix, color in (('INFO: ', 'green'), ('WARNING: ', 'yellow'), ('ERROR: ', 'red')):
         if text.startswith(prefix):
             text = text.replace(
                 prefix.rstrip(),
@@ -727,8 +727,8 @@ def parse_arguments() -> argparse.Namespace:
 
     if args.interval < _MIN_INTERVAL:
         parser.error(
-            f'the interval {args.interval:0.2g}s is too short, '
-            f'which may cause performance issues. Expected 1/4 or higher.',
+            f'`--interval` value {args.interval:0.2g}s is too short, '
+            f'which may cause performance issues. Expected `{_MIN_INTERVAL}` or higher.',
         )
 
     if (args.certfile is None) != (args.keyfile is None):
