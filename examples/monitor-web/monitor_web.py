@@ -112,18 +112,19 @@ class BufferStats(TypedDict):
 
 # Reference: https://stackoverflow.com/a/28950776
 def get_ip_address() -> str:
-    """Get the IP address of the current machine."""
+    """Best-effort guess of a routable local IPv4 address; silently falls back to ``127.0.0.1``."""
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(0.0)
     try:
-        # Doesn't even have to be reachable.
+        # Doesn't even have to be reachable; the kernel picks the source IP for the route.
         s.connect(('10.254.254.254', 1))
-        ip_address = s.getsockname()[0]
-    except Exception:  # noqa: BLE001 # pylint: disable=broad-except
-        ip_address = '127.0.0.1'
+        return str(s.getsockname()[0])
+    except OSError:
+        # Non-blocking UDP probe surfaces every failure (no route, gaierror, EHOSTUNREACH, ...)
+        # as an OSError subclass; collapse them all into the loopback fallback.
+        return '127.0.0.1'
     finally:
         s.close()
-    return ip_address
 
 
 def parse_duration(text: str) -> float:
@@ -507,9 +508,10 @@ def _average_history_bucket(samples: list[Sample], *, timestamp: float | None = 
                 metrics_sum[key] += float(value)
                 metrics_count[key] += 1
 
+    # Skip keys whose entire bucket was non-finite; the JS treats absent keys as gaps the same way
+    # it treats null, so dropping them saves bytes on 24-h downsampled payloads.
     metrics_average = {
-        key: metrics_sum[key] / metrics_count[key] if metrics_count[key] > 0 else math.nan
-        for key in keys
+        key: metrics_sum[key] / metrics_count[key] for key in keys if metrics_count[key] > 0
     }
     return Sample(epoch=timestamp, metrics=metrics_average)
 

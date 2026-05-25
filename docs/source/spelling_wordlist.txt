@@ -41,6 +41,7 @@ fallbacks
 fg
 fmt
 func
+gaierror
 getch
 getmouse
 gib
@@ -58,6 +59,7 @@ ints
 ipython
 isinstance
 iterable
+js
 json
 keras
 keyfile
@@ -70,6 +72,7 @@ libcudart
 libnvml
 linters
 lol
+loopback
 lstrip
 maxsize
 memoize
@@ -112,6 +115,7 @@ pytorch
 redhat
 reentrant
 resourcemetriccollector
+routable
 rss
 rstrip
 rtx
@@ -141,6 +145,7 @@ ttc
 tty
 tx
 txt
+udp
 uid
 uids
 unallocated
