@@ -388,6 +388,7 @@
         let historyAbortController = null;
         let historyRequestId = 0;
         let historyRefreshPromise = null;
+        let consecutiveFetchFailures = 0;
         const chartRelayoutHandlersAttached = new Set();
         const hiddenChartTraces = new Map();
 
@@ -1347,9 +1348,14 @@
             const resp = await fetch("/metrics.json", { cache: "no-store" });
             if (!resp.ok) throw new Error("HTTP " + resp.status);
             payload = await resp.json();
+            consecutiveFetchFailures = 0;
           } catch (err) {
-            $("stale").hidden = false;
-            $("stale").textContent = "fetch failed: " + err.message;
+            consecutiveFetchFailures += 1;
+            const staleEl = $("stale");
+            staleEl.hidden = false;
+            staleEl.textContent =
+              `connection lost (${consecutiveFetchFailures} ` +
+              `attempt${consecutiveFetchFailures === 1 ? "" : "s"}): ${err.message}`;
             return;
           }
 
