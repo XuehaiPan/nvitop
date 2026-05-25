@@ -267,6 +267,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
             self._send_404()
 
     def _safe_write(self, body: bytes) -> None:
+        """Write ``body`` to the response, swallowing client-disconnect errors."""
         # Routine browser refreshes drop the connection mid-write; suppress these so the per-thread
         # error handler in the standard library does not print a traceback for each one.
         try:
@@ -275,6 +276,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
             pass
 
     def _send_html(self) -> None:
+        """Serve the dashboard HTML; respond ``500`` if the on-disk asset is missing or unreadable."""
         try:
             body = HTML_PATH.read_bytes()
         except OSError:
@@ -288,6 +290,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._safe_write(body)
 
     def _send_metrics_json(self) -> None:
+        """Serve the latest collector sample plus dashboard metadata as strict JSON."""
         latest = self.store.latest()
         sample_time = latest[0] if latest is not None else 0.0
         metrics = latest[1] if latest is not None else {}
@@ -318,6 +321,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._send_json(payload)
 
     def _send_history_json(self, query: str) -> None:
+        """Serve filtered/downsampled history as strict JSON; respond ``400`` on bad query input."""
         params = urllib.parse.parse_qs(query)
         try:
             bucket_seconds = _parse_positive_float(params, 'bucket_seconds')
@@ -340,9 +344,10 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._send_json(payload)
 
     def _send_json(self, payload: object) -> None:
-        # `allow_nan=False` makes strict JSON; ``_finite()`` first maps `math.nan`/`math.inf` (which
-        # the collector emits for missing samples) to `None` so the browser's `JSON.parse` accepts
-        # the body.
+        """Encode ``payload`` as strict JSON (200 OK) after coercing non-finite floats to null."""
+        # Strict JSON has no representation for NaN/Infinity, so `allow_nan=False` would raise.
+        # `_finite()` first maps non-finite floats (nan/+inf/-inf) to None; the collector emits
+        # NaN for any metric key seen previously but absent from the current snapshot.
         body = json.dumps(_finite(payload), allow_nan=False, default=float).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'application/json; charset=utf-8')
@@ -352,6 +357,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._safe_write(body)
 
     def _send_400(self, body: bytes) -> None:
+        """Respond ``400 Bad Request`` with a plain-text body."""
         self.send_response(400)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')
@@ -360,6 +366,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._safe_write(body)
 
     def _send_404(self) -> None:
+        """Respond ``404 Not Found`` with a short plain-text body."""
         body = b'404 Not Found\n'
         self.send_response(404)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
@@ -368,6 +375,7 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         self._safe_write(body)
 
     def _send_500(self, body: bytes) -> None:
+        """Respond ``500 Internal Server Error`` with the provided plain-text body."""
         self.send_response(500)
         self.send_header('Content-Type', 'text/plain; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')
@@ -377,11 +385,13 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
 
 
 def _finite(value: Any) -> Any:
-    """Replace `nan`/`+inf`/`-inf` with :data:`None` so the result is strict JSON.
+    """Recursively replace non-finite floats (``nan``/``+inf``/``-inf``) with :data:`None`.
 
-    The collector writes :data:`math.nan` for any metric key that was sampled previously but is
-    missing from the current snapshot (see :class:`nvitop.ResourceMetricCollector`), and strict
-    JSON has no representation for ``NaN`` or ``Infinity``.
+    Strict JSON has no representation for ``NaN`` or ``Infinity``, so the encoder is invoked with
+    ``allow_nan=False``. The ``nvitop`` collector writes :data:`math.nan` for any metric key that
+    was sampled previously but is absent from the current snapshot (see ``_MetricBuffer.add`` in
+    ``nvitop/api/collector.py``); this function maps those values to :data:`None` so the encoder
+    accepts them.
     """
     if isinstance(value, float):
         return value if math.isfinite(value) else None
@@ -398,7 +408,13 @@ def _downsample_history(
     *,
     bucket_seconds: float | None = None,
 ) -> list[tuple[float, dict[str, float]]]:
-    """Return averaged samples aligned to fixed time buckets."""
+    """Downsample ``samples`` to at most ``max_samples`` entries.
+
+    Returns ``samples`` unchanged when ``max_samples`` is :data:`None` or the input already fits.
+    When ``bucket_seconds`` is given, groups samples into epoch-aligned time buckets and averages
+    each bucket, doubling ``bucket_seconds`` until the result fits ``max_samples``. Otherwise the
+    input is split into ``max_samples`` equal-count slices and each slice is averaged.
+    """
     if not samples:
         return []
     if max_samples is None or len(samples) <= max_samples:

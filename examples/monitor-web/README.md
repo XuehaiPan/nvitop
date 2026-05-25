@@ -96,7 +96,7 @@ python3 examples/monitor-web/monitor_web.py --retention 30min --interval 5
 python3 examples/monitor-web/monitor_web.py --retention 600
 ```
 
-The buffer holds at most `int(retention / interval)` samples. Each sample stores the collector's metric dictionary, including aggregate keys such as `mean`, `min`, `max`, and `last`, so memory use depends on the sample count, the exported metric-key count, and normal Python object overhead. Increase `--interval` to keep the same retention window with fewer stored samples.
+The buffer holds at most `max(1, int(retention / interval))` samples. Each sample stores the collector's metric dictionary, including aggregate keys such as `mean`, `min`, `max`, and `last`, so memory use depends on the sample count, the exported metric-key count, and normal Python object overhead. Increase `--interval` to keep the same retention window with fewer stored samples.
 
 ## TLS And Mutual TLS
 
