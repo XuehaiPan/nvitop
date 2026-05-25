@@ -39,7 +39,7 @@ import time
 import urllib.parse
 from collections import deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, ClassVar, TextIO
+from typing import TYPE_CHECKING, Any, NamedTuple, TextIO, TypedDict
 
 from nvitop import (
     Device,
@@ -53,7 +53,7 @@ from nvitop import (
 
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
 
 __all__ = ['main']
@@ -90,6 +90,24 @@ _DURATION_MULTIPLIERS = {
     'day': 86400.0,
     'days': 86400.0,
 }
+
+
+class Sample(NamedTuple):
+    """A collector sample: an epoch timestamp and the metric mapping captured at that instant."""
+
+    epoch: float
+    metrics: dict[str, float]
+
+
+class BufferStats(TypedDict):
+    """Shape of :meth:`MetricStore.stats` — also the ``buffer`` field on the JSON payloads."""
+
+    count: int
+    max_count: int
+    retention_seconds: float
+    retention_human: str
+    oldest_epoch: float
+    newest_epoch: float
 
 
 # Reference: https://stackoverflow.com/a/28950776
@@ -134,11 +152,7 @@ def format_duration(seconds: float) -> str:
 
 def cprint(text: str = '', *, file: TextIO | None = None) -> None:
     """Print colored ``INFO``/``WARNING``/``ERROR`` lines (mirrors ``nvitop-exporter``)."""
-    for prefix, color in (
-        ('INFO: ', 'yellow'),
-        ('WARNING: ', 'yellow'),
-        ('ERROR: ', 'red'),
-    ):
+    for prefix, color in (('INFO: ', 'yellow'), ('WARNING: ', 'yellow'), ('ERROR: ', 'red')):
         if text.startswith(prefix):
             text = text.replace(
                 prefix.rstrip(),
@@ -166,18 +180,18 @@ class MetricStore:
         maxlen = max(1, int(retention_seconds / interval))
         self._lock = threading.Lock()
         self._retention_seconds = retention_seconds
-        self._samples: deque[tuple[float, dict[str, float]]] = deque(maxlen=maxlen)
+        self._samples: deque[Sample] = deque(maxlen=maxlen)
         self._closed = False
         self._last_error: str | None = None
 
-    def update(self, metrics: dict[str, float]) -> None:
+    def update(self, metrics: Mapping[str, float]) -> None:
         """Append one sample; oldest entries are evicted by the deque ``maxlen``."""
-        sample = (time.time(), dict(metrics))
+        sample = Sample(epoch=time.time(), metrics=dict(metrics))
         with self._lock:
             self._samples.append(sample)
             self._last_error = None
 
-    def latest(self) -> tuple[float, dict[str, float]] | None:
+    def latest(self) -> Sample | None:
         """Return the most recent sample, or :data:`None` if the buffer is empty."""
         with self._lock:
             return self._samples[-1] if self._samples else None
@@ -189,31 +203,31 @@ class MetricStore:
         limit: int | None = None,
         max_samples: int | None = None,
         since: float | None = None,
-    ) -> list[tuple[float, dict[str, float]]]:
+    ) -> list[Sample]:
         """Snapshot copy of the buffer, optionally filtered, trimmed, and downsampled."""
         with self._lock:
             samples = list(self._samples)
         if since is not None:
-            samples = [s for s in samples if s[0] > since]
+            samples = [s for s in samples if s.epoch > since]
         if limit is not None and len(samples) > limit:
             samples = samples[-limit:]
         return _downsample_history(samples, max_samples, bucket_seconds=bucket_seconds)
 
-    def stats(self) -> dict[str, Any]:
+    def stats(self) -> BufferStats:
         """Return buffer statistics suitable for embedding in the JSON payload."""
         with self._lock:
             count = len(self._samples)
-            oldest = self._samples[0][0] if count else 0.0
-            newest = self._samples[-1][0] if count else 0.0
+            oldest = self._samples[0].epoch if count else 0.0
+            newest = self._samples[-1].epoch if count else 0.0
             max_count = self._samples.maxlen or 0
-        return {
-            'count': count,
-            'max_count': max_count,
-            'retention_seconds': self._retention_seconds,
-            'retention_human': format_duration(self._retention_seconds),
-            'oldest_epoch': oldest,
-            'newest_epoch': newest,
-        }
+        return BufferStats(
+            count=count,
+            max_count=max_count,
+            retention_seconds=self._retention_seconds,
+            retention_human=format_duration(self._retention_seconds),
+            oldest_epoch=oldest,
+            newest_epoch=newest,
+        )
 
     def record_error(self, message: str) -> None:
         """Record the most recent collector failure for surfacing through ``/metrics.json``."""
@@ -239,16 +253,44 @@ class MetricStore:
 HTML_PATH = Path(__file__).resolve().with_suffix('.html')
 
 
+class MonitorServer(http.server.ThreadingHTTPServer):
+    """:class:`ThreadingHTTPServer` subclass that owns the dashboard configuration.
+
+    Configuration (the metric store, device descriptions, displayed hostname, sampling interval)
+    lives on the server instance so each request handler can read it via ``self.server`` rather
+    than relying on globally mutated class state. This also makes it trivial to run more than one
+    dashboard in the same process — for tests, for example.
+    """
+
+    allow_reuse_address = True
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        server_address: tuple[str, int],
+        *,
+        store: MetricStore,
+        devices_info: list[dict[str, Any]],
+        hostname: str,
+        interval: float,
+    ) -> None:
+        """Bind to ``server_address`` and remember the dashboard configuration."""
+        self.store = store
+        self.devices_info = devices_info
+        self.hostname = hostname
+        self.interval = interval
+        super().__init__(server_address, MonitorRequestHandler)
+
+
 class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
     """Tiny request router serving the dashboard HTML and JSON snapshots."""
 
     server_version = 'nvitop-monitor-web'
     sys_version = ''
 
-    store: ClassVar[MetricStore]  # populated in main() before serve_forever
-    devices_info: ClassVar[list[dict[str, Any]]] = []
-    hostname: ClassVar[str] = get_ip_address()
-    interval: ClassVar[float] = 1.0
+    if TYPE_CHECKING:
+        # Narrow the inherited `server` attribute so route handlers get IDE/type-checker support
+        # when reading the dashboard configuration via `self.server.<field>`.
+        server: MonitorServer
 
     def log_message(self, *_args: Any, **_kwargs: Any) -> None:
         """Silence the default per-request access log."""
@@ -291,30 +333,32 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_metrics_json(self) -> None:
         """Serve the latest collector sample plus dashboard metadata as strict JSON."""
-        latest = self.store.latest()
-        sample_time = latest[0] if latest is not None else 0.0
-        metrics = latest[1] if latest is not None else {}
+        store = self.server.store
+        interval = self.server.interval
+        latest = store.latest()
+        sample_time = latest.epoch if latest is not None else 0.0
+        metrics = latest.metrics if latest is not None else {}
         now = time.time()
         stale_seconds = max(0.0, now - sample_time) if latest is not None else None
-        collector_error = self.store.last_error()
+        collector_error = store.last_error()
         if collector_error is not None:
             status = 'failed'
         elif latest is None:
             status = 'warming_up'
-        elif stale_seconds is not None and stale_seconds > 2 * self.interval:
+        elif stale_seconds is not None and stale_seconds > 2 * interval:
             status = 'stalled'
         else:
             status = 'ready'
         payload = {
-            'interval': self.interval,
-            'hostname': self.hostname,
+            'interval': interval,
+            'hostname': self.server.hostname,
             'server_time': now,
             'sample_time': sample_time,
             'stale_seconds': stale_seconds,
             'status': status,
             'collector_error': collector_error,
-            'buffer': self.store.stats(),
-            'devices': self.devices_info,
+            'buffer': store.stats(),
+            'devices': self.server.devices_info,
             'metrics': metrics,
             'metrics_human': _humanize_metrics(metrics),
         }
@@ -331,15 +375,16 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
         except _BadRequestError as ex:
             self._send_400(f'400 Bad Request: {ex}\n'.encode())
             return
-        history = self.store.history(
+        store = self.server.store
+        history = store.history(
             bucket_seconds=bucket_seconds,
             limit=limit,
             max_samples=max_samples,
             since=since,
         )
         payload = {
-            'buffer': self.store.stats(),
-            'samples': [{'epoch': ts, 'metrics': metrics} for ts, metrics in history],
+            'buffer': store.stats(),
+            'samples': [{'epoch': sample.epoch, 'metrics': sample.metrics} for sample in history],
         }
         self._send_json(payload)
 
@@ -403,11 +448,11 @@ def _finite(value: Any) -> Any:
 
 
 def _downsample_history(
-    samples: list[tuple[float, dict[str, float]]],
+    samples: list[Sample],
     max_samples: int | None,
     *,
     bucket_seconds: float | None = None,
-) -> list[tuple[float, dict[str, float]]]:
+) -> list[Sample]:
     """Downsample ``samples`` to at most ``max_samples`` entries.
 
     Returns ``samples`` unchanged when ``max_samples`` is :data:`None` or the input already fits.
@@ -439,33 +484,25 @@ def _downsample_history(
     return downsampled
 
 
-def _average_history_time_buckets(
-    samples: list[tuple[float, dict[str, float]]],
-    *,
-    bucket_seconds: float,
-) -> list[tuple[float, dict[str, float]]]:
-    buckets: dict[float, list[tuple[float, dict[str, float]]]] = {}
-    for timestamp, metrics in samples:
-        bucket_start = math.floor(timestamp / bucket_seconds) * bucket_seconds
-        buckets.setdefault(bucket_start, []).append((timestamp, metrics))
+def _average_history_time_buckets(samples: list[Sample], *, bucket_seconds: float) -> list[Sample]:
+    buckets: dict[float, list[Sample]] = {}
+    for sample in samples:
+        bucket_start = math.floor(sample.epoch / bucket_seconds) * bucket_seconds
+        buckets.setdefault(bucket_start, []).append(sample)
     return [
         _average_history_bucket(bucket, timestamp=bucket_start)
         for bucket_start, bucket in sorted(buckets.items())
     ]
 
 
-def _average_history_bucket(
-    samples: list[tuple[float, dict[str, float]]],
-    *,
-    timestamp: float | None = None,
-) -> tuple[float, dict[str, float]]:
+def _average_history_bucket(samples: list[Sample], *, timestamp: float | None = None) -> Sample:
     if timestamp is None:
-        timestamp = sum(ts for ts, _metrics in samples) / len(samples)
-    keys = {key for _ts, metrics in samples for key in metrics}
+        timestamp = sum(sample.epoch for sample in samples) / len(samples)
+    keys = {key for sample in samples for key in sample.metrics}
     metrics_sum = dict.fromkeys(keys, 0.0)
     metrics_count = dict.fromkeys(keys, 0)
-    for _ts, metrics in samples:
-        for key, value in metrics.items():
+    for sample in samples:
+        for key, value in sample.metrics.items():
             if isinstance(value, (float, int)) and math.isfinite(value):
                 metrics_sum[key] += float(value)
                 metrics_count[key] += 1
@@ -474,7 +511,7 @@ def _average_history_bucket(
         key: metrics_sum[key] / metrics_count[key] if metrics_count[key] > 0 else math.nan
         for key in keys
     }
-    return timestamp, metrics_average
+    return Sample(epoch=timestamp, metrics=metrics_average)
 
 
 def _humanize_metrics(metrics: dict[str, float]) -> dict[str, str]:
@@ -756,29 +793,14 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         file=sys.stderr,
     )
     for info in devices_info:
-        cprint(
-            f'INFO: GPU {info["index"]}: {info["name"]} (UUID: {info["uuid"]})',
-            file=sys.stderr,
-        )
+        cprint(f'INFO: GPU {info["index"]}: {info["name"]} (UUID: {info["uuid"]})', file=sys.stderr)
 
     store = MetricStore(retention_seconds=args.retention, interval=args.interval)
     cprint(
         'INFO: Retention {} at {} interval (max {} samples).'.format(
-            colored(
-                format_duration(args.retention),
-                color='magenta',
-                attrs=('bold',),
-            ),
-            colored(
-                f'{args.interval:g}s',
-                color='magenta',
-                attrs=('bold',),
-            ),
-            colored(
-                str(store.stats()['max_count']),
-                color='magenta',
-                attrs=('bold',),
-            ),
+            colored(format_duration(args.retention), color='magenta', attrs=('bold',)),
+            colored(f'{args.interval:g}s', color='magenta', attrs=('bold',)),
+            colored(str(store.stats()['max_count']), color='magenta', attrs=('bold',)),
         ),
         file=sys.stderr,
     )
@@ -811,24 +833,18 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         tag='monitor',
     )
 
-    MonitorRequestHandler.store = store
-    MonitorRequestHandler.devices_info = devices_info
-    MonitorRequestHandler.hostname = args.hostname
-    MonitorRequestHandler.interval = args.interval
-
     base_url = f'{scheme}://{args.bind_address}:{args.port}'
     try:
-        server = http.server.ThreadingHTTPServer(
+        server = MonitorServer(
             (args.bind_address, args.port),
-            MonitorRequestHandler,
+            store=store,
+            devices_info=devices_info,
+            hostname=args.hostname,
+            interval=args.interval,
         )
     except OSError as ex:
         message = str(ex).lower()
-        url_colored = colored(
-            base_url,
-            color='blue',
-            attrs=('bold', 'underline'),
-        )
+        url_colored = colored(base_url, color='blue', attrs=('bold', 'underline'))
         if 'address already in use' in message:
             cprint(
                 f'ERROR: Address {url_colored} is already in use. '
@@ -858,11 +874,7 @@ def main() -> int:  # pylint: disable=too-many-locals,too-many-statements
         cprint(
             'INFO: {} {}'.format(
                 label,
-                colored(
-                    f'{base_url}{suffix}',
-                    color='green',
-                    attrs=('bold', 'underline'),
-                ),
+                colored(f'{base_url}{suffix}', color='green', attrs=('bold', 'underline')),
             ),
             file=sys.stderr,
         )
