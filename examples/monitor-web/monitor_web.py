@@ -536,7 +536,12 @@ def _parse_positive_float(params: dict[str, list[str]], name: str) -> float | No
 
 
 def build_ssl_context(args: argparse.Namespace) -> ssl.SSLContext | None:
-    """Build an :class:`ssl.SSLContext` from the parsed args, or :data:`None` for plain HTTP."""
+    """Build an :class:`ssl.SSLContext` from the parsed args, or :data:`None` for plain HTTP.
+
+    Raises :class:`SystemExit` with a friendly ``ERROR:`` line if the certificate, private key,
+    or trusted-CA bundle cannot be loaded (malformed PEM, key/cert mismatch, passphrase-protected
+    key, etc.) — :func:`parse_arguments` only verifies file existence, not parse-ability.
+    """
     if args.certfile is None and args.keyfile is None:
         return None
     # `parse_arguments()` enforces that `--certfile`/`--keyfile` are paired and that the mTLS flags
@@ -544,9 +549,21 @@ def build_ssl_context(args: argparse.Namespace) -> ssl.SSLContext | None:
     assert args.certfile is not None
     assert args.keyfile is not None
     ctx = ssl.create_default_context(purpose=ssl.Purpose.CLIENT_AUTH)
-    ctx.load_cert_chain(certfile=args.certfile, keyfile=args.keyfile)
+    try:
+        ctx.load_cert_chain(certfile=args.certfile, keyfile=args.keyfile)
+    except (ssl.SSLError, OSError) as ex:
+        raise SystemExit(
+            f'ERROR: Failed to load TLS certificate/key from '
+            f'`{args.certfile}` / `{args.keyfile}`: {ex}',
+        ) from ex
     if args.client_auth_required:
-        ctx.load_verify_locations(cafile=args.client_cafile, capath=args.client_capath)
+        try:
+            ctx.load_verify_locations(cafile=args.client_cafile, capath=args.client_capath)
+        except (ssl.SSLError, OSError) as ex:
+            raise SystemExit(
+                f'ERROR: Failed to load client CA bundle from '
+                f'`{args.client_cafile or args.client_capath}`: {ex}',
+            ) from ex
         ctx.verify_mode = ssl.CERT_REQUIRED
     return ctx
 
