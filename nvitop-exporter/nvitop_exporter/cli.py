@@ -34,9 +34,9 @@ from nvitop_exporter.version import __version__
 
 
 def cprint(text: str = '', *, file: TextIO | None = None) -> None:
-    """Print colored text to a file."""
+    """Print a line, applying a bold color to any leading log-level prefix."""
     for prefix, color in (
-        ('INFO: ', 'yellow'),
+        ('INFO: ', 'green'),
         ('WARNING: ', 'yellow'),
         ('ERROR: ', 'red'),
         ('NVML ERROR: ', 'red'),
@@ -47,6 +47,7 @@ def cprint(text: str = '', *, file: TextIO | None = None) -> None:
                 colored(prefix.rstrip(), color=color, attrs=('bold',)),  # type: ignore[arg-type]
                 1,
             )
+            break
     print(text, file=file)
 
 
