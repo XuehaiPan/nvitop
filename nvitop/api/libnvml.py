@@ -184,6 +184,7 @@ else:
 c_nvmlFieldValue_t: _TypeAlias = _pynvml.c_nvmlFieldValue_t  # noqa: PYI042
 NVML_SUCCESS: int = _pynvml.NVML_SUCCESS
 NVML_ERROR_INSUFFICIENT_SIZE: int = _pynvml.NVML_ERROR_INSUFFICIENT_SIZE
+NVMLError_Uninitialized: _TypeAlias = _pynvml.NVMLError_Uninitialized
 NVMLError_FunctionNotFound: _TypeAlias = _pynvml.NVMLError_FunctionNotFound
 NVMLError_GpuIsLost: _TypeAlias = _pynvml.NVMLError_GpuIsLost
 NVMLError_InvalidArgument: _TypeAlias = _pynvml.NVMLError_InvalidArgument
@@ -227,7 +228,7 @@ NVML_VALUE_TYPE_SIGNED_INT: int = getattr(_pynvml, 'NVML_VALUE_TYPE_SIGNED_INT',
 __flags: list[int] = []
 __initialized: bool = False
 __lock: _threading.Lock = _threading.Lock()
-__shutdown_lock: _threading.Lock = _threading.Lock()
+__shutdown_condition: _threading.Condition = _threading.Condition()
 __active_queries: int = 0
 # Once set on shutdown, no new NVML queries are issued; never reset to False.
 __shutting_down: bool = False
@@ -316,31 +317,26 @@ def _atexit_shutdown(timeout: float | None = None) -> None:
     if __shutting_down:
         return
 
-    with __shutdown_lock:
+    # Set the shutdown latch, then wait for in-flight queries to drain. Once `__shutting_down` is
+    # set, `nvmlQuery` starts no new NVML calls, so `__active_queries` only decreases; each decrement
+    # notifies the condition, so this blocks without polling and wakes as soon as it reaches zero.
+    with __shutdown_condition:
         if __shutting_down:
             return  # type: ignore[unreachable]
         __shutting_down = True
+        drained = __shutdown_condition.wait_for(lambda: __active_queries == 0, timeout=timeout)
 
-    # Once `__shutting_down` is set, `nvmlQuery` starts no new NVML calls, so `__active_queries`
-    # only decreases -- wait for it to reach zero before freeing the NVML context.
-    endtime = None if timeout is None else _time.monotonic() + timeout
-    while True:
-        with __shutdown_lock:
-            drained = __active_queries == 0
-        if drained:
-            try:
-                nvmlShutdown()
-            except NVMLError:
-                # NVML may already be torn down (e.g. via an explicit `nvmlShutdown()` call); the
-                # OS reclaims all NVML resources at process exit regardless.
-                pass
-            return
-        if endtime is not None and _time.monotonic() >= endtime:
-            # Timed out with queries still in flight: skip `nvmlShutdown()` to avoid a
-            # use-after-free. The OS reclaims all NVML resources at process exit anyway.
-            LOGGER.warning('Skipped `nvmlShutdown()` at exit: NVML queries are still in flight.')
-            return
-        _time.sleep(0.001)
+    if drained:
+        try:
+            nvmlShutdown()
+        except NVMLError:
+            # NVML may already be torn down (e.g. via an explicit `nvmlShutdown()` call); the OS
+            # reclaims all NVML resources at process exit regardless.
+            pass
+    else:
+        # Timed out with queries still in flight: skip `nvmlShutdown()` to avoid a use-after-free.
+        # The OS reclaims all NVML resources at process exit anyway.
+        LOGGER.warning('Skipped `nvmlShutdown()` at exit: NVML queries are still in flight.')
 
 
 def nvmlInit() -> None:  # pylint: disable=function-redefined
@@ -502,57 +498,73 @@ def nvmlQuery(
     global UNKNOWN_FUNCTIONS, __active_queries  # pylint: disable=global-statement,global-variable-not-assigned
 
     if __shutting_down:
-        return default  # return early on interpreter shutdown to avoid re-initializing
+        if ignore_errors:
+            return default
+        raise NVMLError_Uninitialized
 
-    _lazy_init()
-
-    with __shutdown_lock:
+    # Reserve an in-flight slot BEFORE any NVML-touching work (including `_lazy_init`'s `nvmlInit`)
+    # so the `atexit` drain waits for this query instead of shutting NVML down underneath it.
+    # See https://github.com/XuehaiPan/nvitop/issues/222.
+    with __shutdown_condition:
         if __shutting_down:
-            return default  # type: ignore[unreachable]
+            if ignore_errors:  # type: ignore[unreachable]
+                return default
+            raise NVMLError_Uninitialized
         __active_queries += 1
 
     try:
-        if isinstance(func, str):
-            try:
-                func = getattr(__modself, func)
-            except AttributeError as e1:
-                raise NVMLError_FunctionNotFound from e1
+        _lazy_init()
+
+        # Re-check after `_lazy_init`: shutdown may have started while we initialized, in which case
+        # `_lazy_init` bailed and NVML is not up -- abort before calling an uninitialized function.
+        if __shutting_down:
+            if ignore_errors:  # type: ignore[unreachable]
+                return default
+            raise NVMLError_Uninitialized
 
         try:
-            retval = func(*args, **kwargs)
-        except UnicodeDecodeError as e2:
-            raise NVMLError_Unknown from e2
-    except NVMLError_FunctionNotFound as e3:
-        if not ignore_function_not_found:
-            identifier = (
-                func
-                if isinstance(func, str)
-                else (_inspect.getsource(func) if func.__name__ == '<lambda>' else repr(func))
-            )
-            with __lock:
-                if (
-                    identifier not in UNKNOWN_FUNCTIONS
-                    and len(UNKNOWN_FUNCTIONS) < UNKNOWN_FUNCTIONS_CACHE_SIZE
-                ):
-                    UNKNOWN_FUNCTIONS[identifier] = (func, e3)
-                    LOGGER.exception(
-                        (
-                            'ERROR: A FunctionNotFound error occurred while calling %s.\n'
-                            'Please verify whether the `nvidia-ml-py` package is '
-                            'compatible with your NVIDIA driver version.'
-                        ),
-                        f'nvmlQuery({func!r}, *args, **kwargs)',
-                    )
-        if ignore_errors or ignore_function_not_found:
-            return default
-        raise
-    except NVMLError:
-        if ignore_errors:
-            return default
-        raise
+            if isinstance(func, str):
+                try:
+                    func = getattr(__modself, func)
+                except AttributeError as e1:
+                    raise NVMLError_FunctionNotFound from e1
+
+            try:
+                retval = func(*args, **kwargs)
+            except UnicodeDecodeError as e2:
+                raise NVMLError_Unknown from e2
+        except NVMLError_FunctionNotFound as e3:
+            if not ignore_function_not_found:
+                identifier = (
+                    func
+                    if isinstance(func, str)
+                    else (_inspect.getsource(func) if func.__name__ == '<lambda>' else repr(func))
+                )
+                with __lock:
+                    if (
+                        identifier not in UNKNOWN_FUNCTIONS
+                        and len(UNKNOWN_FUNCTIONS) < UNKNOWN_FUNCTIONS_CACHE_SIZE
+                    ):
+                        UNKNOWN_FUNCTIONS[identifier] = (func, e3)
+                        LOGGER.exception(
+                            (
+                                'ERROR: A FunctionNotFound error occurred while calling %s.\n'
+                                'Please verify whether the `nvidia-ml-py` package is '
+                                'compatible with your NVIDIA driver version.'
+                            ),
+                            f'nvmlQuery({func!r}, *args, **kwargs)',
+                        )
+            if ignore_errors or ignore_function_not_found:
+                return default
+            raise
+        except NVMLError:
+            if ignore_errors:
+                return default
+            raise
     finally:
-        with __shutdown_lock:
+        with __shutdown_condition:
             __active_queries -= 1
+            __shutdown_condition.notify_all()
 
     if isinstance(retval, bytes):
         retval = retval.decode('utf-8', errors='replace')
