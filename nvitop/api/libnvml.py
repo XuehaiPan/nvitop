@@ -269,11 +269,11 @@ def _lazy_init() -> None:
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
-    if __initialized:
+    if __initialized or __shutting_down:
         return
 
     with __lock:
-        if __initialized:
+        if __initialized or __shutting_down:
             return  # type: ignore[unreachable]
 
     nvmlInit()
@@ -301,7 +301,12 @@ def _atexit_shutdown(timeout: float | None = None) -> None:
     """
     global __shutting_down  # pylint: disable=global-statement
 
+    if __shutting_down:
+        return
+
     with __shutdown_lock:
+        if __shutting_down:
+            return  # type: ignore[unreachable]
         __shutting_down = True
 
     # Once `__shutting_down` is set, `nvmlQuery` starts no new NVML calls, so `__active_queries`
@@ -479,10 +484,10 @@ def nvmlQuery(
     """
     global UNKNOWN_FUNCTIONS, __active_queries  # pylint: disable=global-statement,global-variable-not-assigned
 
-    _lazy_init()
-
     if __shutting_down:
-        return default
+        return default  # return early on interpreter shutdown to avoid re-initializing
+
+    _lazy_init()
 
     with __shutdown_lock:
         if __shutting_down:
