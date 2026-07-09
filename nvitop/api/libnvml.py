@@ -227,6 +227,10 @@ NVML_VALUE_TYPE_SIGNED_INT: int = getattr(_pynvml, 'NVML_VALUE_TYPE_SIGNED_INT',
 __flags: list[int] = []
 __initialized: bool = False
 __lock: _threading.Lock = _threading.Lock()
+__shutdown_lock: _threading.Lock = _threading.Lock()
+__active_queries: int = 0
+# Once set on shutdown, no new NVML queries are issued; never reset to False.
+__shutting_down: bool = False
 
 LOGGER: _logging.Logger = _logging.getLogger(__name__)
 try:
@@ -273,7 +277,48 @@ def _lazy_init() -> None:
             return  # type: ignore[unreachable]
 
     nvmlInit()
-    _atexit.register(nvmlShutdown)
+    _atexit.register(_atexit_shutdown, timeout=120.0)
+
+
+def _atexit_shutdown(timeout: float | None = None) -> None:
+    """Wait for in-flight NVML queries, then shutdown the NVML context (registered via ``atexit``).
+
+    Setting ``__shutting_down`` makes :func:`nvmlQuery` stop issuing new NVML calls, and the drain
+    loop waits for any in-flight query to finish before calling :func:`nvmlShutdown`. This keeps
+    :func:`nvmlShutdown` from freeing NVML internal state while a background thread is still inside
+    a ``libnvidia-ml`` call -- an intermittent use-after-free that segfaults on interpreter exit.
+
+    Args:
+        timeout (Optional[float]):
+            The maximum number of seconds to wait for in-flight queries to drain.
+            :data:`None` (the default) waits indefinitely. If the queries do not drain within
+            ``timeout``, :func:`nvmlShutdown` is skipped to avoid a use-after-free; the OS reclaims
+            NVML resources at process exit anyway.
+
+    .. note::
+        This only guards the implicit ``atexit`` shutdown. An explicit :func:`nvmlShutdown` call
+        (e.g. to reinitialize NVML) is unaffected and remains the caller's responsibility.
+    """
+    global __shutting_down  # pylint: disable=global-statement
+
+    with __shutdown_lock:
+        __shutting_down = True
+
+    # Once `__shutting_down` is set, `nvmlQuery` starts no new NVML calls, so `__active_queries`
+    # only decreases -- wait for it to reach zero before freeing the NVML context.
+    endtime = None if timeout is None else _time.monotonic() + timeout
+    while True:
+        with __shutdown_lock:
+            drained = __active_queries == 0
+        if drained:
+            nvmlShutdown()
+            return
+        if endtime is not None and _time.monotonic() >= endtime:
+            # Timed out with queries still in flight: skip `nvmlShutdown()` to avoid a
+            # use-after-free. The OS reclaims all NVML resources at process exit anyway.
+            LOGGER.warning('Skipped `nvmlShutdown()` at exit: NVML queries are still in flight.')
+            return
+        _time.sleep(0.001)
 
 
 def nvmlInit() -> None:  # pylint: disable=function-redefined
@@ -386,6 +431,7 @@ def nvmlShutdown() -> None:  # pylint: disable=function-redefined
         __initialized = len(__flags) > 0
 
 
+# pylint: disable-next=too-many-branches
 def nvmlQuery(
     func: _Callable[..., _Any] | str,
     /,
@@ -431,9 +477,17 @@ def nvmlQuery(
         NVMLError_InvalidArgument:
             If passed with an invalid argument.
     """
-    global UNKNOWN_FUNCTIONS  # pylint: disable=global-statement,global-variable-not-assigned
+    global UNKNOWN_FUNCTIONS, __active_queries  # pylint: disable=global-statement,global-variable-not-assigned
 
     _lazy_init()
+
+    if __shutting_down:
+        return default
+
+    with __shutdown_lock:
+        if __shutting_down:
+            return default  # type: ignore[unreachable]
+        __active_queries += 1
 
     try:
         if isinstance(func, str):
@@ -474,6 +528,9 @@ def nvmlQuery(
         if ignore_errors:
             return default
         raise
+    finally:
+        with __shutdown_lock:
+            __active_queries -= 1
 
     if isinstance(retval, bytes):
         retval = retval.decode('utf-8', errors='replace')
