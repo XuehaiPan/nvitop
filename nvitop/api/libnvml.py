@@ -231,6 +231,8 @@ __shutdown_lock: _threading.Lock = _threading.Lock()
 __active_queries: int = 0
 # Once set on shutdown, no new NVML queries are issued; never reset to False.
 __shutting_down: bool = False
+# Whether the `atexit` shutdown hook has been registered (registered at most once per process).
+__atexit_registered: bool = False
 
 LOGGER: _logging.Logger = _logging.getLogger(__name__)
 try:
@@ -269,6 +271,8 @@ def _lazy_init() -> None:
             If cannot find function :func:`pynvml.nvmlInitWithFlags`, usually the :mod:`pynvml` module
             is overridden by other modules. Need to reinstall package ``nvidia-ml-py``.
     """
+    global __atexit_registered  # pylint: disable=global-statement
+
     if __initialized or __shutting_down:
         return
 
@@ -277,7 +281,13 @@ def _lazy_init() -> None:
             return  # type: ignore[unreachable]
 
     nvmlInit()
-    _atexit.register(_atexit_shutdown, timeout=120.0)
+
+    # Register the shutdown hook exactly once: concurrent first initialization and repeated
+    # initialization/shutdown cycles must not queue duplicate `atexit` handlers.
+    with __lock:
+        if not __atexit_registered:
+            _atexit.register(_atexit_shutdown, timeout=120.0)
+            __atexit_registered = True
 
 
 def _atexit_shutdown(timeout: float | None = None) -> None:
@@ -297,7 +307,9 @@ def _atexit_shutdown(timeout: float | None = None) -> None:
 
     .. note::
         This only guards the implicit ``atexit`` shutdown. An explicit :func:`nvmlShutdown` call
-        (e.g. to reinitialize NVML) is unaffected and remains the caller's responsibility.
+        (e.g. to reinitialize NVML) is unaffected and remains the caller's responsibility. The drain
+        only tracks NVML calls made through :func:`nvmlQuery`; direct :mod:`pynvml` calls are not
+        counted.
     """
     global __shutting_down  # pylint: disable=global-statement
 
@@ -316,7 +328,12 @@ def _atexit_shutdown(timeout: float | None = None) -> None:
         with __shutdown_lock:
             drained = __active_queries == 0
         if drained:
-            nvmlShutdown()
+            try:
+                nvmlShutdown()
+            except NVMLError:
+                # NVML may already be torn down (e.g. via an explicit `nvmlShutdown()` call); the
+                # OS reclaims all NVML resources at process exit regardless.
+                pass
             return
         if endtime is not None and _time.monotonic() >= endtime:
             # Timed out with queries still in flight: skip `nvmlShutdown()` to avoid a
