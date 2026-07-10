@@ -31,12 +31,11 @@ def main() -> None:
             sorted_pids = sorted(processes.keys())
 
             print(device)
-            print(f'  - Fan speed:       {device.fan_speed()}%')
+            print(f'  - Fan Speed:       {device.fan_speed()}%')
             print(f'  - Temperature:     {device.temperature()}C')
-            print(f'  - GPU utilization: {device.gpu_utilization()}%')
-            print(f'  - Total memory:    {device.memory_total_human()}')
-            print(f'  - Used memory:     {device.memory_used_human()}')
-            print(f'  - Free memory:     {device.memory_free_human()}')
+            print(f'  - GPU Utilization: {device.gpu_utilization()}%')
+            print(f'  - Used Memory:     {device.memory_used_human()}')
+            print(f'  - Free Memory:     {device.memory_free_human()}')
             print(f'  - Processes ({len(processes)}): {sorted_pids}')
             for pid in sorted_pids:
                 print(f'    - {processes[pid]}')
