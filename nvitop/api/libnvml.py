@@ -339,6 +339,28 @@ def _atexit_shutdown(timeout: float | None = None) -> None:
         LOGGER.warning('Skipped `nvmlShutdown()` at exit: NVML queries are still in flight.')
 
 
+def _reset_after_fork() -> None:
+    """Reset the NVML shutdown-drain state in a forked child process.
+
+    ``os.fork()`` copies the module globals but leaves only the calling thread alive in the child:
+    a lock held by another thread at fork time is inherited already-locked, and ``__active_queries``
+    may count queries owned by threads that no longer exist. Rebuild the synchronization primitives
+    and zero the drain state so the child starts clean; otherwise the inherited ``atexit`` hook
+    could block for its full timeout draining phantom queries, or deadlock on an inherited-locked
+    ``Lock``.
+    """
+    global __lock, __shutdown_condition, __active_queries, __shutting_down  # pylint: disable=global-statement
+
+    __lock = _threading.Lock()
+    __shutdown_condition = _threading.Condition()
+    __active_queries = 0
+    __shutting_down = False
+
+
+if hasattr(_os, 'register_at_fork'):  # `os.register_at_fork` is unavailable on Windows (no `fork`)
+    _os.register_at_fork(after_in_child=_reset_after_fork)
+
+
 def nvmlInit() -> None:  # pylint: disable=function-redefined
     """Initialize the NVML context with default flag (0).
 
