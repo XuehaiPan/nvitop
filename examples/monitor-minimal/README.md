@@ -14,6 +14,12 @@ A one-shot, no-extras script that prints the same information `nvitop` shows in 
 python3 examples/monitor-minimal/monitor_minimal.py
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-minimal/monitor_minimal.py
+```
+
 Requires only `nvitop` itself; no other dependencies.
 
 See [`../README.md`](../README.md) for the full example index.

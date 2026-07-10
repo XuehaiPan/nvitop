@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Run `ResourceMetricCollector` on a background daemon thread via `collect_in_background`."""
+"""Run `ResourceMetricCollector` on a background daemon thread via `collect_in_background`.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/collector-background/collector_background.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 

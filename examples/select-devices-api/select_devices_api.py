@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Use `nvitop.select_devices` to programmatically pick CUDA devices for a job."""
+"""Use `nvitop.select_devices` to programmatically pick CUDA devices for a job.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/select-devices-api/select_devices_api.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 

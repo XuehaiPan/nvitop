@@ -14,6 +14,12 @@ pip install -r examples/collector-tensorboard/requirements.txt
 python3 examples/collector-tensorboard/collector_tensorboard.py
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv) (which installs the dependencies automatically):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/collector-tensorboard/collector_tensorboard.py
+```
+
 The script writes a [TensorBoard] event file under `runs/` and prints the location at the end. View it with `tensorboard --logdir runs`.
 
 See [`../README.md`](../README.md) for the full example index.

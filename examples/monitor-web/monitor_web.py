@@ -20,7 +20,16 @@ Drives :func:`nvitop.collect_in_background` on a daemon thread, stores the sampl
 ring buffer (24h by default), and serves a small browser dashboard plus JSON endpoints
 (``/metrics.json``, ``/history.json``) over either HTTP or HTTPS using only the Python standard
 library.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-web/monitor_web.py --port 5555
 """
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 

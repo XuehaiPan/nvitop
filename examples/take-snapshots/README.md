@@ -14,6 +14,12 @@ Exercises every form of [`nvitop.take_snapshots`][take-snapshots] — the helper
 python3 examples/take-snapshots/take_snapshots_demo.py
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/take-snapshots/take_snapshots_demo.py
+```
+
 Requires only `nvitop` itself; no other dependencies.
 
 See [`../README.md`](../README.md) for the full example index.

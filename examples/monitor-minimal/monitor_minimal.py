@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Minimal one-shot GPU monitor: prints status + processes for every device."""
+"""Minimal one-shot GPU monitor: prints status + processes for every device.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-minimal/monitor_minimal.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 
@@ -31,12 +41,11 @@ def main() -> None:
             sorted_pids = sorted(processes.keys())
 
             print(device)
-            print(f'  - Fan speed:       {device.fan_speed()}%')
+            print(f'  - Fan Speed:       {device.fan_speed()}%')
             print(f'  - Temperature:     {device.temperature()}C')
-            print(f'  - GPU utilization: {device.gpu_utilization()}%')
-            print(f'  - Total memory:    {device.memory_total_human()}')
-            print(f'  - Used memory:     {device.memory_used_human()}')
-            print(f'  - Free memory:     {device.memory_free_human()}')
+            print(f'  - GPU Utilization: {device.gpu_utilization()}%')
+            print(f'  - Used Memory:     {device.memory_used_human()}')
+            print(f'  - Free Memory:     {device.memory_free_human()}')
             print(f'  - Processes ({len(processes)}): {sorted_pids}')
             for pid in sorted_pids:
                 print(f'    - {processes[pid]}')
