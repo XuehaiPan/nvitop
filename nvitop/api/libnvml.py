@@ -230,7 +230,8 @@ __initialized: bool = False
 __lock: _threading.Lock = _threading.Lock()
 __shutdown_condition: _threading.Condition = _threading.Condition()
 __active_queries: int = 0
-# Once set on shutdown, no new NVML queries are issued; never reset to False.
+# Set on shutdown to stop issuing new NVML queries; stays set for the life of the process, except a
+# forked child resets it to False via `_reset_after_fork`.
 __shutting_down: bool = False
 # Whether the `atexit` shutdown hook has been registered (registered at most once per process).
 __atexit_registered: bool = False
@@ -516,6 +517,10 @@ def nvmlQuery(
             If the function is not supported by the driver or the device.
         NVMLError_InvalidArgument:
             If passed with an invalid argument.
+        NVMLError_Uninitialized:
+            If a shutdown is in progress (the ``atexit`` drain latch is set) and ``ignore_errors``
+            is :data:`False`. New NVML calls are refused once shutdown begins so they cannot race
+            :func:`nvmlShutdown`.
     """
     global UNKNOWN_FUNCTIONS, __active_queries  # pylint: disable=global-statement,global-variable-not-assigned
 
