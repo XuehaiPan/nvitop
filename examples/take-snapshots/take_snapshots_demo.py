@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Demonstrate `nvitop.take_snapshots` across NVML and CUDA enumerations."""
+"""Demonstrate `nvitop.take_snapshots` across NVML and CUDA enumerations.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/take-snapshots/take_snapshots_demo.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 

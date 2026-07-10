@@ -33,6 +33,12 @@ Process snapshots are disabled with `root_pids={}` so the dashboard tracks host 
 python3 examples/monitor-web/monitor_web.py --port 5555
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-web/monitor_web.py --port 5555
+```
+
 Open <http://127.0.0.1:5555/> in a browser.
 
 The backend collector samples every `--interval` seconds, defaulting to `1.0`. The frontend polls `/metrics.json` every second and marks the dashboard stale if the latest sample is too old.

@@ -12,6 +12,12 @@ Shows [`nvitop.select_devices`][select-devices] — the Python API behind the [`
 python3 examples/select-devices-api/select_devices_api.py
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/select-devices-api/select_devices_api.py
+```
+
 Requires only `nvitop` itself; no other dependencies.
 
 See [`../README.md`](../README.md) for the full example index.

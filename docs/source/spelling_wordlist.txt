@@ -137,6 +137,7 @@ superset
 sys
 systemd
 tcc
+tensorboard
 tensorflow
 throughputinfo
 toml
@@ -155,6 +156,7 @@ unparsable
 uptime
 utils
 uuid
+uv
 wddm
 wdm
 widestring

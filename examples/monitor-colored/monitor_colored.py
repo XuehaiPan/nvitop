@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""One-shot GPU monitor with ANSI color, using the CUDA ordinal."""
+"""One-shot GPU monitor with ANSI color, using the CUDA ordinal.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-colored/monitor_colored.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 

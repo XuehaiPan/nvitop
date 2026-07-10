@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Minimal one-shot GPU monitor: prints status + processes for every device."""
+"""Minimal one-shot GPU monitor: prints status + processes for every device.
+
+Run without cloning the repository using ``uv``::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-minimal/monitor_minimal.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop"]
+# ///
 
 from __future__ import annotations
 

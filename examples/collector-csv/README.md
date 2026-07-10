@@ -13,6 +13,12 @@ pip install -r examples/collector-csv/requirements.txt
 python3 examples/collector-csv/collector_csv.py
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv) (which installs the dependencies automatically):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/collector-csv/collector_csv.py
+```
+
 By default the script takes 5 samples at 2-second intervals (≈10s wall time). Bump the `SAMPLES` / `SAMPLE_INTERVAL_SECONDS` constants at the top of the file for a longer run.
 
 See [`../README.md`](../README.md) for the full example index.

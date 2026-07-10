@@ -16,6 +16,12 @@ The same pattern is available as a one-liner via [`ResourceMetricCollector.daemo
 python3 examples/collector-background/collector_background.py
 ```
 
+Or run it without cloning the repository, using [uv](https://docs.astral.sh/uv):
+
+```bash
+uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/collector-background/collector_background.py
+```
+
 The script collects in the background for ~10 seconds and prints each tick.
 
 See [`../README.md`](../README.md) for the full example index.

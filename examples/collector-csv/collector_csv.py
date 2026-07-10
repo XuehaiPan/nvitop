@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Sample resource metrics with `ResourceMetricCollector` and append to a CSV file."""
+"""Sample resource metrics with `ResourceMetricCollector` and append to a CSV file.
+
+Run without cloning the repository using ``uv`` (which installs the dependencies automatically)::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/collector-csv/collector_csv.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop", "pandas"]
+# ///
 
 from __future__ import annotations
 

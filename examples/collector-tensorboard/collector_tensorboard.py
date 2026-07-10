@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-"""Log `ResourceMetricCollector` output to TensorBoard alongside a tiny training loop."""
+"""Log `ResourceMetricCollector` output to TensorBoard alongside a tiny training loop.
+
+Run without cloning the repository using ``uv`` (which installs the dependencies automatically)::
+
+    uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/collector-tensorboard/collector_tensorboard.py
+"""
+
+# /// script
+# requires-python = ">= 3.8"
+# dependencies = ["nvitop", "torch", "tensorboard"]
+# ///
 
 from __future__ import annotations
 
