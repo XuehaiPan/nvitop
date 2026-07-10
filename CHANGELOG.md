@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add a minimal stdlib HTTP(S) GPU dashboard built on `nvitop.collect_in_background` by [@XuehaiPan](https://github.com/XuehaiPan) in [#218](https://github.com/XuehaiPan/nvitop/pull/218).
-- Add inline script metadata (PEP 723) to the runnable `examples/` scripts so each runs directly from its URL with `uv run` without cloning the repository by [@XuehaiPan](https://github.com/XuehaiPan) in [#224](https://github.com/XuehaiPan/nvitop/pull/224).
+-
 
 ### Changed
 
@@ -22,11 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix an intermittent `SIGSEGV` at interpreter exit where the `atexit` `nvmlShutdown()` raced in-flight NVML queries from background threads by [@XuehaiPan](https://github.com/XuehaiPan) in [#223](https://github.com/XuehaiPan/nvitop/pull/223). Issued by [@zengchang233](https://github.com/zengchang233) in [#222](https://github.com/XuehaiPan/nvitop/issues/222).
+-
 
 ### Removed
 
 -
+
+------
+
+## [1.7.1] - 2026-07-10
+
+### Added
+
+- Add a minimal stdlib HTTP(S) GPU dashboard built on `nvitop.collect_in_background` by [@XuehaiPan](https://github.com/XuehaiPan) in [#218](https://github.com/XuehaiPan/nvitop/pull/218).
+- Add inline script metadata (PEP 723) to the runnable `examples/` scripts so each runs directly from its URL with `uv run` without cloning the repository by [@XuehaiPan](https://github.com/XuehaiPan) in [#224](https://github.com/XuehaiPan/nvitop/pull/224).
+
+### Fixed
+
+- Fix an intermittent `SIGSEGV` at interpreter exit where the `atexit` `nvmlShutdown()` raced in-flight NVML queries from background threads by [@XuehaiPan](https://github.com/XuehaiPan) in [#223](https://github.com/XuehaiPan/nvitop/pull/223). Issued by [@zengchang233](https://github.com/zengchang233) in [#222](https://github.com/XuehaiPan/nvitop/issues/222).
 
 ------
 
@@ -284,7 +296,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/XuehaiPan/nvitop/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/XuehaiPan/nvitop/compare/v1.6.2...v1.7.0
 [1.6.2]: https://github.com/XuehaiPan/nvitop/compare/v1.6.1...v1.6.2
 [1.6.1]: https://github.com/XuehaiPan/nvitop/compare/v1.6.0...v1.6.1
