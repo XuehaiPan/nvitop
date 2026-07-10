@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Fix an intermittent `SIGSEGV` at interpreter exit where the `atexit` `nvmlShutdown()` raced in-flight NVML queries from background threads by [@XuehaiPan](https://github.com/XuehaiPan) in [#223](https://github.com/XuehaiPan/nvitop/pull/223). Issued by [@zengchang233](https://github.com/zengchang233) in [#222](https://github.com/XuehaiPan/nvitop/issues/222).
 
 ### Removed
 
