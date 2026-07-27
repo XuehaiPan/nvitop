@@ -644,6 +644,7 @@ for device in devices:
 
 Another more advanced approach with coloring:
 
+<!-- fmt:off -->
 ```python
 import time
 
@@ -689,6 +690,7 @@ for device in devices:
         print('-' * 120)
     separator = True
 ```
+<!-- fmt:on -->
 
 <p align="center">
   <img width="100%" src="https://user-images.githubusercontent.com/16078332/177041142-fe988d58-6a97-4559-84fd-b51204cf9231.png" alt="Demo">
@@ -860,9 +862,11 @@ def add_scalar_dict(writer, main_tag, tag_scalar_dict, global_step=None, walltim
 
 # Logger and status collector
 writer = SummaryWriter()
-collector = ResourceMetricCollector(devices=CudaDevice.all(),  # log all visible CUDA devices and use the CUDA ordinal
-                                    root_pids={os.getpid()},   # only log the descendant processes of the current process
-                                    interval=1.0)              # snapshot interval for background daemon thread
+collector = ResourceMetricCollector(
+    devices=CudaDevice.all(),  # log all visible CUDA devices and use the CUDA ordinal
+    root_pids={os.getpid()},  # only log the descendant processes of the current process
+    interval=1.0,  # snapshot interval for background daemon thread
+)
 
 # Start training
 global_step = 0
@@ -873,20 +877,29 @@ for epoch in range(num_epoch):
                 metrics = train(net, batch)
                 global_step += 1
                 add_scalar_dict(writer, 'train', metrics, global_step=global_step)
-                add_scalar_dict(writer, 'resources',      # tag='resources/train/batch/...'
-                                collector.collect(),
-                                global_step=global_step)
+                add_scalar_dict(
+                    writer,
+                    'resources',  # tag='resources/train/batch/...'
+                    collector.collect(),
+                    global_step=global_step,
+                )
 
-        add_scalar_dict(writer, 'resources',              # tag='resources/train/...'
-                        collector.collect(),
-                        global_step=epoch)
+        add_scalar_dict(
+            writer,
+            'resources',  # tag='resources/train/...'
+            collector.collect(),
+            global_step=epoch,
+        )
 
     with collector(tag='validate'):
         metrics = validate(net, validation_dataset)
         add_scalar_dict(writer, 'validate', metrics, global_step=epoch)
-        add_scalar_dict(writer, 'resources',              # tag='resources/validate/...'
-                        collector.collect(),
-                        global_step=epoch)
+        add_scalar_dict(
+            writer,
+            'resources',  # tag='resources/validate/...'
+            collector.collect(),
+            global_step=epoch,
+        )
 ```
 
 Another example for logging into a CSV file:
@@ -899,7 +912,8 @@ import pandas as pd
 
 from nvitop import ResourceMetricCollector
 
-collector = ResourceMetricCollector(root_pids={1}, interval=2.0)  # log all devices and all GPU processes
+# Log all devices and all GPU processes
+collector = ResourceMetricCollector(root_pids={1}, interval=2.0)
 df = pd.DataFrame()
 
 with collector(tag='resources'):
@@ -923,15 +937,18 @@ from nvitop import Device, ResourceMetricCollector, collect_in_background
 
 logger = ...
 
+
 def on_collect(metrics):  # will be called periodically
     if logger.is_closed():  # closed manually by user
         return False
     logger.log(metrics)
     return True
 
+
 def on_stop(collector):  # will be called only once at stop
     if not logger.is_closed():
         logger.close()  # cleanup
+
 
 # Record metrics to the logger in the background every 5 seconds.
 # It will collect 5-second mean/min/max for each metric.
@@ -1148,6 +1165,7 @@ Out[19]: MemoryInfo(total=268435456, free=257622016, used=10813440)
 
 **NOTE:** Some entry values may be `'N/A'` (type: [`NaType`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NaType), a subclass of `str`) when the corresponding resources are not applicable. The [`NA`](https://nvitop.readthedocs.io/en/latest/index.html#nvitop.NA) value supports arithmetic operations. It acts like `math.nan: float`.
 
+<!-- fmt:off -->
 ```python
 >>> from nvitop import NA
 >>> NA
@@ -1171,20 +1189,25 @@ nan
 >>> NA / (1024 * 1024)             # auto-casting to float if the operand is a number
 nan
 ```
+<!-- fmt:on -->
 
 You can use `entry != 'N/A'` conditions to avoid exceptions. It's safe to use `float(entry)` for numbers while `NaType` will be converted to `math.nan`. For example:
 
+<!-- fmt:off -->
 ```python
 memory_used: Union[int, NaType] = device.memory_used()            # memory usage in bytes or `'N/A'`
 memory_used_in_mib: float       = float(memory_used) / (1 << 20)  # memory usage in Mebibytes (MiB) or `math.nan`
 ```
+<!-- fmt:on -->
 
 It's safe to compare `NaType` with numbers, but `NaType` is always larger than any number:
 
+<!-- fmt:off -->
 ```python
 devices_by_used_memory = sorted(Device.all(), key=Device.memory_used, reverse=True)  # it's safe to compare `'N/A'` with numbers
 devices_by_free_memory = sorted(Device.all(), key=Device.memory_free, reverse=True)  # please add `memory_free != 'N/A'` checks if sort in descending order here
 ```
+<!-- fmt:on -->
 
 See [`nvitop.NaType`](https://nvitop.readthedocs.io/en/latest/apis/index.html#nvitop.NaType) documentation for more details.
 
@@ -1213,6 +1236,7 @@ The [process module](https://nvitop.readthedocs.io/en/latest/api/process.html) p
   </tbody>
 </table>
 
+<!-- fmt:off -->
 ```python
 In [20]: processes = nvidia1.processes()  # type: Dict[int, GpuProcess]
     ...: processes
@@ -1339,9 +1363,11 @@ Out[37]: GpuProcess(pid=35783, gpu_memory=255MiB, type=C, device=CudaDevice(cuda
 In [38]: id(this) == id(GpuProcess(os.getpid(), cuda0))  # IMPORTANT: the instance will be reused while the process is running
 Out[38]: True
 ```
+<!-- fmt:on -->
 
 ##### Host (inherited from [psutil](https://github.com/giampaolo/psutil))
 
+<!-- fmt:off -->
 ```python
 In [39]: host.cpu_count()
 Out[39]: 88
@@ -1367,6 +1393,7 @@ Out[45]: sswap(total=65534947328, used=475136, free=65534472192, percent=0.0, si
 In [46]: host.swap_percent()
 Out[46]: 0.0
 ```
+<!-- fmt:on -->
 
 ------
 
