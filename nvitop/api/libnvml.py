@@ -775,6 +775,69 @@ if not _pynvml_installation_corrupted:
 
         return __get_running_processes_version_suffix
 
+    __process_info_struct_probed: bool = False
+
+    def __probe_process_info_struct(fn: _Any, handle: c_nvmlDevice_t) -> None:
+        """Measure the struct layout that the NVIDIA driver actually writes.
+
+        The symbol-presence heuristic in
+        :func:`__determine_get_running_processes_version_suffix` can select a struct that is
+        larger than the one the driver really fills in. For example, the R550 driver fills v1
+        type structs from ``nvmlDeviceGetComputeRunningProcesses_v3``, while the heuristic
+        selects the v2 type struct. Parsing a 16-byte-strided result with a 24-byte struct
+        silently shifts every entry after the first one and yields garbage PIDs, which crashes
+        the caller with ``psutil.NoSuchProcess: process PID out of range``.
+
+        Fill the output buffer with a sentinel byte and measure how much of it the driver
+        overwrites. ``written // count`` is the true entry stride.
+        """
+        global c_nvmlProcessInfo_t, __process_info_struct_probed  # pylint: disable=global-statement
+
+        sentinel = 0xAA
+        candidates = (c_nvmlProcessInfo_v1_t, c_nvmlProcessInfo_v2_t, c_nvmlProcessInfo_v3_t)
+
+        c_count = _ctypes.c_uint(0)
+        if fn(handle, _ctypes.byref(c_count), None) != NVML_ERROR_INSUFFICIENT_SIZE:
+            # No running processes on this device, nothing to measure. Retry on the next call.
+            return
+
+        count = c_count.value
+        buffer = (_ctypes.c_ubyte * (count * max(map(_ctypes.sizeof, candidates))))()
+        _ctypes.memset(buffer, sentinel, len(buffer))
+        c_count = _ctypes.c_uint(count)
+        if fn(handle, _ctypes.byref(c_count), _ctypes.byref(buffer)) != NVML_SUCCESS:
+            return
+        if c_count.value != count:
+            # The process list changed under us, the measurement would be meaningless.
+            return
+
+        __process_info_struct_probed = True
+        written = 0
+        for offset, byte in enumerate(buffer):
+            if byte != sentinel:
+                written = offset + 1
+        stride, remainder = divmod(written, count)
+        if remainder == 0:
+            for struct_type in candidates:
+                if _ctypes.sizeof(struct_type) == stride:
+                    if struct_type is not c_nvmlProcessInfo_t:
+                        LOGGER.debug(
+                            'NVML writes %d bytes per running process entry. Switch from struct '
+                            '%s to %s.',
+                            stride,
+                            c_nvmlProcessInfo_t.__name__,
+                            struct_type.__name__,
+                        )
+                    c_nvmlProcessInfo_t = struct_type
+                    return
+        LOGGER.debug(
+            'Cannot determine the NVML running process entry stride (%d bytes written for %d '
+            'entries). Keep using struct %s.',
+            written,
+            count,
+            c_nvmlProcessInfo_t.__name__,
+        )
+
     def __nvml_device_get_running_processes(
         func: str,
         /,
@@ -790,6 +853,8 @@ if not _pynvml_installation_corrupted:
         # First call to get the size
         c_count = _ctypes.c_uint(0)
         fn = _nvmlGetFunctionPointer(f'{func}{version_suffix}')
+        if not __process_info_struct_probed:
+            __probe_process_info_struct(fn, handle)
         ret = fn(handle, _ctypes.byref(c_count), None)
 
         if ret == NVML_SUCCESS:

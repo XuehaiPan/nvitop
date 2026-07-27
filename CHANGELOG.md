@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Fix garbage PIDs (e.g. `psutil.NoSuchProcess: process PID out of range`) when the NVIDIA driver fills a smaller `nvmlProcessInfo_t` struct than the symbol-presence heuristic assumes, by measuring the real entry stride returned by `nvmlDeviceGet{Compute,Graphics,MPSCompute}RunningProcesses`.
 
 ### Removed
 
