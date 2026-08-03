@@ -23,7 +23,8 @@ import re
 import shutil
 import time
 import unicodedata
-from typing import TYPE_CHECKING, Any, cast
+from collections import deque
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 from nvitop.api.npu_device import NpuDevice, NpuProcess
 from nvitop.api.utils import NA, NaType, bytes2human, colored
@@ -57,8 +58,86 @@ _PROCESS_COLUMNS = [
     ('Command', 34, 'command'),
     ('User', 12, 'user'),
     ('CPU', 7, 'cpu'),
+    ('%MEM', 7, 'host_memory'),
     ('Uptime', 9, 'uptime'),
 ]
+
+
+class HistorySample(NamedTuple):
+    """A timestamped host and NPU utilization sample."""
+
+    timestamp: float
+    cpu_percent: float
+    memory_percent: float
+    memory_used: int
+    swap_percent: float
+    npu_memory_percent: float
+    npu_utilization: float
+    load_average: tuple[float, float, float]
+
+
+class MonitorHistory:
+    """Keep a bounded time window of host and NPU utilization samples."""
+
+    def __init__(self, seconds: float = 180.0) -> None:
+        """Initialize an empty history with a duration in seconds."""
+        self.seconds = float(seconds)
+        self.samples: deque[HistorySample] = deque()
+
+    def append(
+        self,
+        *,
+        cpu_percent: float,
+        memory_percent: float,
+        memory_used: int,
+        swap_percent: float,
+        npu_memory_percent: float,
+        npu_utilization: float,
+        load_average: tuple[float, float, float],
+        timestamp: float | None = None,
+    ) -> None:
+        """Append a sample and discard values outside the history window."""
+        timestamp = time.time() if timestamp is None else float(timestamp)
+        self.samples.append(
+            HistorySample(
+                timestamp=timestamp,
+                cpu_percent=float(cpu_percent),
+                memory_percent=float(memory_percent),
+                memory_used=int(memory_used),
+                swap_percent=float(swap_percent),
+                npu_memory_percent=float(npu_memory_percent),
+                npu_utilization=float(npu_utilization),
+                load_average=tuple(map(float, load_average)),
+            ),
+        )
+        cutoff = timestamp - self.seconds
+        while len(self.samples) > 1 and self.samples[0].timestamp < cutoff:
+            self.samples.popleft()
+
+    @property
+    def latest(self) -> HistorySample | None:
+        """Return the most recent sample."""
+        return self.samples[-1] if self.samples else None
+
+    def values(self, field: str, width: int, *, now: float | None = None) -> list[float | None]:
+        """Project a metric onto evenly spaced columns in the configured time window."""
+        if width <= 0:
+            return []
+        if not self.samples:
+            return [None] * width
+        now = self.samples[-1].timestamp if now is None else float(now)
+        start = now - self.seconds
+        samples = [sample for sample in self.samples if sample.timestamp >= start]
+        values: list[float | None] = []
+        sample_index = 0
+        last_value: float | None = None
+        for column in range(width):
+            column_time = start + (column + 1) * self.seconds / width
+            while sample_index < len(samples) and samples[sample_index].timestamp <= column_time:
+                last_value = float(getattr(samples[sample_index], field))
+                sample_index += 1
+            values.append(last_value)
+        return values
 
 
 def _plain(text: Any) -> str:
@@ -315,6 +394,290 @@ def render_summary(
     )
 
 
+def render_monitor_title(
+    *,
+    paused: bool,
+    no_unicode: bool = False,
+    width: int | None = None,
+) -> str:
+    """Render the timestamp and monitor help hint above the dashboard."""
+    width = width or shutil.get_terminal_size().columns
+    left = time.strftime('%a %b %d %H:%M:%S %Y')
+    state = 'PAUSED' if paused else 'LIVE'
+    right = f'({state}; press h for help or q to quit)'
+    gap = max(1, width - _display_width(left) - _display_width(right))
+    return _fit_line(left + ' ' * gap + right, width, no_unicode=no_unicode)
+
+
+def _wide_bar(
+    value: float | NaType,
+    width: int,
+    *,
+    no_unicode: bool,
+    color: str,
+) -> str:
+    """Render a metric bar at an exact terminal-cell width."""
+    if width <= 0:
+        return ''
+    block, empty = ('#', '.') if no_unicode else (BLOCK, EMPTY)
+    if isinstance(value, NaType):
+        return empty * width
+    filled = round(max(0.0, min(100.0, float(value))) / 100.0 * width)
+    return colored(block * filled, cast('Color', color)) + empty * (width - filled)
+
+
+def _dashboard_metric(
+    label: str,
+    value: float | NaType,
+    *,
+    extra: str,
+    width: int,
+    no_unicode: bool,
+    color: str,
+) -> str:
+    """Render a labeled, dynamically sized utilization bar."""
+    suffix = f' {_percent(value):>5s}'
+    if extra:
+        suffix += f'  {extra}'
+    prefix = f'{label}: '
+    bar_width = max(4, width - _display_width(prefix) - _display_width(suffix))
+    text = prefix + _wide_bar(value, bar_width, no_unicode=no_unicode, color=color) + suffix
+    return _format_cell(_fit_line(text, width, no_unicode=no_unicode), width, no_unicode=no_unicode)
+
+
+def render_device_dashboard(
+    devices: list[NpuDevice],
+    *,
+    colorful: bool = False,
+    no_unicode: bool = False,
+    width: int | None = None,
+) -> str:
+    """Render the wide, two-row-per-device dashboard used by full monitor mode."""
+    del colorful
+    width = width or shutil.get_terminal_size().columns
+    if width < 90:
+        return render_devices_table(devices, no_unicode=no_unicode)
+
+    left_width = min(64, max(44, (width - 3) // 2))
+    right_width = width - left_width - 3
+    vline = _vline(no_unicode)
+    hline = '-' if no_unicode else '─'
+    top_left, top_right = ('+', '+') if no_unicode else ('╭', '╮')
+    header = 'NVITOP-NPU {}  Driver Version: {}  {} x{}'.format(
+        __version__,
+        _printable(NpuDevice.driver_version()),
+        ', '.join(sorted({_printable(device.name()) for device in devices})),
+        len(devices),
+    )
+    lines = [
+        top_left + hline * max(0, width - 2) + top_right,
+        vline
+        + ' '
+        + _format_cell(_fit_line(header, width - 4, no_unicode=no_unicode), width - 4, no_unicode=no_unicode)
+        + ' '
+        + vline,
+        _border('├┬┤', [left_width, right_width], no_unicode),
+    ]
+
+    for index, device in enumerate(devices):
+        health = device.health()
+        temperature = device.temperature()
+        memory = device.memory_percent()
+        utilization = device.gpu_utilization()
+        aicore_clock = device.aicore_clock()
+        memory_clock = device.memory_clock()
+        status1 = f'NPU {device.index}  {_printable(device.name())}  Health {_printable(health)}  Temp {_printable(temperature)}C'
+        status2 = f'HBM {device.memory_usage()}  PWR {device.power_status()}  Bus {_printable(device.bus_id())}'
+        memory_extra = f'@ {_printable(memory_clock)}MHz'
+        utilization_extra = f'@ {_printable(aicore_clock)}MHz  PWR {device.power_status()}'
+        memory_row = _dashboard_metric(
+            'MEM',
+            memory,
+            extra=memory_extra,
+            width=right_width,
+            no_unicode=no_unicode,
+            color=device.memory_color(memory),
+        )
+        utilization_row = _dashboard_metric(
+            'AICore',
+            utilization,
+            extra=utilization_extra,
+            width=right_width,
+            no_unicode=no_unicode,
+            color=device.utilization_color(utilization),
+        )
+        lines.extend(
+            (
+                vline
+                + _format_cell(status1, left_width, no_unicode=no_unicode)
+                + vline
+                + memory_row
+                + vline,
+                vline
+                + _format_cell(status2, left_width, no_unicode=no_unicode)
+                + vline
+                + utilization_row
+                + vline,
+            ),
+        )
+        if index != len(devices) - 1:
+            lines.append(_border('├┼┤', [left_width, right_width], no_unicode))
+
+    lines.append(_border('└┴┘', [left_width, right_width], no_unicode))
+    return '\n'.join(_fit_line(line, width, no_unicode=no_unicode) for line in lines)
+
+
+def _history_graph(
+    values: list[float | None],
+    *,
+    height: int,
+    no_unicode: bool,
+    color: str,
+) -> list[str]:
+    """Render a compact area graph from percentages."""
+    block, half = ('#', ':') if no_unicode else ('█', '▄')
+    step = 100.0 / height
+    rows = []
+    for row in range(height):
+        threshold = 100.0 - row * step
+        chars = []
+        for value in values:
+            if value is None:
+                chars.append(' ')
+            elif value >= threshold:
+                chars.append(block)
+            elif value >= threshold - step / 2.0:
+                chars.append(half)
+            else:
+                chars.append(' ')
+        rows.append(colored(''.join(chars), cast('Color', color)))
+    return rows
+
+
+def _history_timeline(width: int) -> str:
+    """Render fixed labels for the 180-second history window."""
+    labels = (('180s', 0.0), ('120s', 1.0 / 3.0), ('60s', 2.0 / 3.0), ('0s', 1.0))
+    chars = [' '] * width
+    for label, ratio in labels:
+        start = min(max(0, round((width - len(label)) * ratio)), max(0, width - len(label)))
+        chars[start : start + len(label)] = label
+    return ''.join(chars)
+
+
+def render_history_panel(
+    history: MonitorHistory,
+    *,
+    no_unicode: bool = False,
+    width: int | None = None,
+    now: float | None = None,
+) -> str:
+    """Render host and aggregate NPU utilization histories side by side."""
+    width = width or shutil.get_terminal_size().columns
+    if width < 90:
+        return ''
+    left_width = min(62, (width - 3) // 2)
+    right_width = width - left_width - 3
+    vline = _vline(no_unicode)
+
+    def row(left: str, right: str) -> str:
+        return (
+            vline
+            + _format_cell(left, left_width, no_unicode=no_unicode)
+            + vline
+            + _format_cell(right, right_width, no_unicode=no_unicode)
+            + vline
+        )
+
+    latest = history.latest
+    if latest is None:
+        load_average = (0.0, 0.0, 0.0)
+        cpu = memory = swap = npu_memory = npu_utilization = 0.0
+        memory_used = 0
+    else:
+        load_average = latest.load_average
+        cpu = latest.cpu_percent
+        memory = latest.memory_percent
+        memory_used = latest.memory_used
+        swap = latest.swap_percent
+        npu_memory = latest.npu_memory_percent
+        npu_utilization = latest.npu_utilization
+
+    host_values = history.values('cpu_percent', left_width, now=now)
+    npu_memory_values = history.values('npu_memory_percent', right_width, now=now)
+    memory_values = history.values('memory_percent', left_width, now=now)
+    npu_utilization_values = history.values('npu_utilization', right_width, now=now)
+    host_graph = _history_graph(
+        host_values,
+        height=3,
+        no_unicode=no_unicode,
+        color='cyan',
+    )
+    npu_memory_graph = _history_graph(
+        npu_memory_values,
+        height=3,
+        no_unicode=no_unicode,
+        color='red' if npu_memory >= 80 else 'green',
+    )
+    memory_graph = _history_graph(
+        memory_values,
+        height=1,
+        no_unicode=no_unicode,
+        color='magenta',
+    )[0]
+    npu_utilization_graph = _history_graph(
+        npu_utilization_values,
+        height=1,
+        no_unicode=no_unicode,
+        color='green',
+    )[0]
+
+    lines = [
+        _border('┌┬┐', [left_width, right_width], no_unicode),
+        row(
+            'Load Average: {:.2f} {:.2f} {:.2f}  CPU: {:.1f}%'.format(*load_average, cpu),
+            f'AVG NPU HBM: {npu_memory:.1f}%',
+        ),
+    ]
+    lines.extend(row(host_line, npu_line) for host_line, npu_line in zip(host_graph, npu_memory_graph))
+    lines.append(row(_history_timeline(left_width), _history_timeline(right_width)))
+    lines.append(
+        row(
+            f'MEM: {bytes2human(memory_used)} ({memory:.1f}%)  SWP: {swap:.1f}%',
+            f'AVG AICore: {npu_utilization:.1f}%',
+        ),
+    )
+    lines.append(row(memory_graph, npu_utilization_graph))
+    lines.append(_border('└┴┘', [left_width, right_width], no_unicode))
+    return '\n'.join(_fit_line(line, width, no_unicode=no_unicode) for line in lines)
+
+
+def render_help(*, no_unicode: bool = False, width: int | None = None) -> str:
+    """Render the interactive monitor key reference."""
+    width = max(20, min(width or shutil.get_terminal_size().columns, 100))
+    vline = _vline(no_unicode)
+    hline = '-' if no_unicode else '─'
+    top_left, top_right = ('+', '+') if no_unicode else ('╭', '╮')
+    bottom_left, bottom_right = ('+', '+') if no_unicode else ('╰', '╯')
+    body_width = width - 4
+    entries = (
+        ('q', 'quit and restore the terminal'),
+        ('space', 'pause / resume sampling'),
+        ('r', 'refresh metrics immediately'),
+        ('c', 'switch compact / full view'),
+        ('s', 'cycle process sort order'),
+        ('h', 'close this help'),
+    )
+    lines = [top_left + hline * (width - 2) + top_right]
+    title = 'Monitor Help'
+    lines.append(vline + ' ' + _format_cell(title, body_width, no_unicode=no_unicode) + ' ' + vline)
+    lines.append(vline + hline * (width - 2) + vline)
+    for key, description in entries:
+        text = f'{key:<8s} {description}'
+        lines.append(vline + ' ' + _format_cell(text, body_width, no_unicode=no_unicode) + ' ' + vline)
+    lines.append(bottom_left + hline * (width - 2) + bottom_right)
+    return '\n'.join(lines)
+
+
 def render_devices_table(
     devices: list[NpuDevice],
     *,
@@ -393,10 +756,11 @@ def render_processes_table(
     *,
     colorful: bool = False,
     no_unicode: bool = False,
+    width: int | None = None,
 ) -> str:
     """Render the responsive NPU process table."""
     del colorful
-    term_width = shutil.get_terminal_size().columns
+    term_width = width or shutil.get_terminal_size().columns
     columns = _fit_columns(_PROCESS_COLUMNS, term_width)
     widths = [width for _, width, _ in columns]
     vline = _vline(no_unicode)
@@ -418,6 +782,7 @@ def render_processes_table(
             command = name
         created = process.create_time()
         uptime = NA if isinstance(created, NaType) else max(0.0, now - created)
+        host_memory = process.host_memory_percent()
         cells = {
             'npu': _format_npus(npus),
             'pid': str(process.pid),
@@ -425,6 +790,9 @@ def render_processes_table(
             'command': _printable(command),
             'user': _printable(process.username()),
             'cpu': f'{process.cpu_percent():.0f}%',
+            'host_memory': (
+                'N/A' if isinstance(host_memory, NaType) else f'{float(host_memory):.1f}%'
+            ),
             'uptime': _format_duration(uptime),
         }
         lines.append(
@@ -452,14 +820,22 @@ def render_footer(
     view = 'compact' if compact else 'full'
     state = 'paused' if paused else 'running'
     separator = ' | ' if no_unicode else ' · '
-    text = f'[q] quit  [space] pause  [r] refresh  [c] view:{view}  [s] sort:{sort_by}{separator}{state}'
+    text = (
+        f'[q] quit  [h] help  [space] pause  [r] refresh  '
+        f'[c] view:{view}  [s] sort:{sort_by}{separator}{state}'
+    )
     return _fit_line(text, width, no_unicode=no_unicode)
 
 
 __all__ = [
+    'MonitorHistory',
+    'render_device_dashboard',
     'render_devices_table',
     'render_footer',
     'render_header',
+    'render_help',
+    'render_history_panel',
+    'render_monitor_title',
     'render_processes_table',
     'render_summary',
 ]

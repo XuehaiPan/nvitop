@@ -21,17 +21,25 @@ from __future__ import annotations
 
 import os
 import select
+import shutil
 import sys
 import time
 from typing import TYPE_CHECKING, Any, Iterable, Tuple
+
+import psutil
 
 from nvitop.api import libnpu
 from nvitop.api.npu_device import NpuDevice, NpuProcess
 from nvitop.api.utils import NaType, colored
 from nvitop.npu_ui import (
+    MonitorHistory,
+    render_device_dashboard,
     render_devices_table,
     render_footer,
     render_header,
+    render_help,
+    render_history_panel,
+    render_monitor_title,
     render_processes_table,
     render_summary,
 )
@@ -52,6 +60,7 @@ _SHOW_CURSOR = '\x1b[?25h'
 def collect_processes(
     devices: Iterable[NpuDevice],
     use_cache: bool = True,
+    process_cache: dict[int, NpuProcess] | None = None,
 ) -> list[ProcessEntry]:
     """Collect and merge process rows from the global NPU overview."""
     indices = {device.index for device in devices}
@@ -69,13 +78,21 @@ def collect_processes(
         merged[pid]['memory'] += memory
         merged[pid]['npus'].add(npu)
 
-    return [
-        (
-            NpuProcess(pid, used_memory=info['memory'], name=info['name']),
-            tuple(sorted(info['npus'])),
-        )
-        for pid, info in merged.items()
-    ]
+    entries = []
+    active_processes = {}
+    for pid, info in merged.items():
+        process = process_cache.get(pid) if process_cache is not None else None
+        if process is None:
+            process = NpuProcess(pid, used_memory=info['memory'], name=info['name'])
+        else:
+            process.used_memory = info['memory']
+            process._name = info['name']  # pylint: disable=protected-access
+        active_processes[pid] = process
+        entries.append((process, tuple(sorted(info['npus']))))
+    if process_cache is not None:
+        process_cache.clear()
+        process_cache.update(active_processes)
+    return entries
 
 
 def prefetch_clocks(devices: Iterable[NpuDevice], *, use_cache: bool = True) -> None:
@@ -160,6 +177,35 @@ def _read_key(input_fd: int | None, timeout: float) -> str | None:
     return os.read(input_fd, 1).decode(errors='ignore').lower() if readable else None
 
 
+def _sample_history(history: MonitorHistory, devices: Iterable[NpuDevice]) -> None:
+    """Append one host and aggregate NPU sample to the history window."""
+    memory_used = 0.0
+    memory_total = 0.0
+    utilizations = []
+    for device in devices:
+        used = device.memory_used()
+        total = device.memory_total()
+        utilization = device.gpu_utilization()
+        if not isinstance(used, NaType) and not isinstance(total, NaType):
+            memory_used += float(used)
+            memory_total += float(total)
+        if not isinstance(utilization, NaType):
+            utilizations.append(float(utilization))
+
+    virtual_memory = psutil.virtual_memory()
+    swap_memory = psutil.swap_memory()
+    load_average = psutil.getloadavg() if hasattr(psutil, 'getloadavg') else os.getloadavg()
+    history.append(
+        cpu_percent=psutil.cpu_percent(interval=None),
+        memory_percent=virtual_memory.percent,
+        memory_used=virtual_memory.used,
+        swap_percent=swap_memory.percent,
+        npu_memory_percent=100.0 * memory_used / memory_total if memory_total else 0.0,
+        npu_utilization=sum(utilizations) / len(utilizations) if utilizations else 0.0,
+        load_average=load_average,
+    )
+
+
 def run_monitor(
     devices: list[NpuDevice],
     *,
@@ -170,26 +216,40 @@ def run_monitor(
     args: argparse.Namespace,
 ) -> None:
     """Run the interactive monitor loop."""
-    compact = mode == 'compact'
+    term_size = shutil.get_terminal_size()
+    compact = mode == 'compact' or (
+        mode == 'auto'
+        and (term_size.columns < 100 or term_size.lines < 30 + 3 * len(devices))
+    )
     paused = False
+    show_help = False
     sort_index = PROCESS_SORTS.index(getattr(args, 'sort', 'memory'))
     sort_by = PROCESS_SORTS[sort_index]
     driver = NpuDevice.driver_version()
+    history = MonitorHistory()
+    process_cache: dict[int, NpuProcess] = {}
     processes: list[ProcessEntry] = []
     summary_text = ''
     devices_text = ''
+    dashboard_text = ''
+    history_text = ''
+    processes_text = ''
     needs_render = True
-    force_refresh = True
+    refresh_data = True
     input_fd, input_settings = _configure_terminal_input()
 
     sys.stdout.write(_HIDE_CURSOR)
     try:
         while True:
             if needs_render:
-                if not paused or force_refresh:
+                if refresh_data:
                     processes = sort_processes(
                         filter_processes(
-                            collect_processes(devices, use_cache=False),
+                            collect_processes(
+                                devices,
+                                use_cache=False,
+                                process_cache=process_cache,
+                            ),
                             users=users,
                             pids=pids,
                         ),
@@ -207,35 +267,75 @@ def run_monitor(
                         colorful=args.colorful,
                         no_unicode=args.no_unicode,
                     )
-                    force_refresh = False
+                    term_size = shutil.get_terminal_size()
+                    dashboard_text = render_device_dashboard(
+                        devices,
+                        colorful=args.colorful,
+                        no_unicode=args.no_unicode,
+                        width=term_size.columns,
+                    )
+                    _sample_history(history, devices)
+                    history_text = render_history_panel(
+                        history,
+                        no_unicode=args.no_unicode,
+                        width=term_size.columns,
+                    )
+                    processes_text = render_processes_table(
+                        processes,
+                        colorful=args.colorful,
+                        no_unicode=args.no_unicode,
+                        width=term_size.columns,
+                    )
+                    refresh_data = False
 
                 sys.stdout.write(_CLEAR_SCREEN)
-                print(
-                    render_header(
-                        devices,
-                        monitor=True,
-                        colorful=args.colorful,
-                        driver=driver,
-                        paused=paused,
-                        no_unicode=args.no_unicode,
-                    ),
-                )
-                print()
-                print(summary_text)
-                print()
-                print(devices_text)
-                if not compact and not getattr(args, 'no_processes', False):
+                if show_help:
+                    print(
+                        render_monitor_title(
+                            paused=paused,
+                            no_unicode=args.no_unicode,
+                            width=term_size.columns,
+                        ),
+                    )
                     print()
-                    if processes:
-                        print(
-                            render_processes_table(
-                                processes,
-                                colorful=args.colorful,
-                                no_unicode=args.no_unicode,
-                            ),
-                        )
-                    else:
-                        print(colored('No running processes found.', 'yellow'))
+                    print(render_help(no_unicode=args.no_unicode, width=term_size.columns))
+                elif not compact:
+                    print(
+                        render_monitor_title(
+                            paused=paused,
+                            no_unicode=args.no_unicode,
+                            width=term_size.columns,
+                        ),
+                    )
+                    print()
+                    print(dashboard_text)
+                    if history_text:
+                        print()
+                        print(history_text)
+                    if os.geteuid() == 0:
+                        print()
+                        print(colored('! CAUTION: SUPERUSER LOGGED-IN.', 'yellow'))
+                    if not getattr(args, 'no_processes', False):
+                        print()
+                        if processes:
+                            print(processes_text)
+                        else:
+                            print(colored('No running processes found.', 'yellow'))
+                else:
+                    print(
+                        render_header(
+                            devices,
+                            monitor=True,
+                            colorful=args.colorful,
+                            driver=driver,
+                            paused=paused,
+                            no_unicode=args.no_unicode,
+                        ),
+                    )
+                    print()
+                    print(summary_text)
+                    print()
+                    print(devices_text)
                 print()
                 print(
                     render_footer(
@@ -251,11 +351,16 @@ def run_monitor(
             key = _read_key(input_fd, 0.25 if paused else interval)
             if key == 'q':
                 return
-            if key == ' ':
+            if key == 'h':
+                show_help = not show_help
+                needs_render = True
+            elif key == ' ':
                 paused = not paused
+                if not paused:
+                    refresh_data = True
                 needs_render = True
             elif key == 'r':
-                force_refresh = True
+                refresh_data = True
                 needs_render = True
             elif key == 'c':
                 compact = not compact
@@ -264,8 +369,15 @@ def run_monitor(
                 sort_index = (sort_index + 1) % len(PROCESS_SORTS)
                 sort_by = PROCESS_SORTS[sort_index]
                 processes = sort_processes(processes, sort_by)
+                processes_text = render_processes_table(
+                    processes,
+                    colorful=args.colorful,
+                    no_unicode=args.no_unicode,
+                    width=term_size.columns,
+                )
                 needs_render = True
-            elif key is None and not paused:
+            elif key is None and not paused and not show_help:
+                refresh_data = True
                 needs_render = True
     finally:
         _restore_terminal_input(input_fd, input_settings)

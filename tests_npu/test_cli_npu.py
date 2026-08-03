@@ -127,6 +127,7 @@ class FakeDevice:
     power_status = lambda self: '99.6W'  # noqa: E731
     temperature = lambda self: 33  # noqa: E731
     aicore_clock = lambda self: 800  # noqa: E731
+    memory_clock = lambda self: 1600  # noqa: E731
     utilization_color = lambda self, v: 'green'  # noqa: E731
     memory_color = lambda self, v: 'green'  # noqa: E731
     power_color = lambda self, v: 'green'  # noqa: E731
@@ -161,6 +162,9 @@ class StubProcess:
 
     def cpu_percent(self):
         return 0.0
+
+    def host_memory_percent(self):
+        return 1.5
 
 
 npu_device = types.ModuleType('nvitop.api.npu_device')
@@ -255,6 +259,14 @@ def test_collect_processes_filters_devices():
     assert [process.pid for process, _ in processes] == [1001]
 
 
+def test_collect_processes_reuses_process_objects_for_cpu_sampling():
+    process_cache = {}
+    first = cli.collect_processes([FakeDevice(0)], process_cache=process_cache)
+    second = cli.collect_processes([FakeDevice(0)], process_cache=process_cache)
+
+    assert first[0][0] is second[0][0]
+
+
 def test_process_sort_and_cli_options(monkeypatch):
     processes = [
         (StubProcess(2, used_memory=100, name='b'), (1,)),
@@ -295,6 +307,87 @@ def test_render_devices_table_unicode():
     assert '│NPU │' in table
 
 
+def test_render_device_dashboard_matches_wide_monitor_layout():
+    dashboard = ui.render_device_dashboard(
+        [FakeDevice(0), FakeDevice(1)],
+        no_unicode=True,
+        width=140,
+    )
+
+    assert 'NPU 0  Ascend 910B3' in dashboard
+    assert 'Health OK' in dashboard
+    assert 'MEM' in dashboard
+    assert 'AICore' in dashboard
+    assert 'PWR 99.6W' in dashboard
+    assert '@ 1600MHz' in dashboard
+    assert 'Ascend 910B3 x2' in dashboard
+    assert dashboard.count('NPU 0  Ascend 910B3') == 1
+    assert all(len(_visible(line)) <= 140 for line in dashboard.splitlines())
+
+
+def test_monitor_history_renders_host_and_npu_graphs():
+    history = ui.MonitorHistory(seconds=180)
+    history.append(
+        timestamp=100.0,
+        cpu_percent=10.0,
+        memory_percent=20.0,
+        memory_used=16 * 1024**3,
+        swap_percent=0.0,
+        npu_memory_percent=90.0,
+        npu_utilization=40.0,
+        load_average=(1.0, 2.0, 3.0),
+    )
+    history.append(
+        timestamp=110.0,
+        cpu_percent=30.0,
+        memory_percent=25.0,
+        memory_used=20 * 1024**3,
+        swap_percent=1.0,
+        npu_memory_percent=92.0,
+        npu_utilization=60.0,
+        load_average=(1.5, 2.5, 3.5),
+    )
+
+    panel = ui.render_history_panel(history, no_unicode=True, width=140, now=110.0)
+
+    assert 'Load Average: 1.50 2.50 3.50' in panel
+    assert 'CPU: 30.0%' in panel
+    assert 'MEM: 20480MiB (25.0%)' in panel
+    assert 'AVG NPU HBM: 92.0%' in panel
+    assert 'AVG AICore: 60.0%' in panel
+    assert '180s' in panel and '60s' in panel
+    assert all(len(_visible(line)) <= 140 for line in panel.splitlines())
+
+
+def test_monitor_history_discards_samples_outside_window():
+    history = ui.MonitorHistory(seconds=180)
+    for timestamp in (0.0, 100.0, 200.0):
+        history.append(
+            timestamp=timestamp,
+            cpu_percent=timestamp / 2,
+            memory_percent=20.0,
+            memory_used=1,
+            swap_percent=0.0,
+            npu_memory_percent=80.0,
+            npu_utilization=10.0,
+            load_average=(0.0, 0.0, 0.0),
+        )
+
+    assert [sample.timestamp for sample in history.samples] == [100.0, 200.0]
+    assert history.values('cpu_percent', 4, now=200.0)[-1] == 100.0
+
+
+def test_render_help_lists_monitor_controls():
+    help_text = ui.render_help(no_unicode=True, width=100)
+    assert 'Monitor Help' in help_text
+    assert 'pause / resume sampling' in help_text
+    assert 'cycle process sort order' in help_text
+    assert all(len(_visible(line)) <= 100 for line in help_text.splitlines())
+
+    narrow_help = ui.render_help(no_unicode=True, width=36)
+    assert all(len(_visible(line)) <= 36 for line in narrow_help.splitlines())
+
+
 def test_render_devices_table_fits_narrow_terminal(monkeypatch):
     monkeypatch.setattr(ui.shutil, 'get_terminal_size', lambda: types.SimpleNamespace(columns=36))
     table = cli.render_devices_table([FakeDevice(0)])
@@ -305,10 +398,12 @@ def test_render_processes_table():
     processes = [
         (StubProcess(1001, used_memory=55844 * 1024 * 1024, name='VLLMWorker_TP'), (0, 1)),
     ]
-    table = cli.render_processes_table(processes)
+    table = cli.render_processes_table(processes, width=140)
     assert 'VLLMWorker_TP' in table
     assert '55844MiB' in table
     assert '0-1' in table
+    assert '%MEM' in table
+    assert '1.5%' in table
 
 
 def test_render_header_includes_driver_version():
@@ -347,6 +442,49 @@ def test_monitor_quits_and_restores_cursor(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert '[q] quit' in output
     assert output.endswith(monitor._SHOW_CURSOR)  # pylint: disable=protected-access
+
+
+def test_full_monitor_help_redraw_does_not_resample_devices(monkeypatch, capsys):
+    args = types.SimpleNamespace(
+        sort='memory',
+        colorful=False,
+        no_unicode=True,
+        no_processes=False,
+    )
+    keys = iter(('h', 'h', 'q'))
+    dashboard_calls = []
+    original_dashboard = monitor.render_device_dashboard
+    monkeypatch.setattr(monitor, '_configure_terminal_input', lambda: (None, None))
+    monkeypatch.setattr(monitor, '_read_key', lambda input_fd, timeout: next(keys))
+    monkeypatch.setattr(
+        monitor.shutil,
+        'get_terminal_size',
+        lambda: types.SimpleNamespace(columns=140, lines=80),
+    )
+    monkeypatch.setattr(
+        monitor,
+        'render_device_dashboard',
+        lambda *args, **kwargs: dashboard_calls.append(True)
+        or original_dashboard(*args, **kwargs),
+    )
+
+    monitor.run_monitor([FakeDevice(0)], interval=2.0, mode='full', args=args)
+
+    output = capsys.readouterr().out
+    assert 'NVITOP-NPU' in output
+    assert 'AVG NPU HBM' in output
+    assert 'Monitor Help' in output
+    assert len(dashboard_calls) == 1
+
+
+def test_tty_defaults_to_monitor_but_once_stays_noninteractive():
+    assert cli._should_monitor(types.SimpleNamespace(once=False), is_tty=True) is True
+    assert cli._should_monitor(types.SimpleNamespace(once=True), is_tty=True) is False
+    assert cli._should_monitor(types.SimpleNamespace(once=False), is_tty=False) is False
+    assert cli._should_monitor(
+        types.SimpleNamespace(once=False, monitor='compact'),
+        is_tty=True,
+    ) is True
 
 
 def test_read_key_uses_unbuffered_file_descriptor(monkeypatch):

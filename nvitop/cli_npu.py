@@ -25,8 +25,8 @@ with ``-m``).
 Examples:
     .. code-block:: console
 
-        $ nvitop-npu          # one-shot report of all NPU devices and processes
-        $ nvitop-npu -1       # same as above, report query data only once
+        $ nvitop-npu          # interactive monitor in a terminal
+        $ nvitop-npu -1       # report query data only once
         $ nvitop-npu -m       # monitor mode, refresh every 2 seconds
         $ nvitop-npu -m compact --interval 5
         $ nvitop-npu -u root -p 12345
@@ -236,6 +236,11 @@ NVITOP_MONITOR_MODE = set(
 )
 
 
+def _should_monitor(args: argparse.Namespace, *, is_tty: bool) -> bool:
+    """Return whether the CLI should start the interactive monitor."""
+    return hasattr(args, 'monitor') or (is_tty and not args.once)
+
+
 # Main ##############################################################################################
 
 def main() -> int:
@@ -307,8 +312,8 @@ def main() -> int:
     pids: set[int] | None = set(args.pid) if args.pid is not None else None
 
     interval = args.interval if args.interval is not None else 2.0
-    monitor = hasattr(args, 'monitor')
-    mode = args.monitor if monitor else 'auto'
+    monitor = _should_monitor(args, is_tty=sys.stdout.isatty())
+    mode = getattr(args, 'monitor', 'auto')
 
     try:
         if monitor and sys.stdout.isatty():

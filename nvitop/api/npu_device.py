@@ -682,6 +682,15 @@ class NpuProcess:
             pass
         return 0.0
 
+    def host_memory_percent(self) -> float | NaType:
+        """Get the percentage of host memory used by the process."""
+        try:
+            if self._psutil_process is not None:
+                return self._psutil_process.memory_percent()
+        except Exception:  # noqa: BLE001  # pylint: disable=broad-except
+            return NA
+        return NA
+
     @classmethod
     def from_pid(cls, pid: int, device: NpuDevice | None = None) -> NpuProcess:
         """Create an :class:`NpuProcess` instance from a pid."""
