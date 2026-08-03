@@ -15,8 +15,9 @@ import types
 # --------------------------------------------------------------------------- #
 # Minimal stubs so that `cli_npu` can be imported without pynvml / psutil.     #
 # --------------------------------------------------------------------------- #
+_PACKAGE_ROOT = pathlib.Path(__file__).parent.parent / 'nvitop'
 nvitop = types.ModuleType('nvitop')
-nvitop.__path__ = []  # type: ignore[attr-defined]
+nvitop.__path__ = [str(_PACKAGE_ROOT)]  # type: ignore[attr-defined]
 api = types.ModuleType('nvitop.api')
 api.__path__ = []  # type: ignore[attr-defined]
 utils = types.ModuleType('nvitop.api.utils')
@@ -120,10 +121,12 @@ class FakeDevice:
     memory_utilization = lambda self: 90 if self.index == 0 else 18  # noqa: E731
     memory_usage = lambda self: '57.80GiB / 64.00GiB'  # noqa: E731
     memory_percent = lambda self: 90.3  # noqa: E731
+    memory_used = lambda self: 57.8 * 1024**3  # noqa: E731
+    memory_total = lambda self: 64 * 1024**3  # noqa: E731
     power_usage = lambda self: 99600  # noqa: E731
     power_status = lambda self: '99.6W'  # noqa: E731
     temperature = lambda self: 33  # noqa: E731
-    aicore_clock = lambda self: '800MHz / 1800MHz'  # noqa: E731
+    aicore_clock = lambda self: 800  # noqa: E731
     utilization_color = lambda self, v: 'green'  # noqa: E731
     memory_color = lambda self, v: 'green'  # noqa: E731
     power_color = lambda self, v: 'green'  # noqa: E731
@@ -150,6 +153,15 @@ class StubProcess:
             return NA
         return _bytes2human(self.used_memory)
 
+    def cmdline(self):
+        return self._name or NA
+
+    def create_time(self):
+        return NA
+
+    def cpu_percent(self):
+        return 0.0
+
 
 npu_device = types.ModuleType('nvitop.api.npu_device')
 npu_device.NpuDevice = FakeDevice
@@ -165,11 +177,13 @@ sys.modules['nvitop.version'] = version
 sys.modules['nvitop.api.libnpu'] = libnpu
 sys.modules['nvitop.api.npu_device'] = npu_device
 
-_CLI_PATH = pathlib.Path(__file__).parent.parent / 'nvitop' / 'cli_npu.py'
+_CLI_PATH = _PACKAGE_ROOT / 'cli_npu.py'
 spec = importlib.util.spec_from_file_location('nvitop.cli_npu_under_test', _CLI_PATH)
 cli = importlib.util.module_from_spec(spec)
 sys.modules['nvitop.cli_npu_under_test'] = cli
 spec.loader.exec_module(cli)
+monitor = sys.modules['nvitop.npu_monitor']
+ui = sys.modules['nvitop.npu_ui']
 
 
 def _visible(text):
@@ -183,27 +197,44 @@ def _visible(text):
 
 
 def test_border_unicode_and_ascii():
-    top = cli._border('┌┬┐', [4, 10], no_unicode=False)  # pylint: disable=protected-access
+    top = ui._border('┌┬┐', [4, 10], no_unicode=False)  # pylint: disable=protected-access
     assert top == '┌────┬──────────┐'
-    ascii_top = cli._border('┌┬┐', [4, 10], no_unicode=True)  # pylint: disable=protected-access
+    ascii_top = ui._border('┌┬┐', [4, 10], no_unicode=True)  # pylint: disable=protected-access
     assert ascii_top == '+----+----------+'
     assert '─' not in ascii_top
 
 
 def test_vline_switches_with_no_unicode():
-    assert cli._vline(no_unicode=False) == '│'  # pylint: disable=protected-access
-    assert cli._vline(no_unicode=True) == '|'  # pylint: disable=protected-access
+    assert ui._vline(no_unicode=False) == '│'  # pylint: disable=protected-access
+    assert ui._vline(no_unicode=True) == '|'  # pylint: disable=protected-access
 
 
 def test_format_cell_truncates_with_ellipsis():
-    assert cli._format_cell('Ascend 910B3', 8) == 'Ascend …'  # pylint: disable=protected-access
-    assert cli._format_cell('NPU', 10) == 'NPU       '  # pylint: disable=protected-access
+    assert ui._format_cell('Ascend 910B3', 8) == 'Ascend …'  # pylint: disable=protected-access
+    assert ui._format_cell('NPU', 10) == 'NPU       '  # pylint: disable=protected-access
+
+
+def test_format_cell_measures_colored_text_by_visible_width():
+    value = '\x1b[31mOK\x1b[0m'
+    formatted = ui._format_cell(value, 7)  # pylint: disable=protected-access
+    assert formatted.startswith(value)
+    assert len(_visible(formatted)) == 7
+
+
+def test_format_cell_handles_wide_cjk_text():
+    formatted = ui._format_cell('模型服务进程', 7)  # pylint: disable=protected-access
+    assert formatted == '模型服…'
+    assert ui._display_width(formatted) == 7  # pylint: disable=protected-access
+
+
+def test_printable_text_removes_terminal_control_characters():
+    assert ui._printable('worker\x1b[31m\n') == 'worker [31m '  # pylint: disable=protected-access
 
 
 def test_fit_columns_drops_tail_columns():
-    fitted = cli._fit_columns(cli._DEVICE_COLUMNS, term_width=40)  # pylint: disable=protected-access
-    assert len(fitted) < len(cli._DEVICE_COLUMNS)  # pylint: disable=protected-access
-    assert fitted[0] == cli._DEVICE_COLUMNS[0]  # NPU column survives first
+    fitted = ui._fit_columns(ui._DEVICE_COLUMNS, term_width=40)  # pylint: disable=protected-access
+    assert len(fitted) < len(ui._DEVICE_COLUMNS)  # pylint: disable=protected-access
+    assert fitted[0] == ui._DEVICE_COLUMNS[0]  # NPU column survives first
     total = sum(w for _, w, _ in fitted) + len(fitted) + 1
     assert total <= 40
 
@@ -212,11 +243,11 @@ def test_collect_processes_merges_memory_across_devices():
     processes = cli.collect_processes([FakeDevice(0), FakeDevice(1)], use_cache=False)
     by_pid = {process.pid: (process, npu) for process, npu in processes}
     assert set(by_pid) == {1001, 1002}
-    merged, npu = by_pid[1001]
+    merged, npus = by_pid[1001]
     assert merged.used_memory == (55844 + 1024) * 1024 * 1024  # sum over both devices
-    assert npu == 1  # keeps the last device
-    _, npu2 = by_pid[1002]
-    assert npu2 == 1
+    assert npus == (0, 1)
+    _, npus2 = by_pid[1002]
+    assert npus2 == (1,)
 
 
 def test_collect_processes_filters_devices():
@@ -224,8 +255,22 @@ def test_collect_processes_filters_devices():
     assert [process.pid for process, _ in processes] == [1001]
 
 
+def test_process_sort_and_cli_options(monkeypatch):
+    processes = [
+        (StubProcess(2, used_memory=100, name='b'), (1,)),
+        (StubProcess(1, used_memory=200, name='a'), (0,)),
+    ]
+    assert [process.pid for process, _ in cli.sort_processes(processes, 'memory')] == [1, 2]
+    assert [process.pid for process, _ in cli.sort_processes(processes, 'pid')] == [1, 2]
+
+    monkeypatch.setattr(sys, 'argv', ['nvitop-npu', '--sort', 'pid', '--no-processes'])
+    args = cli.parse_arguments()
+    assert args.sort == 'pid'
+    assert args.no_processes is True
+
+
 def test_filter_processes_by_pid_and_user():
-    processes = [(StubProcess(1001, name='a'), 0), (StubProcess(1002, name='b'), 1)]
+    processes = [(StubProcess(1001, name='a'), (0,)), (StubProcess(1002, name='b'), (1,))]
     filtered = cli.filter_processes(processes, pids={1002})
     assert [p.pid for p, _ in filtered] == [1002]
     filtered = cli.filter_processes(processes, users={'nobody'})
@@ -235,8 +280,11 @@ def test_filter_processes_by_pid_and_user():
 def test_render_devices_table_ascii_has_no_box_drawing():
     table = cli.render_devices_table([FakeDevice(0)], no_unicode=True)
     assert '│' not in table
+    assert '█' not in table
+    assert '░' not in table
     assert '|' in table
     assert '+----' in table
+    assert '###..... 42%' in table
     assert '57.80GiB / 64.00GiB' in table
     assert '42%' in table  # AICore utilization of device 0
 
@@ -247,24 +295,64 @@ def test_render_devices_table_unicode():
     assert '│NPU │' in table
 
 
+def test_render_devices_table_fits_narrow_terminal(monkeypatch):
+    monkeypatch.setattr(ui.shutil, 'get_terminal_size', lambda: types.SimpleNamespace(columns=36))
+    table = cli.render_devices_table([FakeDevice(0)])
+    assert all(len(_visible(line)) <= 36 for line in table.splitlines())
+
+
 def test_render_processes_table():
-    processes = [(StubProcess(1001, used_memory=55844 * 1024 * 1024, name='VLLMWorker_TP'), 0)]
+    processes = [
+        (StubProcess(1001, used_memory=55844 * 1024 * 1024, name='VLLMWorker_TP'), (0, 1)),
+    ]
     table = cli.render_processes_table(processes)
     assert 'VLLMWorker_TP' in table
     assert '55844MiB' in table
-    assert 'root' in table
+    assert '0-1' in table
 
 
 def test_render_header_includes_driver_version():
     header = cli.render_header([FakeDevice(0), FakeDevice(1)])
-    assert '2 x Ascend 910B3' in header
-    assert 'driver 25.5.1' in header
+    assert 'Ascend 910B3 x2' in header
+    assert 'Driver 25.5.1' in header
+
+
+def test_render_summary_aggregates_cluster_metrics():
+    summary = cli.render_summary(
+        [FakeDevice(0), FakeDevice(1)],
+        process_count=2,
+        no_unicode=True,
+        width=120,
+    )
+    assert '2/2 OK' in summary
+    assert 'AICore 26%' in summary
+    assert 'HBM 90%' in summary
+    assert 'Power 199W' in summary
+    assert 'Processes 2' in summary
+    assert all(len(_visible(line)) <= 120 for line in summary.splitlines())
+
+
+def test_monitor_quits_and_restores_cursor(monkeypatch, capsys):
+    args = types.SimpleNamespace(
+        sort='memory',
+        colorful=False,
+        no_unicode=True,
+        no_processes=False,
+    )
+    monkeypatch.setattr(monitor, '_configure_terminal_input', lambda: (None, None))
+    monkeypatch.setattr(monitor, '_read_key', lambda input_fd, timeout: 'q')
+
+    monitor.run_monitor([FakeDevice(0)], interval=2.0, mode='compact', args=args)
+
+    output = capsys.readouterr().out
+    assert '[q] quit' in output
+    assert output.endswith(monitor._SHOW_CURSOR)  # pylint: disable=protected-access
 
 
 def test_bar_renders_na_and_value():
-    assert cli._bar(NA) == cli.EMPTY * cli.BAR_WIDTH  # pylint: disable=protected-access
-    filled = cli._bar(50)  # pylint: disable=protected-access
-    assert filled.count(cli.BLOCK) == 4  # half of BAR_WIDTH=8
+    assert ui._bar(NA) == ui.EMPTY * ui.BAR_WIDTH  # pylint: disable=protected-access
+    filled = ui._bar(50)  # pylint: disable=protected-access
+    assert filled.count(ui.BLOCK) == 4  # half of BAR_WIDTH=8
 
 
 if __name__ == '__main__':

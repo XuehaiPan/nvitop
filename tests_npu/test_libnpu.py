@@ -142,6 +142,23 @@ def test_driver_version():
     assert libnpu._parse_driver_version(load_sample('info.txt')) == '25.5.1'  # pylint: disable=protected-access
 
 
+def test_forced_global_refresh_populates_shared_cache(monkeypatch):
+    calls = []
+
+    def query_raw(*args):
+        calls.append(args)
+        return load_sample('info.txt')
+
+    libnpu.clear_cache()
+    monkeypatch.setattr(libnpu, 'npu_query_raw', query_raw)
+    fresh = libnpu.npu_query_global(use_cache=False)
+    cached = libnpu.npu_query_global()
+
+    assert len(fresh['devices']) == 8
+    assert cached == fresh
+    assert calls == [('info',)]
+
+
 def test_parse_int_float():
     assert libnpu._parse_int('65536') == 65536  # pylint: disable=protected-access
     assert libnpu._parse_int('NA') is libnpu.NA

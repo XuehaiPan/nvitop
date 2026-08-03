@@ -472,8 +472,8 @@ def _global_raw(*, use_cache: bool = True) -> str:
             return cached
 
     output = npu_query_raw('info')
-    if use_cache:
-        _cache_set(cache_key, output)
+    # A forced refresh becomes the new shared snapshot for device and process readers.
+    _cache_set(cache_key, output)
     return output
 
 
