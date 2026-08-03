@@ -1,0 +1,11 @@
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	DDR Capacity(MB)               : 0
+	DDR Clock Speed(MHz)           : 0
+	HBM Capacity(MB)               : 65536
+	HBM Clock Speed(MHz)           : 1600
+	HBM Temperature(C)             : 31
+	HBM Manufacturer ID            : 0x57
+	Chip ID                        : 0
+
