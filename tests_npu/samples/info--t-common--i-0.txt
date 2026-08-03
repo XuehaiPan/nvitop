@@ -1,0 +1,15 @@
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	Chip ID                        : 0
+	Memory Usage Rate(%)           : 0
+	HBM Usage Rate(%)              : 90
+	Aicore Usage Rate(%)           : 0
+	Aicore Freq(MHZ)               : 1800
+	Aicore curFreq(MHZ)            : 800
+	Aicore Count                   : 20
+	Temperature(C)                 : 33
+	NPU Real-time Power(W)         : 99.7
+
+	Chip Name                      : mcu
+	Temperature(C)                 : 31

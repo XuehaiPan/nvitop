@@ -1,0 +1,10 @@
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	NPU Temperature (C)            : 33
+	Chip ID                        : 0
+
+	LM75A_TE (C)                   : 31
+	LM75B_TE (C)                   : 33
+	Chip Name                      : MCU
+
