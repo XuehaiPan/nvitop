@@ -349,6 +349,44 @@ def test_monitor_quits_and_restores_cursor(monkeypatch, capsys):
     assert output.endswith(monitor._SHOW_CURSOR)  # pylint: disable=protected-access
 
 
+def test_read_key_uses_unbuffered_file_descriptor(monkeypatch):
+    monkeypatch.setattr(monitor.select, 'select', lambda readers, writers, errors, timeout: ([7], [], []))
+    monkeypatch.setattr(monitor.os, 'read', lambda input_fd, size: b'Q')
+    assert monitor._read_key(7, 1.0) == 'q'  # pylint: disable=protected-access
+
+
+def test_paused_view_changes_reuse_rendered_device_snapshot(monkeypatch, capsys):
+    args = types.SimpleNamespace(
+        sort='memory',
+        colorful=False,
+        no_unicode=True,
+        no_processes=False,
+    )
+    keys = iter((' ', 'c', 'q'))
+    summary_calls = []
+    device_calls = []
+    original_summary = monitor.render_summary
+    original_devices = monitor.render_devices_table
+    monkeypatch.setattr(monitor, '_configure_terminal_input', lambda: (None, None))
+    monkeypatch.setattr(monitor, '_read_key', lambda input_fd, timeout: next(keys))
+    monkeypatch.setattr(
+        monitor,
+        'render_summary',
+        lambda *args, **kwargs: summary_calls.append(True) or original_summary(*args, **kwargs),
+    )
+    monkeypatch.setattr(
+        monitor,
+        'render_devices_table',
+        lambda *args, **kwargs: device_calls.append(True) or original_devices(*args, **kwargs),
+    )
+
+    monitor.run_monitor([FakeDevice(0)], interval=2.0, mode='compact', args=args)
+    capsys.readouterr()
+
+    assert len(summary_calls) == 1
+    assert len(device_calls) == 1
+
+
 def test_bar_renders_na_and_value():
     assert ui._bar(NA) == ui.EMPTY * ui.BAR_WIDTH  # pylint: disable=protected-access
     filled = ui._bar(50)  # pylint: disable=protected-access

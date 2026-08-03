@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import os
 import select
 import sys
 import time
@@ -156,7 +157,7 @@ def _read_key(input_fd: int | None, timeout: float) -> str | None:
         time.sleep(timeout)
         return None
     readable, _, _ = select.select([input_fd], [], [], timeout)
-    return sys.stdin.read(1).lower() if readable else None
+    return os.read(input_fd, 1).decode(errors='ignore').lower() if readable else None
 
 
 def run_monitor(
@@ -175,6 +176,8 @@ def run_monitor(
     sort_by = PROCESS_SORTS[sort_index]
     driver = NpuDevice.driver_version()
     processes: list[ProcessEntry] = []
+    summary_text = ''
+    devices_text = ''
     needs_render = True
     force_refresh = True
     input_fd, input_settings = _configure_terminal_input()
@@ -193,6 +196,17 @@ def run_monitor(
                         sort_by,
                     )
                     prefetch_clocks(devices)
+                    summary_text = render_summary(
+                        devices,
+                        process_count=len(processes),
+                        colorful=args.colorful,
+                        no_unicode=args.no_unicode,
+                    )
+                    devices_text = render_devices_table(
+                        devices,
+                        colorful=args.colorful,
+                        no_unicode=args.no_unicode,
+                    )
                     force_refresh = False
 
                 sys.stdout.write(_CLEAR_SCREEN)
@@ -207,16 +221,9 @@ def run_monitor(
                     ),
                 )
                 print()
-                print(
-                    render_summary(
-                        devices,
-                        process_count=len(processes),
-                        colorful=args.colorful,
-                        no_unicode=args.no_unicode,
-                    ),
-                )
+                print(summary_text)
                 print()
-                print(render_devices_table(devices, colorful=args.colorful, no_unicode=args.no_unicode))
+                print(devices_text)
                 if not compact and not getattr(args, 'no_processes', False):
                     print()
                     if processes:
