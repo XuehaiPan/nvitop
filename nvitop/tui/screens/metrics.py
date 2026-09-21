@@ -25,8 +25,10 @@ from nvitop.tui.library import (
     Selection,
     WideString,
     bytes2human,
+    command_join,
     cut_string,
     host,
+    process_facts,
     wcslen,
 )
 from nvitop.tui.screens.base import BaseSelectableScreen
@@ -35,6 +37,7 @@ from nvitop.tui.screens.base import BaseSelectableScreen
 if TYPE_CHECKING:
     import curses
 
+    from nvitop.tui.library import ProcessFacts
     from nvitop.tui.tui import TUI
 
 
@@ -92,9 +95,83 @@ def get_yticks(history: HistoryGraph, y_offset: int) -> list[tuple[int, int]]:
     return [(h + y_offset, p) for h, p in ticks]
 
 
+def wrap_command(command: str, width: int) -> tuple[str, str]:
+    """Wrap a command line over at most two rows.
+
+    The first row carries the head of the command and the second row carries the rest.
+    When the command does not fit in two rows, the second row is truncated with a
+    trailing marker, so that the loss is visible rather than silent. Slicing happens on
+    :class:`WideString`, so wide characters count as two columns.
+    """
+    if width <= 0:
+        return '', ''
+    wrapped = WideString(command)
+    if len(wrapped) <= width:
+        return str(wrapped), ''
+    return str(wrapped[:width]), cut_string(str(wrapped[width:]), width, padstr='..')
+
+
+def format_cwd_line(cwd: str | None, container_name: str | None = None) -> str:
+    """Return the working-directory detail row, naming the container when there is one.
+
+    For a containerized process the working directory is the container view of the
+    path, so the container is named to make that explicit.
+    """
+    if not cwd:
+        return ''
+    line = f'CWD: {cwd}'
+    if container_name:
+        line += f' (container: {container_name})'
+    return line
+
+
+def process_cwd(process: object) -> str | None:
+    """Return the working directory of a process, or :data:`None` when unavailable.
+
+    The working directory is plain process information, independent of the command
+    recognition: the detail view shows it on every platform and also when the
+    recognition is turned off.
+    """
+    try:
+        cwd = process.cwd()  # type: ignore[attr-defined]
+    except Exception:  # noqa: BLE001 - the process may be gone or not readable
+        return None
+    return str(cwd) if cwd else None
+
+
+def graph_heights(height: int) -> tuple[int, int]:
+    """Return the graph heights ``(upper, lower)`` that fill the given screen height.
+
+    The rest of the frame is the header block (:attr:`ProcessMetricsScreen.GRAPH_TOP`
+    rows) and the three rules around the graph areas. On a terminal shorter than 21 rows
+    the graphs clamp to their minimum height, so the frame extends past the terminal and
+    the terminal clips it.
+    """
+    return max(5, (height - GRAPH_TOP - 2) // 2), max(5, (height - GRAPH_TOP - 1) // 2)
+
+
+def detail_rows(
+    cmdline: list[str],
+    cwd: str | None,
+    container_name: str | None,
+    width: int,
+) -> tuple[str, str, str]:
+    """Return the three process detail rows: the command (over two rows) and the cwd."""
+    head, tail = wrap_command(command_join(cmdline), max(1, width - 2 - len('CMD: ')))
+    return (
+        'CMD: ' + head,
+        ('     ' + tail) if tail else '',
+        format_cwd_line(cwd, container_name),
+    )
+
+
+GRAPH_TOP: int = 9  # header rows above the graphs (see `ProcessMetricsScreen.frame_lines`)
+
+
 class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-attributes
     NAME: ClassVar[str] = 'process-metrics'
     SNAPSHOT_INTERVAL: ClassVar[float] = 0.5
+    GRAPH_TOP: ClassVar[int] = GRAPH_TOP
 
     def __init__(self, *, win: curses.window, root: TUI) -> None:
         super().__init__(win, root)
@@ -104,6 +181,9 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
         self.gpu_sm_utilization: HistoryGraph | None = None
         self.cpu_percent: HistoryGraph | None = None
         self.used_host_memory: HistoryGraph | None = None
+
+        self._facts: ProcessFacts | None = None
+        self._cwd: str | None = None
 
         self.enabled: bool = False
         self.snapshot_lock = threading.Lock()
@@ -118,8 +198,12 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
         self.width, self.height = root.width, root.height
         self.left_width: int = max(20, (self.width - 3) // 2)
         self.right_width: int = max(20, (self.width - 2) // 2)
-        self.upper_height: int = max(5, (self.height - 5 - 3) // 2)
-        self.lower_height: int = max(5, (self.height - 5 - 2) // 2)
+        self.upper_height, self.lower_height = graph_heights(self.height)
+
+    @property
+    def graph_top(self) -> int:
+        """Return the screen row at which the graphs start."""
+        return self.y + self.GRAPH_TOP
 
     @property
     def visible(self) -> bool:
@@ -270,6 +354,8 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
         with self.snapshot_lock:
             self._daemon_running.clear()
             self.enabled = False
+            self._facts = None
+            self._cwd = None
             self.cpu_percent = None
             self.used_host_memory = None
             self.used_gpu_memory = None
@@ -300,6 +386,11 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                 self.process.device.as_snapshot()
                 self.process.update_gpu_status()
                 snapshot = self.process.as_snapshot()
+                # Gathered on the snapshot thread (never on the drawing path): the facts
+                # provide the container of the process, and the working directory is
+                # shown independently of the command recognition.
+                self._facts = process_facts(self.process)
+                self._cwd = process_cwd(self.process)
 
                 assert self.cpu_percent is not None
                 assert self.used_host_memory is not None
@@ -323,8 +414,7 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
         self.height = n_term_lines - self.y
         self.left_width = max(20, (self.width - 3) // 2)
         self.right_width = max(20, (self.width - 2) // 2)
-        self.upper_height = max(5, (self.height - 8) // 2)
-        self.lower_height = max(5, (self.height - 7) // 2)
+        self.upper_height, self.lower_height = graph_heights(self.height)
         self.need_redraw = True
 
         with self.snapshot_lock:
@@ -342,12 +432,16 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
 
     def frame_lines(self) -> list[str]:
         line = '│' + ' ' * self.left_width + '│' + ' ' * self.right_width + '│'
+        blank_line = '│' + ' ' * (self.width - 2) + '│'
         return [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Process:'.ljust(self.width - 4)),
             '│ {} │'.format('GPU'.ljust(self.width - 4)),
             '╞' + '═' * (self.width - 2) + '╡',
-            '│' + ' ' * (self.width - 2) + '│',
+            blank_line,  # process metrics
+            blank_line,  # full command line (first row)
+            blank_line,  # full command line (second row)
+            blank_line,  # working directory
             '╞' + '═' * self.left_width + '╤' + '═' * self.right_width + '╡',
             *([line] * self.upper_height),
             '├' + '─' * self.left_width + '┼' + '─' * self.right_width + '┤',
@@ -415,7 +509,7 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                 ):
                     if offset > width:
                         break
-                    self.addstr(self.y + self.upper_height + 6, x_offset - offset, string)
+                    self.addstr(self.graph_top + self.upper_height, x_offset - offset, string)
                     self.color_at(
                         self.y + self.upper_height + 6,
                         x_offset - offset + 1,
@@ -425,6 +519,7 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
 
         with self.snapshot_lock:
             process = self.process.snapshot
+            facts = self._facts
             columns = OrderedDict(
                 [
                     (' GPU', self.process.device.display_index.rjust(4)),
@@ -501,14 +596,29 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                         ),
                     )
 
+            self.color(attr='dim')
+            container_name = (
+                facts.container.display_name
+                if facts is not None and facts.container is not None
+                else None
+            )
+            details = detail_rows(process.cmdline, self._cwd, container_name, self.width)
+            for offset, detail in enumerate(details, start=self.GRAPH_TOP - 4):
+                self.addstr(
+                    self.y + offset,
+                    self.x + 1,
+                    cut_string(detail, self.width - 2, padstr='..').ljust(self.width - 2),
+                )
+            self.color_reset()
+
             self.color(fg='cyan')
-            for y, line in enumerate(self.cpu_percent.graph, start=self.y + 6):
+            for y, line in enumerate(self.cpu_percent.graph, start=self.graph_top):
                 self.addstr(y, self.x + 1, line)
 
             self.color(fg='magenta')
             for y, line in enumerate(
                 self.used_host_memory.graph,
-                start=self.y + self.upper_height + 7,
+                start=self.graph_top + self.upper_height + 1,
             ):
                 self.addstr(y, self.x + 1, line)
 
@@ -517,7 +627,7 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                     self.upper_height - 1
                 )
                 for i, (y, line) in enumerate(
-                    enumerate(self.used_gpu_memory.graph, start=self.y + 6),
+                    enumerate(self.used_gpu_memory.graph, start=self.graph_top),
                 ):
                     self.addstr(
                         y,
@@ -530,7 +640,10 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                     self.lower_height - 1
                 )
                 for i, (y, line) in enumerate(
-                    enumerate(self.gpu_sm_utilization.graph, start=self.y + self.upper_height + 7),
+                    enumerate(
+                        self.gpu_sm_utilization.graph,
+                        start=self.graph_top + self.upper_height + 1,
+                    ),
                 ):
                     self.addstr(
                         y,
@@ -540,26 +653,26 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                     )
             else:
                 self.color(fg=self.process.device.snapshot.memory_display_color)
-                for y, line in enumerate(self.used_gpu_memory.graph, start=self.y + 6):
+                for y, line in enumerate(self.used_gpu_memory.graph, start=self.graph_top):
                     self.addstr(y, self.x + self.left_width + 2, line)
 
                 self.color(fg=self.process.device.snapshot.gpu_display_color)
                 for y, line in enumerate(
                     self.gpu_sm_utilization.graph,
-                    start=self.y + self.upper_height + 7,
+                    start=self.graph_top + self.upper_height + 1,
                 ):
                     self.addstr(y, self.x + self.left_width + 2, line)
 
             self.color_reset()
-            self.addstr(self.y + 6, self.x + 1, f' {self.cpu_percent.max_value_string()} ')
-            self.addstr(self.y + 7, self.x + 5, f' {self.cpu_percent} ')
+            self.addstr(self.graph_top, self.x + 1, f' {self.cpu_percent.max_value_string()} ')
+            self.addstr(self.graph_top + 1, self.x + 5, f' {self.cpu_percent} ')
             self.addstr(
-                self.y + self.upper_height + self.lower_height + 5,
+                self.graph_top + self.upper_height + self.lower_height - 1,
                 self.x + 5,
                 f' {self.used_host_memory} ',
             )
             self.addstr(
-                self.y + self.upper_height + self.lower_height + 6,
+                self.graph_top + self.upper_height + self.lower_height,
                 self.x + 1,
                 ' {} '.format(
                     cut_string(
@@ -570,7 +683,7 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                 ),
             )
             self.addstr(
-                self.y + 6,
+                self.graph_top,
                 self.x + self.left_width + 2,
                 ' {} '.format(
                     cut_string(
@@ -580,39 +693,43 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                     ),
                 ),
             )
-            self.addstr(self.y + 7, self.x + self.left_width + 6, f' {self.used_gpu_memory} ')
             self.addstr(
-                self.y + self.upper_height + self.lower_height + 5,
+                self.graph_top + 1,
+                self.x + self.left_width + 6,
+                f' {self.used_gpu_memory} ',
+            )
+            self.addstr(
+                self.graph_top + self.upper_height + self.lower_height - 1,
                 self.x + self.left_width + 6,
                 f' {self.gpu_sm_utilization} ',
             )
             self.addstr(
-                self.y + self.upper_height + self.lower_height + 6,
+                self.graph_top + self.upper_height + self.lower_height,
                 self.x + self.left_width + 2,
                 f' {self.gpu_sm_utilization.max_value_string()} ',
             )
 
-            for y in range(self.y + 6, self.y + 6 + self.upper_height):
+            for y in range(self.graph_top, self.graph_top + self.upper_height):
                 self.addstr(y, self.x, '│')
                 self.addstr(y, self.x + self.left_width + 1, '│')
             for y in range(
-                self.y + self.upper_height + 7,
-                self.y + self.upper_height + self.lower_height + 7,
+                self.graph_top + self.upper_height + 1,
+                self.graph_top + self.upper_height + self.lower_height + 1,
             ):
                 self.addstr(y, self.x, '│')
                 self.addstr(y, self.x + self.left_width + 1, '│')
 
             self.color(attr='dim')
             for y, p in itertools.chain(
-                get_yticks(self.cpu_percent, self.y + 6),
-                get_yticks(self.used_host_memory, self.y + self.upper_height + 7),
+                get_yticks(self.cpu_percent, self.graph_top),
+                get_yticks(self.used_host_memory, self.graph_top + self.upper_height + 1),
             ):
                 self.addstr(y, self.x, f'├╴{p}% ')
                 self.color_at(y, self.x, width=2, attr=0)
             x = self.x + self.left_width + 1
             for y, p in itertools.chain(
-                get_yticks(self.used_gpu_memory, self.y + 6),
-                get_yticks(self.gpu_sm_utilization, self.y + self.upper_height + 7),
+                get_yticks(self.used_gpu_memory, self.graph_top),
+                get_yticks(self.gpu_sm_utilization, self.graph_top + self.upper_height + 1),
             ):
                 self.addstr(y, x, f'├╴{p}% ')
                 self.color_at(y, x, width=2, attr=0)
