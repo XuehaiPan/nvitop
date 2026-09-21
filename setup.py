@@ -75,6 +75,9 @@ if __name__ == '__main__':
     extra_requirements = {
         'exporter': ['nvitop-exporter'],
         'prometheus': ['nvitop-exporter'],
+        'test': [
+            'pytest',
+        ],
         'lint': [
             'ruff',
             'pylint[spelling]',

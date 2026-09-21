@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Recognize the served model and the owning service of GPU processes: the `COMMAND` column shows the model of engine deployments renamed to the `ENGINE::role` convention — vLLM, SGLang, ollama's vLLM workers and friends (e.g., `vllm: Qwen2.5-72B-Instruct`), the project directory of interpreter scripts (e.g., `main.py @ octopus-api`), and the container name with the container path for Docker and LXD processes (e.g., `main.py @ vllm-svc:/workspace`). Unrecognized processes keep their original command text. Add the `--no-model-detect` switch and the `NVITOP_NO_MODEL_DETECT` environment variable to turn the recognition off.
+- Show the full command line and the working directory in the process metrics screen (shortcut: <kbd>Enter</kbd> / <kbd>Return</kbd>).
 - Add `nvidia-ml-py` 13.610.43 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Changed

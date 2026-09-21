@@ -306,6 +306,22 @@ Press <kbd>h</kbd> for help or <kbd>q</kbd> to return to the terminal. See [Keyb
   <code>nvitop</code> comes with a help screen (shortcut: <kbd>h</kbd>).
 </p>
 
+#### Model and Service Recognition
+
+Inference engines often rename their worker processes so that the command line no longer tells what the process is serving: vLLM renames its workers to `VLLM::EngineCore` via `setproctitle`. And a bare `python main.py` gives no hint about which project owns the process. `nvitop` recognizes such processes and enriches the `COMMAND` column:
+
+- An engine process renamed to the `ENGINE::role` convention shows the model it serves, looked up from the deployment command line on its parent chain (`--model` / `--served-model-name` / `--model-id` flags, the positional argument of `serve`, HuggingFace cache paths, and Ollama blob paths resolved through the manifests of the model store), so all workers of one deployment show the same model: `vllm: Qwen2.5-72B-Instruct`. This covers vLLM, SGLang, ollama's vLLM workers, and other engines following the same convention.
+- An interpreter script shows the project directory it runs from: `main.py @ octopus-api`.
+- A containerized process (Docker or LXD) shows the container name and the container view of the path: `main.py @ vllm-svc:/workspace`.
+
+Press <kbd>Enter</kbd> / <kbd>Return</kbd> on a process to see the full command line and the working directory, including the arguments that the `COMMAND` column has to cut off.
+
+Processes that cannot be recognized (including everything on non-Linux platforms) keep their original command text, so the enrichment never hides information. To turn it off explicitly, pass `--no-model-detect` (or set `NVITOP_NO_MODEL_DETECT=1`):
+
+```bash
+$ nvitop --no-model-detect
+```
+
 #### For Docker Users
 
 Build and run the Docker image with [nvidia-container-toolkit](https://github.com/NVIDIA/nvidia-container-toolkit):
@@ -340,12 +356,11 @@ ssh user@host -t '~/.local/bin/nvitop'  # installed by `pip3 install --user ...`
 Type `nvitop --help` for more command options:
 
 ```text
-usage: nvitop [--help] [--version] [--once | --monitor [{auto,full,compact}]]
-              [--interval SEC] [--no-unicode] [--readonly] [--colorful]
-              [--force-color] [--light] [--gpu-util-thresh th1 th2]
-              [--mem-util-thresh th1 th2] [--only INDEX [INDEX ...]]
-              [--only-visible] [--compute] [--only-compute] [--graphics]
-              [--only-graphics] [--user [USERNAME ...]] [--pid PID [PID ...]]
+usage: nvitop [--help] [--version] [--once | --monitor [{auto,full,compact}]] [--interval SEC]
+              [--no-unicode] [--readonly] [--no-model-detect] [--colorful] [--force-color]
+              [--light] [--gpu-util-thresh th1 th2] [--mem-util-thresh th1 th2]
+              [--only INDEX [INDEX ...]] [--only-visible] [--compute] [--only-compute]
+              [--graphics] [--only-graphics] [--user [USERNAME ...]] [--pid PID [PID ...]]
 
 An interactive NVIDIA-GPU process viewer.
 
@@ -362,6 +377,9 @@ options:
                         Use ASCII characters only, which is useful for terminals without Unicode support.
   --readonly            Disable all system and process changing features (e.g., terminating processes).
                         Set variable `NVITOP_MONITOR_MODE="readonly"` for convenience.
+  --no-model-detect     Disable recognizing the served model and the service behind the processes in the
+                        COMMAND column.
+                        Set variable `NVITOP_NO_MODEL_DETECT=1` for convenience.
 
 coloring:
   --colorful            Use gradient colors to get spectrum-like bar charts.
@@ -404,6 +422,7 @@ process filtering:
 | `NVITOP_MONITOR_MODE`                  | The default display mode (a comma-separated string) | `auto` / `full` / `compact`<br>`plain` / `colorful`<br>`dark` / `light`<br>`readonly` (disables process-mutating shortcuts) | `auto,plain,dark` |
 | `NVITOP_GPU_UTILIZATION_THRESHOLDS`    | Thresholds of GPU utilization                       | `10,75` , `1,99`, ...                                                                                                       | `10,75`           |
 | `NVITOP_MEMORY_UTILIZATION_THRESHOLDS` | Thresholds of GPU memory percent                    | `10,80` , `1,99`, ...                                                                                                       | `10,80`           |
+| `NVITOP_NO_MODEL_DETECT`               | Disable the model and service recognition           | `0` / `1`                                                                                                                   | `0`               |
 | `LOGLEVEL`                             | Log level for log messages                          | `DEBUG` , `INFO`, `WARNING`, ...                                                                                            | `WARNING`         |
 
 For example:
