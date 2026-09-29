@@ -669,6 +669,9 @@ if not _pynvml_installation_corrupted:
         LOGGER.debug('Found symbol `%s`.', symbol)
         return ptr
 
+    def _nvml_has_function(symbol: str) -> bool:
+        return _nvmlLookupFunctionPointer(symbol) is not None
+
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
     class c_nvmlProcessInfo_v1_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
@@ -703,8 +706,14 @@ if not _pynvml_installation_corrupted:
             'usedGpuMemory': '%d B',
         }
 
+    # The official v3 struct has the same layout as v2.
+    c_nvmlProcessInfo_v3_t = c_nvmlProcessInfo_v2_t
+
+    # NVIDIA temporarily added `usedGpuCcProtectedMemory` to the v3 API, then reverted the layout
+    # when `nvmlDeviceGetRunningProcessDetailList` introduced `c_nvmlProcessDetail_v1_t`.
+    # Keep the temporary layout separate from the official v3 struct.
     # pylint: disable-next=missing-class-docstring,too-few-public-methods,function-redefined
-    class c_nvmlProcessInfo_v3_t(_PrintableStructure):
+    class c_nvmlProcessInfo_v3_legacy_t(_PrintableStructure):
         _fields_: _ClassVar[list[tuple[str, type]]] = [
             # Process ID
             ('pid', _ctypes.c_uint),
@@ -733,45 +742,36 @@ if not _pynvml_installation_corrupted:
         global __get_running_processes_version_suffix, c_nvmlProcessInfo_t  # pylint: disable=global-statement
 
         if __get_running_processes_version_suffix is None:
-            __get_running_processes_version_suffix = '_v3'
-            if _nvmlLookupFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v3') is not None:
-                if (
-                    _nvmlLookupFunctionPointer('nvmlDeviceGetConfComputeMemSizeInfo') is not None
-                    and _nvmlLookupFunctionPointer('nvmlDeviceGetRunningProcessDetailList') is None
-                ):
+            if _nvml_has_function('nvmlDeviceGetComputeRunningProcesses_v3'):
+                if _nvml_has_function(
+                    'nvmlDeviceGetConfComputeMemSizeInfo',
+                ) and not _nvml_has_function('nvmlDeviceGetRunningProcessDetailList'):
+                    c_nvmlProcessInfo_t = c_nvmlProcessInfo_v3_legacy_t
                     LOGGER.debug(
-                        'NVML get running process version 3 API with v3 type struct is available.',
+                        'NVML get running process v3 API is available; using legacy struct '
+                        '`c_nvmlProcessInfo_v3_legacy_t` with `usedGpuCcProtectedMemory`.',
                     )
                 else:
-                    c_nvmlProcessInfo_t = c_nvmlProcessInfo_v2_t
+                    c_nvmlProcessInfo_t = c_nvmlProcessInfo_v3_t
                     LOGGER.debug(
-                        'NVML get running process version 3 API with v3 type struct is not '
-                        'available due to incompatible NVIDIA driver. Fallback to use get running '
-                        'process version 3 API with v2 type struct.',
+                        'NVML get running process v3 API is available; using '
+                        '`c_nvmlProcessInfo_v3_t` (same layout as `c_nvmlProcessInfo_v2_t`).',
                     )
-            else:
+                __get_running_processes_version_suffix = '_v3'
+            elif _nvml_has_function('nvmlDeviceGetComputeRunningProcesses_v2'):
+                LOGGER.debug(
+                    'NVML get running process v3 API is not available. Falling back to the v2 API '
+                    'with `c_nvmlProcessInfo_v2_t`.',
+                )
                 c_nvmlProcessInfo_t = c_nvmlProcessInfo_v2_t
                 __get_running_processes_version_suffix = '_v2'
+            else:
                 LOGGER.debug(
-                    'NVML get running process version 3 API with v3 type struct is not available '
-                    'due to incompatible NVIDIA driver. Fallback to use get running process '
-                    'version 2 API with v2 type struct.',
+                    'NVML get running process v2/v3 API is not available. Falling back to the '
+                    'unversioned (v1) API with `c_nvmlProcessInfo_v1_t`.',
                 )
-                if (
-                    _nvmlLookupFunctionPointer('nvmlDeviceGetComputeRunningProcesses_v2')
-                    is not None
-                ):
-                    LOGGER.debug(
-                        'NVML get running process version 2 API with v2 type struct is available.',
-                    )
-                else:
-                    c_nvmlProcessInfo_t = c_nvmlProcessInfo_v1_t
-                    __get_running_processes_version_suffix = ''
-                    LOGGER.debug(
-                        'NVML get running process version 2 API with v2 type struct is not '
-                        'available due to incompatible NVIDIA driver. Fallback to use get '
-                        'running process version 1 API with v1 type struct.',
-                    )
+                c_nvmlProcessInfo_t = c_nvmlProcessInfo_v1_t
+                __get_running_processes_version_suffix = ''
 
         return __get_running_processes_version_suffix
 
@@ -944,16 +944,17 @@ if not _pynvml_installation_corrupted:
         global __get_memory_info_version_suffix, c_nvmlMemory_t  # pylint: disable=global-statement
 
         if __get_memory_info_version_suffix is None:
-            __get_memory_info_version_suffix = '_v2'
-            if _nvmlLookupFunctionPointer('nvmlDeviceGetMemoryInfo_v2') is not None:
+            if _nvml_has_function('nvmlDeviceGetMemoryInfo_v2'):
                 LOGGER.debug('NVML get memory info version 2 is available.')
+                c_nvmlMemory_t = c_nvmlMemory_v2_t
+                __get_memory_info_version_suffix = '_v2'
             else:
-                c_nvmlMemory_t = c_nvmlMemory_v1_t
-                __get_memory_info_version_suffix = ''
                 LOGGER.debug(
                     'NVML get memory info version 2 API is not available due to incompatible '
                     'NVIDIA driver. Fallback to use NVML get memory info version 1 API.',
                 )
+                c_nvmlMemory_t = c_nvmlMemory_v1_t
+                __get_memory_info_version_suffix = ''
 
         return __get_memory_info_version_suffix
 
@@ -1033,15 +1034,15 @@ if not _pynvml_installation_corrupted:
         global __get_temperature_version_suffix  # pylint: disable=global-statement
 
         if __get_temperature_version_suffix is None:
-            __get_temperature_version_suffix = 'V'
-            if _nvmlLookupFunctionPointer('nvmlDeviceGetTemperatureV') is not None:
+            if _nvml_has_function('nvmlDeviceGetTemperatureV'):
                 LOGGER.debug('NVML get temperature version 1 API is available.')
+                __get_temperature_version_suffix = 'V'
             else:
-                __get_temperature_version_suffix = ''
                 LOGGER.debug(
                     'NVML get temperature version 1 API is not available due to incompatible '
                     'NVIDIA driver. Fallback to use NVML get temperature API without version.',
                 )
+                __get_temperature_version_suffix = ''
 
         return __get_temperature_version_suffix
 
@@ -1106,15 +1107,15 @@ if not _pynvml_installation_corrupted:
         global __get_driver_model_version_suffix  # pylint: disable=global-statement
 
         if __get_driver_model_version_suffix is None:
-            __get_driver_model_version_suffix = '_v2'
-            if _nvmlLookupFunctionPointer('nvmlDeviceGetDriverModel_v2') is not None:
+            if _nvml_has_function('nvmlDeviceGetDriverModel_v2'):
                 LOGGER.debug('NVML get driver model version 2 API is available.')
+                __get_driver_model_version_suffix = '_v2'
             else:
-                __get_driver_model_version_suffix = ''
                 LOGGER.debug(
                     'NVML get driver model version 2 API is not available due to incompatible '
                     'NVIDIA driver. Fallback to use NVML get driver model version 1 API.',
                 )
+                __get_driver_model_version_suffix = ''
 
         return __get_driver_model_version_suffix
 

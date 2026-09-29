@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `nvidia-ml-py` 13.610.43 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add `nvidia-ml-py` 13.615.71 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
 
 ### Changed
 
