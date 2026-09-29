@@ -23,6 +23,7 @@ from nvitop.api import (
     host,
     libcuda,
     libcudart,
+    libmxsmi,
     libnvml,
     process,
     termcolor,
@@ -69,6 +70,7 @@ __all__ = [  # noqa: RUF022
     'NVMLError',
     'nvmlCheckReturn',
     'libnvml',
+    'libmxsmi',
     'libcuda',
     'libcudart',
     # nvitop.api.device
