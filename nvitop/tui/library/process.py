@@ -7,8 +7,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from nvitop.api import NA, HostProcess, Snapshot, utilization2string
+from nvitop.api import NA, HostProcess, Snapshot, command_join, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
+from nvitop.api.recognizer import ProcessFacts, process_facts, recognize_command
 from nvitop.tui.library.utils import IS_WINDOWS, IS_WSL
 
 
@@ -18,7 +19,7 @@ if TYPE_CHECKING:
     from nvitop.tui.library.device import Device
 
 
-__all__ = ['GpuProcess', 'HostProcess']
+__all__ = ['GpuProcess', 'HostProcess', 'ProcessFacts', 'command_join', 'process_facts']
 
 
 class GpuProcess(GpuProcessBase):
@@ -29,6 +30,16 @@ class GpuProcess(GpuProcessBase):
         instance = super().__new__(cls, *args, **kwargs)
         instance._snapshot = None
         return instance
+
+    def command(self) -> str:
+        """Return the command text, enriched with the served model or the owning service.
+
+        The recognition (see :mod:`nvitop.api.recognizer`) replaces the command text of
+        processes whose identity is masked by a renamed command line, and of interpreter
+        scripts whose project would otherwise be unknown. Processes that cannot be
+        recognized keep the original shell-escaped command text.
+        """
+        return recognize_command(self) or super().command()
 
     @property
     def snapshot(self) -> Snapshot:
