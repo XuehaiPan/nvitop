@@ -1,0 +1,6 @@
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	Process id:3233241 Process name:VLLMWorker_TP     Process memory(MB):55844
+	Chip ID                        : 0
+

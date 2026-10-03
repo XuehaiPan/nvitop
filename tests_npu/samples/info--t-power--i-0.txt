@@ -1,0 +1,6 @@
+	NPU ID                         : 0
+	Chip Count                     : 1
+
+	NPU Real-time Power(W)         : 99.4
+	Chip ID                        : 0
+
