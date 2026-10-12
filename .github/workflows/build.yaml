@@ -54,7 +54,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.8 - 3.14"
+          python-version: "3.8 - 3.15"
           update-environment: true
 
       - name: Upgrade build dependencies
@@ -137,7 +137,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.8 - 3.14"
+          python-version: "3.8 - 3.15"
           update-environment: true
 
       - name: Upgrade pip
