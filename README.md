@@ -127,6 +127,8 @@ sudo chvt 3  # or use keyboard shortcut: Ctrl-LeftAlt-F3
 bash install-nvidia-driver.sh --package=nvidia-driver-595  # install the R595 driver from ppa:graphics-drivers
 bash install-nvidia-driver.sh --latest                     # install the latest driver from ppa:graphics-drivers
 bash install-nvidia-driver.sh --latest --open              # install the latest open-kernel-module driver
+bash install-nvidia-driver.sh --latest --server            # install the latest server driver
+bash install-nvidia-driver.sh --latest --server --open     # install the latest server open-kernel-module driver
 ```
 
 <p align="center">
@@ -136,6 +138,10 @@ bash install-nvidia-driver.sh --latest --open              # install the latest 
 </p>
 
 Run `bash install-nvidia-driver.sh --help` for more information.
+
+The installer preserves the installed driver's standard/server family and proprietary/open kernel-module flavor by default. Use `--server` to select server packages; without `--latest`, it selects the server counterpart of the installed major version. With `--package=PKG`, the family is detected from the package name, so this option can also switch back to a standard driver. `--upgrade-only` keeps the installed package and rejects family or flavor changes.
+
+The installer stops active `nvidia-dcgm`, `nvidia-fabricmanager`, and `nvidia-persistenced` services alongside display manager services before unloading the driver. Services stopped by the installer are restarted on completion, failure, or interruption; missing or inactive services are skipped.
 
 <a name="curses">*</a> The `curses` library is a built-in module of Python on Unix-like systems, and it is supported by a third-party package called `windows-curses` on Windows using PDCurses. Inconsistent behavior of `nvitop` may occur on different terminal emulators on Windows, such as missing mouse support.
 
