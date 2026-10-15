@@ -34,6 +34,8 @@ __all__ = [
     'IS_WINDOWS_SUBSYSTEM_FOR_LINUX',
     'IS_WSL',
     'LARGE_INTEGER',
+    'LAYOUT_WIDTH',
+    'MIN_WIDTH',
     'NA',
     'USERNAME',
     'USER_CONTEXT',
@@ -73,6 +75,11 @@ USER_CONTEXT: str = f'{USERNAME}@{HOSTNAME}'
 
 
 LARGE_INTEGER: int = 65536
+
+# Width of the standard layout. Narrower terminals (e.g. a phone) get a narrow
+# layout, which needs at least MIN_WIDTH columns.
+LAYOUT_WIDTH: int = 79
+MIN_WIDTH: int = 50
 
 
 def cut_string(

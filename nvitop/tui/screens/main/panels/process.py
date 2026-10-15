@@ -18,6 +18,7 @@ from nvitop.tui.library import (
     IS_WINDOWS,
     IS_WSL,
     LARGE_INTEGER,
+    MIN_WIDTH,
     SIGNAL_HINT_BLANK,
     SIGNAL_HINT_KEY_SPANS,
     SIGNAL_HINT_TEXT,
@@ -60,6 +61,10 @@ OrderName = Literal[
     'memory_percent',
     'time',
 ]
+
+
+# The superuser caution, then shorter forms for narrow terminals
+SUPERUSER_CAUTIONS: tuple[str, ...] = ('!CAUTION: SUPERUSER LOGGED-IN.', '!SUPERUSER', '!')
 
 
 class Order(NamedTuple):
@@ -229,7 +234,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
         self.devices: list[Device | MigDevice] = devices
 
         self._compact: bool = compact
-        self.width: int = max(79, root.width)
+        self.width: int = max(MIN_WIDTH, root.width)
         self.height = self._full_height = self.compact_height = 7
 
         self.filters: list[Callable[[Snapshot], bool] | None] = [None, *filters]
@@ -260,7 +265,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
 
     @width.setter
     def width(self, value: int) -> None:
-        width = max(79, value)
+        width = max(MIN_WIDTH, value)
         if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
@@ -393,7 +398,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
             r'│ GPU     PID      USER  GPU-MEM %SM %GMBW  {} │'.format(
-                '  '.join(self.host_headers).ljust(self.width - 46),
+                '  '.join(self.host_headers)[: self.width - 46].ljust(self.width - 46),
             ),
             '╞' + '═' * (self.width - 2) + '╡',
         ]
@@ -434,7 +439,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 if self.selection.is_same(process):
                     self.selection.within_window = (
                         self.root.y <= y < self.root.termsize[0]  # type: ignore[index]
-                        and self.width >= 79
+                        and self.width >= MIN_WIDTH
                     )
                     if not self.selection.within_window:
                         if y < self.root.y:
@@ -452,10 +457,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
         self.color_reset()
 
         if self.need_redraw:
-            if IS_SUPERUSER:
-                self.addstr(self.y, self.x + 1, '!CAUTION: SUPERUSER LOGGED-IN.')
-                self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
-                self.color_at(self.y, self.x + 2, width=29, fg='yellow', attr='italic')
+            self.draw_superuser_caution()
 
             for y, line in enumerate(self.header_lines(), start=self.y + 1):
                 self.addstr(y, self.x, line)
@@ -463,10 +465,13 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             context_width = wcslen(USER_CONTEXT)
             if not IS_WINDOWS or len(USER_CONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
-                username_width = wcslen(USERNAME)
-                hostname_width = wcslen(HOSTNAME)
+                # Leave room for the panel title on narrow terminals
+                context = cut_string(USER_CONTEXT, maxlen=self.width - 15, padstr='..')
+                context_width = wcslen(context)
+                username_width = min(wcslen(USERNAME), context_width)
+                hostname_width = max(context_width - username_width - 1, 0)
                 offset = self.x + self.width - context_width - 2
-                self.addstr(self.y + 2, self.x + offset, USER_CONTEXT)
+                self.addstr(self.y + 2, self.x + offset, context)
                 self.color_at(self.y + 2, self.x + offset, width=context_width, attr='bold')
                 self.color_at(
                     self.y + 2,
@@ -491,7 +496,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
             self.addstr(
                 self.y + 3,
                 self.x + 44,
-                f'{host_headers[host_offset:].ljust(self.width - 46)}',
+                f'{host_headers[host_offset:][: self.width - 46].ljust(self.width - 46)}',
             )
         else:
             self.addstr(self.y + 3, self.x + 44, '{}'.format('COMMAND'.ljust(self.width - 46)))
@@ -604,7 +609,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                     )
                     self.selection.within_window = (
                         self.root.y <= y < self.root.termsize[0]  # type: ignore[index]
-                        and self.width >= 79
+                        and self.width >= MIN_WIDTH
                     )
                 else:
                     owned = IS_SUPERUSER or str(process.username) == USERNAME
@@ -640,6 +645,8 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
         text_offset = self.x + self.width - len(SIGNAL_HINT_TEXT)
         if not self.selection.has_actionable_processes():
             self.addstr(self.y, text_offset, SIGNAL_HINT_BLANK)
+            # On narrow terminals the hint shares the row with the superuser caution
+            self.draw_superuser_caution()
             return
 
         self.addstr(self.y, text_offset, SIGNAL_HINT_TEXT)
@@ -654,6 +661,28 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 )
             else:
                 self.color_at(self.y, text_offset + dx, width=width, fg='red', attr='bold')
+
+        # On narrow terminals, shorten the superuser caution to the room left of the hint
+        room = text_offset - self.x - 1  # columns between the left border and the hint
+        if IS_SUPERUSER and room < len(SUPERUSER_CAUTIONS[0]):
+            self.addstr(self.y, self.x + 1, ' ' * room)
+            self.draw_superuser_caution(max_width=room)
+
+    def draw_superuser_caution(self, max_width: int | None = None) -> None:
+        if not IS_SUPERUSER:
+            return
+        for caution in SUPERUSER_CAUTIONS:
+            if max_width is None or len(caution) <= max_width:
+                self.addstr(self.y, self.x + 1, caution)
+                self.color_at(self.y, self.x + 1, width=1, fg='red', attr='blink')
+                self.color_at(
+                    self.y,
+                    self.x + 2,
+                    width=len(caution) - 1,
+                    fg='yellow',
+                    attr='italic',
+                )
+                return
 
     def finalize(self) -> None:
         self.y_mouse = None

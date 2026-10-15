@@ -10,6 +10,8 @@ import time
 from typing import TYPE_CHECKING, ClassVar
 
 from nvitop.tui.library import (
+    LAYOUT_WIDTH,
+    MIN_WIDTH,
     NA,
     BufferedHistoryGraph,
     Device,
@@ -58,10 +60,10 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             self.enable_history()
 
         self._compact: bool = compact
-        self.width: int = max(79, root.width)
-        self.full_height: int = 12
+        self._full_height: int = 12
         self.compact_height: int = 2
         self.height: int = self.compact_height if compact else self.full_height
+        self.width: int = max(MIN_WIDTH, root.width)
 
         self.cpu_percent: float = NA  # type: ignore[assignment]
         self.load_average: tuple[float, float, float] = (NA, NA, NA)  # type: ignore[assignment]
@@ -80,10 +82,13 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
     @width.setter
     def width(self, value: int) -> None:
-        width = max(79, value)
+        width = max(MIN_WIDTH, value)
         if self._width != width:
             if self.visible:
                 self.need_redraw = True
+            self._width = width
+            # The history graphs need the standard layout width
+            self.height = self.compact_height if self.compact else self.full_height
             graph_width = max(width - 80, 20)
             if self.win is not None:
                 self.average_gpu_memory_percent.width = graph_width  # type: ignore[union-attr]
@@ -95,7 +100,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
     @property
     def compact(self) -> bool:
-        return self._compact or self.no_unicode
+        return self._compact or self.no_unicode or self.width < LAYOUT_WIDTH
 
     @compact.setter
     def compact(self, value: bool) -> None:
@@ -104,6 +109,14 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             self.need_redraw = True
             self._compact = value
             self.height = self.compact_height if self.compact else self.full_height
+
+    @property
+    def full_height(self) -> int:
+        return self.compact_height if self.width < LAYOUT_WIDTH else self._full_height
+
+    @full_height.setter
+    def full_height(self, value: int) -> None:
+        self._full_height = value
 
     def enable_history(self) -> None:
         host.cpu_percent = BufferedHistoryGraph(
@@ -285,6 +298,14 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         if self.compact:
             width_right = len(load_average) + 4
             width_left = self.width - 2 - width_right
+            if width_left < 30:  # narrow terminal: keep the bars readable
+                load_average = 'Load: {}'.format(
+                    f'{self.load_average[0]:5.2f}'[:5]
+                    if self.load_average[0] < 10000.0
+                    else '9999+',
+                )
+                width_right = len(load_average) + 4
+                width_left = self.width - 2 - width_right
             cpu_bar = '[ {} ]'.format(
                 make_bar_chart(
                     'CPU',

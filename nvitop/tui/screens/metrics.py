@@ -13,7 +13,6 @@ from collections import OrderedDict
 from typing import TYPE_CHECKING, ClassVar
 
 from nvitop.tui.library import (
-    HOSTNAME,
     IS_SUPERUSER,
     IS_WINDOWS,
     NA,
@@ -381,10 +380,13 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
             context_width = wcslen(USER_CONTEXT)
             if not IS_WINDOWS or len(USER_CONTEXT) == context_width:
                 # Do not support windows-curses with wide characters
-                username_width = wcslen(USERNAME)
-                hostname_width = wcslen(HOSTNAME)
+                # Leave room for the panel title on narrow terminals
+                context = cut_string(USER_CONTEXT, maxlen=self.width - 15, padstr='..')
+                context_width = wcslen(context)
+                username_width = min(wcslen(USERNAME), context_width)
+                hostname_width = max(context_width - username_width - 1, 0)
                 offset = self.x + self.width - context_width - 2
-                self.addstr(self.y + 1, self.x + offset, USER_CONTEXT)
+                self.addstr(self.y + 1, self.x + offset, context)
                 self.color_at(self.y + 1, self.x + offset, width=context_width, attr='bold')
                 self.color_at(
                     self.y + 1,
@@ -551,12 +553,22 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                     self.addstr(y, self.x + self.left_width + 2, line)
 
             self.color_reset()
-            self.addstr(self.y + 6, self.x + 1, f' {self.cpu_percent.max_value_string()} ')
-            self.addstr(self.y + 7, self.x + 5, f' {self.cpu_percent} ')
+            # The labels are cut to their column, which matters on narrow terminals
+            left_max, right_max = self.left_width - 2, self.right_width - 2
+            self.addstr(
+                self.y + 6,
+                self.x + 1,
+                f' {cut_string(self.cpu_percent.max_value_string(), maxlen=left_max)} ',
+            )
+            self.addstr(
+                self.y + 7,
+                self.x + 5,
+                f' {cut_string(self.cpu_percent, maxlen=left_max - 4)} ',
+            )
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 5,
                 self.x + 5,
-                f' {self.used_host_memory} ',
+                f' {cut_string(self.used_host_memory, maxlen=left_max - 4)} ',
             )
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 6,
@@ -580,16 +592,20 @@ class ProcessMetricsScreen(BaseSelectableScreen):  # pylint: disable=too-many-in
                     ),
                 ),
             )
-            self.addstr(self.y + 7, self.x + self.left_width + 6, f' {self.used_gpu_memory} ')
+            self.addstr(
+                self.y + 7,
+                self.x + self.left_width + 6,
+                f' {cut_string(self.used_gpu_memory, maxlen=right_max - 4)} ',
+            )
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 5,
                 self.x + self.left_width + 6,
-                f' {self.gpu_sm_utilization} ',
+                f' {cut_string(self.gpu_sm_utilization, maxlen=right_max - 4)} ',
             )
             self.addstr(
                 self.y + self.upper_height + self.lower_height + 6,
                 self.x + self.left_width + 2,
-                f' {self.gpu_sm_utilization.max_value_string()} ',
+                f' {cut_string(self.gpu_sm_utilization.max_value_string(), maxlen=right_max)} ',
             )
 
             for y in range(self.y + 6, self.y + 6 + self.upper_height):

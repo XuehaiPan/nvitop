@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, ClassVar
 
 from nvitop.tui.library import (
     IS_WINDOWS,
+    LAYOUT_WIDTH,
+    MIN_WIDTH,
     NA,
     Device,
     MigDevice,
@@ -70,14 +72,17 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         self.leaf_device_count: int = len(self.leaf_devices)
 
         self._compact: bool = compact
-        self.width: int = max(79, root.width)
-        self.compact_height: int = (
+        self._compact_height: int = (
             4 + 2 * (self.device_count + 1) + self.mig_device_count + self.mig_enabled_device_count
         )
-        self.full_height: int = self.compact_height + self.device_count + 1
-        self.height: int = self.compact_height if compact else self.full_height
+        self._full_height: int = self._compact_height + self.device_count + 1
+        # The narrow layout has one line per device (MIG devices included) and no separators
+        self.narrow_height: int = 7 + self.all_device_count
         if self.device_count == 0:
-            self.height = self.full_height = self.compact_height = 6
+            self._full_height = self._compact_height = self.narrow_height = 6
+        self._narrow_layout: tuple[int, bool, int, int, int] | None = None
+        self.width: int = max(MIN_WIDTH, root.width)
+        self.height: int = self.compact_height if compact else self.full_height
 
         self.driver_version: str = Device.driver_version()
         self.cuda_driver_version: str = Device.cuda_driver_version()
@@ -142,10 +147,24 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
     @width.setter
     def width(self, value: int) -> None:
-        width = max(79, value)
+        width = max(MIN_WIDTH, value)
         if self._width != width and self.visible:
             self.need_redraw = True
         self._width = width
+        self.height = self.compact_height if self.compact else self.full_height
+
+    @property
+    def narrow(self) -> bool:
+        """Whether the terminal is too narrow for the standard layout (e.g. a phone)."""
+        return self.width < LAYOUT_WIDTH
+
+    @property
+    def compact_height(self) -> int:
+        return self.narrow_height if self.narrow else self._compact_height
+
+    @property
+    def full_height(self) -> int:
+        return self.narrow_height if self.narrow else self._full_height
 
     @property
     def compact(self) -> bool:
@@ -319,6 +338,10 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
     # pylint: disable-next=too-many-locals,too-many-branches,too-many-statements
     def draw(self) -> None:
         self.color_reset()
+
+        if self.narrow:
+            self.draw_narrow()
+            return
 
         if self.need_redraw:
             self.addstr(self.y, self.x, '(Press h for help or q to quit)'.rjust(79))
@@ -495,38 +518,211 @@ class DevicePanel(BasePanel):  # pylint: disable=too-many-instance-attributes
 
                 for y, row in enumerate(matrix, start=y_start):
                     for x_offset, width, prefix, utilization, color, extra_text in row:
-                        bar_chart = make_bar_chart(
-                            prefix,
-                            utilization,
-                            width=width,
-                            extra_text=extra_text if 'N/A' not in extra_text else '',
-                            swap_text=not extra_text.endswith('MHz'),
-                            extra_blank=' ',
+                        self.draw_bar_chart(
+                            y,
+                            x_offset,
+                            width,
+                            prefix=prefix,
+                            utilization=utilization,
+                            color=color,
+                            extra_text=extra_text,
+                            attr=attr,
                         )
-                        self.addstr(y, x_offset, f'{bar_chart} │')
-                        if self.TERM_256COLOR:
-                            parts = bar_chart.rstrip().split(' ')
-                            prefix_len = len(parts[0])
-                            bar_len = len(parts[1])
-                            full_bar_len = width - prefix_len - 5
-                            self.color_at(
-                                y,
-                                x_offset,
-                                width=width,
-                                fg=float(bar_len / full_bar_len),
-                            )
-                            for i, x in enumerate(
-                                range(
-                                    x_offset + prefix_len + 1,
-                                    x_offset + prefix_len + 1 + bar_len,
-                                ),
-                            ):
-                                self.color_at(y, x, width=1, fg=float(i / full_bar_len))
-                        else:
-                            self.color_at(y, x_offset, width=width, fg=color, attr=attr)
 
             y_start += len(fmts)
             prev_device_index = device.tuple_index
+
+    # pylint: disable-next=too-many-arguments,too-many-locals
+    def draw_bar_chart(
+        self,
+        y: int,
+        x: int,
+        width: int,
+        *,
+        prefix: str,
+        utilization: float | str,
+        color: str,
+        extra_text: str,
+        attr: int | str,
+    ) -> None:
+        bar_chart = make_bar_chart(
+            prefix,
+            utilization,
+            width=width,
+            extra_text=extra_text if 'N/A' not in extra_text else '',
+            swap_text=not extra_text.endswith('MHz'),
+            extra_blank=' ',
+        )
+        self.addstr(y, x, f'{bar_chart} │')
+        if self.TERM_256COLOR:
+            parts = bar_chart.rstrip().split(' ')
+            prefix_len = len(parts[0])
+            bar_len = len(parts[1])
+            full_bar_len = width - prefix_len - 5
+            self.color_at(y, x, width=width, fg=float(bar_len / full_bar_len))
+            for i, x_bar in enumerate(range(x + prefix_len + 1, x + prefix_len + 1 + bar_len)):
+                self.color_at(y, x_bar, width=1, fg=float(i / full_bar_len))
+        else:
+            self.color_at(y, x, width=width, fg=color, attr=attr)
+
+    def narrow_layout(self) -> tuple[int, bool, int, int, int]:
+        """Return the column widths of the narrow layout.
+
+        The narrow layout fits terminals narrower than the standard one (e.g. a phone) with
+        one line per device: index, fan, temperature and power, then memory and utilization
+        bars sharing the remaining width. The fan column is left out when no device has a fan
+        (e.g. passively cooled data center boards).
+        """
+        index_width = 5 if self.mig_device_count > 0 else 3
+        has_fan = any(
+            device.fan_speed is not NA for device in self.snapshots if not device.is_mig_device
+        )
+        info_width = index_width + 13 + (4 if has_fan else 0)
+        bars_width = self.width - info_width - 8
+        memory_width = (bars_width + 1) // 2
+        return index_width, has_fan, info_width, memory_width, bars_width - memory_width
+
+    def narrow_frame_lines(self) -> list[str]:
+        index_width, has_fan, info_width, memory_width, utilization_width = self.narrow_layout()
+
+        version_info = '  '.join(
+            (
+                'NVITOP {}'.format(__version__.partition('+')[0]),
+                f'Driver: {self.driver_version}',
+                f'CUDA: {self.cuda_driver_version}',
+            ),
+        )
+        frame = [
+            '╒' + '═' * (self.width - 2) + '╕',
+            f'│ {cut_string(version_info, maxlen=self.width - 4).ljust(self.width - 4)} │',
+        ]
+        if self.device_count == 0:
+            frame.extend(
+                (
+                    '╞' + '═' * (self.width - 2) + '╡',
+                    '│ {} │'.format('No visible devices found'.ljust(self.width - 4)),
+                    '╘' + '═' * (self.width - 2) + '╛',
+                ),
+            )
+            return frame
+
+        def row(left: str, middle: str, right: str, fill: str) -> str:
+            return (
+                left
+                + fill * info_width
+                + middle
+                + fill * (memory_width + 2)
+                + middle
+                + fill * (utilization_width + 2)
+                + right
+            )
+
+        titles = ' {:>{}} {}{:>4} {:>5} '.format(
+            'GPU',
+            index_width,
+            'Fan ' if has_fan else '',
+            'Temp',
+            'Pwr',
+        )
+        frame.extend(
+            (
+                row('├', '┬', '┤', '─'),
+                '│{}│{}│{}│'.format(
+                    titles,
+                    (' Memory-Usage' if memory_width >= 13 else ' Memory').ljust(memory_width + 2),
+                    ' GPU-Util'.ljust(utilization_width + 2),
+                ),
+                row('╞', '╪', '╡', '═'),
+            ),
+        )
+        frame.extend(row('│', '│', '│', ' ') for _ in range(self.all_device_count))
+        frame.append(row('╘', '╧', '╛', '═'))
+        return frame
+
+    # pylint: disable-next=too-many-locals
+    def draw_narrow(self) -> None:
+        layout = self.narrow_layout()
+        index_width, has_fan, info_width, memory_width, utilization_width = layout
+        if layout != self._narrow_layout:  # e.g. the fan readings come and go
+            self._narrow_layout = layout
+            self.need_redraw = True
+
+        if self.need_redraw:
+            # The hint and the column of each highlighted key
+            hint, key_offsets = (
+                ('(Press h for help or q to quit)', (7, 21))
+                if self.width >= 57
+                else ('(h: help, q: quit)', (1, 10))
+            )
+            hint_x = self.x + self.width - len(hint)
+            self.addstr(self.y, hint_x, hint)
+            for offset in key_offsets:
+                self.color_at(self.y, hint_x + offset, width=1, fg='magenta', attr='bold | italic')
+            for y, line in enumerate(self.narrow_frame_lines(), start=self.y + 1):
+                self.addstr(y, self.x, line)
+
+        self.addstr(self.y, self.x, cut_string(time.strftime('%a %b %d %H:%M:%S %Y'), maxlen=24))
+        if self.device_count == 0:
+            return
+
+        try:
+            selected_device = self.parent.selection.process.device  # type: ignore[union-attr]
+        except AttributeError:
+            selected_device = None
+
+        memory_x = self.x + info_width + 3
+        utilization_x = memory_x + memory_width + 3
+        for y, device in enumerate(self.snapshots, start=self.y + 6):
+            attr: int | str = 0
+            if selected_device is not None:
+                if device.real == selected_device:
+                    attr = 'bold'
+                elif (
+                    device.is_mig_device or device.physical_index != selected_device.physical_index
+                ):
+                    attr = 'dim'
+
+            if device.is_mig_device:
+                index = f'{device.physical_index}:{device.mig_index}'
+                info = cut_string(device.name, maxlen=info_width - index_width - 3)
+                info = ' {:>{}} {:>{}} '.format(
+                    index,
+                    index_width,
+                    info,
+                    info_width - index_width - 3,
+                )
+            else:
+                power = device.power_status.partition(' / ')[0].replace(' ', '')
+                info = ' {:>{}} {}{:>4} {:>5} '.format(
+                    device.physical_index,
+                    index_width,
+                    f'{device.fan_speed_string:>3} ' if has_fan else '',
+                    cut_string(device.temperature_string, maxlen=4),
+                    cut_string(power, maxlen=5),
+                )
+            self.addstr(y, self.x + 1, info)
+            self.color_at(y, self.x + 1, width=info_width, fg=device.display_color, attr=attr)
+
+            self.draw_bar_chart(
+                y,
+                memory_x,
+                memory_width,
+                prefix='MEM',
+                utilization=device.memory_percent,
+                color=device.memory_display_color,
+                extra_text=device.memory_used_human,
+                attr=attr,
+            )
+            self.draw_bar_chart(
+                y,
+                utilization_x,
+                utilization_width,
+                prefix='UTL',
+                utilization=device.gpu_utilization,
+                color=device.gpu_display_color,
+                extra_text='' if device.is_mig_device else f'@ {device.clock_infos.sm}MHz',
+                attr=attr,
+            )
 
     def destroy(self) -> None:
         super().destroy()

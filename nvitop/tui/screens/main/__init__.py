@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, ClassVar, NoReturn
 
 from nvitop.tui.library import (
     LARGE_INTEGER,
+    LAYOUT_WIDTH,
     Device,
     Displayable,
     MessageBox,
@@ -189,7 +190,8 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
     def print(self) -> None:
         if self.device_count > 0:
             print_width = min(panel.print_width() for panel in self.container)
-            self.width = max(print_width, min(self.width, 140))
+            # The printed snapshot always uses the standard layout, even on a narrow terminal
+            self.width = max(print_width, min(max(self.width, LAYOUT_WIDTH), 140))
         else:
             self.width = 79
         for panel in self.container:

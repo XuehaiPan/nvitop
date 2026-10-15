@@ -129,7 +129,13 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
 
         self.xy_mouse: tuple[int, int] | None = None
         self.x, self.y = root.x, root.y
-        self.width: int = (self.name_len + 6) * self.num_options + 6
+        # Spacing around the option buttons: the padding inside each button, the gap between
+        # buttons and the margin to the frame. Tighter on terminals too narrow for the box.
+        self.padding, self.gap, self.margin = 1, 2, 2
+        if self.box_width() > root.width:
+            self.padding, self.gap, self.margin = 0, 1, 1
+        self.button_width: int = self.name_len + 2 * self.padding + 2
+        self.width: int = self.box_width()
 
         self.init_keybindings()
 
@@ -155,12 +161,42 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
             ' │' + ' ' * (self.width - 4) + '│ ',
             *raw_lines,
             ' │' + ' ' * (self.width - 4) + '│ ',
-            ' │  ' + '  '.join(['┌' + '─' * (self.name_len + 2) + '┐'] * self.num_options) + '  │ ',
-            ' │  ' + '  '.join(map('│ {} │'.format, self.options)) + '  │ ',
-            ' │  ' + '  '.join(['└' + '─' * (self.name_len + 2) + '┘'] * self.num_options) + '  │ ',
+            self.button_line('┌{}┐', '─' * (self.name_len + 2 * self.padding)),
+            self.button_line(
+                '│{}│',
+                *(f'{" " * self.padding}{option}{" " * self.padding}' for option in self.options),
+            ),
+            self.button_line('└{}┘', '─' * (self.name_len + 2 * self.padding)),
             ' ╘' + '═' * (self.width - 4) + '╛ ',
         ]
         self.lines: list[str] = raw_lines
+
+    def box_width(self) -> int:
+        button_width = self.name_len + 2 * self.padding + 2
+        return (
+            4
+            + 2 * self.margin
+            + self.num_options * button_width
+            + (self.num_options - 1) * self.gap
+        )
+
+    def button_line(self, template: str, *contents: str) -> str:
+        if len(contents) == 1:
+            contents *= self.num_options
+        buttons = (' ' * self.gap).join(map(template.format, contents))
+        return f' │{" " * self.margin}{buttons}{" " * self.margin}│ '
+
+    def option_x(self, x_start: int, index: int) -> int:
+        """Return the column where the name of the option at ``index`` starts."""
+        return x_start + 2 + self.margin + index * (self.button_width + self.gap) + 1 + self.padding
+
+    def option_highlight(self, x_start: int, index: int) -> tuple[int, int]:
+        """Return the start column and the width of the highlight of an option."""
+        half_gap = self.gap // 2
+        return (
+            self.option_x(x_start, index) - self.padding - 1 - half_gap,
+            self.button_width + 2 * half_gap,
+        )
 
     @property
     def current(self) -> int:
@@ -179,13 +215,13 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         n_term_lines, n_term_cols = self.root.termsize
 
         height = len(self.lines)
-        y_start, x_start = (n_term_lines - height) // 2, (n_term_cols - self.width) // 2
+        y_start, x_start = (n_term_lines - height) // 2, max((n_term_cols - self.width) // 2, 0)
         y_option_start = y_start + height - 3
         for y, line in enumerate(self.lines, start=y_start):
             self.addstr(y, x_start, line)
 
         for i, option in enumerate(self.options):
-            x_option_start = x_start + 6 + i * (self.name_len + 6) + option.offset
+            x_option_start = self.option_x(x_start, i) + option.offset
             for attr in option.attrs:
                 attr = attr.copy()
                 y = y_option_start + attr.pop('y')  # type: ignore[operator]
@@ -196,23 +232,19 @@ class MessageBox(Displayable):  # pylint: disable=too-many-instance-attributes
         if self.xy_mouse is not None:
             x, y = self.xy_mouse
             if y_option_start - 1 <= y <= y_option_start + 1:
-                current = (x - x_start - 3) // (self.name_len + 6)
-                x_option_start = x_start + 6 + current * (self.name_len + 6)
-                if (
-                    0 <= current < self.num_options
-                    and x_option_start - 3 <= x < x_option_start + self.name_len + 3
-                ):
-                    self.apply(current, wait=True)
+                current = (x - self.option_highlight(x_start, 0)[0]) // (
+                    self.button_width + self.gap
+                )
+                if 0 <= current < self.num_options:
+                    highlight_x, highlight_width = self.option_highlight(x_start, current)
+                    if highlight_x <= x < highlight_x + highlight_width:
+                        self.apply(current, wait=True)
 
         option = self.options[self.current]
-        x_option_start = x_start + 6 + self.current * (self.name_len + 6)
+        x_option_start = self.option_x(x_start, self.current)
+        highlight_x, highlight_width = self.option_highlight(x_start, self.current)
         for y in range(y_option_start - 1, y_option_start + 2):
-            self.color_at(
-                y,
-                x_option_start - 3,
-                width=self.name_len + 6,
-                attr='standout | bold',
-            )
+            self.color_at(y, highlight_x, width=highlight_width, attr='standout | bold')
         for attr in option.attrs:
             attr = attr.copy()
             y = y_option_start + attr.pop('y')  # type: ignore[operator]

@@ -8,10 +8,12 @@ from __future__ import annotations
 import curses
 import shutil
 import time
+from functools import partial
 from typing import TYPE_CHECKING, Literal, Union
 
 from nvitop.tui.library import (
     ALT_KEY,
+    MIN_WIDTH,
     Device,
     DisplayableContainer,
     KeyBuffer,
@@ -57,7 +59,10 @@ class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disab
         super().__init__(win, root=self)
 
         self.x = self.y = 0
-        self.width: int = max(79, shutil.get_terminal_size(fallback=(79, 24)).columns - self.x)
+        self.width: int = max(
+            MIN_WIDTH,
+            shutil.get_terminal_size(fallback=(79, 24)).columns - self.x,
+        )
         self.height: int = 0
         self.termsize: tuple[int, int] | None = None
 
@@ -174,7 +179,7 @@ class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disab
         self.set_base_attr(attr=0)
         self.color_reset()
 
-        if self.width >= 79:
+        if self.width >= MIN_WIDTH:
             if self.messagebox is not None:
                 self.set_base_attr(attr='dim')
             super().draw()
@@ -184,9 +189,7 @@ class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disab
 
         assert self.termsize is not None
         n_term_lines, n_term_cols = self.termsize
-        message = (
-            f'nvitop needs at least a width of 79 to render, the current width is {self.width}.'
-        )
+        message = f'nvitop needs at least a width of {MIN_WIDTH} to render, the current width is {self.width}.'
         words = iter(message.split())
         width = min(max(n_term_cols, 40), n_term_cols, 60) - 10
         lines = [next(words)]
@@ -401,7 +404,22 @@ class TUI(DisplayableContainer[Union[BaseScreen, MessageBox]]):  # pylint: disab
         for screen_name in ('main', 'treeview', 'environ', 'process-metrics'):
             self.keymaps.bind(screen_name, 'h', show_help)
             self.keymaps.alias(screen_name, 'h', '?')
+
+        def help_scroll(direction: int) -> None:
+            # Only the narrow layout scrolls; otherwise any key returns
+            if not self.help_screen.scroll(direction):
+                help_return()
+
         self.keymaps.bind('help', '<Esc>', help_return)
         self.keymaps.bind('help', '<any>', help_return)
+        for key, direction in (
+            ('<Up>', -1),
+            ('<Down>', +1),
+            ('<PageUp>', -10),
+            ('<PageDown>', +10),
+            ('k', -1),
+            ('j', +1),
+        ):
+            self.keymaps.bind('help', key, partial(help_scroll, direction))
 
         self.keymaps.use_keymap('main')

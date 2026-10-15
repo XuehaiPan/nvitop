@@ -14,6 +14,7 @@ import signal
 from typing import TYPE_CHECKING, Any, ClassVar, Tuple, Union
 
 from nvitop.tui.library.history import GRAPH_SYMBOLS
+from nvitop.tui.library.widestring import WideString
 
 
 if TYPE_CHECKING:
@@ -212,6 +213,15 @@ class CursesShortcuts:
             ]
 
         assert self.win is not None
+        # Clip at the right edge of the window, where curses would otherwise wrap the
+        # text onto the next line (layouts wider than a narrow terminal, e.g. a phone)
+        if len(args) >= 3 and isinstance(args[1], int) and isinstance(args[2], str):
+            max_width = self.win.getmaxyx()[1] - args[1]
+            # A wide character takes two cells, so only strings that may not fit are measured
+            if len(args[2]) > max_width or (2 * len(args[2]) > max_width and not args[2].isascii()):
+                string = WideString(args[2])
+                if len(string) > max_width:
+                    args = (args[0], args[1], str(string[: max(max_width, 0)]), *args[3:])
         try:
             self.win.addstr(*args, **kwargs)  # type: ignore[arg-type]
         except curses.error:

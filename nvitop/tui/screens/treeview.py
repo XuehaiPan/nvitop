@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from nvitop.tui.library import (
     IS_SUPERUSER,
     IS_WSL,
+    MIN_WIDTH,
     NA,
     SIGNAL_HINT_KEY_SPANS,
     SIGNAL_HINT_TEXT,
@@ -380,7 +381,7 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
                 y = self.y + 1 - self.scroll_offset + i
                 if self.selection.is_same_on_host(process):
                     self.selection.within_window = (
-                        1 <= y - self.y < self.height and self.width >= 79
+                        1 <= y - self.y < self.height and self.width >= MIN_WIDTH
                     )
                     if not self.selection.within_window:
                         if y < self.y + 1:
@@ -497,7 +498,9 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
                     fg='yellow' if self.selection.is_tagged(process) else 'green',
                     attr='bold | reverse',
                 )
-                self.selection.within_window = 1 <= y - self.y < self.height and self.width >= 79
+                self.selection.within_window = (
+                    1 <= y - self.y < self.height and self.width >= MIN_WIDTH
+                )
             elif self.selection.is_tagged(process):
                 self.color_at(
                     y,

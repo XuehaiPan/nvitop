@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `nvidia-ml-py` 13.610.43 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
 - Add `nvidia-ml-py` 13.615.71 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add a narrow layout to the TUI for terminals with 50 to 78 columns (e.g., SSH clients on mobile phones) by [@Windyskr](https://github.com/Windyskr) in [#230](https://github.com/XuehaiPan/nvitop/pull/230).
 
 ### Changed
 
