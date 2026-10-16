@@ -25,7 +25,13 @@ from nvitop.tui.library.messagebox import (
     MessageBox,
 )
 from nvitop.tui.library.mouse import MouseEvent
-from nvitop.tui.library.process import GpuProcess, HostProcess
+from nvitop.tui.library.process import (
+    GpuProcess,
+    HostProcess,
+    ProcessFacts,
+    command_join,
+    process_facts,
+)
 from nvitop.tui.library.selection import Selection
 from nvitop.tui.library.utils import (
     HOSTNAME,
@@ -83,16 +89,19 @@ __all__ = [
     'MigDevice',
     'MouseEvent',
     'NaType',
+    'ProcessFacts',
     'Selection',
     'Snapshot',
     'WideString',
     'bytes2human',
     'colored',
+    'command_join',
     'cut_string',
     'host',
     'libcurses',
     'make_bar_chart',
     'normalize_keybinding',
+    'process_facts',
     'set_color',
     'setlocale_utf8',
     'timedelta2human',

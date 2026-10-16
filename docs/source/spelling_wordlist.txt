@@ -10,6 +10,8 @@ boolean
 bstate
 cafile
 capath
+cgroup
+cgroupfs
 cli
 cmdline
 colorscheme
@@ -27,6 +29,7 @@ deque
 devicesnapshot
 displayables
 divmod
+docker
 docstring
 doctest
 downsample
@@ -65,6 +68,8 @@ keras
 keyfile
 kib
 kmd
+kubepods
+kubernetes
 kwargs
 len
 libcuda
@@ -74,6 +79,7 @@ linters
 lol
 loopback
 lstrip
+lxd
 maxsize
 memoize
 mib
@@ -123,6 +129,7 @@ runtime
 rw
 rx
 selectable
+setproctitle
 shader
 sm
 smi
@@ -157,6 +164,7 @@ uptime
 utils
 uuid
 uv
+vllm
 wddm
 wdm
 widestring
