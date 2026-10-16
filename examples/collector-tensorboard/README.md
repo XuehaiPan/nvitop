@@ -5,7 +5,7 @@ Drives [`ResourceMetricCollector`][collector] around a tiny [PyTorch] training l
 ## APIs Used
 
 - [`nvitop.ResourceMetricCollector`][collector]
-- [`nvitop.CudaDevice.all()`][cuda-all]
+- [`nvitop.CudaDevice.all`][cuda-all]
 
 ## Install + Run
 

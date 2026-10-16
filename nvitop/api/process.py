@@ -185,7 +185,7 @@ class HostProcess(host.Process, ABC):
     """
 
     INSTANCE_LOCK: threading.RLock = threading.RLock()
-    INSTANCES: WeakValueDictionary[int, HostProcess] = WeakValueDictionary()
+    INSTANCES: WeakValueDictionary[int, HostProcess] = WeakValueDictionary()  # noqa: RUF012
 
     _pid: int
     _super_gone: bool
@@ -448,7 +448,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     """
 
     INSTANCE_LOCK: threading.RLock = threading.RLock()
-    INSTANCES: WeakValueDictionary[tuple[int, Device], GpuProcess] = WeakValueDictionary()
+    INSTANCES: WeakValueDictionary[tuple[int, Device], GpuProcess] = WeakValueDictionary()  # noqa: RUF012
 
     _pid: int
     _host: HostProcess

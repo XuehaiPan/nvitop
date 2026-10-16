@@ -6,7 +6,7 @@ Demonstrates [`nvitop.collect_in_background`][cib]: the collector ticks on a dae
 
 - [`nvitop.collect_in_background`][cib]
 - [`nvitop.ResourceMetricCollector`][collector]
-- [`nvitop.Device.cuda.all()`][cuda-all]
+- [`nvitop.Device.cuda.all`][cuda-all]
 
 The same pattern is available as a one-liner via [`ResourceMetricCollector.daemonize`][daemonize].
 

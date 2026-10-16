@@ -6,9 +6,9 @@
 
 - [`nvitop.collect_in_background`][cib]
 - [`nvitop.ResourceMetricCollector`][collector]
-- [`nvitop.Device.all()`][device-all]
-- [`nvitop.bytes2human()`][bytes2human]
-- [`nvitop.colored()`][colored] for the startup banner
+- [`nvitop.Device.all`][device-all]
+- [`nvitop.bytes2human`][bytes2human]
+- [`nvitop.colored`][colored] for the startup banner
 
 ## What It Shows
 
@@ -40,6 +40,10 @@ uv run https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-web/monitor
 ```
 
 Open <http://127.0.0.1:5555/> in a browser.
+
+On the first dashboard request, the script reads `monitor_web.html` beside it. If the file is missing, it downloads the HTML from GitHub. The loaded HTML stays cached in memory until the server restarts.
+
+Downloads require internet access and use a 30-second timeout per attempt, with up to three retries (four attempts total). If all attempts fail, the server returns HTTP `500`; a later request tries again.
 
 The backend collector samples every `--interval` seconds, defaulting to `1.0`. The frontend polls `/metrics.json` every second and marks the dashboard stale if the latest sample is too old.
 

@@ -5,8 +5,8 @@ Exercises every form of [`nvitop.take_snapshots`][take-snapshots] — the helper
 ## APIs Used
 
 - [`nvitop.take_snapshots`][take-snapshots]
-- [`nvitop.Device.all()`][device-all]
-- [`nvitop.Device.cuda.all()`][cuda-all]
+- [`nvitop.Device.all`][device-all]
+- [`nvitop.Device.cuda.all`][cuda-all]
 
 ## Run
 

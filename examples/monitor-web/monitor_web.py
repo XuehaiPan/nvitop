@@ -34,6 +34,7 @@ Run without cloning the repository using ``uv``::
 from __future__ import annotations
 
 import argparse
+import http.client
 import http.server
 import json
 import math
@@ -46,6 +47,7 @@ import sys
 import threading
 import time
 import urllib.parse
+import urllib.request
 from collections import deque
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple, TextIO, TypedDict
@@ -261,6 +263,41 @@ class MetricStore:
 
 
 HTML_PATH = Path(__file__).resolve().with_suffix('.html')
+HTML_URL = 'https://github.com/XuehaiPan/nvitop/raw/HEAD/examples/monitor-web/monitor_web.html'
+HTML_BODY: bytes | None = None
+HTML_LOCK = threading.Lock()
+
+
+def _load_html() -> bytes:
+    """Return cached dashboard HTML, loading it from the sibling file or GitHub.
+
+    Downloads use a 30-second timeout and up to three retries after the initial attempt.
+    Failed loads leave the cache empty so a later request can try again.
+    """
+    global HTML_BODY  # pylint: disable=global-statement
+    if HTML_BODY is not None:
+        return HTML_BODY
+
+    with HTML_LOCK:
+        # Another request may have populated the cache while this request waited.
+        if HTML_BODY is not None:
+            return HTML_BODY  # type: ignore[unreachable]
+
+        try:
+            HTML_BODY = HTML_PATH.read_bytes()
+        except FileNotFoundError:
+            # `uv run <URL>` downloads only the script, so fetch its companion asset.
+            retries_remaining = 3
+            while True:
+                try:
+                    with urllib.request.urlopen(HTML_URL, timeout=30) as response:
+                        HTML_BODY = response.read()
+                    break
+                except (OSError, http.client.HTTPException):
+                    if retries_remaining == 0:
+                        raise
+                    retries_remaining -= 1
+        return HTML_BODY
 
 
 class MonitorServer(http.server.ThreadingHTTPServer):
@@ -328,12 +365,14 @@ class MonitorRequestHandler(http.server.BaseHTTPRequestHandler):
             pass
 
     def _send_html(self) -> None:
-        """Serve the dashboard HTML; respond ``500`` if the on-disk asset is missing or unreadable."""
+        """Serve the dashboard HTML; respond ``500`` if loading fails."""
         try:
-            body = HTML_PATH.read_bytes()
-        except OSError:
+            body = _load_html()
+        except (OSError, http.client.HTTPException) as ex:
+            cprint(f'ERROR: Failed to load dashboard HTML: {ex}', file=sys.stderr)
             self._send_500(b'500 HTML asset unavailable\n')
             return
+
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Cache-Control', 'no-store')

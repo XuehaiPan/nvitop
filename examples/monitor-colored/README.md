@@ -4,7 +4,7 @@ A richer version of the minimal monitor. Uses [`nvitop.colored`][colored] to hig
 
 ## APIs Used
 
-- [`nvitop.CudaDevice.all()`][cuda-all] and [`nvitop.GpuProcess.take_snapshots`][take-snapshots]
+- [`nvitop.CudaDevice.all`][cuda-all] and [`nvitop.GpuProcess.take_snapshots`][take-snapshots]
 - [`nvitop.host`][host] for host metrics (`cpu_percent`, `virtual_memory`, `swap_memory`, `load_average`, `hostname`, `getuser`)
 - [`nvitop.bytes2human`][bytes2human] to format host memory sizes
 - [`nvitop.colored`][colored] and [`nvitop.NA`][na]

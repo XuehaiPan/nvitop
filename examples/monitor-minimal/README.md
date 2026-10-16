@@ -4,9 +4,9 @@ A one-shot, no-extras script that prints the same information `nvitop` shows in 
 
 ## APIs Used
 
-- [`nvitop.Device.all()`][device-all]
-- [`nvitop.Device.processes()`][device-processes]
-- The various `Device.<metric>()` accessors (`fan_speed`, `temperature`, `gpu_utilization`, `memory_*`).
+- [`nvitop.Device.all`][device-all]
+- [`nvitop.Device.processes`][device-processes]
+- The various `Device.<metric>` accessors (`fan_speed`, `temperature`, `gpu_utilization`, `memory_*`).
 
 ## Run
 
