@@ -34,6 +34,7 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+# pylint: disable=import-error
 from rich import box
 from rich.console import Console, Group
 from rich.live import Live
@@ -41,6 +42,7 @@ from rich.progress_bar import ProgressBar
 from rich.table import Table
 from rich.text import Text
 
+# pylint: enable=import-error
 from nvitop import NA, Device, GpuProcess, bytes2human, host, libnvml, utilization2string
 
 
