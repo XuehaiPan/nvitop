@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `nvidia-ml-py` 13.610.43 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
 - Add `nvidia-ml-py` 13.615.71 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add a responsive Rich Live GPU dashboard example with host metrics, MIG support, and GPU process snapshots by [@XuehaiPan](https://github.com/XuehaiPan) in [#231](https://github.com/XuehaiPan/nvitop/pull/231).
 
 ### Changed
 
