@@ -183,6 +183,7 @@ else:
 
 c_nvmlFieldValue_t: _TypeAlias = _pynvml.c_nvmlFieldValue_t  # noqa: PYI042
 NVML_SUCCESS: int = _pynvml.NVML_SUCCESS
+NVML_ERROR_INVALID_ARGUMENT: int = _pynvml.NVML_ERROR_INVALID_ARGUMENT
 NVML_ERROR_INSUFFICIENT_SIZE: int = _pynvml.NVML_ERROR_INSUFFICIENT_SIZE
 NVMLError_Uninitialized: _TypeAlias = _pynvml.NVMLError_Uninitialized
 NVMLError_FunctionNotFound: _TypeAlias = _pynvml.NVMLError_FunctionNotFound
@@ -1007,6 +1008,52 @@ else:
         'Skip patch functions `nvmlDeviceGetMemoryInfo`. '
         'You may get incorrect or incomplete results. Please consider reinstall package '
         '`nvidia-ml-py` via `pip3 install --force-reinstall nvidia-ml-py nvitop`.',
+    )
+
+# Patch function `nvmlDeviceGetFieldValues`
+if not _pynvml_installation_corrupted:
+
+    def nvmlDeviceGetFieldValues(  # pylint: disable=function-redefined
+        handle: c_nvmlDevice_t,
+        fieldIds: list[int | tuple[int, int]],
+    ) -> _ctypes.Array[c_nvmlFieldValue_t]:
+        """Retrieve field values while guarding against an NVML buffer overrun.
+
+        Each field is an ID or an ``(ID, scope ID)`` pair. The returned array contains only the
+        requested fields, with the native status of each query in its ``nvmlReturn`` member.
+        Empty input returns an empty array without calling NVML.
+        """
+        count = len(fieldIds)
+        if count == 0:
+            return (c_nvmlFieldValue_t * 0)()
+
+        values = (c_nvmlFieldValue_t * (count + 1))()
+        # NVML may access one entry past the requested count during NVLink queries.
+        # Only the extra guard needs an error status; initializing all entries is defensive.
+        for value in values:
+            value.nvmlReturn = NVML_ERROR_INVALID_ARGUMENT
+
+        for index, field_id in enumerate(fieldIds):
+            try:
+                values[index].fieldId, values[index].scopeId = field_id  # type: ignore[misc]
+            except TypeError:  # noqa: PERF203
+                values[index].fieldId = field_id
+
+        fn = _nvmlGetFunctionPointer('nvmlDeviceGetFieldValues')
+        ret = fn(handle, _ctypes.c_int32(count), _ctypes.byref(values))
+        if ret != NVML_SUCCESS:
+            raise NVMLError(ret)
+
+        # The view retains the padded allocation without exposing the guard to callers.
+        return (c_nvmlFieldValue_t * count).from_buffer(values)
+
+else:
+    LOGGER.warning(
+        'Your installed package `nvidia-ml-py` is corrupted. '
+        'Skip patch function `nvmlDeviceGetFieldValues`. '
+        'NVLink throughput queries may access memory out of bounds, '
+        'causing memory corruption or process crashes. Please reinstall package '
+        '`nvidia-ml-py` via `python3 -m pip install --force-reinstall nvidia-ml-py nvitop`.',
     )
 
 # Patch function `nvmlDeviceGetTemperature`
