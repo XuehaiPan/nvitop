@@ -1,2 +1,2 @@
 nvitop
-rich
+rich >= 14.0

@@ -452,10 +452,10 @@ def parse_arguments() -> argparse.Namespace:
         '--tol',
         dest='tolerance',
         type=non_negint,
-        default=10,
+        default=0,
         metavar='TOL',
         help=(
-            'The constraints tolerance (in percentage). (default: 0, i.e., strict)\n'
+            'The constraints tolerance (in percentage). (default: %(default)d, i.e., strict)\n'
             'This option can loosen the constraints if the requested resource is not available.\n'
             'For example, set `--tolerance=20` will accept a device with only 4GiB of free\n'
             'memory when set `--min-free-memory=5GiB`.'
