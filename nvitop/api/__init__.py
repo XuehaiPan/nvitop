@@ -24,6 +24,8 @@ from nvitop.api import (
     libcuda,
     libcudart,
     libnvml,
+    libnpu,
+    npu_device,
     process,
     termcolor,
     utils,
@@ -39,7 +41,23 @@ from nvitop.api.device import (
     normalize_cuda_visible_devices,
     parse_cuda_visible_devices,
 )
+from nvitop.api.libnpu import (
+    NpuError,
+    NpuQueryError,
+    NpuSmiNotFound,
+    npu_device_chip_name,
+    npu_device_count,
+    npu_driver_version,
+    npu_init,
+    npu_query_global,
+    npu_query_kv,
+    npu_query_kv_batch,
+    npu_query_proc_mem,
+    npu_query_raw,
+    npu_smi_path,
+)
 from nvitop.api.libnvml import NVMLError, nvmlCheckReturn
+from nvitop.api.npu_device import NpuDevice, NpuProcess
 from nvitop.api.process import GpuProcess, HostProcess, command_join
 from nvitop.api.utils import (  # explicitly export these to appease mypy
     NA,
@@ -71,6 +89,25 @@ __all__ = [  # noqa: RUF022
     'libnvml',
     'libcuda',
     'libcudart',
+    # nvitop.api.libnpu
+    'libnpu',
+    'npu_device',
+    'NpuError',
+    'NpuQueryError',
+    'NpuSmiNotFound',
+    'npu_init',
+    'npu_smi_path',
+    'npu_driver_version',
+    'npu_device_count',
+    'npu_device_chip_name',
+    'npu_query_kv',
+    'npu_query_kv_batch',
+    'npu_query_proc_mem',
+    'npu_query_global',
+    'npu_query_raw',
+    # nvitop.api.npu_device
+    'NpuDevice',
+    'NpuProcess',
     # nvitop.api.device
     'Device',
     'PhysicalDevice',
