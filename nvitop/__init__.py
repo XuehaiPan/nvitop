@@ -29,6 +29,7 @@ from nvitop.api import (
     libcudart,
     libnvml,
     process,
+    recognizer,
     termcolor,
     utils,
 )
@@ -48,6 +49,7 @@ for submodule in (
     libcudart,
     libnvml,
     process,
+    recognizer,
     termcolor,
     utils,
 ):

@@ -11,6 +11,7 @@ import sys
 import textwrap
 
 from nvitop.api import HostProcess, libnvml
+from nvitop.api.recognizer import set_enabled as set_model_recognition_enabled
 from nvitop.tui import TUI, USERNAME, Device, colored, libcurses, set_color, setlocale_utf8
 from nvitop.version import __version__
 
@@ -22,6 +23,12 @@ NVITOP_MONITOR_MODE = set(
         os.environ.get('NVITOP_MONITOR_MODE', '').lower().split(','),
     ),
 )
+NO_MODEL_DETECT = os.environ.get('NVITOP_NO_MODEL_DETECT', '').lower() in {
+    '1',
+    'true',
+    'yes',
+    'on',
+}
 
 
 # pylint: disable=too-many-branches,too-many-statements
@@ -110,6 +117,16 @@ def parse_arguments() -> argparse.Namespace:
         help=(
             'Disable all system and process changing features (e.g., terminating processes).\n'
             'Set variable `NVITOP_MONITOR_MODE="readonly"` for convenience.'
+        ),
+    )
+    parser.add_argument(
+        '--no-model-detect',
+        dest='no_model_detect',
+        action='store_true',
+        help=(
+            'Disable recognizing the served model and the service behind the processes in the\n'
+            'COMMAND column.\n'
+            'Set variable `NVITOP_NO_MODEL_DETECT=1` for convenience.'
         ),
     )
 
@@ -247,6 +264,8 @@ def parse_arguments() -> argparse.Namespace:
         args.light = 'light' in NVITOP_MONITOR_MODE and 'dark' not in NVITOP_MONITOR_MODE
     if not args.readonly:
         args.readonly = 'readonly' in NVITOP_MONITOR_MODE
+    if NO_MODEL_DETECT:
+        args.no_model_detect = True
     if args.user is not None and len(args.user) == 0:
         args.user.append(USERNAME)
     if args.gpu_util_thresh is None:
@@ -285,6 +304,9 @@ def parse_arguments() -> argparse.Namespace:
 def main() -> int:
     """Main function for ``nvitop`` CLI."""
     args = parse_arguments()
+
+    if args.no_model_detect:
+        set_model_recognition_enabled(False)
 
     if args.force_color:
         set_color(True)

@@ -175,6 +175,7 @@ Please refer to section `More than a Monitor <https://github.com/XuehaiPan/nvito
 
     api/device
     api/process
+    api/recognizer
     api/host
     api/collector
     api/libnvml

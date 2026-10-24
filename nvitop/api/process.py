@@ -43,13 +43,13 @@ from nvitop.api.utils import (
 
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Iterable
+    from collections.abc import Callable, Generator, Iterable, Sequence
     from typing_extensions import Self  # Python 3.11+
 
     from nvitop.api.device import Device
 
 
-__all__ = ['GpuProcess', 'HostProcess', 'command_join']
+__all__ = ['GpuProcess', 'HostProcess', 'command_join', 'is_modified_by_setproctitle']
 
 
 if host.POSIX:
@@ -91,12 +91,18 @@ else:
         return '"{}"'.format(s.replace('\n', r'\n'))
 
 
+def is_modified_by_setproctitle(cmdline: Sequence[str]) -> bool:
+    """Return whether the command line has been replaced by ``setproctitle``.
+
+    A replaced command line holds a single element that does not name an existing
+    executable file, e.g. the ``VLLM::EngineCore`` title of a vLLM worker.
+    """
+    return len(cmdline) == 1 and not (os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0]))
+
+
 def command_join(cmdline: list[str]) -> str:
     """Return a shell-escaped string from a list of command line arguments."""
-    if len(cmdline) == 1 and not (
-        # May be modified by `setproctitle`
-        os.path.isfile(cmdline[0]) and os.path.isabs(cmdline[0])
-    ):
+    if is_modified_by_setproctitle(cmdline):
         return cmdline[0]
     return ' '.join(map(add_quotes, cmdline))
 
