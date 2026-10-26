@@ -13,9 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add `nvidia-ml-py` 13.610.43 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
-- Add `nvidia-ml-py` 13.615.71 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
-- Add a responsive Rich Live GPU dashboard example with host metrics, MIG support, and GPU process snapshots by [@XuehaiPan](https://github.com/XuehaiPan) in [#231](https://github.com/XuehaiPan/nvitop/pull/231).
+-
 
 ### Changed
 
@@ -23,12 +21,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Guard NVML field queries against a buffer overrun in NVIDIA driver 595.91.07 that can crash `nvitop-exporter` while collecting NVLink throughput by [@XuehaiPan](https://github.com/XuehaiPan) in [#232](https://github.com/XuehaiPan/nvitop/pull/232).
-- Fix shared-memory accounting on unified-memory devices (e.g., NVIDIA DGX Spark and RTX Spark N1X) to include reclaimable cache in free memory and calculate used memory from available capacity by [@johnnynunez](https://github.com/johnnynunez) in [#234](https://github.com/XuehaiPan/nvitop/pull/234).
+-
 
 ### Removed
 
 -
+
+------
+
+## [1.7.2] - 2026-10-26
+
+### Added
+
+- Add `nvidia-ml-py` 13.610.43 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add `nvidia-ml-py` 13.615.71 to support list by [@XuehaiPan](https://github.com/XuehaiPan).
+- Add a responsive Rich GPU dashboard example with host metrics, MIG support, and GPU process snapshots by [@XuehaiPan](https://github.com/XuehaiPan) in [#231](https://github.com/XuehaiPan/nvitop/pull/231).
+
+### Fixed
+
+- Guard NVML field queries against a buffer overrun in NVIDIA driver 595.91.07 that can crash `nvitop-exporter` while collecting NVLink throughput by [@XuehaiPan](https://github.com/XuehaiPan) in [#232](https://github.com/XuehaiPan/nvitop/pull/232).
+- Fix shared-memory accounting on unified-memory devices (e.g., NVIDIA DGX Spark and RTX Spark N1X) to include reclaimable cache in free memory and calculate used memory from available capacity by [@johnnynunez](https://github.com/johnnynunez) in [#234](https://github.com/XuehaiPan/nvitop/pull/234).
 
 ------
 
@@ -299,7 +311,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ------
 
-[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.7.1...HEAD
+[Unreleased]: https://github.com/XuehaiPan/nvitop/compare/v1.7.2...HEAD
+[1.7.2]: https://github.com/XuehaiPan/nvitop/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/XuehaiPan/nvitop/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/XuehaiPan/nvitop/compare/v1.6.2...v1.7.0
 [1.6.2]: https://github.com/XuehaiPan/nvitop/compare/v1.6.1...v1.6.2
