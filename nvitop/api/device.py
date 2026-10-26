@@ -967,10 +967,9 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
     def memory_info(self) -> MemoryInfo:  # in bytes
         """Return a named tuple with memory information (in bytes) for the device.
 
-        On devices with unified memory, such as ``NVIDIA GB10 (DGX Spark)`` and ``N1X``,
-        the fallback reports shared system memory, not GPU-only allocations.
-        Free memory includes reclaimable cache (system available memory), and
-        used memory is total minus available memory.
+        On devices with unified memory, such as ``NVIDIA GB10 (DGX Spark)`` and ``RTX Spark N1X``,
+        the fallback reports shared system memory, not GPU-only allocations. Free memory is system
+        available memory, including reclaimable cache. Used memory is total minus available memory.
 
         Returns: MemoryInfo(total, free, used, reserved)
             A named tuple with memory information, the item could be :const:`nvitop.NA` when not applicable.
@@ -1004,8 +1003,10 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
                 vm = host.virtual_memory()
                 return MemoryInfo(
                     total=vm.total,
+                    # `vm.free` excludes reclaimable cache
                     free=vm.available,
-                    used=vm.total - vm.available,
+                    # `vm.used` uses platform-specific accounting and may include reclaimable cache
+                    used=max(0, vm.total - vm.available),
                     reserved=NA,
                 )
         return MemoryInfo(total=NA, free=NA, used=NA, reserved=NA)
