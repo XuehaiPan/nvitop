@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Guard NVML field queries against a buffer overrun in NVIDIA driver 595.91.07 that can crash `nvitop-exporter` while collecting NVLink throughput by [@XuehaiPan](https://github.com/XuehaiPan) in [#232](https://github.com/XuehaiPan/nvitop/pull/232).
+- Fix shared-memory accounting on unified-memory devices (e.g., NVIDIA DGX Spark and RTX Spark N1X) to include reclaimable cache in free memory and calculate used memory from available capacity by [@johnnynunez](https://github.com/johnnynunez) in [#234](https://github.com/XuehaiPan/nvitop/pull/234).
 
 ### Removed
 
