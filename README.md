@@ -31,6 +31,7 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
 ### Table of Contents  <!-- omit in toc --> <!-- markdownlint-disable heading-increment -->
 
 - [Features](#features)
+- [Ascend NPU Support (`nvitop-npu`)](#ascend-npu-support-nvitop-npu)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -102,6 +103,61 @@ An interactive NVIDIA-GPU process viewer and beyond, the one-stop solution for G
   <br/>
   (SHELL: PowerShell / TERM: Windows Terminal / OS: Windows 10 / Locale: <code>en-US</code>)
 </p>
+
+------
+
+## Ascend NPU Support (`nvitop-npu`)
+
+This repository also ships `nvitop-npu`, a drop-in replacement of `nvitop` for
+Huawei **Ascend NPU** servers (Atlas 800 / 910B, etc.).  It renders an
+`nvidia-smi`-style report of the NPU devices (AICore utilization, HBM memory,
+power, temperature, health, clock speed) and the running processes, either as a
+one-shot report or as a continuously refreshing monitor.
+
+| | `nvitop` | `nvitop-npu` |
+| --- | --- | --- |
+| Hardware | NVIDIA GPU | Huawei Ascend NPU |
+| Data source | NVML (`nvidia-ml-py`) | `npu-smi` command-line tool |
+| Python version | 3.8+ | 3.9+ (no third-party dependency required) |
+
+### Requirements
+
+- An Ascend NPU server with the NPU driver / CANN toolkit installed
+  (`npu-smi` must be available in `PATH`, typically at
+  `/usr/local/sbin/npu-smi`).
+- Python 3.9+ with `psutil` (optional; a `/proc`-based fallback is used when
+  `psutil` is not installed, so the tool also runs on bare system Python).
+
+### Usage
+
+```console
+$ nvitop-npu          # one-shot report of all NPU devices and processes
+$ nvitop-npu -1       # same as above, report query data only once
+$ nvitop-npu -m       # monitor mode, refresh every 2 seconds
+$ nvitop-npu -m compact --interval 5
+$ nvitop-npu -o 0 1   # only show the NPU cards 0 and 1
+$ nvitop-npu -u root -p 12345   # only show the processes of user `root` / pid `12345`
+$ nvitop-npu -U       # ASCII-only output (for terminals without Unicode support)
+$ nvitop-npu --colorful --force-color
+```
+
+The monitor mode clears the screen and re-renders the report every
+`--interval` seconds (default 2s).  `compact` mode skips the process table.
+
+### Implementation Notes
+
+- All NPU metrics are obtained by executing and parsing the `npu-smi` text
+  output; no vendor SDK is required.  The parsing layer lives in
+  `nvitop/api/libnpu.py` (pure standard library).
+- The global `npu-smi info` query covers every device (utilization, memory,
+  power, temperature, health) **and** every running process with its NPU
+  memory, so a full report costs one global invocation plus one parallel batch
+  of per-card clock queries (about 2 seconds for 8 cards).
+- Query results are cached with short TTLs (`nvitop/api/libnpu.py`), so the
+  monitor mode refreshes the data in real time without hammering `npu-smi`.
+- The data model (`NpuDevice` / `NpuProcess`) mirrors the `Device` / `GpuProcess`
+  API of `nvitop`, so scripts written against the nvitop API can be adapted
+  easily.
 
 ------
 
