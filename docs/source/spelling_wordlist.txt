@@ -31,6 +31,7 @@ docstring
 doctest
 downsample
 downsampled
+dpc
 ecc
 enum
 env
@@ -152,6 +153,7 @@ uids
 unallocated
 uncase
 unicode
+uninitialized
 unparsable
 uptime
 utils

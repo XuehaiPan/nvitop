@@ -23,6 +23,7 @@ utilization (CPU, memory, disks, network, sensors) in Python.
 from __future__ import annotations
 
 import os as _os
+import threading as _threading
 
 import psutil as _psutil
 from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
@@ -62,6 +63,42 @@ __all__ += [name for name in _psutil.__all__ if not name.startswith('_') and nam
 
 
 del Error  # renamed to PsutilError
+
+
+if _psutil.WINDOWS:
+    # ``psutil.cpu_percent()`` counts the Windows ``interrupt`` and ``dpc`` times as busy time.
+    # Both fields are summed from per-CPU counters that only cover the calling thread's
+    # processor group; on machines with more than 64 logical CPUs the counters of the other
+    # groups are uninitialized, so the sum can hold garbage and produce spurious 100% readings
+    # (psutil#2972, psutil#3061). ``psutil.cpu_times().system`` is the kernel time minus idle
+    # and already includes interrupt/dpc time, so ``user + system`` over ``user + system +
+    # idle`` is both sufficient and immune to those values.
+    _cpu_times = _threading.local()
+
+    def cpu_percent(  # pylint: disable=function-redefined
+        interval: float | None = None,
+        percpu: bool = False,
+    ) -> float | list[float]:
+        """Return the system CPU utilization as a percentage.
+
+        On Windows, compute the utilization from the user and system times instead of
+        :func:`psutil.cpu_percent`, which adds the interrupt and dpc times to the busy time.
+        As with ``psutil.cpu_percent``, the first call in each thread returns ``0.0`` because
+        there is no previous sample to compare against.
+        """
+        if interval is not None or percpu:
+            return _psutil.cpu_percent(interval=interval, percpu=percpu)
+
+        times = _psutil.cpu_times()
+        prev = getattr(_cpu_times, 'times', None)
+        _cpu_times.times = times
+        if prev is None:
+            return 0.0
+        busy = (times.user - prev.user) + (times.system - prev.system)
+        total = busy + (times.idle - prev.idle)
+        if busy < 0.0 or total <= 0.0:
+            return 0.0
+        return 100.0 * busy / total
 
 
 def getuser() -> str:
