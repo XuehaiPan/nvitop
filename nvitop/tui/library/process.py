@@ -23,20 +23,14 @@ __all__ = ['GpuProcess', 'HostProcess']
 
 
 class HostProcess(HostProcessBase):
-    """Host process with a cached non-blocking CPU utilization sample.
-
-    :meth:`psutil.Process.cpu_percent` is stateful: it reports the utilization since the previous
-    call on the same instance. The instances are cached and shared by all callers, while several
-    snapshot daemons sample the same process concurrently. The losers of the race measure a
-    near-zero window; on platforms with a coarse CPU-clock granularity (Windows updates
-    ``GetProcessTimes`` every ~15.6ms) that window reads a zero delta and returns ``0.0%``, so the
-    reported value alternates between ``0.0%`` and the real value.
-
-    Cache the sample for 0.1s, the minimum sampling interval recommended by psutil, so that
-    concurrent callers reuse the same sample.
-    """
-
     cpu_percent = ttl_cache(ttl=0.1)(HostProcessBase.cpu_percent)
+    """Return the process CPU utilization as a percentage.
+
+    :meth:`nvitop.HostProcess.cpu_percent` computes non-blocking utilization from two CPU-time
+    samples; :mod:`psutil` recommends at least 0.1 seconds between calls for accuracy. TUI screens
+    share process instances, so closely spaced reads can report false zeros from unchanged
+    counters. Reuse each result for 0.1 seconds to avoid advancing the baseline on every read.
+    """
 
 
 class GpuProcess(GpuProcessBase):
