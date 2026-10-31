@@ -5,10 +5,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from nvitop.api import NA, HostProcess, Snapshot, utilization2string
+from nvitop.api import NA, Snapshot, ttl_cache, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
+from nvitop.api import HostProcess as HostProcessBase
 from nvitop.tui.library.utils import IS_WINDOWS, IS_WSL
 
 
@@ -21,7 +22,20 @@ if TYPE_CHECKING:
 __all__ = ['GpuProcess', 'HostProcess']
 
 
+class HostProcess(HostProcessBase):
+    cpu_percent = ttl_cache(maxsize=4096, ttl=0.1)(HostProcessBase.cpu_percent)
+    """Return the process CPU utilization as a percentage.
+
+    :meth:`nvitop.HostProcess.cpu_percent` computes non-blocking utilization from two CPU-time
+    samples; :mod:`psutil` recommends at least 0.1 seconds between calls for accuracy. TUI screens
+    share process instances, so closely spaced reads can report false zeros from unchanged
+    counters. Reuse each result for 0.1 seconds to avoid advancing the baseline on every read.
+    """
+
+
 class GpuProcess(GpuProcessBase):
+    HOST_PROCESS_CLASS: ClassVar[type[HostProcessBase]] = HostProcess
+
     _snapshot: Snapshot | None
     device: Device
 
