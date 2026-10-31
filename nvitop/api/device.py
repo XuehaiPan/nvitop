@@ -833,7 +833,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             setattr(self, name, attribute)
             return attribute
 
-    def __reduce__(self) -> tuple[type[Device], tuple[int | tuple[int, int]]]:
+    def __reduce__(self) -> tuple[type[Self], tuple[int | tuple[int, int]]]:
         """Return state information for pickling."""
         return self.__class__, (self._nvml_index,)
 
@@ -2988,7 +2988,7 @@ class CudaDevice(Device):
             self.memory_total_human(),
         )
 
-    def __reduce__(self) -> tuple[type[CudaDevice], tuple[int]]:
+    def __reduce__(self) -> tuple[type[Self], tuple[int]]:
         """Return state information for pickling."""
         return self.__class__, (self._cuda_index,)
 

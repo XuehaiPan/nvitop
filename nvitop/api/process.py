@@ -239,7 +239,7 @@ class HostProcess(host.Process, ABC):
         """Return a string representation of the process."""
         return super().__repr__().replace(f'{self.__class__.__module__}.', '', 1)
 
-    def __reduce__(self) -> tuple[type[HostProcess], tuple[int]]:
+    def __reduce__(self) -> tuple[type[Self], tuple[int]]:
         """Return state information for pickling."""
         return self.__class__, (self.pid,)
 
@@ -356,8 +356,8 @@ class HostProcess(host.Process, ABC):
         """
         return self.memory_info().rss
 
-    def parent(self) -> HostProcess | None:
-        """Return the parent process as a :class:`HostProcess` instance or :data:`None` if there is no parent.
+    def parent(self) -> Self | None:
+        """Return the parent process using the same class, or :data:`None` if there is no parent.
 
         Raises:
             host.NoSuchProcess:
@@ -367,11 +367,16 @@ class HostProcess(host.Process, ABC):
         """
         parent = super().parent()
         if parent is not None:
-            return HostProcess(parent.pid)
+            return self.__class__(parent.pid)
         return None
 
-    def children(self, recursive: bool = False) -> list[HostProcess]:
-        """Return the children of this process as a list of :class:`HostProcess` instances.
+    # Refine the inherited return type for subclasses.
+    def parents(self) -> list[Self]:  # pylint: disable=useless-parent-delegation
+        """Return all ancestors of this process as instances of the same class."""
+        return super().parents()
+
+    def children(self, recursive: bool = False) -> list[Self]:
+        """Return the children of this process as instances of the same class.
 
         If *recursive* is :data:`True` return all the descendants.
 
@@ -381,7 +386,8 @@ class HostProcess(host.Process, ABC):
             host.AccessDenied:
                 If the user does not have read privilege to the process' status file.
         """
-        return [HostProcess(child.pid) for child in super().children(recursive)]
+        cls = self.__class__
+        return [cls(child.pid) for child in super().children(recursive)]
 
     @contextlib.contextmanager
     def oneshot(self) -> Generator[None]:

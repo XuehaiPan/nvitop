@@ -23,7 +23,7 @@ __all__ = ['GpuProcess', 'HostProcess']
 
 
 class HostProcess(HostProcessBase):
-    cpu_percent = ttl_cache(ttl=0.1)(HostProcessBase.cpu_percent)
+    cpu_percent = ttl_cache(maxsize=4096, ttl=0.1)(HostProcessBase.cpu_percent)
     """Return the process CPU utilization as a percentage.
 
     :meth:`nvitop.HostProcess.cpu_percent` computes non-blocking utilization from two CPU-time
