@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
--
+- Reduce spurious zero CPU utilization readings in the process-metrics screen and treeview by [@arinawang11](https://github.com/arinawang11) in [#237](https://github.com/XuehaiPan/nvitop/pull/237).
 
 ### Removed
 
