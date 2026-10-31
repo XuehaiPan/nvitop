@@ -27,7 +27,7 @@ import os
 import threading
 from abc import ABC
 from types import FunctionType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakValueDictionary
 
 from nvitop.api import host, libnvml
@@ -450,6 +450,8 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
     INSTANCE_LOCK: threading.RLock = threading.RLock()
     INSTANCES: WeakValueDictionary[tuple[int, Device], GpuProcess] = WeakValueDictionary()  # noqa: RUF012
 
+    HOST_PROCESS_CLASS: ClassVar[type[HostProcess]] = HostProcess
+
     _pid: int
     _host: HostProcess
     _device: Device
@@ -483,7 +485,7 @@ class GpuProcess:  # pylint: disable=too-many-instance-attributes,too-many-publi
             instance = super().__new__(cls)
 
             instance._pid = pid
-            instance._host = HostProcess(pid)
+            instance._host = cls.HOST_PROCESS_CLASS(pid)
             instance._ident = (*instance._host._ident, device.index)
             instance._device = device
 

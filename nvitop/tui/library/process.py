@@ -5,10 +5,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 
-from nvitop.api import NA, HostProcess, Snapshot, utilization2string
+from nvitop.api import NA, Snapshot, ttl_cache, utilization2string
 from nvitop.api import GpuProcess as GpuProcessBase
+from nvitop.api import HostProcess as HostProcessBase
 from nvitop.tui.library.utils import IS_WINDOWS, IS_WSL
 
 
@@ -21,7 +22,26 @@ if TYPE_CHECKING:
 __all__ = ['GpuProcess', 'HostProcess']
 
 
+class HostProcess(HostProcessBase):
+    """Host process with a cached non-blocking CPU utilization sample.
+
+    :meth:`psutil.Process.cpu_percent` is stateful: it reports the utilization since the previous
+    call on the same instance. The instances are cached and shared by all callers, while several
+    snapshot daemons sample the same process concurrently. The losers of the race measure a
+    near-zero window; on platforms with a coarse CPU-clock granularity (Windows updates
+    ``GetProcessTimes`` every ~15.6ms) that window reads a zero delta and returns ``0.0%``, so the
+    reported value alternates between ``0.0%`` and the real value.
+
+    Cache the sample for 0.1s, the minimum sampling interval recommended by psutil, so that
+    concurrent callers reuse the same sample.
+    """
+
+    cpu_percent = ttl_cache(ttl=0.1)(HostProcessBase.cpu_percent)
+
+
 class GpuProcess(GpuProcessBase):
+    HOST_PROCESS_CLASS: ClassVar[type[HostProcessBase]] = HostProcess
+
     _snapshot: Snapshot | None
     device: Device
 
