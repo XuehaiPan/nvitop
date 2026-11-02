@@ -471,9 +471,9 @@ echo 'set -gx NVITOP_MONITOR_MODE "full"' >> ~/.config/fish/config.fish
 |                                                                `ou` (`oU`) | Sort processes by `USER` in ascending (descending) order.                                  |
 |                                                                `op` (`oP`) | Sort processes by `PID` in descending (ascending) order.                                   |
 |                                                                `og` (`oG`) | Sort processes by `GPU-MEM` in descending (ascending) order.                               |
-|                                                                `os` (`oS`) | Sort processes by `%SM` in descending (ascending) order.                                   |
-|                                                                `oc` (`oC`) | Sort processes by `%CPU` in descending (ascending) order.                                  |
-|                                                                `om` (`oM`) | Sort processes by `%MEM` in descending (ascending) order.                                  |
+|                                                                `os` (`oS`) | Sort processes by `SM%` in descending (ascending) order.                                   |
+|                                                                `oc` (`oC`) | Sort processes by `CPU%` in descending (ascending) order.                                  |
+|                                                                `om` (`oM`) | Sort processes by `MEM%` in descending (ascending) order.                                  |
 |                                                                `ot` (`oT`) | Sort processes by `TIME` in descending (ascending) order.                                  |
 
 **HINT:** It's recommended to terminate or kill a process in the tree-view screen (shortcut: <kbd>t</kbd>).

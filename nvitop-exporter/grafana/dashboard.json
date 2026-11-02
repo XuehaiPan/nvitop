@@ -746,7 +746,7 @@
           {
             "matcher": {
               "id": "byRegexp",
-              "options": "/^%.*$/"
+              "options": "/^.*%$/"
             },
             "properties": [
               {
@@ -1240,12 +1240,12 @@
               "uuid": 4
             },
             "renameByName": {
-              "Value #cpu percent (lastNotNull)": "%CPU",
-              "Value #gpu decoder utilization (lastNotNull)": "%DEC",
-              "Value #gpu encoder utilization (lastNotNull)": "%ENC",
+              "Value #cpu percent (lastNotNull)": "CPU%",
+              "Value #gpu decoder utilization (lastNotNull)": "DEC%",
+              "Value #gpu encoder utilization (lastNotNull)": "ENC%",
               "Value #gpu memory (lastNotNull)": "GPU MEMORY",
-              "Value #gpu memory bandwidth utilization (lastNotNull)": "%GMBW",
-              "Value #gpu sm utilization (lastNotNull)": "%SM",
+              "Value #gpu memory bandwidth utilization (lastNotNull)": "GMBW%",
+              "Value #gpu sm utilization (lastNotNull)": "SM%",
               "Value #rss memory (lastNotNull)": "RSS MEMORY",
               "Value #running time (lastNotNull)": "TIME",
               "command (lastNotNull)": "COMMAND",

@@ -440,10 +440,17 @@ def render_dashboard(devices: list[Snapshot], *, processes: list[Snapshot], widt
         (f'SWAP {host.swap_memory().percent:.1f}%', 'bold blue'),
     )
     load_average: tuple[float, float, float] | None = host.load_average()
-    load = 'N/A' if load_average is None else ' '.join(f'{value:.2f}' for value in load_average)
-    load_summary = f'LOAD AVG (1/5/15m) {load}'
+    if load_average is None:
+        load_summary = Text.assemble(('LOADAVG', 'bold yellow'), ' ', ('N/A', 'dim'))
+    else:
+        load = '/'.join(f'{value:.1f}' for value in load_average)
+        load_summary = Text.assemble(
+            (f'LOADAVG {load}', 'bold yellow'),
+            ' ',
+            ('(1/5/15m)', 'dim'),
+        )
     summary.append('  ' if summary.cell_len + len(load_summary) + 2 <= width else '\n')
-    summary.append(load_summary, style='bold yellow')
+    summary.append(load_summary)
     return Group(
         header,
         summary,

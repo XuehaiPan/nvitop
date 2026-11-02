@@ -146,7 +146,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 ),
                 reverse=True,
                 offset=34,
-                column='SM',
+                column='SM',  # remove the `%` suffix to make room for the sort indicator
                 previous='gpu_memory',
                 next='gpu_memory_utilization',
                 bind_key='s',
@@ -162,7 +162,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 ),
                 reverse=True,
                 offset=38,
-                column='GMBW',
+                column='GMBW',  # remove the `%` suffix to make room for the sort indicator
                 previous='sm_utilization',
                 next='cpu_percent',
                 bind_key='b',
@@ -177,7 +177,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 ),
                 reverse=True,
                 offset=44,
-                column='%CPU',
+                column='CPU%',
                 previous='gpu_memory_utilization',
                 next='memory_percent',
                 bind_key='c',
@@ -192,7 +192,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                 ),
                 reverse=True,
                 offset=50,
-                column='%MEM',
+                column='MEM%',
                 previous='cpu_percent',
                 next='time',
                 bind_key='m',
@@ -234,7 +234,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
 
         self.filters: list[Callable[[Snapshot], bool] | None] = [None, *filters]
 
-        self.host_headers: list[str] = ['%CPU', '%MEM', 'TIME', 'COMMAND']
+        self.host_headers: list[str] = ['CPU%', 'MEM%', 'TIME', 'COMMAND']
 
         self.selection: Selection = Selection(self)
         self.host_offset: int = -1
@@ -392,7 +392,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
         header = [
             '╒' + '═' * (self.width - 2) + '╕',
             '│ {} │'.format('Processes:'.ljust(self.width - 4)),
-            r'│ GPU     PID      USER  GPU-MEM %SM %GMBW  {} │'.format(
+            r'│ GPU     PID      USER  GPU-MEM SM% GMBW%  {} │'.format(
                 '  '.join(self.host_headers).ljust(self.width - 46),
             ),
             '╞' + '═' * (self.width - 2) + '╡',
@@ -483,7 +483,7 @@ class ProcessPanel(BaseSelectablePanel):  # pylint: disable=too-many-instance-at
                     attr='bold',
                 )
 
-        self.addstr(self.y + 3, self.x + 1, r' GPU     PID      USER  GPU-MEM %SM %GMBW  ')
+        self.addstr(self.y + 3, self.x + 1, r' GPU     PID      USER  GPU-MEM SM% GMBW%  ')
         host_offset = max(self.host_offset, 0)
         command_offset = max(14 + len(self.host_headers[-2]) - host_offset, 0)
         if command_offset > 0:

@@ -46,10 +46,10 @@ Device coloring rules by loading intensity:
         Tab: scroll process list         Ctrl-Wheel: fast scroll ({}x)
 
       on oN: sort by GPU-INDEX
-      op oP: sort by PID                      ob oB: sort by %GMBW
-      ou oU: sort by USER                     oc oC: sort by %CPU
-      og oG: sort by GPU-MEM                  om oM: sort by %MEM
-      os oS: sort by %SM                      ot oT: sort by TIME
+      op oP: sort by PID                      ob oB: sort by GMBW%
+      ou oU: sort by USER                     oc oC: sort by CPU%
+      og oG: sort by GPU-MEM                  om oM: sort by MEM%
+      os oS: sort by SM%                      ot oT: sort by TIME
         , .: select sort column                   /: invert sort order
 
 Press any key to return.
