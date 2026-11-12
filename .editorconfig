@@ -9,17 +9,46 @@ indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
 insert_final_newline = true
+switch_case_indent = true
 
-[*.py]
+[*.{py,pyi}]
 indent_size = 4
 
-[*.{js,ts,jsx,tsx,mjs,css,scss,html,htm,vue}]
+[*.{cpp,hpp,cxx,cc,c,h,cu,cuh}]
+indent_size = 4
+
+[{CMakeLists.txt,CMakeLists.txt.in,*.cmake,*.cmake.in}]
+indent_size = 4
+
+[*.rs]
+indent_size = 4
+
+[{*.go,go.mod,go.work}]
+indent_style = tab
+
+[*.{js,ts,jsx,tsx,mjs,cjs,mts,cts,css,scss,html,htm,vue}]
 indent_size = 2
 
-[*.{yaml,yml,json,xml}]
+[*.{yaml,yml,json,jsonc,json5,xml}]
 indent_size = 2
 
-[*.md]
+[.clang-{format,tidy}]
+indent_size = 2
+
+[{,*.}[Dd]ockerfile{,.*}]
+indent_size = 2
+
+[{Makefile,Makefile.*}]
+indent_style = tab
+
+[*.sh]
+indent_size = 4
+
+[*.bat]
+indent_size = 4
+end_of_line = crlf
+
+[*.{md,mdx}]
 indent_size = 2
 x-soft-wrap-text = true
 
@@ -27,15 +56,8 @@ x-soft-wrap-text = true
 indent_size = 4
 x-soft-wrap-text = true
 
-[Dockerfile,{*.,}dockerfile{*.,}]
-indent_size = 2
-
-[Makefile]
+[.gitconfig]
 indent_style = tab
 
-[*.sh]
-indent_style = tab
-
-[*.bat]
-end_of_line = crlf
-indent_style = tab
+[*.{patch,diff}]
+trim_trailing_whitespace = false

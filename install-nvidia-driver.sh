@@ -38,34 +38,35 @@
 
 # shellcheck disable=SC2016,SC2310,SC2312
 
+# shellcheck disable=2292
+if [ -z "${BASH_VERSION:-}" ]; then
+    echo "Bash is required to interpret this script." >&2
+    exit 1
+fi
+
 set -u
 set -e
 shopt -s inherit_errexit &>/dev/null || true
 
 function abort() {
-	echo "$@" >&2
-	exit 1
+    echo "$@" >&2
+    exit 1
 }
-
-# shellcheck disable=2292
-if [ -z "${BASH_VERSION:-}" ]; then
-	abort "Bash is required to interpret this script."
-fi
 
 export LANGUAGE="C:en"
 
 # shellcheck disable=1091
 if [[ "$(uname -s)" != "Linux" ]] || (source /etc/os-release && [[ "${NAME:-}" != "Ubuntu" ]]); then
-	abort "This script only supports Ubuntu Linux."
+    abort "This script only supports Ubuntu Linux."
 elif [[ -n "${WSL_DISTRO_NAME:-}" ]] || (uname -r | grep -qiF 'microsoft'); then
-	abort "Please install the NVIDIA driver in the Windows host system rather than in WSL."
+    abort "Please install the NVIDIA driver in the Windows host system rather than in WSL."
 fi
 
 # String formatters
 if [[ -t 1 ]]; then
-	tty_escape() { printf "\033[%sm" "$1"; }
+    tty_escape() { printf "\033[%sm" "$1"; }
 else
-	tty_escape() { :; }
+    tty_escape() { :; }
 fi
 tty_mkbold() { tty_escape "1;$1"; }
 tty_blue="$(tty_mkbold 34)"
@@ -78,7 +79,7 @@ tty_dim="$(tty_escape 90)"
 tty_reset="$(tty_escape 0)"
 
 function usage() {
-	cat <<EOS
+    cat <<EOS
 Usage: bash $(basename "$0") [--package=PKG] [--upgrade-only] [--latest]
                              [--server] [--proprietary | --open]
                              [--dry-run] [--yes] [--help]
@@ -133,62 +134,62 @@ DRY_RUN=''
 YES=''
 unset HAVE_SUDO_ACCESS
 while [[ "$#" -gt 0 ]]; do
-	arg="$1"
-	shift
-	case "${arg}" in
-		--package)
-			REQUESTED_DRIVER="$1"
-			shift
-			;;
-		--package=*)
-			REQUESTED_DRIVER="${arg#*=}"
-			;;
-		--upgrade-only)
-			if [[ -n "${LATEST}" ]]; then
-				abort 'Both option `--upgrade-only` and `--latest` are set.'
-			fi
-			UPGRADE_ONLY=1
-			;;
-		--latest)
-			if [[ -n "${UPGRADE_ONLY}" ]]; then
-				abort 'Both option `--upgrade-only` and `--latest` are set.'
-			fi
-			LATEST=1
-			;;
-		--server)
-			SERVER=1
-			;;
-		--proprietary)
-			if [[ "${FLAVOR}" == 'open' ]]; then
-				abort 'Both option `--proprietary` and `--open` are set.'
-			fi
-			FLAVOR='proprietary'
-			FLAVOR_EXPLICIT=1
-			;;
-		--open)
-			if [[ "${FLAVOR}" == 'proprietary' ]]; then
-				abort 'Both option `--proprietary` and `--open` are set.'
-			fi
-			FLAVOR='open'
-			FLAVOR_EXPLICIT=1
-			;;
-		--dry-run | -n)
-			DRY_RUN=1
-			HAVE_SUDO_ACCESS=1
-			;;
-		--yes | -y)
-			YES=1
-			;;
-		--help | -h)
-			usage
-			exit
-			;;
-		*)
-			usage >&2
-			echo >&2
-			abort "Invalid option '${arg}'"
-			;;
-	esac
+    arg="$1"
+    shift
+    case "${arg}" in
+        --package)
+            REQUESTED_DRIVER="$1"
+            shift
+            ;;
+        --package=*)
+            REQUESTED_DRIVER="${arg#*=}"
+            ;;
+        --upgrade-only)
+            if [[ -n "${LATEST}" ]]; then
+                abort 'Both option `--upgrade-only` and `--latest` are set.'
+            fi
+            UPGRADE_ONLY=1
+            ;;
+        --latest)
+            if [[ -n "${UPGRADE_ONLY}" ]]; then
+                abort 'Both option `--upgrade-only` and `--latest` are set.'
+            fi
+            LATEST=1
+            ;;
+        --server)
+            SERVER=1
+            ;;
+        --proprietary)
+            if [[ "${FLAVOR}" == 'open' ]]; then
+                abort 'Both option `--proprietary` and `--open` are set.'
+            fi
+            FLAVOR='proprietary'
+            FLAVOR_EXPLICIT=1
+            ;;
+        --open)
+            if [[ "${FLAVOR}" == 'proprietary' ]]; then
+                abort 'Both option `--proprietary` and `--open` are set.'
+            fi
+            FLAVOR='open'
+            FLAVOR_EXPLICIT=1
+            ;;
+        --dry-run | -n)
+            DRY_RUN=1
+            HAVE_SUDO_ACCESS=1
+            ;;
+        --yes | -y)
+            YES=1
+            ;;
+        --help | -h)
+            usage
+            exit
+            ;;
+        *)
+            usage >&2
+            echo >&2
+            abort "Invalid option '${arg}'"
+            ;;
+    esac
 done
 
 # Default flavor when neither --proprietary nor --open is given.
@@ -197,387 +198,387 @@ done
 ### Functions ######################################################################################
 
 function apt-list-packages() {
-	dpkg-query --show --showformat='${Installed-Size} ${binary:Package} ${Version} ${Status}\n' |
-		grep -v deinstall | sort -n | awk '{ print $1" "$2" "$3 }'
+    dpkg-query --show --showformat='${Installed-Size} ${binary:Package} ${Version} ${Status}\n' |
+        grep -v deinstall | sort -n | awk '{ print $1" "$2" "$3 }'
 }
 
 function apt-list-nvidia-packages() {
-	local packages
-	packages="$(
-		apt-list-packages |
-			awk '$2 ~ /nvidia.*-[0-9]+(-server)?(-open)?(:.*)?$/ { print $2 }' |
-			sort
-	)"
-	echo "${packages//$'\n'/ }"
+    local packages
+    packages="$(
+        apt-list-packages |
+            awk '$2 ~ /nvidia.*-[0-9]+(-server)?(-open)?(:.*)?$/ { print $2 }' |
+            sort
+    )"
+    echo "${packages//$'\n'/ }"
 }
 
 function apt-installed-version() {
-	apt-cache policy "$1" | grep -F 'Installed' | awk '{ print $2 }'
+    apt-cache policy "$1" | grep -F 'Installed' | awk '{ print $2 }'
 }
 
 function driver-major() {
-	# nvidia-driver-595             -> 595
-	# nvidia-driver-595-open        -> 595
-	# nvidia-driver-580-server      -> 580
-	# nvidia-driver-580-server-open -> 580
-	local d="${1#nvidia-driver-}"
-	echo "${d%%-*}"
+    # nvidia-driver-595             -> 595
+    # nvidia-driver-595-open        -> 595
+    # nvidia-driver-580-server      -> 580
+    # nvidia-driver-580-server-open -> 580
+    local d="${1#nvidia-driver-}"
+    echo "${d%%-*}"
 }
 
 function driver-family() {
-	if [[ "$1" == *-server || "$1" == *-server-open ]]; then
-		echo 'server'
-	else
-		echo 'standard'
-	fi
+    if [[ "$1" == *-server || "$1" == *-server-open ]]; then
+        echo 'server'
+    else
+        echo 'standard'
+    fi
 }
 
 function driver-flavor() {
-	# nvidia-driver-595             -> proprietary
-	# nvidia-driver-595-open        -> open
-	# nvidia-driver-580-server      -> proprietary
-	# nvidia-driver-580-server-open -> open
-	if [[ "$1" == *-open ]]; then
-		echo 'open'
-	else
-		echo 'proprietary'
-	fi
+    # nvidia-driver-595             -> proprietary
+    # nvidia-driver-595-open        -> open
+    # nvidia-driver-580-server      -> proprietary
+    # nvidia-driver-580-server-open -> open
+    if [[ "$1" == *-open ]]; then
+        echo 'open'
+    else
+        echo 'proprietary'
+    fi
 }
 
 function toggle-open-suffix() {
-	# nvidia-driver-595             -> nvidia-driver-595-open
-	# nvidia-driver-595-open        -> nvidia-driver-595
-	# nvidia-driver-580-server      -> nvidia-driver-580-server-open
-	# nvidia-driver-580-server-open -> nvidia-driver-580-server
-	if [[ "$1" == *-open ]]; then
-		echo "${1%-open}"
-	else
-		echo "$1-open"
-	fi
+    # nvidia-driver-595             -> nvidia-driver-595-open
+    # nvidia-driver-595-open        -> nvidia-driver-595
+    # nvidia-driver-580-server      -> nvidia-driver-580-server-open
+    # nvidia-driver-580-server-open -> nvidia-driver-580-server
+    if [[ "$1" == *-open ]]; then
+        echo "${1%-open}"
+    else
+        echo "$1-open"
+    fi
 }
 
 function driver-available() {
-	# Predicate: is "$1" present in the global AVAILABLE_DRIVERS array?
-	local d
-	for d in "${AVAILABLE_DRIVERS[@]}"; do
-		if [[ "${d}" == "$1" ]]; then
-			return 0
-		fi
-	done
-	return 1
+    # Predicate: is "$1" present in the global AVAILABLE_DRIVERS array?
+    local d
+    for d in "${AVAILABLE_DRIVERS[@]}"; do
+        if [[ "${d}" == "$1" ]]; then
+            return 0
+        fi
+    done
+    return 1
 }
 
 function apt-candidate-version() {
-	apt-cache policy "$1" | grep -F 'Candidate' | awk '{ print $2 }'
+    apt-cache policy "$1" | grep -F 'Candidate' | awk '{ print $2 }'
 }
 
 # From https://github.com/XuehaiPan/Dev-Setup.git
 function exec_cmd() {
-	printf "%s" "$@" | awk \
-		'BEGIN {
-			RESET = "\033[0m";
-			BOLD = "\033[1m";
-			UNDERLINE = "\033[4m";
-			UNDERLINEOFF = "\033[24m";
-			RED = "\033[31m";
-			GREEN = "\033[32m";
-			YELLOW = "\033[33m";
-			WHITE = "\033[37m";
-			GRAY = "\033[90m";
-			IDENTIFIER = "[_a-zA-Z][_a-zA-Z0-9]*";
-			idx = 0;
-			in_string = 0;
-			double_quoted = 1;
-			printf("%s$", RESET BOLD WHITE);
-		}
-		{
-			for (i = 1; i <= NF; ++i) {
-				style = WHITE;
-				post_style = WHITE;
-				if (!in_string) {
-					if ($i ~ /^-/)
-						style = YELLOW;
-					else if ($i == "sudo" && idx == 0) {
-						style = UNDERLINE GREEN;
-						post_style = UNDERLINEOFF WHITE;
-					}
-					else if ($i ~ "^" IDENTIFIER "=" && idx == 0) {
-						style = GRAY;
-						'"if (\$i ~ \"^\" IDENTIFIER \"=[\\\"']\") {"'
-							in_string = 1;
-							double_quoted = ($i ~ "^" IDENTIFIER "=\"");
-						}
-					}
-					else if ($i ~ /^[12&]?>>?/ || $i == "\\")
-						style = RED;
-					else {
-						++idx;
-						'"if (\$i ~ /^[\"']/) {"'
-							in_string = 1;
-							double_quoted = ($i ~ /^"/);
-						}
-						if (idx == 1)
-							style = GREEN;
-					}
-				}
-				if (in_string) {
-					if (style == WHITE)
-						style = "";
-					post_style = "";
-					'"if ((double_quoted && \$i ~ /\";?\$/ && \$i !~ /\\\\\";?\$/) || (!double_quoted && \$i ~ /';?\$/))"'
-						in_string = 0;
-				}
-				if (($i ~ /;$/ && $i !~ /\\;$/) || $i == "|" || $i == "||" || $i == "&&") {
-					if (!in_string) {
-						idx = 0;
-						if ($i !~ /;$/)
-							style = RED;
-					}
-				}
-				if ($i ~ /;$/ && $i !~ /\\;$/)
-					printf(" %s%s%s;%s", style, substr($i, 1, length($i) - 1), (in_string ? WHITE : RED), post_style);
-				else
-					printf(" %s%s%s", style, $i, post_style);
-				if ($i == "\\")
-					printf("\n\t");
-			}
-		}
-		END {
-			printf("%s\n", RESET);
-		}' >&2
-	# Return failures outside `eval` so `bash -c` preserves the EXIT handler's function context.
-	# shellcheck disable=SC2294
-	eval "$@" || return "$?"
+    printf "%s" "$@" | awk \
+        'BEGIN {
+            RESET = "\033[0m";
+            BOLD = "\033[1m";
+            UNDERLINE = "\033[4m";
+            UNDERLINEOFF = "\033[24m";
+            RED = "\033[31m";
+            GREEN = "\033[32m";
+            YELLOW = "\033[33m";
+            WHITE = "\033[37m";
+            GRAY = "\033[90m";
+            IDENTIFIER = "[_a-zA-Z][_a-zA-Z0-9]*";
+            idx = 0;
+            in_string = 0;
+            double_quoted = 1;
+            printf("%s$", RESET BOLD WHITE);
+        }
+        {
+            for (i = 1; i <= NF; ++i) {
+                style = WHITE;
+                post_style = WHITE;
+                if (!in_string) {
+                    if ($i ~ /^-/)
+                        style = YELLOW;
+                    else if ($i == "sudo" && idx == 0) {
+                        style = UNDERLINE GREEN;
+                        post_style = UNDERLINEOFF WHITE;
+                    }
+                    else if ($i ~ "^" IDENTIFIER "=" && idx == 0) {
+                        style = GRAY;
+                        '"if (\$i ~ \"^\" IDENTIFIER \"=[\\\"']\") {"'
+                            in_string = 1;
+                            double_quoted = ($i ~ "^" IDENTIFIER "=\"");
+                        }
+                    }
+                    else if ($i ~ /^[12&]?>>?/ || $i == "\\")
+                        style = RED;
+                    else {
+                        ++idx;
+                        '"if (\$i ~ /^[\"']/) {"'
+                            in_string = 1;
+                            double_quoted = ($i ~ /^"/);
+                        }
+                        if (idx == 1)
+                            style = GREEN;
+                    }
+                }
+                if (in_string) {
+                    if (style == WHITE)
+                        style = "";
+                    post_style = "";
+                    '"if ((double_quoted && \$i ~ /\";?\$/ && \$i !~ /\\\\\";?\$/) || (!double_quoted && \$i ~ /';?\$/))"'
+                        in_string = 0;
+                }
+                if (($i ~ /;$/ && $i !~ /\\;$/) || $i == "|" || $i == "||" || $i == "&&") {
+                    if (!in_string) {
+                        idx = 0;
+                        if ($i !~ /;$/)
+                            style = RED;
+                    }
+                }
+                if ($i ~ /;$/ && $i !~ /\\;$/)
+                    printf(" %s%s%s;%s", style, substr($i, 1, length($i) - 1), (in_string ? WHITE : RED), post_style);
+                else
+                    printf(" %s%s%s", style, $i, post_style);
+                if ($i == "\\")
+                    printf("\n\t");
+            }
+        }
+        END {
+            printf("%s\n", RESET);
+        }' >&2
+    # Return failures outside `eval` so `bash -c` preserves the EXIT handler's function context.
+    # shellcheck disable=SC2294
+    eval "$@" || return "$?"
 }
 
 # From https://github.com/Homebrew/install.git
 shell_join() {
-	local arg
-	printf "%s" "$1"
-	shift
-	for arg in "$@"; do
-		printf " "
-		printf "%s" "${arg// /\ }"
-	done
+    local arg
+    printf "%s" "$1"
+    shift
+    for arg in "$@"; do
+        printf " "
+        printf "%s" "${arg// /\ }"
+    done
 }
 
 chomp() {
-	printf "%s" "${1/"$'\n'"/}"
+    printf "%s" "${1/"$'\n'"/}"
 }
 
 ohai() {
-	printf "${tty_blue}==>${tty_bold} %s${tty_reset}\n" "$(shell_join "$@")"
+    printf "${tty_blue}==>${tty_bold} %s${tty_reset}\n" "$(shell_join "$@")"
 }
 
 warn() {
-	printf "${tty_red}Warning:${tty_reset} %s\n" "$(chomp "$1")"
+    printf "${tty_red}Warning:${tty_reset} %s\n" "$(chomp "$1")"
 }
 
 ring_bell() {
-	# Use the shell's audible bell.
-	if [[ -t 1 ]]; then
-		printf "\a"
-	fi
+    # Use the shell's audible bell.
+    if [[ -t 1 ]]; then
+        printf "\a"
+    fi
 }
 
 getc() {
-	local save_state
-	save_state="$(/bin/stty -g)"
-	/bin/stty raw -echo
-	IFS='' read -r -n 1 -d '' "$@"
-	/bin/stty "${save_state}"
+    local save_state
+    save_state="$(/bin/stty -g)"
+    /bin/stty raw -echo
+    IFS='' read -r -n 1 -d '' "$@"
+    /bin/stty "${save_state}"
 }
 
 CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:"
 wait_for_user() {
-	local c
-	echo
-	echo "${CONFIRM_MESSAGE}"
-	getc c
-	# we test for \r and \n because some stuff does \r instead
-	if ! [[ "${c}" == $'\r' || "${c}" == $'\n' ]]; then
-		exit 1
-	fi
+    local c
+    echo
+    echo "${CONFIRM_MESSAGE}"
+    getc c
+    # we test for \r and \n because some stuff does \r instead
+    if ! [[ "${c}" == $'\r' || "${c}" == $'\n' ]]; then
+        exit 1
+    fi
 }
 
 function have_sudo_access() {
-	if [[ "${EUID:-"${UID}"}" == "0" ]]; then
-		return 0
-	fi
+    if [[ "${EUID:-"${UID}"}" == "0" ]]; then
+        return 0
+    fi
 
-	if [[ ! -x "/usr/bin/sudo" ]]; then
-		return 1
-	fi
+    if [[ ! -x "/usr/bin/sudo" ]]; then
+        return 1
+    fi
 
-	local -a SUDO=("/usr/bin/sudo")
-	if [[ -n "${SUDO_ASKPASS-}" ]]; then
-		SUDO+=("-A")
-	fi
+    local -a SUDO=("/usr/bin/sudo")
+    if [[ -n "${SUDO_ASKPASS-}" ]]; then
+        SUDO+=("-A")
+    fi
 
-	if [[ -z "${HAVE_SUDO_ACCESS-}" ]]; then
-		ohai "Checking sudo access (press ${tty_yellow}Ctrl+C${tty_white} to list the driver versions only)." >&2
-		exec_cmd "${SUDO[*]} -v && ${SUDO[*]} -l mkdir &>/dev/null"
-		HAVE_SUDO_ACCESS="$?"
-	fi
+    if [[ -z "${HAVE_SUDO_ACCESS-}" ]]; then
+        ohai "Checking sudo access (press ${tty_yellow}Ctrl+C${tty_white} to list the driver versions only)." >&2
+        exec_cmd "${SUDO[*]} -v && ${SUDO[*]} -l mkdir &>/dev/null"
+        HAVE_SUDO_ACCESS="$?"
+    fi
 
-	return "${HAVE_SUDO_ACCESS}"
+    return "${HAVE_SUDO_ACCESS}"
 }
 
 ### Add Graphics Drivers PPA #######################################################################
 
 # shellcheck disable=SC2310
 if have_sudo_access; then
-	exec_cmd 'sudo apt-get update'
-	if ! (apt-cache policy | grep -qF 'graphics-drivers/ppa/ubuntu'); then
-		exec_cmd 'sudo apt-get install software-properties-common apt-transport-https --yes'
-		exec_cmd 'sudo add-apt-repository ppa:graphics-drivers/ppa --yes'
-		exec_cmd 'sudo apt-get update'
-	fi
-	echo
+    exec_cmd 'sudo apt-get update'
+    if ! (apt-cache policy | grep -qF 'graphics-drivers/ppa/ubuntu'); then
+        exec_cmd 'sudo apt-get install software-properties-common apt-transport-https --yes'
+        exec_cmd 'sudo add-apt-repository ppa:graphics-drivers/ppa --yes'
+        exec_cmd 'sudo apt-get update'
+    fi
+    echo
 else
-	DRY_RUN=1
+    DRY_RUN=1
 fi
 
 ### Query and list available driver packages #######################################################
 
 # shellcheck disable=SC2207
 AVAILABLE_DRIVERS=($(
-	apt-cache search --names-only nvidia-driver |
-		awk '$1 ~ /^nvidia-driver-[0-9]+(-server)?(-open)?$/ { print $1 }' |
-		sort -V
+    apt-cache search --names-only nvidia-driver |
+        awk '$1 ~ /^nvidia-driver-[0-9]+(-server)?(-open)?$/ { print $1 }' |
+        sort -V
 ))
 
 if [[ "${#AVAILABLE_DRIVERS[@]}" -eq 0 ]]; then
-	abort "No available drivers found from APT."
+    abort "No available drivers found from APT."
 fi
 
 INSTALLED_DRIVER="$(apt-list-packages | awk '$2 ~ /^nvidia-driver-[0-9]+(-server)?(-open)?$/ { print $2 }')"
 if [[ -n "${INSTALLED_DRIVER}" ]]; then
-	INSTALLED_DRIVER_VERSION="$(apt-installed-version "${INSTALLED_DRIVER}")"
-	INSTALLED_DRIVER_CANDIDATE_VERSION="$(apt-candidate-version "${INSTALLED_DRIVER}")"
-	INSTALLED_FLAVOR="$(driver-flavor "${INSTALLED_DRIVER}")"
-	INSTALLED_FAMILY="$(driver-family "${INSTALLED_DRIVER}")"
+    INSTALLED_DRIVER_VERSION="$(apt-installed-version "${INSTALLED_DRIVER}")"
+    INSTALLED_DRIVER_CANDIDATE_VERSION="$(apt-candidate-version "${INSTALLED_DRIVER}")"
+    INSTALLED_FLAVOR="$(driver-flavor "${INSTALLED_DRIVER}")"
+    INSTALLED_FAMILY="$(driver-family "${INSTALLED_DRIVER}")"
 else
-	INSTALLED_DRIVER_VERSION=''
-	INSTALLED_DRIVER_CANDIDATE_VERSION=''
-	INSTALLED_FLAVOR=''
-	INSTALLED_FAMILY=''
+    INSTALLED_DRIVER_VERSION=''
+    INSTALLED_DRIVER_CANDIDATE_VERSION=''
+    INSTALLED_FLAVOR=''
+    INSTALLED_FAMILY=''
 fi
 
 # Effective flavor for picking LATEST_DRIVER: explicit `--proprietary`/`--open` wins; otherwise
 # preserve the installed driver's flavor; fresh hosts fall through to the `FLAVOR` default.
 EFFECTIVE_FLAVOR="${FLAVOR}"
 if [[ -z "${FLAVOR_EXPLICIT}" && -n "${INSTALLED_FLAVOR}" ]]; then
-	EFFECTIVE_FLAVOR="${INSTALLED_FLAVOR}"
+    EFFECTIVE_FLAVOR="${INSTALLED_FLAVOR}"
 fi
 
 # Server packages are a separate family with both proprietary and open kernel modules.
 # Preserve the installed family unless `--server` or an explicit `--package` overrides it.
 EFFECTIVE_FAMILY="${INSTALLED_FAMILY:-standard}"
 if [[ -n "${REQUESTED_DRIVER}" ]]; then
-	EFFECTIVE_FAMILY="$(driver-family "${REQUESTED_DRIVER}")"
+    EFFECTIVE_FAMILY="$(driver-family "${REQUESTED_DRIVER}")"
 elif [[ -n "${SERVER}" ]]; then
-	EFFECTIVE_FAMILY='server'
+    EFFECTIVE_FAMILY='server'
 fi
 
 # Pick each flavor's latest branch within the effective family, never across families.
 LATEST_PROPRIETARY_DRIVER=''
 LATEST_OPEN_DRIVER=''
 for driver in "${AVAILABLE_DRIVERS[@]}"; do
-	if [[ "$(driver-family "${driver}")" != "${EFFECTIVE_FAMILY}" ]]; then
-		continue
-	fi
-	if [[ "$(driver-flavor "${driver}")" == 'open' ]]; then
-		LATEST_OPEN_DRIVER="${driver}"
-	else
-		LATEST_PROPRIETARY_DRIVER="${driver}"
-	fi
+    if [[ "$(driver-family "${driver}")" != "${EFFECTIVE_FAMILY}" ]]; then
+        continue
+    fi
+    if [[ "$(driver-flavor "${driver}")" == 'open' ]]; then
+        LATEST_OPEN_DRIVER="${driver}"
+    else
+        LATEST_PROPRIETARY_DRIVER="${driver}"
+    fi
 done
 
 if [[ "${EFFECTIVE_FLAVOR}" == 'open' ]]; then
-	LATEST_DRIVER="${LATEST_OPEN_DRIVER}"
-	LATEST_FALLBACK="${LATEST_PROPRIETARY_DRIVER}"
+    LATEST_DRIVER="${LATEST_OPEN_DRIVER}"
+    LATEST_FALLBACK="${LATEST_PROPRIETARY_DRIVER}"
 else
-	LATEST_DRIVER="${LATEST_PROPRIETARY_DRIVER}"
-	LATEST_FALLBACK="${LATEST_OPEN_DRIVER}"
+    LATEST_DRIVER="${LATEST_PROPRIETARY_DRIVER}"
+    LATEST_FALLBACK="${LATEST_OPEN_DRIVER}"
 fi
 # Resolution-time fallback only matters when the script needs LATEST_DRIVER to compute
 # REQUESTED_DRIVER. An explicit `--package=PKG` is the user's authoritative override and is
 # allowed through even when the preserved flavor has no APT candidates.
 if [[ -z "${LATEST_DRIVER}" && -z "${REQUESTED_DRIVER}" ]]; then
-	if [[ -z "${LATEST_FALLBACK}" ]]; then
-		abort "No \`${EFFECTIVE_FAMILY}\` driver candidates available from APT. Run \`sudo apt-get update\` to refresh the package cache, or pass \`--package=PKG\` to choose another family."
-	fi
-	if [[ -n "${FLAVOR_EXPLICIT}" ]]; then
-		abort "No \`${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR}\` driver candidates available from APT. Drop \`--${FLAVOR}\`, run \`sudo apt-get update\` to refresh the package cache, or pass \`--package=PKG\` to override."
-	fi
-	if [[ -n "${INSTALLED_DRIVER}" ]]; then
-		# Never silently switch flavor on an installed system: falling back to the opposite
-		# kernel-module flavor would be a root-level migration the user did not ask for.
-		if [[ "${EFFECTIVE_FLAVOR}" == 'open' ]]; then
-			opposite_flavor='proprietary'
-		else
-			opposite_flavor='open'
-		fi
-		abort "No \`${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR}\` driver candidates available from APT to upgrade \`${INSTALLED_DRIVER}\`. Run \`sudo apt-get update\` to refresh the cache, pass \`--${opposite_flavor}\` to switch flavors explicitly, or pass \`--package=PKG\` to override."
-	fi
-	# Fresh-install fallback: pick whichever flavor the PPA publishes rather than refusing.
-	warn "No \`${EFFECTIVE_FLAVOR}\` driver candidates available; falling back to \`${LATEST_FALLBACK}\` ($(driver-flavor "${LATEST_FALLBACK}") flavor)."
-	LATEST_DRIVER="${LATEST_FALLBACK}"
+    if [[ -z "${LATEST_FALLBACK}" ]]; then
+        abort "No \`${EFFECTIVE_FAMILY}\` driver candidates available from APT. Run \`sudo apt-get update\` to refresh the package cache, or pass \`--package=PKG\` to choose another family."
+    fi
+    if [[ -n "${FLAVOR_EXPLICIT}" ]]; then
+        abort "No \`${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR}\` driver candidates available from APT. Drop \`--${FLAVOR}\`, run \`sudo apt-get update\` to refresh the package cache, or pass \`--package=PKG\` to override."
+    fi
+    if [[ -n "${INSTALLED_DRIVER}" ]]; then
+        # Never silently switch flavor on an installed system: falling back to the opposite
+        # kernel-module flavor would be a root-level migration the user did not ask for.
+        if [[ "${EFFECTIVE_FLAVOR}" == 'open' ]]; then
+            opposite_flavor='proprietary'
+        else
+            opposite_flavor='open'
+        fi
+        abort "No \`${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR}\` driver candidates available from APT to upgrade \`${INSTALLED_DRIVER}\`. Run \`sudo apt-get update\` to refresh the cache, pass \`--${opposite_flavor}\` to switch flavors explicitly, or pass \`--package=PKG\` to override."
+    fi
+    # Fresh-install fallback: pick whichever flavor the PPA publishes rather than refusing.
+    warn "No \`${EFFECTIVE_FLAVOR}\` driver candidates available; falling back to \`${LATEST_FALLBACK}\` ($(driver-flavor "${LATEST_FALLBACK}") flavor)."
+    LATEST_DRIVER="${LATEST_FALLBACK}"
 fi
 LATEST_DRIVER_VERSION=''
 if [[ -n "${LATEST_DRIVER}" ]]; then
-	LATEST_DRIVER_VERSION="$(apt-candidate-version "${LATEST_DRIVER}")"
+    LATEST_DRIVER_VERSION="$(apt-candidate-version "${LATEST_DRIVER}")"
 fi
 
 if [[ -z "${REQUESTED_DRIVER}" ]]; then
-	if [[ -n "${LATEST}" || -z "${INSTALLED_DRIVER}" ]]; then
-		REQUESTED_DRIVER="${LATEST_DRIVER}"
-		REQUESTED_DRIVER_VERSION="${LATEST_DRIVER_VERSION}"
-	elif [[ "${INSTALLED_FLAVOR}" != "${EFFECTIVE_FLAVOR}" ||
-		"${INSTALLED_FAMILY}" != "${EFFECTIVE_FAMILY}" ]]; then
-		# Standalone family/flavor flags switch to the same-major counterpart.
-		counterpart="nvidia-driver-$(driver-major "${INSTALLED_DRIVER}")"
-		if [[ "${EFFECTIVE_FAMILY}" == 'server' ]]; then
-			counterpart+='-server'
-		fi
-		if [[ "${EFFECTIVE_FLAVOR}" == 'open' ]]; then
-			counterpart+='-open'
-		fi
-		if ! driver-available "${counterpart}"; then
-			abort "Cannot switch \`${INSTALLED_DRIVER}\` to ${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR}: \`${counterpart}\` is not available from APT. Pass \`--latest\` to switch to the latest ${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR} branch instead."
-		fi
-		REQUESTED_DRIVER="${counterpart}"
-		REQUESTED_DRIVER_VERSION="$(apt-candidate-version "${REQUESTED_DRIVER}")"
-	else
-		REQUESTED_DRIVER="${INSTALLED_DRIVER}"
-		REQUESTED_DRIVER_VERSION="${INSTALLED_DRIVER_CANDIDATE_VERSION}"
-	fi
+    if [[ -n "${LATEST}" || -z "${INSTALLED_DRIVER}" ]]; then
+        REQUESTED_DRIVER="${LATEST_DRIVER}"
+        REQUESTED_DRIVER_VERSION="${LATEST_DRIVER_VERSION}"
+    elif [[ "${INSTALLED_FLAVOR}" != "${EFFECTIVE_FLAVOR}" ||
+        "${INSTALLED_FAMILY}" != "${EFFECTIVE_FAMILY}" ]]; then
+        # Standalone family/flavor flags switch to the same-major counterpart.
+        counterpart="nvidia-driver-$(driver-major "${INSTALLED_DRIVER}")"
+        if [[ "${EFFECTIVE_FAMILY}" == 'server' ]]; then
+            counterpart+='-server'
+        fi
+        if [[ "${EFFECTIVE_FLAVOR}" == 'open' ]]; then
+            counterpart+='-open'
+        fi
+        if ! driver-available "${counterpart}"; then
+            abort "Cannot switch \`${INSTALLED_DRIVER}\` to ${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR}: \`${counterpart}\` is not available from APT. Pass \`--latest\` to switch to the latest ${EFFECTIVE_FAMILY} ${EFFECTIVE_FLAVOR} branch instead."
+        fi
+        REQUESTED_DRIVER="${counterpart}"
+        REQUESTED_DRIVER_VERSION="$(apt-candidate-version "${REQUESTED_DRIVER}")"
+    else
+        REQUESTED_DRIVER="${INSTALLED_DRIVER}"
+        REQUESTED_DRIVER_VERSION="${INSTALLED_DRIVER_CANDIDATE_VERSION}"
+    fi
 else
-	REQUESTED_DRIVER_VERSION="$(apt-candidate-version "${REQUESTED_DRIVER}")"
-	if [[ -z "${REQUESTED_DRIVER_VERSION}" ]]; then
-		abort "Unable to locate package ${REQUESTED_DRIVER}."
-	fi
-	requested_flavor="$(driver-flavor "${REQUESTED_DRIVER}")"
-	if [[ -n "${SERVER}" && "$(driver-family "${REQUESTED_DRIVER}")" != 'server' ]]; then
-		suggested="${REQUESTED_DRIVER%-open}-server"
-		if [[ "${requested_flavor}" == 'open' ]]; then
-			suggested+='-open'
-		fi
-		conflict_msg="Option \`--server\` conflicts with package \`${REQUESTED_DRIVER}\` (standard family)."
-		if driver-available "${suggested}"; then
-			conflict_msg+=" Did you mean \`${suggested}\`?"
-		fi
-		abort "${conflict_msg}"
-	fi
-	if [[ -n "${FLAVOR_EXPLICIT}" && "${requested_flavor}" != "${FLAVOR}" ]]; then
-		suggested="$(toggle-open-suffix "${REQUESTED_DRIVER}")"
-		conflict_msg="Option \`--${FLAVOR}\` conflicts with package \`${REQUESTED_DRIVER}\` (${requested_flavor} flavor)."
-		if driver-available "${suggested}"; then
-			conflict_msg+=" Did you mean \`${suggested}\`?"
-		fi
-		abort "${conflict_msg}"
-	fi
+    REQUESTED_DRIVER_VERSION="$(apt-candidate-version "${REQUESTED_DRIVER}")"
+    if [[ -z "${REQUESTED_DRIVER_VERSION}" ]]; then
+        abort "Unable to locate package ${REQUESTED_DRIVER}."
+    fi
+    requested_flavor="$(driver-flavor "${REQUESTED_DRIVER}")"
+    if [[ -n "${SERVER}" && "$(driver-family "${REQUESTED_DRIVER}")" != 'server' ]]; then
+        suggested="${REQUESTED_DRIVER%-open}-server"
+        if [[ "${requested_flavor}" == 'open' ]]; then
+            suggested+='-open'
+        fi
+        conflict_msg="Option \`--server\` conflicts with package \`${REQUESTED_DRIVER}\` (standard family)."
+        if driver-available "${suggested}"; then
+            conflict_msg+=" Did you mean \`${suggested}\`?"
+        fi
+        abort "${conflict_msg}"
+    fi
+    if [[ -n "${FLAVOR_EXPLICIT}" && "${requested_flavor}" != "${FLAVOR}" ]]; then
+        suggested="$(toggle-open-suffix "${REQUESTED_DRIVER}")"
+        conflict_msg="Option \`--${FLAVOR}\` conflicts with package \`${REQUESTED_DRIVER}\` (${requested_flavor} flavor)."
+        if driver-available "${suggested}"; then
+            conflict_msg+=" Did you mean \`${suggested}\`?"
+        fi
+        abort "${conflict_msg}"
+    fi
 fi
 
 # `--upgrade-only` promises to keep the installed driver package, so reject any combination that
@@ -586,74 +587,74 @@ fi
 # the later install path would purge the existing NVIDIA stack and reinstall the new package — a
 # root-level system change masquerading as an upgrade.
 if [[ -n "${UPGRADE_ONLY}" && -n "${INSTALLED_DRIVER}" && "${INSTALLED_DRIVER}" != "${REQUESTED_DRIVER}" ]]; then
-	abort "Option \`--upgrade-only\` cannot change the driver package from \`${INSTALLED_DRIVER}\` to \`${REQUESTED_DRIVER}\`. Drop \`--upgrade-only\` to switch packages."
+    abort "Option \`--upgrade-only\` cannot change the driver package from \`${INSTALLED_DRIVER}\` to \`${REQUESTED_DRIVER}\`. Drop \`--upgrade-only\` to switch packages."
 fi
 
 ohai "Available NVIDIA drivers (${EFFECTIVE_FAMILY} family):"
 for driver in "${AVAILABLE_DRIVERS[@]}"; do
-	family="$(driver-family "${driver}")"
-	if [[ "${family}" != "${EFFECTIVE_FAMILY}" ]]; then
-		continue
-	fi
-	flavor="$(driver-flavor "${driver}")"
-	prefix="    "
-	if [[ "${driver}" == "${REQUESTED_DRIVER}" ]]; then
-		prefix="--> "
-	fi
+    family="$(driver-family "${driver}")"
+    if [[ "${family}" != "${EFFECTIVE_FAMILY}" ]]; then
+        continue
+    fi
+    flavor="$(driver-flavor "${driver}")"
+    prefix="    "
+    if [[ "${driver}" == "${REQUESTED_DRIVER}" ]]; then
+        prefix="--> "
+    fi
 
-	# Annotate branch tips in the effective family so "latest" matches the selected family.
-	suffix=''
-	if [[ "${driver}" == "${LATEST_PROPRIETARY_DRIVER}" ]]; then
-		suffix=" (latest ${EFFECTIVE_FAMILY} proprietary)"
-	elif [[ "${driver}" == "${LATEST_OPEN_DRIVER}" ]]; then
-		suffix=" (latest ${EFFECTIVE_FAMILY} open)"
-	fi
+    # Annotate branch tips in the effective family so "latest" matches the selected family.
+    suffix=''
+    if [[ "${driver}" == "${LATEST_PROPRIETARY_DRIVER}" ]]; then
+        suffix=" (latest ${EFFECTIVE_FAMILY} proprietary)"
+    elif [[ "${driver}" == "${LATEST_OPEN_DRIVER}" ]]; then
+        suffix=" (latest ${EFFECTIVE_FAMILY} open)"
+    fi
 
-	# Dim other-family/flavor rows: picking one would require a purge+reinstall switch. The
-	# REQUESTED_DRIVER row is exempt so the `--> ` arrow keeps priority on a deliberate switch.
-	dim=''
-	if [[ -n "${INSTALLED_FLAVOR}" &&
-		("${flavor}" != "${INSTALLED_FLAVOR}" || "${family}" != "${INSTALLED_FAMILY}") &&
-		"${driver}" != "${REQUESTED_DRIVER}" ]]; then
-		dim=1
-	fi
+    # Dim other-family/flavor rows: picking one would require a purge+reinstall switch. The
+    # REQUESTED_DRIVER row is exempt so the `--> ` arrow keeps priority on a deliberate switch.
+    dim=''
+    if [[ -n "${INSTALLED_FLAVOR}" &&
+        ("${flavor}" != "${INSTALLED_FLAVOR}" || "${family}" != "${INSTALLED_FAMILY}") &&
+        "${driver}" != "${REQUESTED_DRIVER}" ]]; then
+        dim=1
+    fi
 
-	if [[ "${driver}" == "${INSTALLED_DRIVER}" ]]; then
-		if [[ "${driver}" != "${REQUESTED_DRIVER}" ]]; then
-			prefix="<-- "
-		elif [[ "${REQUESTED_DRIVER_VERSION}" != "${INSTALLED_DRIVER_VERSION}" ]]; then
-			prefix="--> "
-		else
-			prefix="--- "
-		fi
-		if [[ "${INSTALLED_DRIVER_VERSION}" == "${INSTALLED_DRIVER_CANDIDATE_VERSION}" ]]; then
-			if [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
-				echo "${prefix}${tty_green}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
-			else
-				echo "${prefix}${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
-			fi
-		else
-			echo "${prefix}${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (upgradable to [${INSTALLED_DRIVER_CANDIDATE_VERSION}])"
-		fi
-	elif [[ -n "${dim}" ]]; then
-		echo "${prefix}${tty_dim}${driver} [$(apt-candidate-version "${driver}")]${suffix}${tty_reset}"
-	elif [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
-		echo "${prefix}${tty_green}${driver} [${LATEST_DRIVER_VERSION}]${tty_reset}${suffix}"
-	else
-		echo "${prefix}${driver} [$(apt-candidate-version "${driver}")]${suffix}"
-	fi
+    if [[ "${driver}" == "${INSTALLED_DRIVER}" ]]; then
+        if [[ "${driver}" != "${REQUESTED_DRIVER}" ]]; then
+            prefix="<-- "
+        elif [[ "${REQUESTED_DRIVER_VERSION}" != "${INSTALLED_DRIVER_VERSION}" ]]; then
+            prefix="--> "
+        else
+            prefix="--- "
+        fi
+        if [[ "${INSTALLED_DRIVER_VERSION}" == "${INSTALLED_DRIVER_CANDIDATE_VERSION}" ]]; then
+            if [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
+                echo "${prefix}${tty_green}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
+            else
+                echo "${prefix}${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (up-to-date)"
+            fi
+        else
+            echo "${prefix}${tty_bold}${driver} [${INSTALLED_DRIVER_VERSION}]${tty_reset} ${tty_yellow}[installed]${tty_reset} (upgradable to [${INSTALLED_DRIVER_CANDIDATE_VERSION}])"
+        fi
+    elif [[ -n "${dim}" ]]; then
+        echo "${prefix}${tty_dim}${driver} [$(apt-candidate-version "${driver}")]${suffix}${tty_reset}"
+    elif [[ "${driver}" == "${LATEST_DRIVER}" ]]; then
+        echo "${prefix}${tty_green}${driver} [${LATEST_DRIVER_VERSION}]${tty_reset}${suffix}"
+    else
+        echo "${prefix}${driver} [$(apt-candidate-version "${driver}")]${suffix}"
+    fi
 done
 
 if [[ "${INSTALLED_DRIVER}@${INSTALLED_DRIVER_VERSION}" == "${REQUESTED_DRIVER}@${REQUESTED_DRIVER_VERSION}" ]]; then
-	echo
-	ohai "Your NVIDIA driver is already up-to-date."
-	exit
+    echo
+    ohai "Your NVIDIA driver is already up-to-date."
+    exit
 elif [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" && -z "${UPGRADE_ONLY}" && -z "${LATEST}" ]]; then
-	echo
-	ohai "The requested driver ${REQUESTED_DRIVER} is already installed. Run \`bash $(basename "$0") --upgrade-only\` to upgrade."
-	exit
+    echo
+    ohai "The requested driver ${REQUESTED_DRIVER} is already installed. Run \`bash $(basename "$0") --upgrade-only\` to upgrade."
+    exit
 elif [[ -n "${DRY_RUN}" ]]; then
-	exit
+    exit
 fi
 
 echo
@@ -661,57 +662,57 @@ echo
 ### Show the installation plan and wait for user confirmation ######################################
 
 if [[ -z "${INSTALLED_DRIVER}" ]]; then
-	ohai "Install the NVIDIA driver ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
+    ohai "Install the NVIDIA driver ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
 elif [[ "$(driver-major "${REQUESTED_DRIVER}")" -ge "$(driver-major "${INSTALLED_DRIVER}")" ]]; then
-	ohai "Upgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
+    ohai "Upgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
 else
-	ohai "Downgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
+    ohai "Downgrade the NVIDIA driver from ${INSTALLED_DRIVER} [${INSTALLED_DRIVER_VERSION}] to ${REQUESTED_DRIVER} [${REQUESTED_DRIVER_VERSION}]."
 fi
 
 REQUESTED_FLAVOR="$(driver-flavor "${REQUESTED_DRIVER}")"
 REQUESTED_FAMILY="$(driver-family "${REQUESTED_DRIVER}")"
 if [[ -n "${INSTALLED_FAMILY}" && "${INSTALLED_FAMILY}" != "${REQUESTED_FAMILY}" ]]; then
-	ohai "Switching driver family from ${INSTALLED_FAMILY} to ${REQUESTED_FAMILY}."
+    ohai "Switching driver family from ${INSTALLED_FAMILY} to ${REQUESTED_FAMILY}."
 fi
 if [[ -n "${INSTALLED_FLAVOR}" && "${INSTALLED_FLAVOR}" != "${REQUESTED_FLAVOR}" ]]; then
-	ohai "Switching kernel-module flavor from ${INSTALLED_FLAVOR} to ${REQUESTED_FLAVOR}."
+    ohai "Switching kernel-module flavor from ${INSTALLED_FLAVOR} to ${REQUESTED_FLAVOR}."
 fi
 
 DM_SERVICES=()
 if [[ -n "$(sudo lsof -t /dev/nvidia* 2>/dev/null || true)" ]]; then
-	for dm in gdm3 lightdm; do
-		if service "${dm}" status &>/dev/null; then
-			DM_SERVICES+=("${dm}")
-		fi
-	done
+    for dm in gdm3 lightdm; do
+        if service "${dm}" status &>/dev/null; then
+            DM_SERVICES+=("${dm}")
+        fi
+    done
 fi
 
 if [[ "${#DM_SERVICES[@]}" -gt 0 ]]; then
-	if [[ "${#DM_SERVICES[@]}" -gt 1 ]]; then
-		warn "The following display manager services are running:"
-	else
-		warn "The following display manager service is running:"
-	fi
-	printf "  - %s\n" "${DM_SERVICES[@]}"
-	echo "The service will be stopped during the installation which may shut down the GUI desktop. The service will be restarted after the installation."
+    if [[ "${#DM_SERVICES[@]}" -gt 1 ]]; then
+        warn "The following display manager services are running:"
+    else
+        warn "The following display manager service is running:"
+    fi
+    printf "  - %s\n" "${DM_SERVICES[@]}"
+    echo "The service will be stopped during the installation which may shut down the GUI desktop. The service will be restarted after the installation."
 fi
 
 NVIDIA_SERVICES=()
 for service_name in nvidia-dcgm nvidia-fabricmanager nvidia-persistenced; do
-	if service "${service_name}" status &>/dev/null; then
-		NVIDIA_SERVICES+=("${service_name}")
-	fi
+    if service "${service_name}" status &>/dev/null; then
+        NVIDIA_SERVICES+=("${service_name}")
+    fi
 done
 
 if [[ "${#NVIDIA_SERVICES[@]}" -gt 0 ]]; then
-	warn "The following NVIDIA services are running:"
-	printf "  - %s\n" "${NVIDIA_SERVICES[@]}"
-	echo "These services will be stopped during installation and restarted when the installer exits."
+    warn "The following NVIDIA services are running:"
+    printf "  - %s\n" "${NVIDIA_SERVICES[@]}"
+    echo "These services will be stopped during installation and restarted when the installer exits."
 fi
 
 if [[ -z "${YES}" ]]; then
-	ring_bell
-	CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:" wait_for_user
+    ring_bell
+    CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to continue or any other key to abort:" wait_for_user
 fi
 
 ### Do install/upgrade the requested driver package ################################################
@@ -719,18 +720,18 @@ fi
 # One exit handler restores every affected service, including after partial shutdown failures.
 STOPPED_SERVICES=()
 function restore-services() {
-	local exit_status="$?"
-	local index service_name
-	for ((index = ${#STOPPED_SERVICES[@]} - 1; index >= 0; --index)); do
-		service_name="${STOPPED_SERVICES[index]}"
-		if ! exec_cmd "sudo service ${service_name} start"; then
-			warn "Failed to restart \`${service_name}\`. Run \`sudo service ${service_name} start\` to retry." >&2
-			if [[ "${exit_status}" -eq 0 ]]; then
-				exit_status=1
-			fi
-		fi
-	done
-	exit "${exit_status}"
+    local exit_status="$?"
+    local index service_name
+    for ((index = ${#STOPPED_SERVICES[@]} - 1; index >= 0; --index)); do
+        service_name="${STOPPED_SERVICES[index]}"
+        if ! exec_cmd "sudo service ${service_name} start"; then
+            warn "Failed to restart \`${service_name}\`. Run \`sudo service ${service_name} start\` to retry." >&2
+            if [[ "${exit_status}" -eq 0 ]]; then
+                exit_status=1
+            fi
+        fi
+    done
+    exit "${exit_status}"
 }
 trap restore-services EXIT
 trap 'exit 130' INT
@@ -738,13 +739,13 @@ trap 'exit 143' TERM
 
 # Stop services before checking GPU users so their processes cannot be automatically respawned.
 for service_name in "${DM_SERVICES[@]}" "${NVIDIA_SERVICES[@]}"; do
-	STOPPED_SERVICES+=("${service_name}")
-	exec_cmd "sudo service ${service_name} stop"
+    STOPPED_SERVICES+=("${service_name}")
+    exec_cmd "sudo service ${service_name} stop"
 done
 
 # Disable persistence mode
 if [[ -n "$(sudo lsmod | grep '^nvidia' | awk '{ print $1 }')" ]]; then
-	exec_cmd "sudo nvidia-smi -pm 0 || true"
+    exec_cmd "sudo nvidia-smi -pm 0 || true"
 fi
 
 sleep 1 # ensure the processes are stopped
@@ -753,59 +754,59 @@ sleep 1 # ensure the processes are stopped
 # shellcheck disable=SC2207
 PIDS=($(sudo lsof -t /dev/nvidia* 2>/dev/null || true))
 if [[ "${#PIDS[@]}" -gt 0 ]]; then
-	cat >&2 <<EOS
+    cat >&2 <<EOS
 
 ${tty_red}FATAL:${tty_white} Some processes are still using the NVIDIA devices.${tty_reset}
 
 $(ps --format=pid,user,command --pid="${PIDS[*]}")
 EOS
 
-	if [[ -z "${YES}" ]]; then
-		ring_bell
-		CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to kill (\`kill -9\`) and continue or any other key to abort:" wait_for_user
-	fi
+    if [[ -z "${YES}" ]]; then
+        ring_bell
+        CONFIRM_MESSAGE="Press ${tty_bold}RETURN${tty_reset}/${tty_bold}ENTER${tty_reset} to kill (\`kill -9\`) and continue or any other key to abort:" wait_for_user
+    fi
 
-	# Processes may exit between discovery and `kill`; recheck device users afterward.
-	exec_cmd "sudo kill -9 ${PIDS[*]}" || true
-	sleep 3 # ensure the processes are stopped
+    # Processes may exit between discovery and `kill`; recheck device users afterward.
+    exec_cmd "sudo kill -9 ${PIDS[*]}" || true
+    sleep 3 # ensure the processes are stopped
 
-	# shellcheck disable=SC2207
-	PIDS=($(sudo lsof -t /dev/nvidia* 2>/dev/null || true))
-	if [[ "${#PIDS[@]}" -gt 0 ]]; then
-		abort "Processes are still using the NVIDIA devices (PIDs: ${PIDS[*]}). Stop them and retry."
-	fi
+    # shellcheck disable=SC2207
+    PIDS=($(sudo lsof -t /dev/nvidia* 2>/dev/null || true))
+    if [[ "${#PIDS[@]}" -gt 0 ]]; then
+        abort "Processes are still using the NVIDIA devices (PIDs: ${PIDS[*]}). Stop them and retry."
+    fi
 fi
 
 # Offload the NVIDIA kernel modules
 MODULES="$(sudo lsmod | grep '^nvidia' | awk '{ print $1 }')"
 MODULES="${MODULES//$'\n'/ }"
 if [[ -n "${MODULES}" ]]; then
-	exec_cmd "sudo modprobe -r -f ${MODULES}"
+    exec_cmd "sudo modprobe -r -f ${MODULES}"
 fi
 
 if [[ -n "${INSTALLED_DRIVER}" ]]; then
-	NVIDIA_PACKAGES="$(apt-list-nvidia-packages)"
-	if [[ -n "${NVIDIA_PACKAGES}" ]]; then
-		exec_cmd "sudo apt-mark unhold ${NVIDIA_PACKAGES}"
-	fi
-	if [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" ]]; then
-		# Upgrade the existing driver packages
-		exec_cmd "sudo apt-get install --only-upgrade --yes ${NVIDIA_PACKAGES}"
-	else
-		# Uninstall the existing driver packages
-		exec_cmd "sudo apt-get purge --yes ${NVIDIA_PACKAGES}"
-	fi
+    NVIDIA_PACKAGES="$(apt-list-nvidia-packages)"
+    if [[ -n "${NVIDIA_PACKAGES}" ]]; then
+        exec_cmd "sudo apt-mark unhold ${NVIDIA_PACKAGES}"
+    fi
+    if [[ "${INSTALLED_DRIVER}" == "${REQUESTED_DRIVER}" ]]; then
+        # Upgrade the existing driver packages
+        exec_cmd "sudo apt-get install --only-upgrade --yes ${NVIDIA_PACKAGES}"
+    else
+        # Uninstall the existing driver packages
+        exec_cmd "sudo apt-get purge --yes ${NVIDIA_PACKAGES}"
+    fi
 fi
 
 if [[ "${INSTALLED_DRIVER}" != "${REQUESTED_DRIVER}" ]]; then
-	# Install the required driver packages
-	exec_cmd "sudo apt-get install --yes ${REQUESTED_DRIVER}"
+    # Install the required driver packages
+    exec_cmd "sudo apt-get install --yes ${REQUESTED_DRIVER}"
 fi
 
 # Hold the NVIDIA driver packages for `apt upgrade`
 NVIDIA_PACKAGES="$(apt-list-nvidia-packages)"
 if [[ -n "${NVIDIA_PACKAGES}" ]]; then
-	exec_cmd "sudo apt-mark hold ${NVIDIA_PACKAGES}"
+    exec_cmd "sudo apt-mark hold ${NVIDIA_PACKAGES}"
 fi
 
 ### Reload the NVIDIA kernel modules ###############################################################
