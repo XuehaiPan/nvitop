@@ -58,6 +58,7 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             self.enable_history()
 
         self._compact: bool = compact
+        self._swap_graphs: bool = False
         self.width: int = max(79, root.width)
         self.full_height: int = 12
         self.compact_height: int = 2
@@ -84,14 +85,41 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
         if self._width != width:
             if self.visible:
                 self.need_redraw = True
-            graph_width = max(width - 80, 20)
-            if self.win is not None:
-                self.average_gpu_memory_percent.width = graph_width  # type: ignore[union-attr]
-                self.average_gpu_utilization.width = graph_width  # type: ignore[union-attr]
-                for device in self.devices:
-                    device.memory_percent.history.width = graph_width  # type: ignore[attr-defined]
-                    device.gpu_utilization.history.width = graph_width  # type: ignore[attr-defined]
-        self._width = width
+            self._width = width
+            self._update_graph_widths()
+
+    @property
+    def swap_graphs(self) -> bool:
+        return self._swap_graphs
+
+    @swap_graphs.setter
+    def swap_graphs(self, value: bool) -> None:
+        if self._swap_graphs != value:
+            if self.visible:
+                self.need_redraw = True
+            self._swap_graphs = value
+            self._update_graph_widths()
+
+    def toggle_graphs(self) -> None:
+        self.swap_graphs = not self.swap_graphs
+
+    def _update_graph_widths(self) -> None:
+        if self.win is None:
+            return
+
+        right_width = max(self._width - 80, 20)
+        host_width = right_width if self._swap_graphs else 77
+        gpu_width = 77 if self._swap_graphs else right_width
+
+        host.cpu_percent.history.width = host_width
+        host.virtual_memory.history.width = host_width  # type: ignore[attr-defined]
+        host.swap_memory.history.width = host_width  # type: ignore[attr-defined]
+
+        self.average_gpu_memory_percent.width = gpu_width  # type: ignore[union-attr]
+        self.average_gpu_utilization.width = gpu_width  # type: ignore[union-attr]
+        for device in self.devices:
+            device.memory_percent.history.width = gpu_width  # type: ignore[attr-defined]
+            device.gpu_utilization.history.width = gpu_width  # type: ignore[attr-defined]
 
     @property
     def compact(self) -> bool:
@@ -352,19 +380,30 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
                         attr='dim',
                     )
 
-        self.color(fg='cyan')
-        for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
-            self.addstr(y, self.x + 1, line)
+        right_width = max(remaining_width - 1, 20)
+        if self.swap_graphs:
+            gpu_x, draw_gpu = self.x + 1, True
+            host_x, host_width, draw_host = self.x + 79, right_width, self.width >= 100
+        else:
+            host_x, host_width, draw_host = self.x + 1, 77, True
+            gpu_x, draw_gpu = self.x + 79, self.width >= 100
 
-        self.color(fg='magenta')
-        for y, line in enumerate(host.virtual_memory.history.graph, start=self.y + 6):  # type: ignore[attr-defined]
-            self.addstr(y, self.x + 1, line)
+        if draw_host:
+            self.color(fg='cyan')
+            for y, line in enumerate(host.cpu_percent.history.graph, start=self.y):
+                self.addstr(y, host_x, line)
 
-        self.color(fg='blue')
-        for y, line in enumerate(host.swap_memory.history.graph, start=self.y + 10):  # type: ignore[attr-defined]
-            self.addstr(y, self.x + 1, line)
+            self.color(fg='magenta')
+            for y, line in enumerate(host.virtual_memory.history.graph, start=self.y + 6):  # type: ignore[attr-defined]
+                self.addstr(y, host_x, line)
 
-        if self.width >= 100:
+            self.color(fg='blue')
+            for y, line in enumerate(host.swap_memory.history.graph, start=self.y + 10):  # type: ignore[attr-defined]
+                self.addstr(y, host_x, line)
+
+        gpu_memory_percent = None
+        gpu_utilization = None
+        if draw_gpu:
             if self.device_count > 1 and self.parent.selection.is_set():
                 device = self.parent.selection.process.device  # type: ignore[union-attr]
                 gpu_memory_percent = device.memory_percent.history  # type: ignore[union-attr]
@@ -377,41 +416,47 @@ class HostPanel(BasePanel):  # pylint: disable=too-many-instance-attributes
             assert gpu_utilization is not None
             if self.TERM_256COLOR:
                 for i, (y, line) in enumerate(enumerate(gpu_memory_percent.graph, start=self.y)):
-                    self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
+                    self.addstr(y, gpu_x, line, self.get_fg_bg_attr(fg=1.0 - i / 4.0))
 
                 for i, (y, line) in enumerate(enumerate(gpu_utilization.graph, start=self.y + 6)):
-                    self.addstr(y, self.x + 79, line, self.get_fg_bg_attr(fg=i / 4.0))
+                    self.addstr(y, gpu_x, line, self.get_fg_bg_attr(fg=i / 4.0))
             else:
                 self.color(fg=Device.color_of(gpu_memory_percent.last_value, type='memory'))
                 for y, line in enumerate(gpu_memory_percent.graph, start=self.y):
-                    self.addstr(y, self.x + 79, line)
+                    self.addstr(y, gpu_x, line)
 
                 self.color(fg=Device.color_of(gpu_utilization.last_value, type='gpu'))
                 for y, line in enumerate(gpu_utilization.graph, start=self.y + 6):
-                    self.addstr(y, self.x + 79, line)
+                    self.addstr(y, gpu_x, line)
 
         self.color_reset()
-        self.addstr(self.y, self.x + 1, f' {load_average} ')
-        self.addstr(self.y + 1, self.x + 1, f' {host.cpu_percent.history} ')
-        self.addstr(
-            self.y + 9,
-            self.x + 1,
-            (
+        if draw_host:
+            load_average_info = f' {load_average} '
+            if len(load_average_info) <= host_width:
+                self.addstr(self.y, host_x, load_average_info)
+                self.addstr(self.y + 1, host_x, f' {host.cpu_percent.history} ')
+            else:
+                self.addstr(self.y, host_x, f' {host.cpu_percent.history} ')
+
+            memory_info = (
                 f' MEM: {bytes2human(self.virtual_memory.used, min_unit=GiB)} '
                 f'({host.virtual_memory.history}) '  # type: ignore[attr-defined]
-            ),
-        )
-        self.addstr(
-            self.y + 10,
-            self.x + 1,
-            (
+            )
+            if len(memory_info) > host_width:
+                memory_info = f' MEM: {host.virtual_memory.history} '  # type: ignore[attr-defined]
+            self.addstr(self.y + 9, host_x, memory_info)
+
+            swap_info = (
                 f' SWP: {bytes2human(self.swap_memory.used, min_unit=GiB)} '
                 f'({host.swap_memory.history}) '  # type: ignore[attr-defined]
-            ),
-        )
-        if self.width >= 100:
-            self.addstr(self.y, self.x + 79, f' {gpu_memory_percent} ')
-            self.addstr(self.y + 10, self.x + 79, f' {gpu_utilization} ')
+            )
+            if len(swap_info) > host_width:
+                swap_info = f' SWP: {host.swap_memory.history} '  # type: ignore[attr-defined]
+            self.addstr(self.y + 10, host_x, swap_info)
+
+        if draw_gpu:
+            self.addstr(self.y, gpu_x, f' {gpu_memory_percent} ')
+            self.addstr(self.y + 10, gpu_x, f' {gpu_utilization} ')
 
     def destroy(self) -> None:
         super().destroy()

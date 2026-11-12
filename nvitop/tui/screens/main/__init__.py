@@ -211,6 +211,9 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
             self.mode = mode
             self.root.update_size()
 
+        def toggle_host_graphs() -> None:
+            self.host_panel.toggle_graphs()
+
         def force_refresh() -> None:
             select_clear()
             host_begin()
@@ -264,6 +267,7 @@ class MainScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance-att
         keymaps.bind('main', 'a', partial(change_mode, mode='auto'))
         keymaps.bind('main', 'f', partial(change_mode, mode='full'))
         keymaps.bind('main', 'c', partial(change_mode, mode='compact'))
+        keymaps.bind('main', 'g', toggle_host_graphs)
         keymaps.bind('main', 'r', force_refresh)
         keymaps.alias('main', 'r', 'R')
         keymaps.alias('main', 'r', '<C-r>')

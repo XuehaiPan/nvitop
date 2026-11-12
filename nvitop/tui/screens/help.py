@@ -32,6 +32,7 @@ Device coloring rules by loading intensity:
 
       a f c: change display mode                h ?: show this help screen
        F5 r: force refresh window                 q: quit
+          g: swap host/GPU graphs
 
      Arrows: scroll process list              Space: tag/untag current process
        Home: select the first process           Esc: clear process selection
@@ -75,15 +76,16 @@ class HelpScreen(BaseScreen):  # pylint: disable=too-many-instance-attributes
         self.color_matrix: dict[int, tuple[str | None, str | None]] = {
             9: ('green', 'green'),
             10: ('green', 'green'),
-            12: ('cyan', 'yellow'),
+            11: ('green', None),
             13: ('cyan', 'yellow'),
-            14: ('cyan', 'red'),
-            15: (None, 'red'),
-            16: ('cyan', 'red'),
-            **dict.fromkeys(range(17, 20), ('cyan', 'green')),
-            **dict.fromkeys(range(21, 23), ('blue', 'blue')),
-            **dict.fromkeys(range(24, 29), ('blue', 'blue')),
-            29: ('magenta', 'magenta'),
+            14: ('cyan', 'yellow'),
+            15: ('cyan', 'red'),
+            16: (None, 'red'),
+            17: ('cyan', 'red'),
+            **dict.fromkeys(range(18, 21), ('cyan', 'green')),
+            **dict.fromkeys(range(22, 24), ('blue', 'blue')),
+            **dict.fromkeys(range(25, 30), ('blue', 'blue')),
+            30: ('magenta', 'magenta'),
         }
         # Rows whose right-hand action column is colored red are exactly the
         # kill/terminate/interrupt keybindings — the same set ``--readonly`` disables.
