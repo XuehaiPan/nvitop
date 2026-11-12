@@ -25,7 +25,9 @@ from __future__ import annotations
 import os as _os
 
 import psutil as _psutil
-from psutil import *  # noqa: F403 # pylint: disable=wildcard-import,unused-wildcard-import,redefined-builtin
+
+# pylint: disable-next=wildcard-import,unused-wildcard-import,redefined-builtin
+from psutil import *  # noqa: F403
 from psutil import (  # noqa: F401
     LINUX,
     MACOS,

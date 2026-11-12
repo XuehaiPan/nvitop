@@ -517,7 +517,7 @@ class TreeViewScreen(BaseSelectableScreen):  # pylint: disable=too-many-instance
 
         self.color(fg='cyan', attr='bold | reverse')
         text_offset = self.x + self.width - len(SIGNAL_HINT_TEXT)
-        # Leading space lets the cell share the row-above's reverse-highlighted background.
+        # The leading space extends the reverse highlight from the row above.
         self.addstr(self.y, text_offset - 1, ' ' + SIGNAL_HINT_TEXT)
         for kind, dx, width in SIGNAL_HINT_KEY_SPANS:
             if kind == 'key':

@@ -1024,9 +1024,8 @@ if not _pynvml_installation_corrupted:
               queried together to avoid separate calls for each field.
             - Each entry in ``fieldIds`` is a field ID or a ``(fieldId, scopeId)`` pair. The meaning
               of ``scopeId`` depends on the field, such as a link ID for NVLink throughput counters.
-            - The returned array contains one entry per requested field, in the same order. Check
-              each entry's ``nvmlReturn`` before reading its ``value``, which is valid only when
-              ``nvmlReturn`` is :data:`NVML_SUCCESS`.
+            - The returned array contains one entry per requested field, in the same order. Read
+              ``value`` only for entries whose ``nvmlReturn`` is :data:`NVML_SUCCESS`.
 
         Raises:
             NVMLError_Uninitialized:
