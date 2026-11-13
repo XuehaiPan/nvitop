@@ -1,0 +1,19 @@
+	NPU ID                         : 0
+	Product Name                   : IT21HMDC_Bin6
+	Model                          : NA
+	Manufacturer                   : Huawei
+	Serial Number                  : 1023C7991472
+	Software Version               : 25.5.1
+	Firmware Version               : 7.7.0.6.236
+	Compatibility                  : OK
+	Board ID                       : 0x62
+	PCB ID                         : A
+	BOM ID                         : 1
+	PCIe Bus Info                  : 0000:C1:00.0
+	Slot ID                        : 0
+	Class ID                       : NA
+	PCI Vendor ID                  : 0x19E5
+	PCI Device ID                  : 0xD802
+	Subsystem Vendor ID            : 0x19E5
+	Subsystem Device ID            : 0x3000
+	Chip Count                     : 1
