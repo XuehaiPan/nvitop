@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--
+- Add `Device.memory_temperature()` to query the memory (VRAM) temperature via the NVML field `NVML_FI_DEV_MEMORY_TEMP` (`nvidia-smi --query-gpu=temperature.memory`).
 
 ### Changed
 

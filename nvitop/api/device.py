@@ -1485,6 +1485,30 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
             )
         return NA
 
+    def memory_temperature(self) -> int | NaType:  # in Celsius
+        """Memory (VRAM) temperature in degrees C.
+
+        This value is only reported by GPUs whose memory exposes a temperature sensor to NVML
+        (e.g., HBM-based data center GPUs). Many consumer GPUs report :const:`nvitop.NA`.
+
+        Returns: Union[int, NaType]
+            The memory temperature in Celsius degrees, or :const:`nvitop.NA` when not applicable.
+
+        Command line equivalent:
+
+        .. code:: bash
+
+            nvidia-smi --id=<IDENTIFIER> --format=csv,noheader,nounits --query-gpu=temperature.memory
+        """
+        if self._handle is not None:
+            ((memory_temperature, _),) = libnvml.nvmlQueryFieldValues(
+                self._handle,
+                [libnvml.NVML_FI_DEV_MEMORY_TEMP],
+            )
+            if libnvml.nvmlCheckReturn(memory_temperature, int):
+                return memory_temperature  # type: ignore[return-value]
+        return NA
+
     @memoize_when_activated
     def power_usage(self) -> int | NaType:  # in milliwatts (mW)
         """The last measured power draw for the entire board in milliwatts.
@@ -2410,6 +2434,7 @@ class Device:  # pylint: disable=too-many-instance-attributes,too-many-public-me
         'memory_clock',
         'fan_speed',
         'temperature',
+        'memory_temperature',
         'power_usage',
         'power_limit',
         'power_status',
