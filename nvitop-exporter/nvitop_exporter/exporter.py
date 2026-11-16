@@ -56,6 +56,8 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
             device: set() for device in self.devices
         }
 
+        self.alive_interfaces: set[str] = set()
+
         self.info = Info(
             'nvitop',
             documentation='NVITOP Prometheus Exporter.',
@@ -518,6 +520,18 @@ class PrometheusExporter:  # pylint: disable=too-many-instance-attributes
                 (self.host_net_io_rx_packets, net_io_counter.packets_recv),
             ):
                 gauge.labels(hostname=self.hostname, interface=interface).set(value)
+
+        # Remove series only after collecting a complete network snapshot.
+        alive_interfaces = set(net_io_counters)
+        for interface in self.alive_interfaces.difference(alive_interfaces):
+            for gauge in (
+                self.host_net_io_tx_data,
+                self.host_net_io_rx_data,
+                self.host_net_io_tx_packets,
+                self.host_net_io_rx_packets,
+            ):
+                gauge.remove(self.hostname, interface)
+        self.alive_interfaces = alive_interfaces
 
         for partition, disk_io_counter in disk_io_counters.items():
             for gauge, value in (
