@@ -61,13 +61,16 @@ jobs:
           )
 
       - name: Install linters
-        run: python -m pip install --upgrade pre-commit 'pylint[spelling]' mypy typing-extensions
+        run: python -m pip install --upgrade pre-commit 'pylint[spelling]' mypy typing-extensions pytest
 
       - name: pre-commit
         run: |
           python -m pre_commit --version
           python -m pre_commit install --install-hooks
           python -m pre_commit run --all-files
+
+      - name: Exporter regression tests
+        run: PYTHONPATH=nvitop-exporter python -m pytest nvitop-exporter/test_network_metrics.py
 
       - name: xdoctest
         run: |

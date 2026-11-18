@@ -1,4 +1,4 @@
-"""Regression coverage for network metric lifecycle, without GPU hardware."""
+"""Regression coverage for network metric life cycle, without GPU hardware."""
 
 from __future__ import annotations
 
@@ -13,16 +13,17 @@ from prometheus_client import CollectorRegistry
 from nvitop_exporter.exporter import PrometheusExporter
 
 
-@pytest.fixture
-def exporter() -> Iterator[PrometheusExporter]:
+@pytest.fixture(name='exporter')
+def isolated_exporter() -> Iterator[PrometheusExporter]:
     """Create an isolated collector without initializing GPU hardware."""
+    mocked_values: tuple[tuple[str, object], ...] = (
+        ('Device.count', 0),
+        ('Device.driver_version', 'test'),
+        ('Device.cuda_driver_version', 'test'),
+        ('host.disk_partitions', []),
+    )
     with ExitStack() as stack:
-        for name, value in (
-            ('Device.count', 0),
-            ('Device.driver_version', 'test'),
-            ('Device.cuda_driver_version', 'test'),
-            ('host.disk_partitions', []),
-        ):
+        for name, value in mocked_values:
             stack.enter_context(patch(f'nvitop_exporter.exporter.{name}', return_value=value))
         yield PrometheusExporter([], hostname='test', registry=CollectorRegistry())
 
@@ -30,7 +31,12 @@ def exporter() -> Iterator[PrometheusExporter]:
 def update(exporter: PrometheusExporter, *interfaces: str) -> None:
     """Collect a synthetic interface snapshot."""
     snapshot = {
-        name: SimpleNamespace(bytes_sent=1048576, bytes_recv=2097152, packets_sent=3, packets_recv=4)
+        name: SimpleNamespace(
+            bytes_sent=1048576,
+            bytes_recv=2097152,
+            packets_sent=3,
+            packets_recv=4,
+        )
         for name in interfaces
     }
     with patch('nvitop_exporter.exporter.host.net_io_counters', return_value=snapshot):
@@ -67,9 +73,12 @@ def test_failed_snapshot_preserves_previous_metrics(exporter: PrometheusExporter
     """Do not treat collection failure as an empty network."""
     update(exporter, 'eth0', 'veth0')
     with ExitStack() as stack:
-        stack.enter_context(patch(
-            'nvitop_exporter.exporter.host.net_io_counters', side_effect=OSError('unavailable'),
-        ))
+        stack.enter_context(
+            patch(
+                'nvitop_exporter.exporter.host.net_io_counters',
+                side_effect=OSError('unavailable'),
+            ),
+        )
         stack.enter_context(pytest.raises(OSError, match='unavailable'))
         exporter.update_host()
     assert_interfaces(exporter, {'eth0', 'veth0'})
