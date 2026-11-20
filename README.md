@@ -1027,7 +1027,7 @@ The [device module](https://nvitop.readthedocs.io/en/latest/api/device.html) pro
 In [1]: from nvitop import (
    ...:     host,
    ...:     Device, PhysicalDevice, CudaDevice,
-   ...:     parse_cuda_visible_devices, normalize_cuda_visible_devices
+   ...:     parse_cuda_visible_devices, normalize_cuda_visible_devices,
    ...:     HostProcess, GpuProcess,
    ...:     NA,
    ...: )
